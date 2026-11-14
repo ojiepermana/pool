@@ -677,3 +677,32 @@ fn base_could_not_run_when_an_owner_file_at_the_base_cannot_be_read() {
     f.check("docs", &["--base", &base])
         .assert_not_run("docs", "cannot read the base revision");
 }
+
+#[test]
+fn d1_skips_a_link_inside_a_double_backtick_code_span() {
+    // covers: 0002 AC-8, D1: a code span opened and closed by two backticks is removed before links are looked for,
+    // while a run of backticks with no partner of the same length stays plain text, so the link after it counts.
+    let f = good_tree("docs_d1_double_backtick");
+    f.append(
+        README,
+        "\nShown as code: ``[label](docs/nope.md)`` and ``a ` [x](docs/nope.md) b``.\n",
+    );
+    f.check("docs", &[]).assert_ok("docs");
+
+    f.append(README, "\nAn odd `` run then [gone](docs/nope.md).\n");
+    let line = line_of(&f.read(README), "odd ``");
+    f.check("docs", &[]).assert_problem(
+        "docs",
+        "D1",
+        &[&format!("README.md:{line}:"), "docs/nope.md"],
+    );
+}
+
+#[test]
+fn d5_still_counts_a_citation_inside_a_double_backtick_code_span() {
+    // covers: 0002 AC-10, D5: citations are read inside code spans, whatever their delimiter.
+    let f = good_tree("docs_d5_double_backtick");
+    f.append(README, "\nCited as code: ``SEC-99``.\n");
+    f.check("docs", &[])
+        .assert_problem("docs", "D5", &["README.md:", "SEC-99"]);
+}
