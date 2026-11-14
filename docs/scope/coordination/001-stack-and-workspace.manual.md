@@ -8,8 +8,8 @@ Keputusan yang diambil atas namamu ada di `001-stack-and-workspace.log.md` bagia
 
 | ID | Langkah | AC | Kotak yang dicentang dengan langkah ini `NOT_RUN` | Bisa dijalankan sesudah | Hasil |
 | --- | --- | --- | --- | --- | --- |
-| `F1-1` | Nyalakan Docker Desktop supaya build Linux bisa dijalankan sesi developer dan verify | `0001 AC-2` | belum ada | kapan saja; paling lambat sebelum `Verify it` | `NOT_RUN` |
-| `F1-2` | Jalankan perintah build Linux spec 0001 (hanya bila sesi tidak sempat menjalankannya karena daemon mati) | `0001 AC-2` | belum ada | `F1-1` lulus dan branch developer sudah di-merge ke `main` | `NOT_RUN` |
+| `F1-1` | Nyalakan Docker Desktop supaya build Linux bisa dijalankan sesi developer dan verify | `0001 AC-2` | F1 · `Scaffold from the decision`, `Verify it` | kapan saja | `NOT_RUN` |
+| `F1-2` | Jalankan perintah build Linux spec 0001 (hanya bila sesi tidak sempat menjalankannya karena daemon mati) | `0001 AC-2`, klausa `/dev/full` `0001 AC-11` | F1 · `Scaffold from the decision`, `Verify it`, `Test it` (dua test khusus Linux) | `F1-1` lulus; sekarang juga, kode sudah di `main` | `NOT_RUN` |
 
 ## Nilai dari user
 
@@ -36,5 +36,5 @@ Dari laporan `arc-f1-update` (2026-11-14). Bukti `0001 AC-2`. Sesi developer dan
 
 - **Prasyarat:** `F1-1` lulus; branch developer sudah di-merge ke `main`; `git status --short` tidak menampilkan perubahan pada file yang dilacak.
 - **Jalankan:** dari root repo, blok `bash` persis di [spec 0001 bagian "Linux build"](../../specs/0001-initial-architecture/index.md#linux-build) (dimulai `git archive --format=tar HEAD | docker run --rm -i --platform linux/amd64 ...`). Unduhan image sekitar 320 MB; di Apple silicon berjalan lewat emulasi, beberapa menit.
-- **Lulus bila:** exit 0, output memuat `host: x86_64-unknown-linux-gnu`, test lulus, dan baris terakhir `linux build check passed`.
+- **Lulus bila:** exit 0, output memuat `host: x86_64-unknown-linux-gnu`, test lulus (termasuk `a_failed_write_exits_3_without_stderr` dan `ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr`, yang hanya berjalan di Linux), satu blok `== <fixture> <format> exit=<n>` per fixture dan format (0 untuk `valid-*`, 1 untuk lainnya), tidak ada `canary leaked`, dan baris terakhir `linux build check passed`.
 - **Kirim ke lead:** `PASS` atau `FAIL`, baris `sha256sum`, dan `git rev-parse HEAD`; bila `FAIL`, outputnya.

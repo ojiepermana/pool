@@ -10,9 +10,9 @@ Use the [workspace handoff](../implementation-order.md#first-handoff-the-workspa
 
 - [x] Decide the stack (spec): `/architect stack and architecture`
 - [x] Record the build notes the handoff requires in spec 0001: `/architect stack and workspace build notes`
-- [ ] Scaffold from the decision: `/develop stack and workspace`
-- [ ] Verify it: `/check verify stack and workspace`
-- [ ] Test it: `/test stack and workspace`
+- [x] Scaffold from the decision: `/develop stack and workspace`
+- [x] Verify it: `/check verify stack and workspace`
+- [x] Test it: `/test stack and workspace`
 - [ ] Review it (fresh model): `/check review stack and workspace`
 - [ ] Document it: `/document stack and workspace`
 
