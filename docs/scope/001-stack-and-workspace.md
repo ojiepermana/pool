@@ -9,6 +9,7 @@ Ratify the foundation and create only the minimal workspace needed by the first 
 Use the [workspace handoff](../implementation-order.md#first-handoff-the-workspace) for the Linux build, offline validation fixtures and explicit exclusions. The feature spec holds the build notes and verification record.
 
 - [x] Decide the stack (spec): `/architect stack and architecture`
+- [ ] Record the build notes the handoff requires in spec 0001: `/architect stack and workspace build notes`
 - [ ] Scaffold from the decision: `/develop stack and workspace`
 - [ ] Verify it: `/check verify stack and workspace`
 - [ ] Test it: `/test stack and workspace`

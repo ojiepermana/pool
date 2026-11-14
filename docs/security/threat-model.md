@@ -23,22 +23,24 @@ flowchart LR
 
 ## Threats and controls
 
-| Threat | Entry and impact | Required control | Verification |
-|---|---|---|---|
-| Frame confusion or memory exhaustion | Startup/message lengths, endless streams | Checked bounds, state machine, byte/time budgets | Fuzz all states, fragmented inputs and slow clients |
-| Password or SCRAM downgrade | Frontend handshake | Reviewed SCRAM, TLS policy, channel binding negotiation and proof length checks | PostgreSQL interoperability and downgrade corpus |
-| Backend impersonation | DNS/network/certificate path | CA and hostname verification; identity checked after connection | Wrong hostname, CA, role and system ID tests |
-| Role confusion and cross tenant reuse | Pool keys and credential maps | Actual login identity partitioning; no global privileged SET ROLE scheme | Alternating role/database and credential generation tests |
-| Late cancellation affects another user | Token map after release/reuse | Private backend keys, virtual frontend credentials, serialized retirement and backend closure after forwarded cancellation | Completion/release/reuse race model |
-| Unsafe replica routing | SQL syntax or catalog indirection | Primary default, restricted read profile, trusted object contract and DB permissions | Adversarial function, cast, view, FDW, RLS and session corpus |
-| Commit replay duplicates effects | Backend connection loss | No replay after dispatch; expose uncertainty | Drop response after committed write |
-| Management privilege escalation | REST/CLI identity or oversized request | Authenticated protected listener, role checks, body/rate limits | Denial matrix and malformed requests |
-| Command injection | Fencing/recovery hook arguments | Structured allowlisted adapter, no arbitrary shell endpoint | Adversarial node names and argument tests |
-| Split brain or stale leader | Partition, pause, incomplete power action | Independent verified fencing, fresh epoch/preconditions, durable intent | Partitions and crash at every operation stage |
-| Journal tampering, loss or disk full | Host/storage boundary | Restrictive files, durable writes, bounded retention, export, fail closed mutations | Power/crash, full disk, corrupt journal drills |
-| Secret disclosure through diagnostics | Errors, logs, traces, metrics | Explicit redaction, no raw SQL/parameters by default, bounded label values | Snapshot tests with seeded canary secrets |
-| Dependency or native parser compromise | Build and runtime supply chain | Pins, SBOM, notices, advisories, isolated native boundaries | Reviewed update PRs, fuzz/sanitizer runs |
-| Correlated host failure | Single Proxmox host | Separate hosts/failure domains before HA claims | Full host loss drill |
+| ID | Threat | Entry and impact | Required control | Verification |
+|---|---|---|---|---|
+| T-01 | Frame confusion or memory exhaustion | Startup/message lengths, endless streams | Checked bounds, state machine, byte/time budgets | Fuzz all states, fragmented inputs and slow clients |
+| T-02 | Password or SCRAM downgrade | Frontend handshake | Reviewed SCRAM, TLS policy, channel binding negotiation and proof length checks | PostgreSQL interoperability and downgrade corpus |
+| T-03 | Backend impersonation | DNS/network/certificate path | CA and hostname verification; identity checked after connection | Wrong hostname, CA, role and system ID tests |
+| T-04 | Role confusion and cross tenant reuse | Pool keys and credential maps | Actual login identity partitioning; no global privileged SET ROLE scheme | Alternating role/database and credential generation tests |
+| T-05 | Late cancellation affects another user | Token map after release/reuse | Private backend keys, virtual frontend credentials, serialized retirement and backend closure after forwarded cancellation | Completion/release/reuse race model |
+| T-06 | Unsafe replica routing | SQL syntax or catalog indirection | Primary default, restricted read profile, trusted object contract and DB permissions | Adversarial function, cast, view, FDW, RLS and session corpus |
+| T-07 | Commit replay duplicates effects | Backend connection loss | No replay after dispatch; expose uncertainty | Drop response after committed write |
+| T-08 | Management privilege escalation | REST/CLI identity or oversized request | Authenticated protected listener, role checks, body/rate limits | Denial matrix and malformed requests |
+| T-09 | Command injection | Fencing/recovery hook arguments | Structured allowlisted adapter, no arbitrary shell endpoint | Adversarial node names and argument tests |
+| T-10 | Split brain or stale leader | Partition, pause, incomplete power action | Independent verified fencing, fresh epoch/preconditions, durable intent | Partitions and crash at every operation stage |
+| T-11 | Journal tampering, loss or disk full | Host/storage boundary | Restrictive files, durable writes, bounded retention, export, fail closed mutations | Power/crash, full disk, corrupt journal drills |
+| T-12 | Secret disclosure through diagnostics | Errors, logs, traces, metrics | Explicit redaction, no raw SQL/parameters by default, bounded label values | Snapshot tests with seeded canary secrets |
+| T-13 | Dependency or native parser compromise | Build and runtime supply chain | Pins, SBOM, notices, advisories, isolated native boundaries | Reviewed update PRs, fuzz/sanitizer runs |
+| T-14 | Correlated host failure | Single Proxmox host | Separate hosts/failure domains before HA claims | Full host loss drill |
+
+Cite a threat by its ID, for example `T-05`, when a spec or test covers it.
 
 ## Residual risks
 

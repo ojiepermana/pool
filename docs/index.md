@@ -13,9 +13,11 @@ For the next development task, start with the [workspace handoff](implementation
 | How does the product meet that contract? | The owning feature spec; [0001](specs/0001-initial-architecture/index.md) governs the foundation | Architecture explains interactions; the ADR points to the decision. A PRD's suggested types and defaults are inputs until the spec settles them. |
 | What blocks delivery, and what qualifies a release? | [Dependencies](plan/dependencies.md), [risks](plan/risk-register.md) or [milestones](plan/milestones.md), according to the question | Record a decision once in its spec; the [ledger](plan/decision-ledger.md) records its disposition. |
 | How is a requirement proved? | [Testing strategy](testing/strategy.md#acceptance-evidence) for the method; the slice verification record for results | Scope and release reports link to that evidence. Use the [driver matrix](testing/compatibility-matrix.md) for the supported profile. |
+| What is a thing called? | The [glossary](glossary.md) | Use its names for types, configuration keys, metrics and API fields. Other documents link to the term instead of defining it again. |
+| Which rule do all slices share for keys, errors, metrics or output? | [Shared conventions](engineering-standards.md#shared-conventions) | The first slice that exposes a surface records the rule once. Later specs cite it. |
 | What global rule or upstream behavior applies? | [Engineering standards](engineering-standards.md), [security requirements](security/security-requirements.md) or dated research | The [feature inventory](feature-matrix.md) records parity dispositions. A research entry is neither a release commitment nor a test result. |
 
-When one change crosses these boundaries, change the owner first and follow its references to the affected scope, plan and tests. Unaffected documents need no matching paragraph. All ten PRDs are proposed contracts, subject to these shared standards and the governing spec.
+When one change crosses these boundaries, change the owner first and follow its references to the affected scope, plan and tests. Unaffected documents need no matching paragraph. Cite by stable ID and never copy the text: `PRD-001 AC-1`, `PRD-001 FR-2` for a numbered functional requirement, `0001 SC-4` for a safety contract, `0004 AC-1` for a criterion that exists only in a feature spec, and `SEC-3`, `F-018`, `R-07` or `T-05` for security requirements, inventory rows, risks and threats. All ten PRDs are proposed contracts, subject to these shared standards and the governing spec.
 
 ## Project root
 
@@ -53,7 +55,8 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/engineering-standards.md](engineering-standards.md) | Engineering standards |
 | [docs/feature-matrix.md](feature-matrix.md) | Feature inventory and parity matrix |
-| [docs/implementation-order.md](implementation-order.md) | Implementation starting point |
+| [docs/glossary.md](glossary.md) | Glossary |
+| [docs/implementation-order.md](implementation-order.md) | Starting development |
 | [docs/repository-structure.md](repository-structure.md) | Repository proposal |
 
 ## docs/plan

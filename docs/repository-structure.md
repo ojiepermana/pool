@@ -10,6 +10,8 @@ pool/
   rustfmt.toml
   clippy.toml
   LICENSE
+  NOTICE
+  CHANGELOG.md
   README.md
   AGENTS.md
   CONTRIBUTING.md
@@ -45,6 +47,7 @@ pool/
     prd/
     adr/
     testing/
+    reviews/
     operations/
     security/
   .github/
@@ -71,6 +74,8 @@ Authentication, connection, pooling, SQL adapter, router, balancer and backend a
 
 The controller executable, consensus crate, cache crate, dashboard and middleware replication crates are deferred. If a component later gains independent consumers, dependency weight, versioning, ownership or fuzzing/build isolation needs, extraction gets a documented decision. Acyclic internal dependencies are checked in CI from Cargo metadata once a workspace exists.
 
+Cargo builds tests, benchmarks and fuzz targets only inside a package. The `tests/` and `benchmarks/` entries are groupings, not packages. The slice that adds the first suite spanning crates names the workspace member that owns it in its spec.
+
 ## Documentation ownership
 
-Use the [documentation ownership table](index.md#where-a-change-belongs) when changing a requirement, decision, milestone or test. The operations directory in the proposed layout is for tested operator procedures as each feature becomes available.
+Use the [documentation ownership table](index.md#where-a-change-belongs) when changing a requirement, decision, milestone or test. The operations directory in the proposed layout is for tested operator procedures as each feature becomes available. The reviews directory holds independent review findings. `NOTICE` carries the attributions that bundled native components require, and `CHANGELOG.md` starts with the first tagged release.

@@ -22,6 +22,22 @@ Each dependency addition records purpose, current version, maintenance signal, s
 
 Follow [security requirements](security/security-requirements.md). Keep secrets out of code, command arguments, Debug output, logs, traces and metrics. Require administrative authentication and action authorization. Protocol/parser/auth changes receive security review; pooling/cancel changes receive protocol review; failover and HA changes receive database/infrastructure review. No broad host administrator credential is justified by a routine monitor task.
 
+## Shared conventions
+
+Some surfaces are extended by every later slice. The slice that first exposes one records its rule in this table once. Later specs cite the rule instead of choosing again. An empty rule is an open decision for the named slice, not permission to improvise.
+
+| Surface | First fixed in | Rule |
+|---|---|---|
+| Configuration keys: naming, units, unknown keys, secret references and reserved names | [001](scope/001-stack-and-workspace.md) | Pending |
+| Process exit status, and command output for people and as JSON | [001](scope/001-stack-and-workspace.md) | Pending |
+| Log event fields and redaction | [001](scope/001-stack-and-workspace.md) | Pending |
+| Identifier and generation types | [003](scope/003-control-and-session-data-model.md) | Pending |
+| SQLSTATEs and messages that POOL itself generates | [004](scope/004-one-real-primary-path.md) | Pending |
+| Metric names, units and bounded labels | The first slice that exports a metric, no later than [006](scope/006-protocol-breadth-and-cancellation.md) | Pending |
+| Administration API versioning, error body and request ID | [009](scope/009-safe-topology-administration.md) | Pending |
+
+Take every public name from the [glossary](glossary.md). A new term enters the glossary before it enters code.
+
 ## Tests and evidence
 
 Test observable behavior and safety invariants. Choose the test layer and record the result using the [testing strategy](testing/strategy.md#acceptance-evidence). Follow the [benchmark method](testing/benchmark-plan.md) for performance claims.

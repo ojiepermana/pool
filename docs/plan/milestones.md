@@ -14,7 +14,7 @@ The first column identifies where the gate is assessed. Passing an earlier gate 
 
 ## Release practices
 
-Use pre 1.0 releases while configuration and protocol support contracts are evolving. Publish supported PostgreSQL versions, protocol profiles, driver versions, known limitations and upgrade steps with every release. A version number is not a safety certification. Promote a release only from tagged artifacts with checksums, SBOM, license notices and reproducible test evidence.
+Use pre 1.0 releases while configuration and protocol support contracts are evolving. Publish supported PostgreSQL versions, protocol profiles, driver versions, known limitations and upgrade steps with every release. A version number is not a safety certification. Milestone names are gates, not version numbers. Before the first tagged release, the release maintainer records the version scheme, including whether passing the V1 gate publishes 1.0.0. Promote a release only from tagged artifacts with checksums, SBOM, license notices and reproducible test evidence.
 
 Before publishing V1, the release maintainer links the tested operator procedures for install, drain, upgrade and restore. Rehearse a compatible rollback or a documented forward recovery on a disposable deployment with existing state. Reverting binaries or TOML cannot undo a promotion or silently restore stale writer authority. Identify the supported upgrade path (or first install only), approver, artifact and any unresolved blockers. Follow the [security reporting policy](../../SECURITY.md) for a public release.
 

@@ -1,0 +1,410 @@
+{
+  "AGENTS.md": {
+    "mtime": 1794624116.1791606,
+    "seen": 1794624512.96277,
+    "ast_hash": "6a2a621b8ad6297803a7692988b1a653",
+    "semantic_hash": "6a2a621b8ad6297803a7692988b1a653"
+  },
+  "CLAUDE.md": {
+    "mtime": 1794622415.6685483,
+    "seen": 1794623470.244072,
+    "ast_hash": "13810534a8efa90cf417f78e871f167a",
+    "semantic_hash": ""
+  },
+  "CONTRIBUTING.md": {
+    "mtime": 1794621975.196525,
+    "seen": 1794623470.2440739,
+    "ast_hash": "c80c5397122eb63b50c013a6af9307a6",
+    "semantic_hash": "c80c5397122eb63b50c013a6af9307a6"
+  },
+  "README.md": {
+    "mtime": 1794623188.8476322,
+    "seen": 1794623470.2440739,
+    "ast_hash": "4ec1a8513e49db5ed8f2e206460b96c1",
+    "semantic_hash": "4ec1a8513e49db5ed8f2e206460b96c1"
+  },
+  "SECURITY.md": {
+    "mtime": 1794623188.8471694,
+    "seen": 1794623470.244075,
+    "ast_hash": "3a64ab84a86a8746bf4f5f642d59899c",
+    "semantic_hash": "3a64ab84a86a8746bf4f5f642d59899c"
+  },
+  "docs/adr/0001-initial-architecture.md": {
+    "mtime": 1794619943.991641,
+    "seen": 1794623470.244076,
+    "ast_hash": "960c4701299922b2cd12379312d55a4b",
+    "semantic_hash": "960c4701299922b2cd12379312d55a4b"
+  },
+  "docs/architecture/cluster-management.md": {
+    "mtime": 1794622878.8222795,
+    "seen": 1794623470.244077,
+    "ast_hash": "0e7f8712f478d8f717b46d5df9767b24",
+    "semantic_hash": "0e7f8712f478d8f717b46d5df9767b24"
+  },
+  "docs/architecture/connection-pooling.md": {
+    "mtime": 1794623326.4903986,
+    "seen": 1794623470.244077,
+    "ast_hash": "23fb9f5edec33491b7b8cf8f36c8d7a4",
+    "semantic_hash": "23fb9f5edec33491b7b8cf8f36c8d7a4"
+  },
+  "docs/architecture/control-plane.md": {
+    "mtime": 1794622933.3792336,
+    "seen": 1794623470.2440782,
+    "ast_hash": "58962379a798b2ee9c886b0890a98948",
+    "semantic_hash": "58962379a798b2ee9c886b0890a98948"
+  },
+  "docs/architecture/data-plane.md": {
+    "mtime": 1794622919.777205,
+    "seen": 1794623470.244079,
+    "ast_hash": "7f6c5b15feedfac251fa4ee181d8cef7",
+    "semantic_hash": "7f6c5b15feedfac251fa4ee181d8cef7"
+  },
+  "docs/architecture/deployment.md": {
+    "mtime": 1794623326.4914174,
+    "seen": 1794623470.244079,
+    "ast_hash": "6cfbe1ce0ddc680c37f758492a878469",
+    "semantic_hash": "6cfbe1ce0ddc680c37f758492a878469"
+  },
+  "docs/architecture/failover-recovery.md": {
+    "mtime": 1794622920.9540415,
+    "seen": 1794623470.24408,
+    "ast_hash": "bfd47a823ecc4bba74699e2dd38c1468",
+    "semantic_hash": "bfd47a823ecc4bba74699e2dd38c1468"
+  },
+  "docs/architecture/overview.md": {
+    "mtime": 1794621622.2752118,
+    "seen": 1794623470.2440808,
+    "ast_hash": "5d874a6f5cc5a811e36587a7cc1eb527",
+    "semantic_hash": "5d874a6f5cc5a811e36587a7cc1eb527"
+  },
+  "docs/architecture/protocol-engine.md": {
+    "mtime": 1794622919.778091,
+    "seen": 1794623470.2440808,
+    "ast_hash": "b3cbcee8574443c2bab923a8174e8495",
+    "semantic_hash": "b3cbcee8574443c2bab923a8174e8495"
+  },
+  "docs/architecture/sql-routing.md": {
+    "mtime": 1794622919.7782872,
+    "seen": 1794623470.244082,
+    "ast_hash": "302469f735651f3744288de61006e500",
+    "semantic_hash": "302469f735651f3744288de61006e500"
+  },
+  "docs/engineering-standards.md": {
+    "mtime": 1794622902.3139555,
+    "seen": 1794623470.244083,
+    "ast_hash": "e5c82262590980650c8025fe303b53f4",
+    "semantic_hash": ""
+  },
+  "docs/feature-matrix.md": {
+    "mtime": 1794624031.2750814,
+    "seen": 1794624512.962773,
+    "ast_hash": "702d355262649d49a3046101f7772ba2",
+    "semantic_hash": "702d355262649d49a3046101f7772ba2"
+  },
+  "docs/implementation-order.md": {
+    "mtime": 1794623326.4882605,
+    "seen": 1794623470.244084,
+    "ast_hash": "64b9fbace0199e4a98a61a2442100201",
+    "semantic_hash": ""
+  },
+  "docs/index.md": {
+    "mtime": 1794623235.6506429,
+    "seen": 1794623470.244084,
+    "ast_hash": "078344fdc6215e538331aa3ceba16c7a",
+    "semantic_hash": ""
+  },
+  "docs/plan/decision-ledger.md": {
+    "mtime": 1794623188.8460188,
+    "seen": 1794623470.244085,
+    "ast_hash": "ac5e3f9cb55f9515d4a2ab33c3a2bdcf",
+    "semantic_hash": "ac5e3f9cb55f9515d4a2ab33c3a2bdcf"
+  },
+  "docs/plan/dependencies.md": {
+    "mtime": 1794623415.6863036,
+    "seen": 1794623470.244086,
+    "ast_hash": "f11ab4ad8ecfb6ee2caf77ac58ac6827",
+    "semantic_hash": ""
+  },
+  "docs/plan/milestones.md": {
+    "mtime": 1794623415.687166,
+    "seen": 1794623470.244086,
+    "ast_hash": "ea7711b3822b2e473aa84c1a74cd9406",
+    "semantic_hash": ""
+  },
+  "docs/plan/planning-validation.md": {
+    "mtime": 1794623415.6853852,
+    "seen": 1794623470.244087,
+    "ast_hash": "f519643125bffec7efd2ff6cdcf73df5",
+    "semantic_hash": ""
+  },
+  "docs/plan/risk-register.md": {
+    "mtime": 1794624116.1773562,
+    "seen": 1794624512.962774,
+    "ast_hash": "79c7e5a275104bf174072944d0ea9730",
+    "semantic_hash": "79c7e5a275104bf174072944d0ea9730"
+  },
+  "docs/plan/roadmap.md": {
+    "mtime": 1794623415.6865785,
+    "seen": 1794623470.2440882,
+    "ast_hash": "9763e52286afbd88e1173648630457c1",
+    "semantic_hash": "9763e52286afbd88e1173648630457c1"
+  },
+  "docs/plan/timeline.md": {
+    "mtime": 1794623188.8463106,
+    "seen": 1794623470.2440891,
+    "ast_hash": "d052d60ad9450828397695d421d213ab",
+    "semantic_hash": "d052d60ad9450828397695d421d213ab"
+  },
+  "docs/prd/001-core-proxy.md": {
+    "mtime": 1794623235.6490984,
+    "seen": 1794623470.2440891,
+    "ast_hash": "f0014cc325ed4950d9ea20a9b69129d8",
+    "semantic_hash": "f0014cc325ed4950d9ea20a9b69129d8"
+  },
+  "docs/prd/002-connection-pooling.md": {
+    "mtime": 1794623235.649289,
+    "seen": 1794623470.24409,
+    "ast_hash": "917f7640d3cf0aedfd008573229c7fc9",
+    "semantic_hash": "917f7640d3cf0aedfd008573229c7fc9"
+  },
+  "docs/prd/003-sql-routing.md": {
+    "mtime": 1794623235.6494324,
+    "seen": 1794623470.2440908,
+    "ast_hash": "60f61cc5331665b2d0a0e4fb4836bd3a",
+    "semantic_hash": "60f61cc5331665b2d0a0e4fb4836bd3a"
+  },
+  "docs/prd/004-load-balancing.md": {
+    "mtime": 1794623235.6495607,
+    "seen": 1794623470.2440908,
+    "ast_hash": "35d6e0d60603326f4ccf5df878f59f58",
+    "semantic_hash": "35d6e0d60603326f4ccf5df878f59f58"
+  },
+  "docs/prd/005-health-monitoring.md": {
+    "mtime": 1794623415.6868412,
+    "seen": 1794623470.244092,
+    "ast_hash": "1a48d8b876009dff51d8082aba4f7f0d",
+    "semantic_hash": ""
+  },
+  "docs/prd/006-cluster-management.md": {
+    "mtime": 1794623235.6499333,
+    "seen": 1794623470.244092,
+    "ast_hash": "f858d279e5c8dd5b7bfccbb0f7464270",
+    "semantic_hash": "f858d279e5c8dd5b7bfccbb0f7464270"
+  },
+  "docs/prd/007-manual-failover.md": {
+    "mtime": 1794623235.6500745,
+    "seen": 1794623470.244093,
+    "ast_hash": "fe09c703960c9d7e27b6b6446daa7834",
+    "semantic_hash": "fe09c703960c9d7e27b6b6446daa7834"
+  },
+  "docs/prd/008-high-availability.md": {
+    "mtime": 1794623235.6502123,
+    "seen": 1794623470.244094,
+    "ast_hash": "0c31b74261ee6334ae6fa255dc376f68",
+    "semantic_hash": "0c31b74261ee6334ae6fa255dc376f68"
+  },
+  "docs/prd/009-query-cache.md": {
+    "mtime": 1794623235.6503482,
+    "seen": 1794623470.244094,
+    "ast_hash": "ad839943e7c7a4394624a20b286493ed",
+    "semantic_hash": "ad839943e7c7a4394624a20b286493ed"
+  },
+  "docs/prd/010-administration.md": {
+    "mtime": 1794623235.6504815,
+    "seen": 1794623470.244095,
+    "ast_hash": "f2eba38f6d0df9e32fdc396f3897c50e",
+    "semantic_hash": "f2eba38f6d0df9e32fdc396f3897c50e"
+  },
+  "docs/repository-structure.md": {
+    "mtime": 1794623235.6507905,
+    "seen": 1794623470.244096,
+    "ast_hash": "133bf1153abac2dc31ebd6e2e7720786",
+    "semantic_hash": ""
+  },
+  "docs/research/competitor-analysis.md": {
+    "mtime": 1794620030.0528038,
+    "seen": 1794623470.244096,
+    "ast_hash": "da22e181e77be8f1dc5567696a5604a3",
+    "semantic_hash": "da22e181e77be8f1dc5567696a5604a3"
+  },
+  "docs/research/feasibility-study.md": {
+    "mtime": 1794623188.846867,
+    "seen": 1794623470.244097,
+    "ast_hash": "05930303fe86b52e7da706ab95999d1f",
+    "semantic_hash": "05930303fe86b52e7da706ab95999d1f"
+  },
+  "docs/research/pgpool-baseline.md": {
+    "mtime": 1794621417.111282,
+    "seen": 1794623470.244097,
+    "ast_hash": "bf54ec160c7599b5c176f5f54546b7d8",
+    "semantic_hash": "bf54ec160c7599b5c176f5f54546b7d8"
+  },
+  "docs/research/pgpool-configuration-inventory.md": {
+    "mtime": 1794623203.2751184,
+    "seen": 1794623470.244098,
+    "ast_hash": "f4a764eda872fa33e27697d687bde49c",
+    "semantic_hash": "f4a764eda872fa33e27697d687bde49c"
+  },
+  "docs/research/protocol-analysis.md": {
+    "mtime": 1794621047.4814558,
+    "seen": 1794623470.2440991,
+    "ast_hash": "55d3776162c25e9c238c202b5f2d9330",
+    "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
+  },
+  "docs/research/technology-evaluation.md": {
+    "mtime": 1794623415.6859944,
+    "seen": 1794623470.2440991,
+    "ast_hash": "0db82cc523cd656f46a085e12c09b188",
+    "semantic_hash": "0db82cc523cd656f46a085e12c09b188"
+  },
+  "docs/scope/001-stack-and-workspace.md": {
+    "mtime": 1794623130.2343082,
+    "seen": 1794623470.2441,
+    "ast_hash": "32b1953c01a371efd668183f5fe44341",
+    "semantic_hash": ""
+  },
+  "docs/scope/002-standards-and-tooling.md": {
+    "mtime": 1794623340.74864,
+    "seen": 1794623470.244101,
+    "ast_hash": "f8ba6878d1e33b6ef5c1dc4387838114",
+    "semantic_hash": ""
+  },
+  "docs/scope/003-control-and-session-data-model.md": {
+    "mtime": 1794623130.2351134,
+    "seen": 1794623470.244102,
+    "ast_hash": "bbebd1c2bc8121d2262d0475abe4319d",
+    "semantic_hash": "bbebd1c2bc8121d2262d0475abe4319d"
+  },
+  "docs/scope/004-one-real-primary-path.md": {
+    "mtime": 1794623415.6864564,
+    "seen": 1794623470.244102,
+    "ast_hash": "0f02a5c9ff5fc4f8f39b086760919223",
+    "semantic_hash": "0f02a5c9ff5fc4f8f39b086760919223"
+  },
+  "docs/scope/005-clean-session-reuse.md": {
+    "mtime": 1794623130.2356443,
+    "seen": 1794623470.244103,
+    "ast_hash": "dce04721c4bb40d6d889a3ad2f99f5c5",
+    "semantic_hash": "dce04721c4bb40d6d889a3ad2f99f5c5"
+  },
+  "docs/scope/006-protocol-breadth-and-cancellation.md": {
+    "mtime": 1794623130.2358634,
+    "seen": 1794623470.244103,
+    "ast_hash": "302af765159aa97737dd3e86365d894a",
+    "semantic_hash": "302af765159aa97737dd3e86365d894a"
+  },
+  "docs/scope/007-restricted-replica-sessions.md": {
+    "mtime": 1794623130.2360706,
+    "seen": 1794623470.244104,
+    "ast_hash": "e0f4e5cb281154fcdcb8e48cdb8ffb5f",
+    "semantic_hash": "e0f4e5cb281154fcdcb8e48cdb8ffb5f"
+  },
+  "docs/scope/008-health-diagnostics-and-drain.md": {
+    "mtime": 1794623130.2362778,
+    "seen": 1794623470.2441049,
+    "ast_hash": "68622661b207b007e6a6c53d1e1be1a2",
+    "semantic_hash": "68622661b207b007e6a6c53d1e1be1a2"
+  },
+  "docs/scope/009-safe-topology-administration.md": {
+    "mtime": 1794623130.2364814,
+    "seen": 1794623470.2441049,
+    "ast_hash": "49f6031b032fa83a9455e12020f2a072",
+    "semantic_hash": "49f6031b032fa83a9455e12020f2a072"
+  },
+  "docs/scope/010-fenced-manual-promotion.md": {
+    "mtime": 1794623130.2366939,
+    "seen": 1794623470.244106,
+    "ast_hash": "457a3b9911c50a6f205cd7eb3f2a4184",
+    "semantic_hash": "457a3b9911c50a6f205cd7eb3f2a4184"
+  },
+  "docs/scope/011-release-qualification-harness.md": {
+    "mtime": 1794623130.2368972,
+    "seen": 1794623470.244106,
+    "ast_hash": "01374135c233a7f7280d0b2989245ce4",
+    "semantic_hash": ""
+  },
+  "docs/scope/012-multiple-proxy-authority.md": {
+    "mtime": 1794623130.2370927,
+    "seen": 1794623470.244107,
+    "ast_hash": "552b6459acba46cd9b877752fcda30cc",
+    "semantic_hash": "552b6459acba46cd9b877752fcda30cc"
+  },
+  "docs/scope/013-checked-online-recovery.md": {
+    "mtime": 1794623130.2372825,
+    "seen": 1794623470.244107,
+    "ast_hash": "f58311f9f24ccfa6bbae3476b3ec9beb",
+    "semantic_hash": "f58311f9f24ccfa6bbae3476b3ec9beb"
+  },
+  "docs/scope/014-advanced-pooling-and-routing.md": {
+    "mtime": 1794623130.2374961,
+    "seen": 1794623470.244108,
+    "ast_hash": "c46835f579d743728827bea3b3b264c7",
+    "semantic_hash": "c46835f579d743728827bea3b3b264c7"
+  },
+  "docs/scope/015-optional-result-cache.md": {
+    "mtime": 1794623326.4906383,
+    "seen": 1794623470.2441092,
+    "ast_hash": "1203dcd7607373aec21f26731bcf90ab",
+    "semantic_hash": "1203dcd7607373aec21f26731bcf90ab"
+  },
+  "docs/scope/016-additional-replication-modes.md": {
+    "mtime": 1794623130.2379136,
+    "seen": 1794623470.2441092,
+    "ast_hash": "2f004301322f3bde1e7a4d7d40a7c746",
+    "semantic_hash": "2f004301322f3bde1e7a4d7d40a7c746"
+  },
+  "docs/scope/017-administrative-dashboard.md": {
+    "mtime": 1794623130.2381122,
+    "seen": 1794623470.24411,
+    "ast_hash": "d894e0d3a8045f88571853f736396b49",
+    "semantic_hash": "d894e0d3a8045f88571853f736396b49"
+  },
+  "docs/scope/index.md": {
+    "mtime": 1794623340.748965,
+    "seen": 1794623470.24411,
+    "ast_hash": "630dd7203c47b90cfd09cb0fe7987909",
+    "semantic_hash": ""
+  },
+  "docs/security/security-requirements.md": {
+    "mtime": 1794624116.17761,
+    "seen": 1794624512.962775,
+    "ast_hash": "ef846dfb308c2f0e6dac35c7f4a1f6fc",
+    "semantic_hash": "ef846dfb308c2f0e6dac35c7f4a1f6fc"
+  },
+  "docs/security/threat-model.md": {
+    "mtime": 1794624116.177483,
+    "seen": 1794624512.962776,
+    "ast_hash": "50d3096f5cd170587380dbaab9c8b21f",
+    "semantic_hash": "50d3096f5cd170587380dbaab9c8b21f"
+  },
+  "docs/specs/0001-initial-architecture/index.md": {
+    "mtime": 1794621622.2700002,
+    "seen": 1794623470.2441118,
+    "ast_hash": "d273cb4d4139b2882af50db5d8277a24",
+    "semantic_hash": "d273cb4d4139b2882af50db5d8277a24"
+  },
+  "docs/specs/0001-initial-architecture/rationale.md": {
+    "mtime": 1794623188.8470368,
+    "seen": 1794623470.244113,
+    "ast_hash": "a860a546265b8bf3e9bd55085f2b22e3",
+    "semantic_hash": "a860a546265b8bf3e9bd55085f2b22e3"
+  },
+  "docs/testing/benchmark-plan.md": {
+    "mtime": 1794620680.8217707,
+    "seen": 1794623470.244113,
+    "ast_hash": "7cd1498c4bd96e07aacc44dcd3b99937",
+    "semantic_hash": "7cd1498c4bd96e07aacc44dcd3b99937"
+  },
+  "docs/testing/compatibility-matrix.md": {
+    "mtime": 1794622934.1233082,
+    "seen": 1794623470.244114,
+    "ast_hash": "aabfbc1739cffb6804b89ce122fd06da",
+    "semantic_hash": "aabfbc1739cffb6804b89ce122fd06da"
+  },
+  "docs/testing/strategy.md": {
+    "mtime": 1794623340.7484627,
+    "seen": 1794623470.2441149,
+    "ast_hash": "480cbdcf079f2174cf8802d01688a5d4",
+    "semantic_hash": ""
+  }
+}

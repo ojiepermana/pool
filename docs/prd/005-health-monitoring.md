@@ -28,7 +28,7 @@ Reserve probe capacity and measure the age of the observation at admission. A de
 
 ## Dependencies
 
-Monitor identity, connection budgets, PostgreSQL probes and topology model.
+Monitor identity, connection budgets, PostgreSQL probes and topology model. The [restricted replica slice](../scope/007-restricted-replica-sessions.md) uses AC-1 to AC-3 as eligibility inputs, and [health diagnostics and drain](../scope/008-health-diagnostics-and-drain.md) completes the contract. The node status route is served under the [administration contract](010-administration.md); the [dependency plan](../plan/dependencies.md) covers the read surface used before that API exists.
 
 ## Data structures
 

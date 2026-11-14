@@ -2,22 +2,24 @@
 
 These are release requirements for implementation, not results already achieved.
 
-| ID | Requirement | Evidence |
-|---|---|---|
-| SEC-1 | Require TLS for network application traffic and verify backend CA plus server name. Plain local development exceptions must be explicit. | Positive and negative certificate corpus |
-| SEC-2 | Use independently authenticated frontend and backend identities. SCRAM verifiers are not backend passwords. | Identity map and SCRAM interoperability tests |
-| SEC-3 | Advertise SCRAM PLUS only with valid channel binding data for that connection. Bound work factors and message sizes. | PLUS/downgrade/CPU budget tests |
-| SEC-4 | Keep secrets in protected files or provider references, never committed configuration or CLI argument values. Redact Debug, errors and diagnostics. | Canary secret redaction checks and permission validation |
-| SEC-5 | Preserve least privilege database logins. Monitor and promotion capabilities use separate restricted roles. | Database grant manifest and denial tests |
-| SEC-6 | Authenticate all administration. Local TCP is not identity. Prefer protected Unix transport locally; remote exposure requires mTLS and explicit role mapping. | Transport and role/action matrix |
-| SEC-7 | Persist administrative intent before an external effect. Confirm success only after the outcome is durable. Reconcile an uncertain effect from its recorded intent before further action. | Crash and full disk before and after the effect, lost response and idempotency tests |
-| SEC-8 | Apply global and per principal connection, byte, queue, parser and authentication CPU budgets. | Saturation and slow client tests |
-| SEC-9 | Use allowlisted structured fencing/recovery adapters with scoped credentials and verified completion. | Injection and wrong-target negative tests |
-| SEC-10 | Disable automatic promotion and result caching by default. Reject unsupported enabled features. | Default configuration tests |
-| SEC-11 | Keep logs/metrics/traces free of credentials, cancellation keys, SQL parameters and raw SQL by default. Database error text may also contain sensitive values. | Export snapshots and bounded label review |
-| SEC-12 | Validate a whole configuration generation before publication. Rotation drains retired identities and handles explicit revocation. | Reload/rotation and concurrent lease tests |
-| SEC-13 | Inventory dependencies and native components with license notices and advisories before release. | SBOM, lockfile and reviewed update evidence |
-| SEC-14 | Audit security sensitive, protocol, parser and HA changes with independent review. | PR approval and test artifacts |
+| ID | Requirement | Evidence | First applies in scope |
+|---|---|---|---|
+| SEC-1 | Require TLS for network application traffic and verify backend CA plus server name. Plain local development exceptions must be explicit. | Positive and negative certificate corpus | 004 |
+| SEC-2 | Use independently authenticated frontend and backend identities. SCRAM verifiers are not backend passwords. | Identity map and SCRAM interoperability tests | 004 |
+| SEC-3 | Advertise SCRAM PLUS only with valid channel binding data for that connection. Bound work factors and message sizes. | PLUS/downgrade/CPU budget tests | 004 |
+| SEC-4 | Keep secrets in protected files or provider references, never committed configuration or CLI argument values. Redact Debug, errors and diagnostics. | Canary secret redaction checks and permission validation | 001 |
+| SEC-5 | Preserve least privilege database logins. Monitor and promotion capabilities use separate restricted roles. | Database grant manifest and denial tests | 004; promotion role in 010 |
+| SEC-6 | Authenticate all administration. Local TCP is not identity. Prefer protected Unix transport locally; remote exposure requires mTLS and explicit role mapping. | Transport and role/action matrix | 009, or earlier if a status read is exposed |
+| SEC-7 | Persist administrative intent before an external effect. Confirm success only after the outcome is durable. Reconcile an uncertain effect from its recorded intent before further action. | Crash and full disk before and after the effect, lost response and idempotency tests | 009; fencing and promotion in 010 |
+| SEC-8 | Apply global and per principal connection, byte, queue, parser and authentication CPU budgets. | Saturation and slow client tests | 004 |
+| SEC-9 | Use allowlisted structured fencing/recovery adapters with scoped credentials and verified completion. | Injection and wrong-target negative tests | 010 |
+| SEC-10 | Disable automatic promotion and result caching by default. Reject unsupported enabled features. | Default configuration tests | 001 |
+| SEC-11 | Keep logs/metrics/traces free of credentials, cancellation keys, SQL parameters and raw SQL by default. Database error text may also contain sensitive values. | Export snapshots and bounded label review | 001 |
+| SEC-12 | Validate a whole configuration generation before publication. Rotation drains retired identities and handles explicit revocation. | Reload/rotation and concurrent lease tests | 001 for validation; rotation in 005 |
+| SEC-13 | Inventory dependencies and native components with license notices and advisories before release. | SBOM, lockfile and reviewed update evidence | 002; release inventory in 011 |
+| SEC-14 | Audit security sensitive, protocol, parser and HA changes with independent review. | PR approval and test artifacts | 001 |
+
+The last column names the first slice whose spec must cite the requirement. Later slices cite it again for each new surface they expose.
 
 Use one deliberately selected rustls crypto provider, initially the compatible aws-lc-rs feature family, and avoid enabling a second provider through defaults. This is an implementation recommendation subject to the locked dependency review. No FIPS compliance is claimed. The frontend authentication feature must audit reused pgwire components and override inappropriate server parameter defaults.
 

@@ -39,8 +39,8 @@ The ten numbered safety contracts in spec 0001 are the detailed form of the AGEN
 
 - [docs/scope/index.md](docs/scope/index.md) is the work queue: 17 features, the last 6 deferred. A status change must update both the index row and the feature file's heading. Feature numbers are stable across renames.
 - Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. The next queued step is `/develop stack and workspace`, then the first walking slice whose acceptance is in [docs/testing/strategy.md](docs/testing/strategy.md).
-- [docs/implementation-order.md](docs/implementation-order.md) gives the slice order. Create only what the current slice needs; do not scaffold the full proposed tree from `docs/repository-structure.md`.
-- Each fact has one owning file (see "Documentation ownership" in `docs/repository-structure.md`). Edit it there and link from other views. Adding or moving a document also means updating [docs/index.md](docs/index.md).
-- Feature status advances only with linked build and test evidence. Documentation alone never moves a feature to implemented or tested.
+- [docs/implementation-order.md](docs/implementation-order.md) gives the first handoff and the entry steps for later slices; the scope index owns the order. Create only what the current slice needs; do not scaffold the full proposed tree from `docs/repository-structure.md`.
+- Each fact has one owning file (see "Documentation ownership" in `docs/repository-structure.md`). Edit it there and link from other views. Terms are owned by [docs/glossary.md](docs/glossary.md). Adding or moving a document also means updating [docs/index.md](docs/index.md).
+- Feature status advances only with linked build and test evidence. Documentation alone never moves a scope feature to `done` or a feature inventory row to Implemented or Tested. The states are defined once in the scope index's status lifecycle.
 - The functional baseline is Pgpool-II 4.7.3 ([docs/feature-matrix.md](docs/feature-matrix.md)). The project does not claim full parity; keep that wording when editing.
 - Use conventional commits and small pull requests ([CONTRIBUTING.md](CONTRIBUTING.md)).

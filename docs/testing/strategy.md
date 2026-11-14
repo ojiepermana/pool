@@ -26,11 +26,11 @@ Run the same fixture through direct PostgreSQL 18 and through POOL with the mapp
 
 Before implementation, use the owning feature spec to identify the acceptance criteria in this slice. Qualify each PRD reference with its document number (for example, `PRD-001 AC-1`). For each case identify the fixture, supported profile, expected observation and applicable negative or fault case. Link relevant inventory IDs (`F-*`) and security requirements (`SEC-*`) where they apply. A foundation slice can use its scope or spec criteria directly.
 
-Keep the verification record with the feature spec. Record the revision and artifact digest where applicable, a reproducible command or CI run, fixture and dependency versions, redacted configuration, expected and observed behavior, and the result for each criterion. Mark a failed, blocked or unrun case explicitly. Tests and logs containing credentials, cancel keys or sensitive SQL must use sanitized fixtures or redacted artifacts.
+Keep the verification record with the feature spec, as `verify.md` beside its `index.md`. Keep independent review findings under `docs/reviews/`, named by date and branch. Record the revision and artifact digest where applicable, a reproducible command or CI run, fixture and dependency versions, redacted configuration, expected and observed behavior, and the result for each criterion. Mark a failed, blocked or unrun case explicitly. Tests and logs containing credentials, cancel keys or sensitive SQL must use sanitized fixtures or redacted artifacts.
 
 For a design or feasibility slice, record the reviewed decision, evidence considered and its limits. A no-go decision can conclude the study; it does not qualify a runtime capability.
 
-Close an implementation slice after its criteria pass in the declared environment, critical regression cases are committed, an independent reviewer has examined the applicable safety changes, and operator or configuration instructions reflect the behavior. Link the verification record from the owning scope feature. A release report can cite the same record for the same artifact and profile. If the candidate or profile changes, identify affected claims and rerun their cases.
+Close an implementation slice after its criteria pass in the declared environment, critical regression cases are committed, an independent reviewer has examined the applicable safety changes, and operator or configuration instructions reflect the behavior. Link the verification record and the review findings from the owning scope feature. A release report can cite the same record for the same artifact and profile. If the candidate or profile changes, identify affected claims and rerun their cases.
 
 ## CI progression
 

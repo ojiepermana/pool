@@ -42,6 +42,19 @@ Only the foundation is in progress, reflecting your accepted design. Other featu
 
 Needs a decision means behavior or safety is not yet fully settled. Deferred means outside the current release queue, not silently removed from the parity inventory. You can revisit scope after each shipped slice.
 
+## Status lifecycle
+
+Each record has its own states. A state changes only when the evidence in the last column exists.
+
+| Record | States | What advances it |
+|---|---|---|
+| Scope feature, in this index and its file | `planned`, `in-progress`, `done`; `dropped` if removed from scope | `in-progress` when you accept its design or building starts. `done` only when the GA steps link their evidence: verification, tests, independent review and documentation. |
+| Feature spec | `Proposed`, `In Progress`, `Accepted`; `Superseded by NNNN` | It mirrors its scope feature: `In Progress` when building starts, `Accepted` when the feature is `done`. Your ratification settles its content, not this status. |
+| PRD | `Proposed`, then `Qualified at <milestone>` | A feature spec adopts criteria by ID for its slice. The state line changes only when the [milestone gate](../plan/milestones.md) that assesses the PRD passes. |
+| [Feature inventory](../feature-matrix.md) row | `Research`, `Planned`, `Implemented`, `Tested` | `Implemented` needs build evidence. `Tested` needs a passing verification record for the row's acceptance. |
+
+A deferred feature stays `planned`. Needs a decision and Deferred are tags, not statuses.
+
 ## References
 
 Your brief supplies the operating scenario and initial exclusions. [Architecture](../specs/0001-initial-architecture/index.md), [roadmap](../plan/roadmap.md), [testing](../testing/strategy.md), and [feature inventory](../feature-matrix.md) provide the reasoning and verified source trail. The order follows foundations before dependent behavior and the confirmed vertical delivery approach.
