@@ -186,10 +186,10 @@ check_fuzz() {
 
 check_sbom() {
   need_command cargo sbom || return 1
-  if ! tool_is cyclonedx cargo-cyclonedx "$CARGO_CYCLONEDX_VERSION"; then
+  # cargo-cyclonedx 0.5.10 prints its name twice: `cargo-cyclonedx-cyclonedx 0.5.10`.
+  if ! tool_is cyclonedx cargo-cyclonedx-cyclonedx "$CARGO_CYCLONEDX_VERSION"; then
     missing "cargo-cyclonedx $CARGO_CYCLONEDX_VERSION is required; run cargo install --locked --root target/tools cargo-cyclonedx@$CARGO_CYCLONEDX_VERSION" || return 1
   fi
-  # provisional: spec 0002 step 8 fixes the flags against cargo-cyclonedx 0.5.10.
   run cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx || return 1
   mkdir -p target/sbom
   run mv apps/pool/pool.cdx.json target/sbom/pool.cdx.json || return 1
