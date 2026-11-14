@@ -1463,23 +1463,29 @@ fn ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_or
                 assert!(code.starts_with("io."), "{path}: {code}");
             }
         }
+        // serde_json sorts keys when it prints a Value, so each finding's
+        // own field order is checked in the raw line. The search resumes
+        // after the previous finding, so two findings with the same code are
+        // each checked.
+        let mut cursor = line.find("\"findings\":[").expect("findings field");
         for finding in findings {
             let object = finding.as_object().expect("finding object");
             assert_eq!(object.len(), finding_keys.len(), "{path}");
             let raw = finding.to_string();
-            // serde_json sorts keys when it prints a Value, so find each
-            // finding's own field order in the raw line by its code.
             let code = finding["code"].as_str().expect("code");
-            let start = line
-                .find(&format!("{{\"code\":\"{code}\""))
-                .expect("finding starts with code");
-            let rest = &line[start..];
+            let start = cursor
+                + line[cursor..]
+                    .find(&format!("{{\"code\":\"{code}\""))
+                    .expect("finding starts with code");
+            let end = line[start..].find('}').map_or(line.len(), |at| start + at);
+            let rest = &line[start..end];
             let mut last = 0;
             for key in finding_keys {
                 let at = rest.find(&format!("\"{key}\":")).expect("field");
                 assert!(at >= last, "{path}: {key} out of order in {raw}");
                 last = at;
             }
+            cursor = end;
         }
     }
 }
@@ -1630,6 +1636,13 @@ fn ac11_arguments_that_are_not_utf8_anywhere_else_are_unexpected() {
         vec![arg("check-config"), bad(b"")],
         vec![arg("check-config"), bad(b"--bogus")],
         vec![arg("check-config"), bad(b"--config=")],
+        vec![arg("check-config"), bad(b"--format=")],
+        vec![
+            arg("check-config"),
+            arg("--config"),
+            arg("a"),
+            bad(b"--format="),
+        ],
         vec![arg("check-config"), arg("--config"), arg("a"), bad(b"")],
     ] {
         assert_run(&pool(&args), 2, "", &usage("unexpected argument"));
@@ -1786,4 +1799,72 @@ fn ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr() {
         assert_eq!(output.status.code(), Some(3), "{args:?}");
         assert!(output.stderr.is_empty(), "{args:?}");
     }
+}
+
+#[test]
+fn ac7_a_reserved_capability_written_as_an_array_is_rejected_by_the_binary() {
+    for (name, text) in [
+        (
+            "array-cache-false",
+            "config_version = 1\nresult_cache = [false]\n",
+        ),
+        (
+            "array-cache-true",
+            "config_version = 1\nresult_cache = [true]\n",
+        ),
+        (
+            "array-promotion-canary",
+            "config_version = 1\nautomatic_promotion = [false, \"CANARY-9f2c7b1e\", 3]\n",
+        ),
+    ] {
+        let path = made_file(&format!("check-config-{name}.toml"), text.as_bytes());
+        let path = path.to_str().expect("UTF-8 temp path");
+        for format in ["human", "json"] {
+            let run = check(path, format);
+            assert_eq!(run.code, 1, "{name} {format}");
+            assert_eq!(run.stderr, "", "{name} {format}");
+            assert_eq!(run.stdout.matches("config.").count(), 1, "{name} {format}");
+            assert!(run.stdout.contains("config.schema"), "{name} {format}");
+            assert!(!run.stdout.contains(CANARY), "{name} {format}");
+        }
+        assert_positioned_rejection(
+            path,
+            "config.schema",
+            2,
+            "unknown key, or a value of the wrong type or range",
+        );
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn ac11_a_file_that_cannot_be_opened_is_permission_denied() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let path = made_file("check-config-no-permission.toml", b"config_version = 1\n");
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o000)).expect("chmod 000");
+    // A process that can still open the file (root) cannot test this path.
+    if std::fs::File::open(&path).is_ok() {
+        let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
+        return;
+    }
+    let text = path.to_str().expect("UTF-8 temp path");
+    let human = check(text, "human");
+    let json = check(text, "json");
+    let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
+    assert_run(
+        &human,
+        3,
+        "",
+        "error: io.permission_denied: the configuration file cannot be read: permission denied\n",
+    );
+    assert_run(
+        &json,
+        3,
+        &error_json(
+            "io.permission_denied",
+            "the configuration file cannot be read: permission denied",
+        ),
+        "",
+    );
 }

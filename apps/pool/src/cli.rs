@@ -53,6 +53,16 @@ pub fn parse(args: impl IntoIterator<Item = OsString>) -> Invocation {
     }
 }
 
+/// The value of an option: the text after the first equals sign, or else the
+/// next argument. `None` when there is no value or it is empty.
+fn take_value(inline: Option<&str>, args: &mut impl Iterator<Item = OsString>) -> Option<OsString> {
+    let value = match inline {
+        Some(value) => OsString::from(value),
+        None => args.next()?,
+    };
+    (!value.is_empty()).then_some(value)
+}
+
 fn parse_check_config(mut args: impl Iterator<Item = OsString>) -> Invocation {
     let mut config: Option<OsString> = None;
     let mut format: Option<Format> = None;
@@ -71,32 +81,18 @@ fn parse_check_config(mut args: impl Iterator<Item = OsString>) -> Invocation {
                 if config.is_some() {
                     return Invocation::Usage(GIVEN_TWICE);
                 }
-                let value = match inline {
-                    Some(value) => OsString::from(value),
-                    None => match args.next() {
-                        Some(value) => value,
-                        None => return Invocation::Usage(REQUIRES_VALUE),
-                    },
-                };
-                if value.is_empty() {
+                let Some(value) = take_value(inline, &mut args) else {
                     return Invocation::Usage(REQUIRES_VALUE);
-                }
+                };
                 config = Some(value);
             }
             "--format" => {
                 if format.is_some() {
                     return Invocation::Usage(GIVEN_TWICE);
                 }
-                let value = match inline {
-                    Some(value) => OsString::from(value),
-                    None => match args.next() {
-                        Some(value) => value,
-                        None => return Invocation::Usage(REQUIRES_VALUE),
-                    },
-                };
-                if value.is_empty() {
+                let Some(value) = take_value(inline, &mut args) else {
                     return Invocation::Usage(REQUIRES_VALUE);
-                }
+                };
                 format = Some(match value.to_str() {
                     Some("human") => Format::Human,
                     Some("json") => Format::Json,
