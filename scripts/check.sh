@@ -24,7 +24,7 @@ exit status: 0 every named check passed, 1 a check failed, 2 usage error, 3 a ch
 USAGE
 }
 
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
 ROOT=$(pwd)
 
 : "${CARGO_INCREMENTAL=0}"
