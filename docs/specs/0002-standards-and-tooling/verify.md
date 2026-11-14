@@ -427,3 +427,181 @@ Step 10 evidence on the final tree `f58885f`, by criterion:
 | `0002 AC-18` | The [reviewer roster](../../engineering-standards.md#reviewer-roster) has 12 rows, one for each of the 12 owner roles in the risk register (each review the standards name is held by one of them); each row names its holder (`Not assigned` for all today) and says whether a fresh model may do the review; the risk register links to it | pass |
 | `0002 AC-19` | Items 1 to 11 and 13 applied (milestones 3 and 4); `docs` passes | pass for those items; item 12 waits for step 11, `NOT_RUN`, `owner: lead` |
 | `0002 AC-20` | `clippy` in `all` passes with the denied lints; cases 2 and 3 rejected | pass |
+
+### Checker run: `/check verify`, milestone 4
+
+Recorded by the checker session `chk-f2-verify` on 2026-11-14 at revision `535bd15c4923c53b184326912b733faf9362f720` (`main`, which holds Build plan steps 1 to 10), on macOS 27.0.1, `arm64` (workstation, not Linux and not CI). `git diff --stat f58885f 535bd15` lists only documents, so the code is the code of the developer's final tree. The checker did not write the code. Every command was run again from this session's own checkout, which was clean and had no `target/` directory before the first command. The developer's record above is kept as it was.
+
+Tools: `rustc 1.100.0 (0ef1bc386 2026-11-09)`; `cargo-deny 0.20.2`; `cargo-fuzz 0.13.2` on `rustc 1.101.0-nightly (5d8fec066 2026-10-16)` (toolchain `nightly-2026-10-17`); `cargo-cyclonedx 0.5.10`, installed in this session with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`; Docker server 29.9.2 (`linux/arm64`, `docker info` exit 0); `git 2.54.0`.
+
+Each probe that needed a changed tree was made in a `git clone` of this checkout in a scratch directory outside the repository, and the clone was removed afterward. The one probe inside the checkout (a planted crash file) used an ignored directory and was undone. `git status --short` was empty after every run.
+
+**Verdict: PASS for milestone 4.** It covers `0002 AC-11`, `0002 AC-16`, `0002 AC-17`, `0002 AC-18` and `0002 AC-19` (all items except item 12, which waits for the remote evidence), and it completes `0002 AC-14` and `0002 AC-15`. The four remote items stay `NOT_RUN`, `owner: lead`.
+
+The proof script, `0002 AC-11`:
+
+- [x] `scripts/prove-checks.sh --with-linux-build` → exit 0. It first ran `scripts/check.sh all` on the unchanged copy, then printed `PASS 1` to `PASS 21`, with no `FAIL` and no `SKIPPED` line. The last line is `all checks reject their bad change`. Afterward `git status --short` is empty, `HEAD` is still `535bd15`, and the temporary copy under `$TMPDIR/pool-prove.*` is gone → `0002 AC-11`
+- [x] The line the script printed under each `PASS` in that run → exit 1 for every case, and the matched text is the text the case table names: 1 `Diff in`; 2 `ptr_arg`; 3 `print_stdout`; 4 `test result: FAILED. 60 passed; 6 failed`; 5 `rejected: license is not explicitly allowed`; 6 `ID: RUSTSEC-0000-0001`; 7 `cannot update the lock file`; 8 `W1: Cargo.lock: package zmij is in the lockfile but not in the baseline lock-packages.txt`; 9 `W2: crates/pool-core: forbidden path crates/pool-core exists`; 10 `W3: apps/pool/src/main.rs:94: forbidden text std::thread`; 11 `W4: apps/pool/Cargo.toml`; 12 `W5 … dependency pool-config -> pool is not allowed`; 13 `C1 … uses actions/checkout@v7`; 14 `C2 … job documents is not a required check`; 15 `D1: README.md:46: link target docs/missing-file.md does not exist`; 16 `D2 … fragment no-such-heading`; 17 `D3 … status disagrees: done in the heading, planned in docs/scope/index.md`; 18 `D5: README.md:46`, the made up ID of line K; 19 `D6 … SEC-14 is defined at the base revision but no longer defined`; 20 `test result: FAILED. 62 passed; 6 failed`, in the container; 21 `W7: scripts/linux-build.sh:42` → `0002 AC-11`
+- [x] The script read against [Proving the checks](index.md#proving-the-checks) → each of the 21 cases names the check, the file and the change that the table gives. Lines A to K are in the script as written in the spec (compared as text, all eleven found). The made up advisory of case 6 equals the spec block, byte for byte. The copy is a `git clone` with `git checkout --detach <commit>`, `POOL_CHECK_BASE` is that commit, `CARGO_TARGET_DIR` is `<root>/target/prove`, `<root>/target/tools/bin` is first on `PATH`, and case 20 commits with the throwaway identity → `0002 AC-11`
+- [x] `DOCKER_HOST=unix:///nonexistent.sock scripts/prove-checks.sh --with-linux-build` (the daemon cannot be reached) → exit 0, 20 `PASS` lines, `SKIPPED 20 linux-build`, and the last line `all checks reject their bad change (linux-build not proven)`. So a skipped case stays visible → `0002 AC-11`
+- [x] `scripts/prove-checks.sh --nope` → exit 2, `unknown argument: --nope` and the usage line on stderr. `scripts/prove-checks.sh` in a clone with one deleted tracked file → exit 3, `prove-checks: commit or remove local changes first; the proof uses only the committed tree` → `0002 AC-11`
+- [x] Probe, does the script notice a check that no longer bites: in a clone, one commit removes the line `print_stdout = "deny"` from the root `Cargo.toml`. `scripts/prove-checks.sh` there → the unchanged copy still passes `all`, then `FAIL 3 clippy exit 1, but the output does not contain: print_stdout`, 19 `PASS` lines, `SKIPPED 20 linux-build`, the line `prove-checks: these cases were not rejected as expected: 3`, exit 1. So a case passes only when the check fails and prints the named text → `0002 AC-11`
+- [x] Probe, a tree that is already red: in a clone, one commit appends line A to `apps/pool/src/main.rs`. `scripts/prove-checks.sh` there → the output of `scripts/check.sh all` (`fmt` and `clippy` `FAILED`), then `prove-checks: scripts/check.sh all failed on the unchanged copy (exit 1); a case could not show its own failure`, exit 1, and no case was run → `0002 AC-11`
+
+The fuzz run, `0002 AC-15` (the path changed by `7c752a9`):
+
+- [x] `scripts/check.sh fuzz` → exit 0. The command line it started ends with `-max_total_time=60 -max_len=4096 fuzz/corpus/validate tests/fixtures`. `Done 1690079 runs in 61 second(s)`, `== ok: fuzz`. `find crates/pool-config/fuzz/artifacts -type f` lists nothing (the directory `artifacts/validate/` exists and is empty). `git status --short` is empty, `git status --short --ignored crates/pool-config/fuzz` shows only `corpus/`, and the committed fuzz lockfile is unchanged → `0002 AC-15`
+- [x] Crash file probe: one file `crash-probe` put into `crates/pool-config/fuzz/artifacts/validate/`, then `POOL_FUZZ_SECONDS=2 scripts/check.sh fuzz` → `Done 59063 runs in 3 second(s)` (so `POOL_FUZZ_SECONDS` replaces the 60), `fuzz: a crash file exists under crates/pool-config/fuzz/artifacts/validate/; report it with its bytes`, `== FAILED: fuzz`, exit 1. The file was removed. Together with the green run above, where the directory is there and empty, this shows that only a file counts as a crash → `0002 AC-15`
+
+The inventory, `0002 AC-16` (the path changed by `7fb6052`):
+
+- [x] `cargo cyclonedx --version` with `target/tools/bin` on `PATH` → `cargo-cyclonedx-cyclonedx 0.5.10`. That is the text the script compares with
+- [x] `scripts/check.sh sbom`, `target/sbom` removed first → exit 0, `== ok: sbom`. One file, `target/sbom/pool.cdx.json`, 20264 bytes. `git status --short` is empty and no `*.cdx.json` file is left outside `target/` → `0002 AC-16`
+- [x] The file read with a JSON parser → `bomFormat` `CycloneDX`, `specVersion` `1.5`, `metadata.component` is `pool` 0.1.0 (type `application`, license `Apache-2.0`). 17 components and 18 `dependencies` entries. Every component has a license expression: `pool-config` `Apache-2.0`, and the 16 third party packages (12 `MIT OR Apache-2.0`, `memchr` `Unlicense OR MIT`, `unicode-ident` `(MIT OR Apache-2.0) AND Unicode-3.0`, `winnow` and `zmij` `MIT`). Every component version equals the version in `Cargo.lock` → `0002 AC-16`
+- [x] The 17 component names plus `pool`, sorted, compared with `tools/repo-check/baseline/lock-packages.txt` → the same 18 names, nothing on either side only. The one difference is a placement and it is explained: `pool` is the subject of the document (`metadata.component`), not an entry of `components` → `0002 AC-16`
+- [x] The command inside `check_sbom`, run alone in a clone: `cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx` → exit 0, two untracked files: `apps/pool/pool.cdx.json` (subject `pool`, 17 components) and `crates/pool-config/pool.cdx.json` (subject `pool-config`, 12 components). The script moves the first by its path and removes the second, so the file it keeps is the one for `pool` → `0002 AC-16`
+- [x] `scripts/check.sh sbom` in a clone with no `cargo-cyclonedx`, with a stub that prints `cargo-cyclonedx-cyclonedx 0.5.9`, and with a stub that prints `cargo-cyclonedx 0.5.10` → exit 3 for each, one line: `cargo-cyclonedx 0.5.10 is required; run cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. The tree stays clean → `0002 AC-1`, `0002 AC-16`
+
+The entry point after `f58885f`, `0002 AC-1`:
+
+- [x] In a clone, `tools/repo-check/Cargo.toml` deleted, then `scripts/check.sh fmt`, `scripts/check.sh clippy` and `scripts/check.sh test`, one at a time → exit 1 for each, `== FAILED: <name>`. `fmt` prints `` `cargo metadata` exited with an error: error: manifest path `tools/repo-check/Cargo.toml` does not exist ``. `clippy` and `test` first pass their workspace command (134 tests passed in `test`) and then print the same `manifest path` error. No line says a command was skipped. `scripts/check.sh guards docs` in that state → exit 3. `scripts/check.sh all` → exit 1, only `deny` is `ok`. This closes the fragile point carried from milestones 2 and 3 → `0002 AC-1`
+
+The documents, `0002 AC-19` and `0002 AC-14`. Each item was read in the file it names, and the old and new texts were compared as whole sentences with the spec:
+
+- [x] Items 1, 2, 3, 5, 7, 8, 9, 10 and 11 of [Document corrections](index.md#document-corrections) → in each named file the old sentence is not there and the new text is there, word for word (`docs/testing/strategy.md` line 3, `docs/implementation-order.md` first paragraph, `docs/index.md` line 5, `docs/repository-structure.md` line 3, its "Merge or defer the candidate crates" paragraph and its last paragraph, `docs/research/technology-evaluation.md` "Adoption gate", `docs/plan/risk-register.md` first paragraph, `CONTRIBUTING.md`) → `0002 AC-19`
+- [x] Item 4 (step 6) → `docs/index.md` line 20 cites `0001 AC-1` in the example and the old example is not there → `0002 AC-19`
+- [x] Item 6 → the layout block of `docs/repository-structure.md` has no `rustfmt.toml` and no `clippy.toml` line. `deny.toml` follows `rust-toolchain.toml`. `scripts/` and `tools/` with `repo-check/` under it follow the `crates/` group. `.github/` has `rulesets/` and `pull_request_template.md` → `0002 AC-19`
+- [x] Item 11 → the command block of `CONTRIBUTING.md` holds the one line `scripts/check.sh all` (`git diff 6de6970` shows the three `cargo` lines removed). The paragraph after it says that every pull request runs seven required checks, that `scripts/check.sh X` reproduces a failed check, and that a change reaches `main` only through a pull request whose checks passed → `0002 AC-19`, `0002 AC-14`
+- [x] Item 12 → left as it is, as the spec asks: the last paragraph of `CONTRIBUTING.md` still names "remote repository review/branch protection settings", the maintainer team and the private reporting channel. It waits for Build plan step 11 → `0002 AC-19` (`NOT_RUN`, `owner: lead`)
+- [x] Item 13 → `README.md`, "Build and check": the block still has its four commands, and the new sentence about `scripts/check.sh all` and `scripts/check.sh linux-build` is there (see the readings below for where it sits) → `0002 AC-19`
+- [x] `scripts/check.sh docs` (inside `all`) → `pool-repo-check docs: ok`, so every link and ID in the changed documents resolves → `0002 AC-19`
+
+The roster and the recorded choices, `0002 AC-18` and `0002 AC-17`:
+
+- [x] The [reviewer roster](../../engineering-standards.md#reviewer-roster) against the Owner column of `docs/plan/risk-register.md` → the register names 12 owner roles over `R-01` to `R-25`, and the roster has 12 rows, one for each. Each of the 25 risk IDs appears in exactly one row. The four reviews the standards name (security, protocol, database and infrastructure review) each stand in the row of the role that does them → `0002 AC-18`
+- [x] The roster, column by column → every row has a Holder cell, and all 12 say `Not assigned`. Every row has an answer in "May a fresh model do the review?". Those answers agree with the two columns of the table under [Reviewer roster and fresh model reviews](index.md#reviewer-roster-and-fresh-model-reviews): a slice review may be done by a fresh model, and promotion, fencing, recovery and HA designs, drill and lab results, licenses, release sign off, `ignore` entries, security reports, accepting a risk and the branch rule need a person. The text above the table gives the stand in rule for Project lead, Maintainer and Release maintainer. The first paragraph of the risk register links to the roster → `0002 AC-18`
+- [x] The section [Adopted in scope 002](../../research/technology-evaluation.md#adopted-in-scope-002), column by column → its table has the columns Version, Purpose, License, Native code, Cost at run time and Alternative, with no empty cell. Its nine rows are the tools the spec adopts: the hosted runner `ubuntu-24.04-arm`, `actions/checkout`, `actions/cache`, cargo-deny 0.20.2, cargo-fuzz 0.13.2, libfuzzer-sys 0.4.13, the toolchain `nightly-2026-10-17`, cargo-cyclonedx 0.5.10 and the PostgreSQL image (rule only, not adopted yet) → `0002 AC-17`
+- [x] The table of observed versions in that section against this session → `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `rustc 1.101.0-nightly (5d8fec066 2026-10-16)`, `cargo-cyclonedx-cyclonedx 0.5.10` and `rustc 1.100.0 (0ef1bc386 2026-11-09)` are what the same commands print here. The ten fuzz only packages have the listed versions in `crates/pool-config/fuzz/Cargo.lock`. The two actions and the runner are marked as not observed on a workstation → `0002 AC-17`
+- [x] [CI progression](../../testing/strategy.md#ci-progression) in the testing strategy → it names the seven checks `fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards` and `docs`, the fuzz rule (cargo-fuzz, a `fuzz/` directory in the crate under test, one target today run by hand, a CI job with the first slice that parses bytes from a socket), and how PostgreSQL 18 is supplied (the official container image, pinned by digest, started by `scripts/check.sh integration`) → `0002 AC-17`
+
+**Readings the checker assessed**
+
+- **A missing `tools/repo-check` package gives exit 1 for `fmt`, `clippy` and `test`.** The status rule says that exit 3 from `pool-repo-check` or from `scripts/linux-build.sh` is a could not run result, and that any other status that is not 0, from any command of a check, is a failed check. `cargo` ends with an error status on a missing manifest, and that status is not 3, so 1 is what the text gives. It also fits the sense of the rule: the package is part of the committed tree, not a tool of the machine, so a tree without it is a wrong tree. `guards` and `docs` still exit 3 for the same missing file, because they test for the manifest first. Both results are other than 0, so no run can pass by accident.
+- **How `scripts/prove-checks.sh` works.** The clone with a detached checkout is the copy the spec describes. The edits are made with `awk` and plain text matching, which the spec leaves open. The extra line under each `PASS` adds evidence and takes nothing away from the `PASS <case> <check> rejected the change` line. A red baseline gives exit 1 and runs no case, as "requires exit 0" asks. With `--with-linux-build` and no daemon, the script prints `SKIPPED 20 linux-build` and the "not proven" ending. The spec says case 20 runs only with the flag and a running daemon, so this is the text.
+- **The version line of `cargo-cyclonedx`.** The tool prints `cargo-cyclonedx-cyclonedx 0.5.10`. The spec says `sbom` checks its tool the same way as `deny`, which compares the whole line. Comparing with the line that version 0.5.10 really prints keeps that rule. A build that prints anything else is refused with exit 3.
+- **Two files written, one kept.** The spec says the tool may write one file for each workspace member and that the script keeps the one for `pool`. The script takes `apps/pool/pool.cdx.json` by path, and that file has `pool` as its subject. The flags are the ones the spec starts from.
+- **`pool` as `metadata.component`.** `0002 AC-16` asks for the third party packages `pool` is built from, with a license for each, and for every difference from `lock-packages.txt` to be explained. All 16 third party packages and `pool-config` are components with a license, and `pool` is the subject. The names are the same 18, and the placement is explained in the record. The checker reads this as met.
+- **Twelve roster rows.** `0002 AC-18` asks for one row for each review named in the standards and for each owner role in the risk register. The standards name four reviews, and each is done by a role that the register also names, so the 12 rows cover both lists. The spec assigns no holder by name. It only says the repository owner decides while three roles are open, and the roster text says that too. All rows saying `Not assigned` is a visible gap, which the criterion allows.
+- **Action versions and the runner.** The technology evaluation gives the version and commit hash of both actions and the runner label in its first table, and says in the observed table that they run only in CI and belong to Build plan step 11. A workstation cannot observe them, so this is an honest entry and `0002 AC-17` is met.
+- **Where item 13 sits in `README.md`.** The spec says to keep the block and "add after it". The new sentence is its own paragraph after the paragraph that explains the last command of the block. It comes after the block, the explanation of the block stays next to it, and the old text is unchanged. The checker reads this as what the item asks.
+
+**Worked, but looked fragile** (notes for `/check review`; none of these goes against a criterion):
+
+- The technology evaluation still says, above its first table, that the observed versions "are added below when the build is done". They are there now. The sentence is out of date in wording only.
+- If `cargo cyclonedx` fails after it wrote one of its two files, `check_sbom` returns before it cleans up, and an untracked `pool.cdx.json` can stay beside a manifest. `git status --short` would show it.
+- In the lint probe, case 3 still made `clippy` exit 1 without the denied lint, for another reason. The script reported it only because it also asks for the named text. That is the right design, and it shows why both conditions are needed.
+- Cases 6 and 7 and the first `deny` run need the network, as the spec says. Without it the proof stops at the baseline.
+
+**Not run by the checker**
+
+- Anything under [Remote proof](index.md#remote-proof): the four items in the table above stay `NOT_RUN`, `owner: lead`.
+- A real `cargo install` inside `scripts/check.sh tools` (the pinned `cargo-deny` is already on this machine; `tools` printed `cargo-deny 0.20.2 is already available`, exit 0).
+- A run without the network.
+
+**Criteria in this milestone**
+
+| Criterion | Result |
+|---|---|
+| `0002 AC-11` | met: 21 cases, each rejected with a status other than 0 and the named text, the ending line, a clean tree afterward. The script itself fails when a check stops rejecting its case |
+| `0002 AC-14` | completed: the template equals the spec (milestone 2), and `CONTRIBUTING.md` describes the path to `main` and names `scripts/check.sh` |
+| `0002 AC-15` | completed: the 60 second run through `scripts/check.sh fuzz` ends with exit 0 and no crash file, and a planted file is reported |
+| `0002 AC-16` | met: one CycloneDX 1.5 file for `pool`, a license for each package, a clean tree, and the same 18 names as `lock-packages.txt` with the one placement explained |
+| `0002 AC-17` | met: every adopted tool with the six columns, the observed versions, the seven checks, the fuzz rule and the PostgreSQL 18 supply |
+| `0002 AC-18` | met: 12 rows for 12 owner roles and the four named reviews, a holder cell and a fresh model answer in every row, and the link from the risk register |
+| `0002 AC-19` | met for items 1 to 11 and 13. Item 12 waits for Build plan step 11: `NOT_RUN`, `owner: lead` |
+| All other criteria | recorded under the full verify below |
+
+## Full verify: `/check verify standards and tooling`
+
+Recorded by the checker session `chk-f2-verify` on 2026-11-14. The checker did not write the code. This section rolls the whole of spec 0002 into one verdict, criterion by criterion. It uses the runs of this session on the final tree, listed below and under [Checker run: `/check verify`, milestone 4](#checker-run-check-verify-milestone-4), and the checker records of milestones 1, 2 and 3 above for the paths that have not changed since.
+
+**Verdict**: `PASS` for everything that can run on the workstation. Fifteen criteria are met in full. `0002 AC-5` and `0002 AC-13` are met for their workstation half, and `0002 AC-19` for every item except item 12. `0002 AC-3`, `0002 AC-12`, the CI half of `0002 AC-5`, the remote half of `0002 AC-13` and item 12 need the remote steps of Build plan step 11: `NOT_RUN`, `owner: lead`. Nothing failed and nothing is blocked by hardware. The spec is fully met only when step 11 is recorded here.
+
+**Revision**: `535bd15c4923c53b184326912b733faf9362f720` (`main`). `git diff --stat f58885f 535bd15` lists only documents (`docs/index.md`, the technology evaluation, the scope files and this record).
+
+**What changed since the milestone records** (`git log --oneline ffa14f2..535bd15 -- tools scripts .github deny.toml crates apps Cargo.toml Cargo.lock`): two commits, `6c03124` (`scripts/prove-checks.sh`) and `f58885f` (the skip removed from `scripts/check.sh`). `git log fb4f93d..535bd15` shows no commit that touches `deny.toml`, `.github/`, `crates/pool-config/fuzz/`, `scripts/linux-build.sh` or the root `Cargo.toml`. `tools/repo-check/` has no commit after the milestone 3 record.
+
+**Checkout**: `git status --short` was empty and there was no `target/` directory before the first command.
+
+**Workstation**: macOS 27.0.1, `arm64`, with the tools listed in the milestone 4 record. A run here is not Linux evidence and not CI evidence.
+
+### UI / manual
+
+No screen. The four remote items are run by the lead with the steps under [Remote proof](index.md#remote-proof). They are not failures and they are not blocked by missing hardware.
+
+| Item | Criterion | Remote steps | Result |
+|---|---|---|---|
+| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 2 and 6 | `NOT_RUN`, `owner: lead` |
+| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 3 | `NOT_RUN`, `owner: lead` |
+| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
+| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 1 and 4 | `NOT_RUN`, `owner: lead` |
+| Item 12 of "Document corrections" | `0002 AC-19`, item 12 | After Build plan step 11 has passed | `NOT_RUN`, `owner: lead` |
+
+### Commands
+
+Run from the repository root at `535bd15`.
+
+- [x] `scripts/check.sh all` → exit 0. `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` each end with `== ok: <name>`, in that order, and the summary repeats the six lines. No line says a command was skipped. 205 tests passed, 0 failed (3 + 66 + 3 + 60 + 2 in the workspace, 71 in `pool-repo-check`). Both `cargo deny` runs print `advisories ok, bans ok, licenses ok, sources ok`, with the one expected warning `license-exception-not-encountered` on the product lockfile. `pool-repo-check workspace: ok`, `pool-repo-check ci: ok`, `pool-repo-check docs: ok`. `git status --short` is empty afterward and `tools/repo-check/target` does not exist → `0002 AC-1`, `0002 AC-4`, `0002 AC-6`, `0002 AC-7`, `0002 AC-8`, `0002 AC-9`, `0002 AC-10`, `0002 AC-20`
+- [x] `scripts/check.sh` with no name, called from `/tmp` → exit 2, stdout empty, the usage text on stderr. `scripts/check.sh fmt bogus` → exit 2, stdout empty, `scripts/check.sh: unknown check: bogus` and the usage text → `0002 AC-1`
+- [x] `PATH=/usr/bin:/bin scripts/check.sh fmt` → exit 3, one line: `fmt: cargo is required and was not found on PATH`. `DOCKER_HOST=unix:///nonexistent.sock scripts/check.sh linux-build` → exit 3, `runner: Darwin arm64`, `linux-build: the Docker daemon is not running`. `scripts/check.sh linux-build` in a clone with one deleted tracked file → exit 3, `linux-build: commit or remove local changes first; this check builds only the committed tree` → `0002 AC-1`
+- [x] `scripts/check.sh tools` → exit 0, `cargo-deny 0.20.2 is already available` → `0002 AC-4`
+- [x] `git ls-files -s scripts` → mode `100755` for `scripts/check.sh`, `scripts/linux-build.sh` and `scripts/prove-checks.sh` → `0002 AC-1`, `0002 AC-11`
+- [x] Files compared with their blocks in the spec as it stands at this revision → no difference for `deny.toml`, `.github/workflows/ci.yml`, `.github/rulesets/main.json`, `.github/pull_request_template.md`, `crates/pool-config/fuzz/Cargo.toml` and `crates/pool-config/fuzz/fuzz_targets/validate.rs` (the spec block now has the committed layout, so the reading from milestone 1 is closed). `crates/pool-config/fuzz/.gitignore` is the four lines `target`, `corpus`, `artifacts`, `coverage` → `0002 AC-2`, `0002 AC-4`, `0002 AC-13`, `0002 AC-14`, `0002 AC-15`
+- [x] `scripts/linux-build.sh` → its text up to the marker line equals the block under [Linux build script](index.md#linux-build-script), the marker occurs once, and the text after it equals the first code block under `### Linux build` in spec 0001 (1100 bytes, 28 lines) → `0002 AC-5`
+- [x] `scripts/check.sh linux-build` → exit 0. `runner: Darwin arm64`, `host: aarch64-unknown-linux-gnu`, `release: 1.100.0`, 136 tests passed in the container (3 + 68 + 3 + 60 + 2), 30 fixture lines (6 with `exit=0`, 24 with `exit=1`), `cb184231b4af3e5c927eb46bb1fd7ad289b5a357a7c8b62a14d45fd6b92d3532  target/release/pool` (the same hash as in the earlier runs), `pool 0.1.0`, `linux build check passed`, `== ok: linux-build` → `0002 AC-5` (a workstation reproduction; the evidence the criterion asks for is the CI log of step 11)
+- [x] `git diff 6de6970 535bd15 -- Cargo.toml` → the only change is the table `[workspace.lints.clippy]` with the five lints. `git diff --quiet 6de6970 -- Cargo.lock` → exit 0, the root lockfile is unchanged and holds 18 packages. The names of both lockfiles equal their baseline files. `cargo metadata --locked --no-deps` lists `pool` and `pool-config` only → `0002 AC-20`, `0002 AC-6`
+- [x] The paths `apps/pool-cli`, `crates/pool-protocol`, `crates/pool-core`, `crates/pool-control`, `rustfmt.toml` and `clippy.toml` → none exists. All 21 paths of the list "New paths, and no others" are tracked, and the files added in `6de6970..535bd15` outside `docs/` are those paths and the modules under `tools/repo-check/src/` → the surfaces of the spec
+- [x] `scripts/prove-checks.sh --with-linux-build`, `scripts/check.sh fuzz`, `scripts/check.sh sbom` and their probes → see the milestone 4 record above → `0002 AC-11`, `0002 AC-15`, `0002 AC-16`
+- [x] The document, roster and recorded choice checks → see the milestone 4 record above → `0002 AC-14`, `0002 AC-17`, `0002 AC-18`, `0002 AC-19`
+- [x] `scripts/check.sh docs` with this record in place → exit 0, `pool-repo-check docs: ok`, so every link and ID written here resolves → `0002 AC-8`
+
+### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0002 AC-1` | `all` exits 0 with six `== ok:` lines in order. Usage errors exit 2 with the usage text on stderr. A missing tool, a wrong version, a stopped daemon and a tree with changes exit 3 with one line. `all` keeps going after a failure, and 1 wins over 3 (milestone 2 probes, and the missing manifest probe of this run) | met |
+| `0002 AC-2` | `ci.yml` equals the spec block; seven jobs, one runner label, `tools` before `deny`, three triggers, read access only, no secret, actions by full commit hash (milestone 2); `pool-repo-check ci: ok`; cases 13 and 14 rejected | met (file) |
+| `0002 AC-3` | Remote steps 2 and 6 | `NOT_RUN`, `owner: lead` |
+| `0002 AC-4` | `deny.toml` equals the spec block; `scripts/check.sh deny` requires `cargo-deny 0.20.2` and passes its four checks on both lockfiles; three licenses and the one `NCSA` exception; `ignore = []`; cases 5, 6 and 7 rejected | met |
+| `0002 AC-5` | The script is the spec 0001 command, byte for byte; `pool-repo-check workspace` (rule W7) passes; case 21 rejected; the local run passes on `aarch64-unknown-linux-gnu`; case 20 rejected in the container. The CI log is remote step 3 | workstation half met; CI half `NOT_RUN`, `owner: lead` |
+| `0002 AC-6` | `pool-repo-check workspace: ok`; a failing test for each of W1 to W7 (milestone 3, 71 tests pass today); cases 8 to 12 and 21 rejected | met |
+| `0002 AC-7` | `pool-repo-check ci: ok`; a failing test for each of C1 to C5 (milestone 3); cases 13 and 14 rejected | met |
+| `0002 AC-8` | `pool-repo-check docs: ok` on the committed tree; cases 15 and 16 rejected | met |
+| `0002 AC-9` | D3 probes of milestone 3; case 17 rejected | met |
+| `0002 AC-10` | D4, D5 and D6 probes of milestone 3; cases 18 and 19 rejected, case 19 with the base revision | met |
+| `0002 AC-11` | 21 `PASS`, `all checks reject their bad change`, exit 0, clean tree; the script fails when a check stops rejecting its case | met |
+| `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
+| `0002 AC-13` | `main.json` equals the spec block; rule C2 keeps its seven contexts equal to the job ids. The remote half is remote steps 1 and 4 | file half met; remote half `NOT_RUN`, `owner: lead` |
+| `0002 AC-14` | The template equals the spec block; `CONTRIBUTING.md` describes the path to `main` and names `scripts/check.sh` | met |
+| `0002 AC-15` | The four package files equal the spec; `scripts/check.sh fuzz` runs `validate` for 60 seconds with `cargo-fuzz 0.13.2` on `nightly-2026-10-17`, exit 0, no crash file; the run is recorded here | met |
+| `0002 AC-16` | `scripts/check.sh sbom` writes the one CycloneDX 1.5 file with a license for each package and leaves the tree clean; names compared with `lock-packages.txt`, the one placement explained | met |
+| `0002 AC-17` | The technology evaluation and the testing strategy, read column by column | met |
+| `0002 AC-18` | The roster, read against the risk register and the standards | met |
+| `0002 AC-19` | Items 1 to 11 and 13, each read in its file. Item 12 waits for the remote evidence | met for items 1 to 11 and 13; item 12 `NOT_RUN`, `owner: lead` |
+| `0002 AC-20` | The Clippy table in the root `Cargo.toml`; `scripts/check.sh clippy` passes; cases 2 and 3 rejected | met |
+
+Surfaces: every path the spec lists is built and tracked. No surface is specced and missing. The four paths that spec 0001 forbids are absent.
+
+### Readings the checker assessed
+
+The readings for this run are under the milestone 4 record above. The readings of milestones 1, 2 and 3 stand, with two of them now closed: the spec block of `validate.rs` has the committed layout, and the provisional skips in `scripts/check.sh` are gone.
+
+### For `/check review`
+
+The notes under "Worked, but looked fragile" in the records of milestones 2, 3 and 4 are still open, except the provisional skip. The ones most worth a second look: a second workflow file is checked by rules C1 and C5 only, `CDPATH` can send both scripts to another directory, and `check_sbom` does not clean up when the tool fails halfway.
+
+### Not run
+
+- Build plan step 11 and everything under [Remote proof](index.md#remote-proof).
+- Any run on Linux outside the container, and any run on a GitHub runner.
+- The probes that milestones 1 to 3 already recorded were not repeated where the code on their path has not changed since.
