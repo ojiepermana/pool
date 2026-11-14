@@ -2,13 +2,21 @@
 # Linux build check of spec 0001 (0001 AC-2). Needs a running Docker daemon.
 # The command below the marker line is copied from spec 0001, "Linux build". Do not edit it here.
 set -eu
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
 echo "runner: $(uname -sm)"
 if ! docker info >/dev/null 2>&1; then
   echo "linux-build: the Docker daemon is not running" >&2
   exit 3
 fi
-if [ -n "$(git status --porcelain)" ]; then
+if ! git rev-parse --verify -q HEAD >/dev/null; then
+  echo "linux-build: git cannot read HEAD here; this check builds only the committed tree" >&2
+  exit 3
+fi
+if ! changes=$(git status --porcelain); then
+  echo "linux-build: git status failed" >&2
+  exit 3
+fi
+if [ -n "$changes" ]; then
   echo "linux-build: commit or remove local changes first; this check builds only the committed tree" >&2
   exit 3
 fi
