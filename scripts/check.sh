@@ -83,36 +83,22 @@ repo_check() {
   run3 cargo run -q --locked --manifest-path tools/repo-check/Cargo.toml --target-dir target/repo-check -- "$@"
 }
 
-# provisional: spec 0002 step 5. Until tools/repo-check exists, fmt, clippy and test
-# skip its command, so that they pass after steps 1 and 2 as the Build plan says.
-repo_check_package_exists() {
-  if [ -f tools/repo-check/Cargo.toml ]; then
-    return 0
-  fi
-  echo "$1: tools/repo-check does not exist yet; its command was skipped"
-  return 1
-}
-
 check_fmt() {
   need_command cargo fmt || return 1
   run cargo fmt --all --check || return 1
-  if repo_check_package_exists fmt; then
-    run cargo fmt --check --manifest-path tools/repo-check/Cargo.toml || return 1
-  fi
+  run cargo fmt --check --manifest-path tools/repo-check/Cargo.toml || return 1
   run cargo fmt --check --manifest-path crates/pool-config/fuzz/Cargo.toml
 }
 
 check_clippy() {
   need_command cargo clippy || return 1
   run cargo clippy --workspace --all-targets --locked -- -D warnings || return 1
-  repo_check_package_exists clippy || return 0
   run cargo clippy --manifest-path tools/repo-check/Cargo.toml --target-dir target/repo-check --all-targets --locked -- -D warnings
 }
 
 check_test() {
   need_command cargo test || return 1
   run cargo test --workspace --locked || return 1
-  repo_check_package_exists test || return 0
   run cargo test --manifest-path tools/repo-check/Cargo.toml --target-dir target/repo-check --locked
 }
 
