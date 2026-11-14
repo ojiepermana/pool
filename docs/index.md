@@ -97,6 +97,12 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/research/protocol-analysis.md](research/protocol-analysis.md) | PostgreSQL protocol analysis |
 | [docs/research/technology-evaluation.md](research/technology-evaluation.md) | Rust technology evaluation |
 
+## docs/reviews
+
+| Path | Document |
+|---|---|
+| [docs/reviews/2026-11-14-scope-001-stack-and-workspace.md](reviews/2026-11-14-scope-001-stack-and-workspace.md) | Review. Scope 001, stack and workspace (2026-11-14) |
+
 ## docs/scope
 
 | Path | Document |
