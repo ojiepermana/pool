@@ -496,5 +496,23 @@
     "seen": 1794649040.506901,
     "ast_hash": "",
     "semantic_hash": "b2b6f14b54f97fd69e6577eb9b20fc20"
+  },
+  "docs/scope/coordination/002-standards-and-tooling.brief-umum.md": {
+    "mtime": 1794655362.0733342,
+    "seen": 1794655781.245831,
+    "ast_hash": "",
+    "semantic_hash": "31e53c95ee25f053a147836be27456b1"
+  },
+  "docs/scope/coordination/002-standards-and-tooling.log.md": {
+    "mtime": 1794655549.6170754,
+    "seen": 1794655781.245836,
+    "ast_hash": "",
+    "semantic_hash": "ddd6b590b8d9dd253d87148bb77702ed"
+  },
+  "docs/scope/coordination/002-standards-and-tooling.manual.md": {
+    "mtime": 1794655356.847045,
+    "seen": 1794655781.2458382,
+    "ast_hash": "",
+    "semantic_hash": "91e60dc627b58a126c377a8e23a67ff6"
   }
 }
