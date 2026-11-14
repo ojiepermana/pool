@@ -258,10 +258,10 @@
     "semantic_hash": "4f5deb579e157fa38a4f090a1a54effd"
   },
   "docs/scope/001-stack-and-workspace.md": {
-    "mtime": 1794624116.175853,
-    "seen": 1794625238.069323,
+    "mtime": 1794643954.247936,
+    "seen": 1794644209.478155,
     "ast_hash": "32faafab017d5597a22862193cc99ae1",
-    "semantic_hash": "32faafab017d5597a22862193cc99ae1"
+    "semantic_hash": "c73784f86f756e51ac64a44664f4cf26"
   },
   "docs/scope/002-standards-and-tooling.md": {
     "mtime": 1794624116.176001,
@@ -420,15 +420,15 @@
     "semantic_hash": "0bb45b9a96696d4ae62c57a866dc0f55"
   },
   "docs/scope/coordination/001-stack-and-workspace.manual.md": {
-    "mtime": 1794631714.667037,
-    "seen": 1794632270.3960268,
+    "mtime": 1794643954.2493868,
+    "seen": 1794644209.47816,
     "ast_hash": "",
-    "semantic_hash": "718018503c9fd4260af349552f6588fd"
+    "semantic_hash": "0fb8e9ae347949abff07e25ae88e5f8c"
   },
   "docs/scope/coordination/001-stack-and-workspace.log.md": {
-    "mtime": 1794641908.4358528,
-    "seen": 1794642010.385762,
+    "mtime": 1794643954.2487419,
+    "seen": 1794644209.478158,
     "ast_hash": "",
-    "semantic_hash": "19cbb9c4087ab38f1cd52c6615b84d91"
+    "semantic_hash": "e49f6cce5ed3bce16eaccac98792146d"
   }
 }
