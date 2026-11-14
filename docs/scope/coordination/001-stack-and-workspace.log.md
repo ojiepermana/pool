@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `001-stack-and-workspace.brief-umum.md` · **Langkah manual:** `001-stack-and-workspace.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-14`
-- **Diperbarui:** `2026-11-14 18:38` (jam lokal mesin)
+- **Diperbarui:** `2026-11-14 19:10` (jam lokal mesin)
 
 ## Sub sesi wave `1`
 
@@ -21,6 +21,8 @@
 | `chk-f1-verify` (lanjutan) | checker (verify) | F1 · verify ulang pada tree gabungan sesudah fix review (menutup Minor 6) | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/verify.md` | `claude/chk-f1-verify-8687b8` | `fable-5-2 · high` | laporan `blocked` 2026-11-14 (commit `cf928e7`): revisi `b6ce165`, 11 AC PASS, 134 test, 398 pemeriksaan probe, semua klarifikasi terbukti pada binary, tidak ada FAIL; `AC-2` dan klausa `/dev/full` `AC-11` tetap `BLOCKED` (Docker mati, owner user); `merged` bersama `chk-f1-review` (`local_313d3224`) |
 | `arc-f1-update` (lanjutan) | architect (update) | F1 · dua kalimat spec: frasa `deny_unknown_fields` di langkah 4, aturan satu temuan sintaks/skema adalah pilihan parser | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/index.md`, `rationale.md` | `claude/arc-f1-update-9bd0bc` | `fable-5-2 · high` | laporan `done` 2026-11-14 (commit `5670851`): frasa langkah 4 dan aturan satu temuan, tanpa AC berubah; gerbang lead lulus (worktree bersih, diff hanya dua file spec); `merged` (commit merge = induk commit `docs(changelog): 001 stack and workspace`) (`local_bee8f476`) |
 | `chk-f1-verify-2` | checker (verify) | F1 · bukti build Linux (`0001 AC-2`, klausa `/dev/full` `0001 AC-11`), sesudah penutupan | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/verify.md` | `claude/chk-f1-verify-2-dcd4b8` | `fable-5-2 · high` | laporan `done` 2026-11-14 (commit `972e160`): revisi `18e9228`, blok "Linux build" spec 0001 exit 0, `host: x86_64-unknown-linux-gnu`, 136 test (3 + 68 + 3 + 60 + 2), dua test khusus Linux `ok`, 30 blok fixture, tanpa `canary leaked`; di-merge ke `main` |
+| `arc-f1-update-2` | architect (update) | F1 · target Linux spec 0001 ke `aarch64-unknown-linux-gnu` sesudah nilai user `F1-N1` (ARM) | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/index.md`, `rationale.md` | `claude/arc-f1-update-2-29134c` | `fable-5-2 · high` | laporan `done` 2026-11-14 (commit `41e8eda`): `0001 AC-2`, tabel target, blok "Linux build" (`--platform linux/arm64`), Follow-up 6, 7, 9, dan bagian baru "Linux target update" di `rationale.md`; lanjutan satu kalimat Follow-up 6 sesudah bukti tercatat; di-merge ke `main` |
+| `chk-f1-verify-3` | checker (verify) | F1 · bukti build Linux untuk `aarch64` (`0001 AC-2`, klausa `/dev/full` `0001 AC-11`) | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/verify.md` | `claude/chk-f1-verify-3-4a7edd` | `fable-5-2 · high` | giliran pertama `standby`; laporan `done` 2026-11-14 (commit `38da818`): revisi `41e8eda`, exit 0, `host: aarch64-unknown-linux-gnu`, 136 test, dua test khusus Linux `ok`, 30 blok fixture, tanpa emulasi; di-merge ke `main` |
 
 ## Keputusan
 
@@ -66,6 +68,9 @@
 | 2026-11-14 | User menulis "Docker sudah nyala" (`F1-1`). Lead menjalankan blok "Linux build" spec 0001 dari `main` pada `18e9228`: exit 0, 136 test, baris terakhir `linux build check passed`, `sha256sum` biner `0481be18…f7bdb3`. Sesi baru `chk-f1-verify-2` (dimulai pada giliran user karena lima sesi lama sudah diarsipkan) menjalankan blok yang sama sendiri dan mencatatnya di `verify.md`; checksum dan jumlah test-nya sama dengan run lead. | user, lead |
 | 2026-11-14 | Fitur 1 ditandai `done` dan spec 0001 `Accepted`: ketiga belas AC kini punya catatan PASS, dan Done when ("builds on Linux") terpenuhi untuk `x86_64` lewat emulasi. Diubah lead: heading dan baris Evidence scope 001, baris fitur 1 dan dua kalimat di `docs/scope/index.md`, baris `**Status**` spec, satu kalimat `CLAUDE.md`, dua butir `CHANGELOG.md`, file manual. Dua kotak `- [ ]` lama untuk langkah ini di `verify.md` (Milestone 3 dan full verify pertama) dibiarkan sebagai riwayat run saat daemon mati. Follow-up 7 spec 0001 ("Start Docker Desktop") kini basi; itu isi spec, jadi dibiarkan untuk `architect (update)` berikutnya. | lead |
 | 2026-11-14 | Koordinasi scope 002 (lead "Standards and tooling") berjalan di checkout utama yang sama sejak `7cba873`. Kedua lead sepakat lewat pesan antarsesi: merge dan pembaruan graph bergantian, `git add` per path, dan tidak men-stage file milik koordinasi lain. Push `main` dari koordinasi ini ikut membawa commit scope 002 yang sudah ada di `main`. | lead |
+| 2026-11-14 | User menjawab `F1-N1`: "VM saya ARM". Keputusan delegasi target `x86_64-unknown-linux-gnu` batal dan runner-up `aarch64-unknown-linux-gnu` berlaku. Lead memeriksa bahwa digest image yang dipin adalah index yang memuat `linux/arm64/v8` (pin tetap), menjalankan uji coba blok build dengan `linux/arm64` dari `2bc4f90` (exit 0, 136 test, `sha256sum` `cb184231…2d3532`), lalu memulai `arc-f1-update-2` dan `chk-f1-verify-3` (standby) pada giliran user itu. | user, lead |
+| 2026-11-14 | Fitur 1 tetap `done` dan spec 0001 tetap `Accepted` selama target dipindah: kode tidak berubah, uji coba arm64 lulus lebih dulu, dan bukti resmi `aarch64` tercatat pada hari yang sama. Bila run resmi gagal, status dikembalikan ke `in-progress`; itu tidak terjadi. | lead |
+| 2026-11-14 | Checker me-merge branch architect ke worktree-nya (bukan menunggu `main`), supaya update spec dan bukti masuk `main` dalam satu commit merge dan graph cukup diperbarui sekali. Revisi yang dibangun adalah `41e8eda`. `x86_64` tidak lagi dinyatakan sebagai target (keputusan architect, `biasa`, sama dengan rekomendasi lead); catatan `18e9228` tinggal sebagai riwayat di `verify.md`. Lead mengabari lead scope 002 bahwa Follow-up 9 kini berarti runner Linux `arm64`. | lead |
 
 ## Keputusan delegasi
 
@@ -73,7 +78,7 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 
 | Tanggal | Spec · AC | Pertanyaan | Diambil | Runner-up | Berat | Cara membatalkan | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | 0001 · AC-2 | Target Linux untuk build pertama | `x86_64-unknown-linux-gnu`, disimpulkan dari Proxmox VE yang hanya berjalan di host x86_64 | `aarch64-unknown-linux-gnu` | `berat` | `architect (update)` spec 0001 (`--platform` dan triple di AC-2 dan "Linux build"); build Linux dijalankan ulang | berlaku; menunggu nilai dari user (arsitektur VM) |
+| 2026-11-14 | 0001 · AC-2 | Target Linux untuk build pertama | `x86_64-unknown-linux-gnu`, disimpulkan dari Proxmox VE yang hanya berjalan di host x86_64 | `aarch64-unknown-linux-gnu` | `berat` | `architect (update)` spec 0001 (`--platform` dan triple di AC-2 dan "Linux build"); build Linux dijalankan ulang | dibatalkan user 2026-11-14 ("VM saya ARM"): runner-up `aarch64-unknown-linux-gnu` berlaku, diterapkan `arc-f1-update-2` (`41e8eda`), build diulang `chk-f1-verify-3` (`38da818`) |
 | 2026-11-14 | 0001 · AC-9 | Isi diagnostik `check-config` | hanya teks konstan, key path skema, baris, dan kolom; tidak pernah isi file, supaya secret tidak mungkin bocor | meneruskan pesan parser (menyebut nama key tak dikenal) | `berat` | `architect (update)` spec 0001 (AC-9, Findings); Build plan langkah 2 dan 3 dibangun ulang | berlaku |
 | 2026-11-14 | 0001 · AC-4, AC-6 | Nama key kapabilitas promosi otomatis | `automatic_promotion` (cache: `result_cache`) | `automatic_failover` | `berat` | `architect (update)` spec 0001 (AC-4, AC-6, fixture, glossary); Build plan langkah 2 dibangun ulang | berlaku |
 | 2026-11-14 | 0001 · AC-3, AC-7, AC-11 | Exit status perintah | 0 sukses, 1 input ditolak, 2 usage, 3 tidak bisa selesai; menjadi Shared convention | 0/1 saja, atau `sysexits` | `berat` | `architect (update)` spec 0001 dan baris Shared conventions; Build plan langkah 3 dibangun ulang | berlaku |
@@ -82,7 +87,7 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 
 ## Blocker terbuka
 
-- F1 · `0001 AC-2`: arsitektur VM proxy dan PostgreSQL (x86_64 atau ARM) belum dikonfirmasi user; target `x86_64-unknown-linux-gnu` disimpulkan (file manual, "Nilai dari user" `F1-N1`).
+- Tidak ada. Follow-up 11 spec 0001 (cek CI untuk `AC-12` dan `AC-13`) menunggu `/scope` dari user dan tidak menahan scope 001.
 
 ## Dicentang pada wave ini
 
@@ -95,6 +100,7 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 
 ## Riwayat wave
 
+- Target ARM (2026-11-14): user menjawab `F1-N1` = ARM; spec 0001 pindah ke `aarch64-unknown-linux-gnu` (`41e8eda`), build Linux `aarch64` lulus (`38da818`, 136 test), keduanya di-merge dalam satu commit. Fitur 1 tetap `done`. Tersisa: Follow-up 11 spec 0001.
 - Sesudah penutupan (2026-11-14): build Linux lulus pada `18e9228` (`F1-1`, `F1-2` `PASS`), bukti di-merge dari `claude/chk-f1-verify-2-dcd4b8`, fitur 1 `done`, spec 0001 `Accepted`. Tersisa: arsitektur VM (`F1-N1`) dan Follow-up 11 spec 0001.
 - Wave `1` (2026-11-14 sampai 2026-11-14, hash awal `591317f`): ketujuh kotak scope 001 dicentang. Terbuka saat itu: build Linux (`0001 AC-2`, klausa `/dev/full` `0001 AC-11`, dua test khusus Linux), jadi fitur 1 tetap `in-progress` dan spec 0001 tetap `In Progress`. Blocker: daemon Docker mati (`F1-1`, `F1-2`), arsitektur VM belum dikonfirmasi (`F1-N1`). Dua file untracked yang sempat menahan push selesai di `d2fda37`. Tidak ada kotak di file scope lain yang terbuka oleh merge wave ini; scope 002 adalah fitur berikutnya dan Follow-up 11 spec 0001 menunggu `/scope`.
 
@@ -113,4 +119,5 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 - **Dibersihkan:** 2026-11-14, sesudah push. Lima sub sesi diarsipkan (`arc-f1-update`, `dev-f1-build`, `chk-f1-verify`, `tst-f1-test`, `chk-f1-review`); tiap worktree bersih dan tiap branch leluhur `origin/main` sebelum `git worktree remove` dan `git branch -d`; `git worktree prune` dijalankan
 - **Disimpan:** tidak ada worktree atau branch koordinasi yang disimpan. Branch `docs/cross-check-before-development` (lokal dan di `origin`) bukan milik koordinasi ini dan tidak disentuh
 - **Sesudah penutupan:** `claude/chk-f1-verify-2-dcd4b8` (`972e160`) di-merge dengan `--no-ff`; `fmt`, `clippy`, dan 134 test hijau di `main` sesudah merge; build Linux lead pada `18e9228` lulus dengan 136 test. Commit `docs(scope): mark 001 stack and workspace done` menyusul merge itu, lalu `git push origin main`. Sesudah push, sesi `chk-f1-verify-2` diarsipkan dan worktree serta branch-nya dihapus tanpa paksa; bila salah satunya gagal, lead melaporkannya ke user dan baris ini dikoreksi
-- **Blocker tersisa:** arsitektur VM (`F1-N1`, x86_64 diasumsikan; bukti Linux hanya untuk `x86_64`); Follow-up 11 spec 0001 menunggu `/scope` dari user. Tidak ada yang menahan status fitur 1
+- **Target ARM:** `claude/arc-f1-update-2-29134c` (`8bd7a30`, memuat `41e8eda` dan commit bukti `38da818` dari `claude/chk-f1-verify-3-4a7edd`) di-merge dengan `--no-ff`; `fmt`, `clippy`, dan test workstation hijau di `main` sesudah merge. Commit `docs(scope): record the aarch64 Linux target for 001` menyusul, lalu `git push origin main`. Sesudah push, kedua sesi diarsipkan dan worktree serta branch-nya dihapus tanpa paksa; bila salah satunya gagal, lead melaporkannya ke user dan baris ini dikoreksi
+- **Blocker tersisa:** tidak ada untuk scope 001. Follow-up 11 spec 0001 menunggu `/scope` dari user

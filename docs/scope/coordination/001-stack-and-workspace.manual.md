@@ -17,7 +17,7 @@ Nilai yang hanya kamu tahu. AC di kolom ketiga `BLOCKED` sampai nilainya ada.
 
 | ID | Nilai yang dibutuhkan | AC yang menunggu | File yang menunggu |
 | --- | --- | --- | --- |
-| `F1-N1` | Arsitektur VM proxy dan PostgreSQL: `x86_64` atau ARM. Target `x86_64-unknown-linux-gnu` disimpulkan dari Proxmox VE (spec 0001 Follow-up 6). Bila ARM, sebut ke lead: `--platform` dan triple diganti lewat `architect (update)`. | `0001 AC-2` (tidak `BLOCKED`; berjalan dengan asumsi x86_64) | `docs/specs/0001-initial-architecture/index.md` bagian "Toolchain and Linux target" dan "Linux build" |
+| `F1-N1` | Arsitektur VM proxy dan PostgreSQL: `x86_64` atau ARM. **Dijawab user 2026-11-14: ARM.** Target spec 0001 diganti ke `aarch64-unknown-linux-gnu` (`--platform linux/arm64`) lewat `architect (update)`, dan build Linux diulang untuk target itu. | `0001 AC-2`: `PASS` untuk `aarch64` pada `41e8eda` | `docs/specs/0001-initial-architecture/index.md` bagian "Toolchain and Linux target" dan "Linux build" (sudah diperbarui) |
 
 ## Fitur 1: Stack and workspace (spec 0001)
 
@@ -38,3 +38,4 @@ Dari laporan `arc-f1-update` (2026-11-14). Bukti `0001 AC-2`. Sesi developer dan
 - **Jalankan:** dari root repo, blok `bash` persis di [spec 0001 bagian "Linux build"](../../specs/0001-initial-architecture/index.md#linux-build) (dimulai `git archive --format=tar HEAD | docker run --rm -i --platform linux/amd64 ...`). Unduhan image sekitar 320 MB; di Apple silicon berjalan lewat emulasi, beberapa menit.
 - **Lulus bila:** exit 0, output memuat `host: x86_64-unknown-linux-gnu`, test lulus (termasuk `a_failed_write_exits_3_without_stderr` dan `ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr`, yang hanya berjalan di Linux), satu blok `== <fixture> <format> exit=<n>` per fixture dan format (0 untuk `valid-*`, 1 untuk lainnya), tidak ada `canary leaked`, dan baris terakhir `linux build check passed`.
 - **Kirim ke lead:** `PASS` atau `FAIL`, baris `sha256sum`, dan `git rev-parse HEAD`; bila `FAIL`, outputnya.
+- **Sesudah jawaban `F1-N1` (ARM):** blok di spec kini memakai `--platform linux/arm64` dan mengharapkan `host: aarch64-unknown-linux-gnu`, tanpa emulasi di Apple silicon; unduhan sekitar 283 MB. Baris "Jalankan" dan "Lulus bila" di atas adalah bunyi langkah ini saat target masih `x86_64`. Run ulang untuk `aarch64` dijalankan sesi `chk-f1-verify-3` pada `41e8eda`: `PASS`, 136 test, `cb184231b4af3e5c927eb46bb1fd7ad289b5a357a7c8b62a14d45fd6b92d3532  target/release/pool`.
