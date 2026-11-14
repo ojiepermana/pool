@@ -70,6 +70,18 @@ The exact effect of each action on active sessions belongs to the [health](scope
 | Fence receipt | Independently verified proof that the old writer is excluded, bound to one operation and one machine identity. | [Failover and recovery](architecture/failover-recovery.md#fencing-contract) |
 | Write barrier | Proof that every writer path is stopped, including paths that bypass POOL. Without it the loss window is unknown. | [Failover and recovery](architecture/failover-recovery.md#candidate-and-rpo-policy) |
 
+## Configuration and commands
+
+| Term | Meaning | Owner |
+|---|---|---|
+| Configuration version | The number in the `config_version` key that says which key schema a file follows. It is not a configuration generation. | [Spec 0001](specs/0001-initial-architecture/index.md#configuration-rules) |
+| Reserved capability | A capability outside the release whose configuration table exists only so that asking for it can be refused by name. | [Spec 0001](specs/0001-initial-architecture/index.md#configuration-rules) |
+| Result cache | Storing query results to answer a later query without the database. Reserved and off. Avoid query cache as a key or type name. | [Security requirements](security/security-requirements.md), SEC-10 |
+| Automatic promotion | POOL promoting a replica without a reviewed operator operation. Reserved and off. Avoid automatic failover as a key or type name; removing a failed node from admission is not promotion. | [Security requirements](security/security-requirements.md), SEC-10 |
+| Secret reference | A configuration key that ends in `_file` and names a protected file that holds a secret. The configuration never holds the secret itself. | [Spec 0001](specs/0001-initial-architecture/index.md#configuration-rules) |
+| Finding | One reason a command rejected its input or could not complete, with a stable code such as `config.schema`. | [Spec 0001](specs/0001-initial-architecture/index.md#findings) |
+| Output version | The number in the `output_version` field of a command's JSON output. It rises when a field is removed or renamed. | [Spec 0001](specs/0001-initial-architecture/index.md#exit-status-and-output) |
+
 ## Delivery
 
 | Term | Meaning | Owner |
