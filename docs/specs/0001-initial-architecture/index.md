@@ -204,6 +204,8 @@ toml = { version = "1.2.1", default-features = false, features = ["parse", "serd
 unsafe_code = "forbid"
 ```
 
+The block above is the contract of the first build. Since spec 0002 the root `Cargo.toml` has one more table after it, `[workspace.lints.clippy]`, which denies the Clippy lints `dbg_macro`, `print_stderr`, `print_stdout`, `todo` and `unimplemented` for the whole workspace (`0002 AC-20`). Its content and the reasons are under [Lint rules](../0002-standards-and-tooling/index.md#lint-rules) in spec 0002. It is the only addition to that file, and **AC-13** does not change: both packages take the new table through the same `[lints] workspace = true` line.
+
 `crates/pool-config/Cargo.toml` names the package `pool-config`, inherits `version`, `edition`, `rust-version`, `license` and `publish` from the workspace, depends on `serde` and `toml` with `workspace = true`, and has `[lints] workspace = true`.
 
 `apps/pool/Cargo.toml` names the package `pool` (its binary is `pool`), inherits the same five fields, depends on `pool-config`, `serde` and `serde_json` with `workspace = true`, and has `[lints] workspace = true`. Neither package has `dev-dependencies` or a build script.
@@ -663,6 +665,8 @@ What it does: `git archive` sends only the committed tree, so the build is from 
 
 The pinned digest names an image index (one name for several platform variants) that holds a `linux/arm64` variant, so `--platform` selects that variant and the pin stays as it is. On Apple silicon the `linux/arm64` container runs without emulation. On a 64 bit Intel or AMD host the same command would need emulation and take longer. The `linux/arm64` variant is about 283 MB to download.
 
+Since spec 0002, `scripts/linux-build.sh` holds a copy of the command in the code block above, after its marker line, and rule W7 under [Workspace guards](../0002-standards-and-tooling/index.md#workspace-guards) fails the build when the two differ. This section still owns the command, so a change here changes the script in the same pull request.
+
 Workstation checks, run from the repository root:
 
 ```bash
@@ -709,7 +713,7 @@ From the first build:
 - The file is parsed twice (once for syntax, once for the schema). At a limit of 1 MiB this costs nothing you would notice.
 - Argument parsing is hand written. It is small now; if the daemon's command line grows, adopting a parser crate is a decision to record here.
 - The log convention is fixed before any log event exists, so it has not met real use. The first slice that logs may find a gap and must amend it here.
-- **AC-2** covers `aarch64` only. `x86_64` is not a declared target: the one `x86_64` run in the [verification record](verify.md#linux-evidence-container-build) is history, and no later build is checked on that target. Declaring it again would mean one more run of the Linux build for every change.
+- Criterion **AC-2** covers `aarch64` only. `x86_64` is not a declared target: the one `x86_64` run in the [verification record](verify.md#linux-evidence-container-build) is history, and no later build is checked on that target. Declaring it again would mean one more run of the Linux build for every change.
 - `check-config` reads a special file like any other file. That is what makes `/dev/zero` and `/dev/stdin` work. It also means that a path which never gives data or an end, such as a FIFO (a named pipe) with no writer, blocks the command with no time limit. This is a known limit. Scope 001 changes no code for it.
 
 **Neutral**:
@@ -727,9 +731,9 @@ From the first build:
 6. You confirmed on 2026-11-14 that your PostgreSQL and proxy VMs are ARM. The earlier target, `x86_64-unknown-linux-gnu`, had been inferred from Proxmox VE and was not confirmed. The same day the `--platform` value and the target in [Toolchain and Linux target](#toolchain-and-linux-target), **AC-2** and the [Linux build](#linux-build) command were changed to `linux/arm64` and `aarch64-unknown-linux-gnu`. The Linux build was then run again for the declared target, also on 2026-11-14, at revision `41e8eda`. It passed with exit status 0, `host: aarch64-unknown-linux-gnu` and the last line `linux build check passed`. The run is recorded under [Linux evidence: container build for aarch64](verify.md#linux-evidence-container-build-for-aarch64), so **AC-2** has evidence for the declared target and nothing is left open here.
 7. Docker Desktop was started on 2026-11-14 (`docker info` exits 0, server 29.9.2, `aarch64`), so **AC-2** is no longer blocked on it. Each run of the Linux build still needs the daemon. If `docker info` fails again, starting Docker Desktop is yours to do.
 8. When the workspace exists, the "Current state and commands" part of `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` should name the real commands. That belongs to the "Document it" step of scope 001.
-9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux `arm64` runner, so that the build for the declared target runs without emulation. Which runner that is belongs to the scope 002 spec.
+9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux `arm64` runner, so that the build for the declared target runs without emulation. Which runner that is belongs to the scope 002 spec. Answered on 2026-11-14 by `0002 AC-5`: `scripts/linux-build.sh` holds a copy of the command, and the CI job `linux-build` runs it on a hosted `arm64` runner ([Linux build script](../0002-standards-and-tooling/index.md#linux-build-script)). The CI evidence for it is still owed. It comes with step 11 of the spec 0002 Build plan and is recorded in the verification record of spec 0002.
 10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction).
-11. [Scope 002](../../scope/002-standards-and-tooling.md) should add automatic CI checks for the parts of **AC-12** and **AC-13** that are checked by hand today: the package set of `Cargo.lock` and the `grep` command (**AC-12**), and the four paths that must not exist plus the lint inheritance of both packages (**AC-13**). Until then nothing fails by itself when one of them regresses. This comes from the scope 001 review.
+11. [Scope 002](../../scope/002-standards-and-tooling.md) should add automatic CI checks for the parts of **AC-12** and **AC-13** that are checked by hand today: the package set of `Cargo.lock` and the `grep` command (**AC-12**), and the four paths that must not exist plus the lint inheritance of both packages (**AC-13**). Until then nothing fails by itself when one of them regresses. This comes from the scope 001 review. Answered on 2026-11-14 by `0002 AC-6`: rules W1 to W4 of `pool-repo-check workspace` ([Workspace guards](../0002-standards-and-tooling/index.md#workspace-guards)) check the package set of `Cargo.lock` (W1), the four paths (W2), the source patterns of the `grep` command (W3) and the lint inheritance (W4). The text of **AC-12** and **AC-13** does not change.
 
 ## Rationale
 
