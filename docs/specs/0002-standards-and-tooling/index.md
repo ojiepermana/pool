@@ -1108,6 +1108,7 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
 7. [Scope 011](../../scope/011-release-qualification-harness.md) turns the inventory into a release inventory with notices, and decides whether the inventory becomes a required check.
 8. After the first scheduled run, confirm that the daily run happened (remote step 7).
+9. The text of the coordination skill (`.claude/skills/coordinate/SKILL.md`: its step 9, "Push `main`", and the limit "Lead hanya push `main` ke `origin`") no longer fits [Branch rule and change path](#branch-rule-and-change-path) once the branch rule is active. The repository owner updates it, because no session edits `.claude/`. Until then the lead follows this spec, not step 9 of the skill.
 
 ## Rationale
 
