@@ -91,3 +91,4 @@ fn read_bounded(path: &Path) -> io::Result<Vec<u8>> {
     File::open(path)?.take(limit).read_to_end(&mut bytes)?;
     Ok(bytes)
 }
+fn  prove_fmt( ){}
