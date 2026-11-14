@@ -225,6 +225,7 @@ Run from the repository root. `pool-repo-check <args>` stands for `cargo run -q 
 | `pool-repo-check lint`; `pool-repo-check workspace --base x` | exit 2, usage on stderr | exit 2, `unknown command lint` and `unexpected argument --base`, then usage | pass |
 | `scripts/check.sh guards` | exit 0, `== ok: guards` | exit 0, `pool-repo-check workspace: ok`, `pool-repo-check ci: ok`, `== ok: guards` | pass |
 | `scripts/check.sh docs`; the same with `POOL_CHECK_BASE=4d03515…` and with forty zeros | exit 0 | exit 1, `== FAILED: docs`, the same single D4 problem in all three runs | fail (same cause as above) |
+| Rerun on `4947c5c` (merged with `main` at `ab7e9ef`, which fixes spec 0001 line 712): `pool-repo-check workspace`, `ci`, `docs`, `docs --base 4d03515`, `docs --base main`, `scripts/check.sh guards`, `scripts/check.sh docs` | exit 0 | exit 0 for each, `ok` and no problem | pass |
 | `scripts/check.sh fmt clippy test` | each runs the `tools/repo-check` command too, no "was skipped" line | exit 0; `pool-repo-check` checked by clippy and its 71 tests run; no "was skipped" line | pass |
 | Cases 8 to 19 and 21 of [Proving the checks](index.md#proving-the-checks), plus one extra case each for W6, C3, C4 and C5, applied one at a time to a `git clone` of `59ab36d` (`docs` with `--base HEAD`) | exit 1 with the rule ID and the named text | all exit 1: `W1 … zmij`, `W2: crates/pool-core`, `W3: apps/pool/src/main.rs:94: forbidden text std::thread`, `W4: apps/pool/Cargo.toml`, `W5 … pool-config -> pool is not allowed`, `W6: x/Cargo.lock`, `W7: scripts/linux-build.sh:42`, `C1 … actions/checkout@v7`, `C2 … job documents`, `C3 … job fmt runs cargo fmt --all --check`, `C4 … runs-on is ubuntu-24.04`, `C5: .github/workflows/ci.yml:10`, `D1 … docs/missing-file.md`, `D2 … no-such-heading`, `D3 … status disagrees`, `D5` for the made up ID of line K, `D6 … SEC-14` | pass (a manual run; `scripts/prove-checks.sh` is step 7) |
 
@@ -234,9 +235,9 @@ Run from the repository root. `pool-repo-check <args>` stands for `cargo run -q 
 |---|---|---|
 | `0002 AC-6` | `workspace` passes on the real tree; each of W1 to W7 has failing tests and was rejected on a copy of the real tree | pass |
 | `0002 AC-7` | `ci` passes on the real `ci.yml` and `main.json`; each of C1 to C5 has failing tests and was rejected on a copy | pass |
-| `0002 AC-8` | D1 and D2 tests; cases 15 and 16 | rule pass; "passes on the committed tree" waits for the spec 0001 fix |
+| `0002 AC-8` | D1 and D2 tests; cases 15 and 16 | pass (green on `4947c5c`) |
 | `0002 AC-9` | D3 tests (status, name, number, unknown status and tag, file without a row, repeated number, file name prefix); case 17 | pass |
-| `0002 AC-10` | D4, D5, D6 tests, `--base` with a real revision; cases 18 and 19 | rule pass; the one D4 problem above is in spec 0001 |
+| `0002 AC-10` | D4, D5, D6 tests, `--base` with a real revision; cases 18 and 19 | pass (green on `4947c5c`) |
 | Other criteria | Not part of this milestone | not run |
 
 How the developer read the criteria where the spec leaves room:
