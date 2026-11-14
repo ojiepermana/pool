@@ -612,19 +612,20 @@ fn base_could_not_run_for_a_revision_that_does_not_exist() {
     let f = good_tree("docs_base_missing");
     f.commit_all("base");
     f.check("docs", &["--base", "no-such-revision"])
-        .assert_not_run("docs", "git ls-tree");
+        .assert_not_run("docs", "git rev-parse: no-such-revision is not a commit");
 }
 
 #[test]
-fn base_could_not_run_for_a_revision_that_starts_with_a_hyphen() {
-    // covers: 0002 AC-10.
-    // Gap: the revision goes to `git ls-tree` before `--`, so `git` reads it as an option. Today every such value
-    // makes `git` fail and the check exit 3; none is accepted as a revision.
+fn base_refuses_a_revision_that_starts_with_a_hyphen_as_not_a_commit() {
+    // covers: 0002 AC-10: the revision is resolved with `git rev-parse --end-of-options` first, so a value that
+    // starts with a hyphen is never read as an option of `git ls-tree`; it is not a commit, exit 3.
     let f = good_tree("docs_base_hyphen");
     f.commit_all("base");
     for revision in ["-h", "--all", "--full-tree"] {
-        f.check("docs", &["--base", revision])
-            .assert_not_run("docs", "git ls-tree");
+        f.check("docs", &["--base", revision]).assert_not_run(
+            "docs",
+            &format!("git rev-parse: {revision} is not a commit"),
+        );
     }
 }
 
@@ -641,19 +642,25 @@ fn base_could_not_run_when_the_root_is_not_a_git_repository() {
             ceiling.to_str().expect("UTF-8 path"),
         )],
     );
-    out.assert_not_run("docs", "git ls-tree");
+    out.assert_not_run("docs", "git rev-parse");
 }
 
 #[test]
-fn base_reads_the_enclosing_repository_when_the_root_is_an_untracked_folder_inside_it() {
-    // covers: 0002 AC-10.
-    // Gap: `git -C <root>` searches upward for a repository. A root that is an untracked folder inside another
-    // repository gets an empty listing at the base, so D6 finds nothing to compare and passes. With the real
-    // repository root, as scripts/check.sh runs it, this cannot happen.
+fn base_could_not_run_when_the_root_is_a_folder_inside_a_repository() {
+    // covers: 0002 AC-10: `--base` needs the top of the work tree. An untracked folder inside another repository
+    // would list nothing at the base and pass D6 unseen, so it exits 3; a tracked folder exits 3 the same way.
     let outer = Fixture::new("docs_base_outer");
     outer.write("README.md", "outer\n");
     outer.commit_all("outer");
     let inner = good_tree("docs_base_outer/inner");
     inner.replace(SECURITY, "| SEC-2 | Second |\n", "");
-    inner.check("docs", &["--base", "HEAD"]).assert_ok("docs");
+    inner.check("docs", &["--base", "HEAD"]).assert_not_run(
+        "docs",
+        "is the folder inner/ of a Git work tree, not its top",
+    );
+
+    outer.commit_all("track inner");
+    inner
+        .check("docs", &["--base", "HEAD"])
+        .assert_not_run("docs", "--base needs the repository root");
 }
