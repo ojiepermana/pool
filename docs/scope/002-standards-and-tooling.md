@@ -1,4 +1,4 @@
-# 2. Standards and tooling · in-progress
+# 2. Standards and tooling · done
 
 [Scope index](index.md)
 
@@ -18,8 +18,8 @@ The maintainer uses the real manifest to select required CI checks, branch revie
 - [x] Test it: `/test standards and tooling`
 - [x] Review it (fresh model): `/check review standards and tooling`
 - [x] Document it: `/document standards and tooling`
-- [ ] Verify the required checks on a pull request and link the result.
+- [x] Verify the required checks on a pull request and link the result: [pull request 1](https://github.com/ojiepermana/pool/pull/1) and the [remote evidence](../specs/0002-standards-and-tooling/verify.md#remote-evidence).
 
 Spec [0002](../specs/0002-standards-and-tooling/index.md) · code in `deny.toml`, `crates/pool-config/fuzz/`, `scripts/`, `.github/`, `tools/repo-check/`.
 
-Evidence: [verification record](../specs/0002-standards-and-tooling/verify.md), [independent review](../reviews/2026-11-14-scope-002-standards-and-tooling.md) and [changelog](../../CHANGELOG.md). Open: the four remote items (`0002 AC-3`, `0002 AC-12`, the CI half of `0002 AC-5` and the remote half of `0002 AC-13`) have not run. They are Build plan step 11 and the last box.
+Evidence: [verification record](../specs/0002-standards-and-tooling/verify.md), [independent review](../reviews/2026-11-14-scope-002-standards-and-tooling.md) and [changelog](../../CHANGELOG.md). The four remote items passed: seven checks on a real pull request (`0002 AC-3`), the Linux build on the ARM runner (`0002 AC-5`), a blocked pull request with a format error (`0002 AC-12`) and the branch rule on `main` (`0002 AC-13`). Not checked yet: the first daily run (remote step 8), which does not hold this feature open.
