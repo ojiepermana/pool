@@ -90,10 +90,10 @@
     "semantic_hash": "302469f735651f3744288de61006e500"
   },
   "docs/engineering-standards.md": {
-    "mtime": 1794658233.5350118,
-    "seen": 1794658537.1568341,
+    "mtime": 1794664013.9580307,
+    "seen": 1794664015.665796,
     "ast_hash": "67328cf9bcc20369bf1e4aebd44fcb30",
-    "semantic_hash": "2e3012f8053fee75ab358cf4d336c5f4"
+    "semantic_hash": "f33266281ac7d14699467575f27f15e6"
   },
   "docs/feature-matrix.md": {
     "mtime": 1794624031.2750814,
@@ -252,10 +252,10 @@
     "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
   },
   "docs/research/technology-evaluation.md": {
-    "mtime": 1794660299.9716043,
-    "seen": 1794660309.630399,
+    "mtime": 1794664013.9585109,
+    "seen": 1794664015.665799,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "d187d1e5d937782c500f2a0662df069e"
+    "semantic_hash": "91a082e8e17ef66d85f7267414a3d6b1"
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794657721.7350848,
@@ -504,10 +504,10 @@
     "semantic_hash": "2748521703f0f2aaa1f3fef318de6fa0"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794661110.490654,
-    "seen": 1794661110.804787,
+    "mtime": 1794663025.4509556,
+    "seen": 1794663025.660584,
     "ast_hash": "",
-    "semantic_hash": "82b5862a3de824112c3416ec25962a6f"
+    "semantic_hash": "d6a371baedae8d771dd935435afcc359"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
     "mtime": 1794658048.2894921,
@@ -546,16 +546,16 @@
     "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
   },
   "docs/specs/0002-standards-and-tooling/index.md": {
-    "mtime": 1794659284.687863,
-    "seen": 1794659285.235851,
+    "mtime": 1794664013.9591525,
+    "seen": 1794664015.665801,
     "ast_hash": "",
-    "semantic_hash": "a0a13335ce99802aff8e174e7ef945a0"
+    "semantic_hash": "5d9bbf5bfd204bbd916f363627d23902"
   },
   "docs/specs/0002-standards-and-tooling/rationale.md": {
-    "mtime": 1794658233.5374477,
-    "seen": 1794658537.15687,
+    "mtime": 1794664013.9594727,
+    "seen": 1794664015.665802,
     "ast_hash": "",
-    "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
+    "semantic_hash": "2441c1d70238629ccbb37ca3ce71149f"
   },
   "docs/specs/0002-standards-and-tooling/verify.md": {
     "mtime": 1794661037.754887,
