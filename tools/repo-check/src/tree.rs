@@ -1,7 +1,9 @@
-//! Read access to a repository tree: the working tree on disk, or a tree held in memory for tests.
+//! Read access to a repository tree: the working tree on disk, a Git revision, or a tree held in memory for tests.
 
+use std::collections::BTreeSet;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 /// A tree of files addressed by paths relative to its root, with `/` as separator.
 pub trait Tree {
@@ -22,6 +24,11 @@ pub fn join(dir: &str, name: &str) -> String {
     } else {
         format!("{dir}/{name}")
     }
+}
+
+/// Returns the directory part of a tree path, the empty string for a file at the root.
+pub fn parent(path: &str) -> &str {
+    path.rsplit_once('/').map_or("", |(dir, _)| dir)
 }
 
 /// Returns the last component of a tree path.
@@ -109,7 +116,65 @@ impl Tree for FsTree {
     }
 }
 
-#[cfg(test)]
+/// The committed tree of one Git revision, read with `git ls-tree` and `git show`.
+pub struct GitTree {
+    root: PathBuf,
+    revision: String,
+    files: BTreeSet<String>,
+}
+
+impl GitTree {
+    /// Lists the files of `revision` in the repository at `root`, or returns why `git` failed.
+    pub fn open(root: &Path, revision: &str) -> Result<Self, String> {
+        let listing = git(
+            root,
+            &["ls-tree", "-r", "--name-only", "-z", revision, "--"],
+        )?;
+        let files = listing
+            .split('\0')
+            .filter(|name| !name.is_empty())
+            .map(str::to_string)
+            .collect();
+        Ok(Self {
+            root: root.to_path_buf(),
+            revision: revision.to_string(),
+            files,
+        })
+    }
+}
+
+fn git(root: &Path, args: &[&str]) -> Result<String, String> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(args)
+        .output()
+        .map_err(|e| format!("git {}: {e}", args.join(" ")))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("git {}: {}", args.join(" "), stderr.trim()));
+    }
+    String::from_utf8(output.stdout)
+        .map_err(|_| format!("git {}: output is not UTF-8", args.join(" ")))
+}
+
+impl Tree for GitTree {
+    fn read(&self, path: &str) -> Result<Option<String>, String> {
+        if !self.files.contains(path) {
+            return Ok(None);
+        }
+        git(&self.root, &["show", &format!("{}:{path}", self.revision)]).map(Some)
+    }
+
+    fn exists(&self, path: &str) -> bool {
+        path_exists(self.files.iter(), path)
+    }
+
+    fn walk(&self, dir: &str, skip_dir: &dyn Fn(&str) -> bool) -> Result<Vec<String>, String> {
+        Ok(walk_names(self.files.iter(), dir, skip_dir))
+    }
+}
+
 fn path_exists<'a>(mut files: impl Iterator<Item = &'a String>, path: &str) -> bool {
     if path.is_empty() {
         return true;
@@ -118,7 +183,6 @@ fn path_exists<'a>(mut files: impl Iterator<Item = &'a String>, path: &str) -> b
     files.any(|file| file == path || file.starts_with(&prefix))
 }
 
-#[cfg(test)]
 fn walk_names<'a>(
     files: impl Iterator<Item = &'a String>,
     dir: &str,

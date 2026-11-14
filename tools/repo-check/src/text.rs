@@ -61,6 +61,29 @@ pub fn key_value(line: &str) -> Option<(&str, &str)> {
     Some((key.trim(), value.trim()))
 }
 
+/// Returns, for each line of a Markdown file, whether it belongs to a fenced code block. Fence lines count as code.
+pub fn code_lines(lines: &[&str]) -> Vec<bool> {
+    let mut out = Vec::with_capacity(lines.len());
+    let mut open: Option<(char, usize)> = None;
+    for line in lines {
+        match open {
+            None => {
+                if let Some(fence) = fence_open(line) {
+                    open = Some(fence);
+                }
+                out.push(open.is_some());
+            }
+            Some((mark, len)) => {
+                if fence_closes(line, mark, len) {
+                    open = None;
+                }
+                out.push(true);
+            }
+        }
+    }
+    out
+}
+
 /// Returns the fence character and its length when `line` opens a fenced code block.
 pub fn fence_open(line: &str) -> Option<(char, usize)> {
     let rest = line.trim_start_matches(' ');
@@ -78,6 +101,26 @@ pub fn fence_closes(line: &str, mark: char, len: usize) -> bool {
     rest.chars().count() >= len && rest.chars().all(|c| c == mark)
 }
 
+/// Removes text between backticks on one line. An unmatched backtick and the text after it are kept.
+pub fn strip_code_spans(line: &str) -> String {
+    let parts: Vec<&str> = line.split('`').collect();
+    let mut out = String::new();
+    let closed = if parts.len() % 2 == 1 {
+        parts.len()
+    } else {
+        parts.len() - 1
+    };
+    for (index, part) in parts.iter().enumerate() {
+        if index >= closed {
+            out.push('`');
+            out.push_str(part);
+        } else if index % 2 == 0 {
+            out.push_str(part);
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,6 +131,26 @@ mod tests {
             baseline_lines("# spec 0002\n\n a \n#b\nc\n"),
             vec!["a", "c"]
         );
+    }
+
+    #[test]
+    fn fences_nest_by_length() {
+        let lines = ["text", "````text", "```toml", "x", "```", "````", "after"];
+        assert_eq!(
+            code_lines(&lines),
+            vec![false, true, true, true, true, true, false]
+        );
+    }
+
+    #[test]
+    fn tilde_fence_is_not_closed_by_backticks() {
+        let lines = ["~~~", "```", "~~~", "out"];
+        assert_eq!(code_lines(&lines), vec![true, true, true, false]);
+    }
+
+    #[test]
+    fn code_spans_are_removed() {
+        assert_eq!(strip_code_spans("a `b` c `d"), "a  c `d");
     }
 
     #[test]
