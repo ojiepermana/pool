@@ -426,10 +426,10 @@
     "semantic_hash": "68a4fdc6a394be374b3004e4846b09b8"
   },
   "docs/scope/coordination/001-stack-and-workspace.log.md": {
-    "mtime": 1794648708.738479,
-    "seen": 1794649040.506907,
+    "mtime": 1794654587.0029123,
+    "seen": 1794654796.742687,
     "ast_hash": "",
-    "semantic_hash": "da10d3bbc58af9e985c6744343fd57f7"
+    "semantic_hash": "4b6854674ba5a13e27872e536dcde288"
   },
   "apps/pool/src/cli.rs": {
     "mtime": 1794647183.3364625,

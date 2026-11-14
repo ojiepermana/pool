@@ -61,6 +61,7 @@
 | 2026-11-14 | `/sync` (`MODE=branch`, `MERGE_BASE=591317f`): `AGENTS.md` dua kalimat dikoreksi (repo kini memuat slice workspace scope 001; workspace Cargo ada, CI belum); `CLAUDE.md` bagian "Current state and commands", kalimat status spec, dan langkah berikutnya; `docs/index.md` (baris `CHANGELOG.md`); `docs/testing/strategy.md` (perintah kini nyata); `docs/scope/index.md` (kalimat keadaan fitur 1); `docs/scope/001-stack-and-workspace.md` (pointer `code in` dan baris evidence). Status spec 0001 sudah `In Progress`, cocok dengan fitur `in-progress`. Tidak ada centang yang ditolak dari `/sync`. Penemuan Agent Skill dan MCP dilewati: `AGENTS.md` mencatat user menundanya pada 2026-11-14, dan dependensi baru (`serde`, `toml`, `serde_json`) adalah pustaka utilitas. Tidak ada `AGENTS.md` bersarang yang dibuat. | lead |
 | 2026-11-14 | Follow-up 11 spec 0001 (cek CI otomatis untuk `AC-12` dan `AC-13`) belum disalin ke `docs/scope/002-standards-and-tooling.md`: menambah sub tugas di scope adalah urusan `/scope` dan menunggu persetujuan user. | lead |
 | 2026-11-14 | Push penutupan ditahan: `git status --short` belum kosong karena dua file untracked (`.graphifyignore`, `graphify-out/cache/last_query_stamp`). Lead mengusulkan meng-commit `.graphifyignore` dan menambahkan `graphify-out/cache/last_query_stamp` ke `.gitignore`; menunggu jawaban user. Pembersihan worktree dan branch menyusul sesudah push. | lead |
+| 2026-11-14 | User menjawab "Ya, lalu push": `.graphifyignore` di-commit dan `graphify-out/cache/last_query_stamp` masuk `.gitignore` (`d2fda37`). Commit itu tidak menjalankan pembaruan graph karena kedua file bukan masukan graph (bukan dokumen atau kode). `main` di-push ke `origin` (`1246c0d..d2fda37`, 39 commit, remote tidak di depan), lalu lima sub sesi diarsipkan dan worktree serta branch-nya dihapus tanpa paksa. | user, lead |
 
 ## Keputusan delegasi
 
@@ -78,7 +79,6 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 ## Blocker terbuka
 
 - F1 · bukti build Linux: daemon Docker mati saat koordinasi dimulai; user menyalakan Docker Desktop (langkah manual `F1-1`). Tidak menahan build notes atau scaffold.
-- `.graphifyignore` untracked di checkout utama (berisi `.claude/`), sudah ada sebelum koordinasi, dan `graphify-out/cache/last_query_stamp` (dibuat `graphify query`). Push penutupan butuh `git status --short` kosong; user memilih commit atau abaikan.
 - F1 · `0001 AC-2` dan klausa `/dev/full` `0001 AC-11`: build Linux belum pernah dijalankan (`docker info` gagal pada 14:30, 16:40, 17:10, 19:17, dan 20:15). Di Linux diharapkan 136 test. Dua test `#[cfg(target_os = "linux")]` ikut `NOT_RUN`. Terbuka saat user menjalankan `F1-1` lalu `F1-2`; menahan status `done` fitur 1, tidak menahan review.
 - F1 · `0001 AC-2`: arsitektur VM proxy dan PostgreSQL (x86_64 atau ARM) belum dikonfirmasi user; target `x86_64-unknown-linux-gnu` disimpulkan (file manual, "Nilai dari user" `F1-N1`).
 
@@ -93,7 +93,7 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 
 ## Riwayat wave
 
-- Wave `1` (2026-11-14 sampai 2026-11-14, hash awal `591317f`): ketujuh kotak scope 001 dicentang. Terbuka: build Linux (`0001 AC-2`, klausa `/dev/full` `0001 AC-11`, dua test khusus Linux), jadi fitur 1 tetap `in-progress` dan spec 0001 tetap `In Progress`. Blocker: daemon Docker mati (`F1-1`, `F1-2`), arsitektur VM belum dikonfirmasi (`F1-N1`), dua file untracked menahan push. Tidak ada kotak di file scope lain yang terbuka oleh merge wave ini; scope 002 adalah fitur berikutnya dan Follow-up 11 spec 0001 menunggu `/scope`.
+- Wave `1` (2026-11-14 sampai 2026-11-14, hash awal `591317f`): ketujuh kotak scope 001 dicentang. Terbuka: build Linux (`0001 AC-2`, klausa `/dev/full` `0001 AC-11`, dua test khusus Linux), jadi fitur 1 tetap `in-progress` dan spec 0001 tetap `In Progress`. Blocker: daemon Docker mati (`F1-1`, `F1-2`), arsitektur VM belum dikonfirmasi (`F1-N1`). Dua file untracked yang sempat menahan push selesai di `d2fda37`. Tidak ada kotak di file scope lain yang terbuka oleh merge wave ini; scope 002 adalah fitur berikutnya dan Follow-up 11 spec 0001 menunggu `/scope`.
 
 ## Penutupan
 
@@ -105,8 +105,8 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 - **Merge:** `claude/chk-f1-review-203c07` → `1eee041`
 - **Document:** F1 · rentang `a2dca30..HEAD` · commit `docs(changelog): 001 stack and workspace`
 - **/sync:** 2026-11-14, rentang `591317f..HEAD`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/index.md`, `docs/testing/strategy.md`, `docs/scope/index.md`, `docs/scope/001-stack-and-workspace.md`; tidak ada centang yang ditolak
-- **Commit penutup:** belum
-- **Push:** belum; ditahan dua file untracked, menunggu user
-- **Dibersihkan:** belum; menyusul sesudah push
-- **Disimpan:** belum ditentukan
-- **Blocker tersisa:** build Linux `0001 AC-2` (`F1-1`, `F1-2`, owner user) menahan status `done` fitur 1; arsitektur VM (`F1-N1`); dua file untracked menahan push
+- **Commit penutup:** `docs(scope): close 001-stack-and-workspace coordination` (commit yang memuat baris ini)
+- **Push:** 2026-11-14, `git push origin main` tanpa `--force`, `1246c0d..d2fda37`; `git rev-parse main` = `git rev-parse origin/main` = `d2fda37`. Commit penutup di-push sesudahnya
+- **Dibersihkan:** 2026-11-14, sesudah push. Lima sub sesi diarsipkan (`arc-f1-update`, `dev-f1-build`, `chk-f1-verify`, `tst-f1-test`, `chk-f1-review`); tiap worktree bersih dan tiap branch leluhur `origin/main` sebelum `git worktree remove` dan `git branch -d`; `git worktree prune` dijalankan
+- **Disimpan:** tidak ada worktree atau branch koordinasi yang disimpan. Branch `docs/cross-check-before-development` (lokal dan di `origin`) bukan milik koordinasi ini dan tidak disentuh
+- **Blocker tersisa:** build Linux `0001 AC-2` (`F1-1`, `F1-2`, owner user) menahan status `done` fitur 1; arsitektur VM (`F1-N1`); Follow-up 11 spec 0001 menunggu `/scope` dari user
