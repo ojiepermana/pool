@@ -258,10 +258,10 @@
     "semantic_hash": "4f5deb579e157fa38a4f090a1a54effd"
   },
   "docs/scope/001-stack-and-workspace.md": {
-    "mtime": 1794643954.247936,
-    "seen": 1794644209.478155,
+    "mtime": 1794645445.6355116,
+    "seen": 1794645817.4006028,
     "ast_hash": "32faafab017d5597a22862193cc99ae1",
-    "semantic_hash": "c73784f86f756e51ac64a44664f4cf26"
+    "semantic_hash": "d8a4df96ae37fc36115e2dc1e5bfa118"
   },
   "docs/scope/002-standards-and-tooling.md": {
     "mtime": 1794624116.176001,
@@ -420,16 +420,16 @@
     "semantic_hash": "0bb45b9a96696d4ae62c57a866dc0f55"
   },
   "docs/scope/coordination/001-stack-and-workspace.manual.md": {
-    "mtime": 1794643954.2493868,
-    "seen": 1794644209.47816,
+    "mtime": 1794645445.75216,
+    "seen": 1794645817.400605,
     "ast_hash": "",
-    "semantic_hash": "0fb8e9ae347949abff07e25ae88e5f8c"
+    "semantic_hash": "68a4fdc6a394be374b3004e4846b09b8"
   },
   "docs/scope/coordination/001-stack-and-workspace.log.md": {
-    "mtime": 1794643954.2487419,
-    "seen": 1794644209.478158,
+    "mtime": 1794645445.684063,
+    "seen": 1794645817.400604,
     "ast_hash": "",
-    "semantic_hash": "e49f6cce5ed3bce16eaccac98792146d"
+    "semantic_hash": "20cffd2b607e70e4947f8e86eaa5dc6a"
   },
   "apps/pool/src/cli.rs": {
     "mtime": 1794644433.246146,
@@ -450,9 +450,9 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/check_config.rs": {
-    "mtime": 1794644433.2515478,
-    "seen": 1794644742.5766551,
-    "ast_hash": "aa4b13dfab5035df1a1c3c6fb3f23624",
+    "mtime": 1794645347.6237628,
+    "seen": 1794645817.3100789,
+    "ast_hash": "2eac9c4083cfced5f5f28357629eda00",
     "semantic_hash": ""
   },
   "crates/pool-config/Cargo.toml": {
@@ -468,16 +468,16 @@
     "semantic_hash": ""
   },
   "crates/pool-config/tests/validate.rs": {
-    "mtime": 1794644433.304668,
-    "seen": 1794644742.5766568,
-    "ast_hash": "1b9509945d299a7560b1ef2244eafa98",
+    "mtime": 1794645347.6973734,
+    "seen": 1794645817.3100858,
+    "ast_hash": "3f5e65e723361445028c6c8685516cef",
     "semantic_hash": ""
   },
   "docs/specs/0001-initial-architecture/verify.md": {
-    "mtime": 1794644433.3059218,
-    "seen": 1794644742.622893,
+    "mtime": 1794645347.2246802,
+    "seen": 1794645817.4006011,
     "ast_hash": "",
-    "semantic_hash": "9fd298b8086431dedd80abf073406a0e"
+    "semantic_hash": "19d05512ef8f8add241d7b37a0eb5a7e"
   },
   "apps/pool/Cargo.toml": {
     "mtime": 1794644433.2458284,
