@@ -150,14 +150,14 @@ fn numbered_items<'a>(doc: &'a Doc, title: &str) -> Vec<(usize, &'a str)> {
     out
 }
 
-/// Reads every definition of `tree`. With `required`, a missing table owner file is a fault.
+/// Reads every definition of `tree`. With `required`, a missing table owner file is a fault. Without it (the base revision) a missing file only means the base did not have it, but a file or listing that cannot be read is still a fault.
 pub fn definitions(tree: &dyn Tree, required: bool, report: &mut Report) -> Definitions {
     let mut defs = Definitions::default();
     for (family, prefix, path) in TABLE_FAMILIES {
         let text = if required {
             report.need(tree, path)
         } else {
-            tree.read(path).ok().flatten()
+            optional_read(tree, path, report)
         };
         let Some(text) = text else {
             continue;
@@ -185,7 +185,7 @@ pub fn definitions(tree: &dyn Tree, required: bool, report: &mut Report) -> Defi
     let prds = if required {
         report.walk(tree, "docs/prd", &skip_all)
     } else {
-        tree.walk("docs/prd", &skip_all).unwrap_or_default()
+        optional_walk(tree, "docs/prd", &skip_all, report)
     };
     for path in prds {
         let name = file_name(&path);
@@ -210,7 +210,7 @@ pub fn definitions(tree: &dyn Tree, required: bool, report: &mut Report) -> Defi
     let specs = if required {
         report.walk(tree, "docs/specs", &|_| false)
     } else {
-        tree.walk("docs/specs", &|_| false).unwrap_or_default()
+        optional_walk(tree, "docs/specs", &|_| false, report)
     };
     for path in specs {
         let Some(rest) = path.strip_prefix("docs/specs/") else {
@@ -250,7 +250,34 @@ fn read(tree: &dyn Tree, path: &str, required: bool, report: &mut Report) -> Opt
     if required {
         report.need(tree, path)
     } else {
-        tree.read(path).ok().flatten()
+        optional_read(tree, path, report)
+    }
+}
+
+/// Reads a file that may be absent. Absent is `None` with no fault; a read error is a fault.
+fn optional_read(tree: &dyn Tree, path: &str, report: &mut Report) -> Option<String> {
+    match tree.read(path) {
+        Ok(text) => text,
+        Err(e) => {
+            report.fault(format!("cannot read the base revision: {e}"));
+            None
+        }
+    }
+}
+
+/// Lists a folder that may be absent. A listing error is a fault.
+fn optional_walk(
+    tree: &dyn Tree,
+    dir: &str,
+    skip_dir: &dyn Fn(&str) -> bool,
+    report: &mut Report,
+) -> Vec<String> {
+    match tree.walk(dir, skip_dir) {
+        Ok(files) => files,
+        Err(e) => {
+            report.fault(format!("cannot list the base revision: {e}"));
+            Vec::new()
+        }
     }
 }
 
@@ -398,9 +425,9 @@ pub fn check(tree: &dyn Tree, docs: &[Doc], base: Option<&dyn Tree>, report: &mu
     let Some(base) = base else {
         return;
     };
-    let mut quiet = Report::default();
-    let old = definitions(base, false, &mut quiet);
-    for fault in quiet.faults {
+    let mut base_report = Report::default();
+    let old = definitions(base, false, &mut base_report);
+    for fault in base_report.faults {
         report.fault(fault);
     }
     let mut gone = BTreeSet::new();
@@ -610,6 +637,28 @@ mod tests {
         let mut now = tree();
         now.replace("docs/prd/001-core-proxy.md", "**AC-2:**", "**AC-3:**");
         assert_problem(&now, Some(&base), "D6", &["PRD-001 AC-2"]);
+    }
+
+    #[test]
+    fn d6_unreadable_base_file_is_a_fault() {
+        let mut base = tree();
+        base.set_unreadable("docs/security/security-requirements.md");
+        let report = run(&tree(), Some(&base));
+        assert!(
+            report
+                .faults
+                .iter()
+                .any(|f| f.contains("base revision") && f.contains("security-requirements.md")),
+            "{}",
+            report.dump()
+        );
+    }
+
+    #[test]
+    fn d6_base_without_an_owner_file_is_not_a_fault() {
+        let mut base = tree();
+        base.remove("docs/feature-matrix.md");
+        assert_ok(&tree(), Some(&base));
     }
 
     #[test]

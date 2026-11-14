@@ -4,6 +4,10 @@
 # It works on a private clone of the committed HEAD and never changes the working tree it was started from.
 set -eu
 
+# An exported GIT_DIR, GIT_WORK_TREE or GIT_INDEX_FILE (Git sets them for hooks and rebase --exec) would win over
+# git -C and send the commits of the proof to the repository this script was started from.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+
 usage() {
   echo "usage: scripts/prove-checks.sh [--with-linux-build]" >&2
 }
@@ -20,7 +24,9 @@ for arg in "$@"; do
   esac
 done
 
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
+# The checks run in the copy change directory too, so an exported CDPATH must not reach them either.
+unset CDPATH
 ROOT=$(pwd)
 
 for tool in git cargo awk; do
@@ -90,6 +96,16 @@ delete_table() {
     $0 == h { skip = 1; next }
     skip && /^\[/ { skip = 0 }
     !skip { print }'
+}
+
+# Replaces the first line that equals the given text.
+replace_line() {
+  rewrite "$1" awk -v a="$2" -v b="$3" '!done && $0 == a { $0 = b; done = 1 } { print }'
+}
+
+# Replaces the first line that starts with the given text.
+replace_line_starting() {
+  rewrite "$1" awk -v a="$2" -v b="$3" '!done && index($0, a) == 1 { $0 = b; done = 1 } { print }'
 }
 
 # Replaces the first commit hash after actions/checkout@ with v7.
@@ -284,7 +300,7 @@ restore
 linux_skipped=0
 if [ "$with_linux_build" -eq 1 ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
   apply_case_4
-  git -C "$COPY" -c user.name=prove -c user.email=prove@example.invalid commit -q -am 'prove case 20'
+  git -C "$COPY" -c user.name=prove -c user.email=prove@example.invalid -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -am 'prove case 20'
   rc=0
   check linux-build || rc=$?
   if [ "$rc" -eq 0 ]; then
@@ -306,6 +322,54 @@ fi
 
 replace_first "$C/scripts/linux-build.sh" 'linux build check passed' 'linux build check skipped'
 expect 21 guards 'W7'
+restore
+
+# Case 22: a dependency from a Git address, cloned from a folder on this machine.
+SOURCE=$TMP/prove-source
+mkdir -p "$SOURCE/src"
+: >"$SOURCE/src/lib.rs"
+cat >"$SOURCE/Cargo.toml" <<'SOURCE_MANIFEST'
+[package]
+name = "pool-prove-source"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+SOURCE_MANIFEST
+git -C "$SOURCE" init -q
+git -C "$SOURCE" add Cargo.toml src/lib.rs
+git -C "$SOURCE" -c user.name=prove -c user.email=prove@example.invalid -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -m 'prove source'
+insert_after "$C/crates/pool-config/Cargo.toml" '[dependencies]' "pool-prove-source = { git = \"file://$SOURCE\" }"
+rc=0
+(cd "$COPY" && cargo metadata --format-version 1 >/dev/null 2>"$OUT") || rc=$?
+if [ "$rc" -ne 0 ]; then
+  note 22 deny "cargo metadata could not add the Git dependency to Cargo.lock (exit $rc)"
+else
+  expect 22 deny 'source-not-allowed'
+fi
+restore
+
+replace_line_starting "$C/Cargo.toml" 'serde_json = ' 'serde_json = "*"'
+expect 23 deny 'error[wildcard]'
+restore
+
+replace_line "$C/.github/workflows/ci.yml" '    timeout-minutes: 15' '    continue-on-error: true'
+expect 24 guards 'C3' 'continue-on-error'
+restore
+
+replace_first "$C/.github/workflows/ci.yml" 'ubuntu-24.04-arm' 'ubuntu-latest'
+expect 25 guards 'C4'
+restore
+
+replace_line "$C/.github/workflows/ci.yml" '  contents: read' '  contents: write'
+expect 26 guards 'C5'
+restore
+
+: >"$C/docs/Cargo.lock"
+expect 27 guards 'W6' 'docs/Cargo.lock'
+restore
+
+append "$C/docs/security/security-requirements.md" '| SEC-14 | Fixture row used to prove the duplicate rule |'
+expect 28 docs 'D4' 'SEC-14'
 restore
 
 if [ -n "$failed" ]; then

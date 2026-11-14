@@ -24,7 +24,7 @@ exit status: 0 every named check passed, 1 a check failed, 2 usage error, 3 a ch
 USAGE
 }
 
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
 ROOT=$(pwd)
 
 : "${CARGO_INCREMENTAL=0}"
@@ -176,10 +176,18 @@ check_sbom() {
   if ! tool_is cyclonedx cargo-cyclonedx-cyclonedx "$CARGO_CYCLONEDX_VERSION"; then
     missing "cargo-cyclonedx $CARGO_CYCLONEDX_VERSION is required; run cargo install --locked --root target/tools cargo-cyclonedx@$CARGO_CYCLONEDX_VERSION" || return 1
   fi
-  run cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx || return 1
-  mkdir -p target/sbom
-  run mv apps/pool/pool.cdx.json target/sbom/pool.cdx.json || return 1
-  find apps crates -name 'pool.cdx.json' -not -path '*/target/*' -exec rm -f {} +
+  # The tool can write pool.cdx.json next to a manifest before it fails, so the cleanup runs
+  # whatever the tool returned, and a failed cleanup fails the check.
+  sbom_ok=1
+  run cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx || sbom_ok=0
+  if [ "$sbom_ok" -eq 1 ]; then
+    run mkdir -p target/sbom || sbom_ok=0
+  fi
+  if [ "$sbom_ok" -eq 1 ]; then
+    run mv apps/pool/pool.cdx.json target/sbom/pool.cdx.json || sbom_ok=0
+  fi
+  run find apps crates -name 'pool.cdx.json' -not -path '*/target/*' -exec rm -f {} + || return 1
+  [ "$sbom_ok" -eq 1 ]
 }
 
 # Validate every name before running anything.

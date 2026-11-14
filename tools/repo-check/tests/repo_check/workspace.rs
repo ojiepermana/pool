@@ -200,15 +200,20 @@ fn w4_rejects_a_wildcard_member() {
 }
 
 #[test]
-fn w4_reports_a_lints_line_with_a_trailing_comment_as_missing() {
-    // covers: 0002 AC-6, W4.
-    // Gap: `workspace = true # comment` is valid TOML and does inherit the lints, but the line reader compares the
-    // whole value with `true`, so the guard reports it. A false alarm, not a miss; the committed manifests have no comment there.
+fn w4_reads_a_lints_line_with_a_trailing_comment() {
+    // covers: 0002 AC-6, W4: `workspace = true # comment` is valid TOML and inherits the lints, so it passes (review m13).
     let f = good_tree("ws_w4_comment");
     f.replace(
         "crates/pool-config/Cargo.toml",
         "workspace = true\n",
         "workspace = true # inherit\n",
+    );
+    f.check("workspace", &[]).assert_ok("workspace");
+
+    f.replace(
+        "crates/pool-config/Cargo.toml",
+        "workspace = true # inherit\n",
+        "workspace = false # inherit\n",
     );
     f.check("workspace", &[])
         .assert_problem("workspace", "W4", &["crates/pool-config/Cargo.toml"]);
@@ -270,26 +275,69 @@ fn w5_reads_dependency_tables_in_every_spelling() {
 }
 
 #[test]
-fn w5_does_not_see_a_member_dependency_under_another_key() {
-    // covers: 0002 AC-6, W5.
-    // Gap: the key is the dependency name. A member renamed with `package = "pool"` is not a member name, so the
-    // forbidden pair pool-config -> pool passes, and the allowed pair renamed the same way is reported as missing.
+fn w5_follows_a_member_dependency_under_another_key() {
+    // covers: 0002 AC-6, W5: a member renamed with `package = "pool"` is still the package pool (review M3).
     let f = good_tree("ws_w5_rename");
     f.replace(
         "crates/pool-config/Cargo.toml",
         "serde = \"1\"\n",
         "serde = \"1\"\ndaemon = { package = \"pool\", path = \"../../apps/pool\" }\n",
     );
-    f.check("workspace", &[]).assert_ok("workspace");
+    f.check("workspace", &[]).assert_problem(
+        "workspace",
+        "W5",
+        &[
+            "crates/pool-config/Cargo.toml",
+            "pool-config -> pool",
+            "not allowed",
+        ],
+    );
 
+    f.replace(
+        "crates/pool-config/Cargo.toml",
+        "daemon = { package = \"pool\", path = \"../../apps/pool\" }\n",
+        "",
+    );
     f.replace(
         "apps/pool/Cargo.toml",
         "pool-config = {",
         "config = { package = \"pool-config\",",
     );
+    f.check("workspace", &[]).assert_ok("workspace");
+}
+
+#[test]
+fn w5_sees_a_dependency_under_a_header_with_a_comment() {
+    // covers: 0002 AC-6, W5: `[dependencies] # runtime` is still the dependency table (review M3).
+    let f = good_tree("ws_w5_header_comment");
+    f.replace(
+        "crates/pool-config/Cargo.toml",
+        "[dependencies]\n",
+        "[dependencies] # runtime\npool = { path = \"../../apps/pool\" }\n",
+    );
+    f.check("workspace", &[]).assert_problem(
+        "workspace",
+        "W5",
+        &["pool-config -> pool", "not allowed"],
+    );
+}
+
+#[test]
+fn w5_sees_a_quoted_key_and_a_target_table_for_one_dependency() {
+    // covers: 0002 AC-6, W5: `"pool" = {...}` and `[target.'cfg(unix)'.dependencies.pool]` (review M3).
+    let f = good_tree("ws_w5_quoted");
+    f.replace(
+        "crates/pool-config/Cargo.toml",
+        "serde = \"1\"\n",
+        "serde = \"1\"\n\"pool\" = { path = \"../../apps/pool\" }\n",
+    );
+    f.append(
+        "crates/pool-config/Cargo.toml",
+        "\n[target.'cfg(unix)'.dependencies.pool]\npath = \"../../apps/pool\"\n",
+    );
     let out = f.check("workspace", &[]);
-    out.assert_problem("workspace", "W5", &["pool -> pool-config", "missing"]);
-    assert_eq!(out.problems().len(), 1, "{out}");
+    out.assert_problem("workspace", "W5", &["pool-config -> pool"]);
+    assert_eq!(out.problems().len(), 2, "one problem per spelling:\n{out}");
 }
 
 #[test]

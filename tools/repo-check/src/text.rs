@@ -17,13 +17,13 @@ pub struct TomlLine<'a> {
     pub text: &'a str,
 }
 
-/// Splits a manifest into its non empty, non comment lines, each tagged with its table. Header lines themselves are not returned.
+/// Splits a manifest into its non empty, non comment lines, each tagged with its table. A comment after a value or a header is cut first. Header lines themselves are not returned.
 pub fn toml_lines(text: &str) -> Vec<TomlLine<'_>> {
     let mut table = String::new();
     let mut out = Vec::new();
     for raw in text.lines() {
-        let line = raw.trim();
-        if line.is_empty() || line.starts_with('#') {
+        let line = strip_comment(raw).trim();
+        if line.is_empty() {
             continue;
         }
         if let Some(name) = table_header(line) {
@@ -38,8 +38,45 @@ pub fn toml_lines(text: &str) -> Vec<TomlLine<'_>> {
     out
 }
 
-/// Returns the table name of a header line `[name]` or `[[name]]`, without spaces around the name.
-pub fn table_header(line: &str) -> Option<String> {
+/// Cuts a TOML comment: the first `#` that is not inside a basic (`"..."`) or literal (`'...'`) string, and everything after it.
+pub fn strip_comment(line: &str) -> &str {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    for (index, c) in line.char_indices() {
+        match quote {
+            Some('"') if escaped => escaped = false,
+            Some('"') if c == '\\' => escaped = true,
+            Some(q) if c == q => quote = None,
+            Some(_) => {}
+            None if c == '"' || c == '\'' => quote = Some(c),
+            None if c == '#' => return &line[..index],
+            None => {}
+        }
+    }
+    line
+}
+
+/// Splits a dotted TOML key, such as `target.'cfg(unix)'.dependencies.pool`, into its parts, with spaces around each part and quotes removed. A dot inside quotes does not split.
+pub fn dotted_parts(key: &str) -> Vec<String> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    for c in key.chars() {
+        match quote {
+            Some(q) if c == q => quote = None,
+            Some(_) => current.push(c),
+            None if c == '"' || c == '\'' => quote = Some(c),
+            None if c == '.' => parts.push(std::mem::take(&mut current).trim().to_string()),
+            None => current.push(c),
+        }
+    }
+    parts.push(current.trim().to_string());
+    parts
+}
+
+/// Returns the parts of the table name of a header line `[name]` or `[[name]]`. A trailing comment must already be cut.
+pub fn table_parts(line: &str) -> Option<Vec<String>> {
+    let line = line.trim();
     let inner = line
         .strip_prefix("[[")
         .and_then(|rest| rest.strip_suffix("]]"))
@@ -47,12 +84,40 @@ pub fn table_header(line: &str) -> Option<String> {
             line.strip_prefix('[')
                 .and_then(|rest| rest.strip_suffix(']'))
         })?;
-    let name: String = inner
-        .split('.')
-        .map(str::trim)
-        .collect::<Vec<_>>()
-        .join(".");
-    if name.is_empty() { None } else { Some(name) }
+    let parts = dotted_parts(inner);
+    if parts.iter().any(String::is_empty) {
+        None
+    } else {
+        Some(parts)
+    }
+}
+
+/// Returns the table name of a header line `[name]` or `[[name]]`, its parts joined by dots without quotes or spaces. A trailing comment must already be cut.
+pub fn table_header(line: &str) -> Option<String> {
+    table_parts(line).map(|parts| parts.join("."))
+}
+
+/// Splits the key at the start of a line from the rest: a quoted key up to its closing quote, a bare key up to the first dot, space or equals sign.
+pub fn leading_key(line: &str) -> Option<(String, &str)> {
+    let line = line.trim_start();
+    let first = line.chars().next()?;
+    if first == '"' || first == '\'' {
+        let close = line[1..].find(first)? + 1;
+        return Some((line[1..close].to_string(), line[close + 1..].trim_start()));
+    }
+    let end = line.find(['.', ' ', '\t', '=']).unwrap_or(line.len());
+    if end == 0 {
+        return None;
+    }
+    Some((line[..end].to_string(), line[end..].trim_start()))
+}
+
+/// Returns the text of a quoted TOML string at the start of `value`.
+pub fn string_value(value: &str) -> Option<String> {
+    let value = value.trim_start();
+    let quote = value.chars().next().filter(|c| *c == '"' || *c == '\'')?;
+    let close = value[1..].find(quote)? + 1;
+    Some(value[1..close].to_string())
 }
 
 /// Splits `key = value` into a trimmed key and a trimmed value.
@@ -151,6 +216,52 @@ mod tests {
     #[test]
     fn code_spans_are_removed() {
         assert_eq!(strip_code_spans("a `b` c `d"), "a  c `d");
+    }
+
+    #[test]
+    fn comments_are_cut_outside_strings() {
+        assert_eq!(strip_comment("[dependencies] # runtime"), "[dependencies] ");
+        assert_eq!(
+            strip_comment("workspace = true # inherit"),
+            "workspace = true "
+        );
+        assert_eq!(strip_comment(r#"a = "x # y" # z"#), r#"a = "x # y" "#);
+        assert_eq!(strip_comment("a = 'x # y'"), "a = 'x # y'");
+        assert_eq!(
+            strip_comment(r#"a = "q\" # in" # out"#),
+            r#"a = "q\" # in" "#
+        );
+    }
+
+    #[test]
+    fn dotted_keys_keep_quoted_dots() {
+        assert_eq!(
+            table_parts("[target.'cfg(unix)'.dependencies.pool]"),
+            Some(vec![
+                "target".to_string(),
+                "cfg(unix)".to_string(),
+                "dependencies".to_string(),
+                "pool".to_string()
+            ])
+        );
+        assert_eq!(
+            table_parts(r#"[ "a.b" . c ]"#),
+            Some(vec!["a.b".to_string(), "c".to_string()])
+        );
+        assert_eq!(table_parts("[a..b]"), None);
+    }
+
+    #[test]
+    fn leading_keys_and_strings() {
+        assert_eq!(
+            leading_key(r#""pool" = { path = "x" }"#),
+            Some(("pool".to_string(), r#"= { path = "x" }"#))
+        );
+        assert_eq!(
+            leading_key("pool.workspace = true"),
+            Some(("pool".to_string(), ".workspace = true"))
+        );
+        assert_eq!(string_value(" 'pool' }"), Some("pool".to_string()));
     }
 
     #[test]
