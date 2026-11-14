@@ -337,11 +337,20 @@ Document checks, `0002 AC-8`, `0002 AC-9`, `0002 AC-10`. Each line is `pool-repo
 
 ## Milestone 4: Proofs, inventory, documents and workstation evidence
 
-Build plan steps 8 and 9, on 2026-11-14, on macOS (workstation, not Linux and not CI). Commits `6cfef86` (step 9) and `7fb6052` (step 8: the `sbom` version check). Tools: `rustc 1.100.0`, `cargo-fuzz 0.13.2` on `rustc 1.101.0-nightly (5d8fec066 2026-10-16)` (toolchain `nightly-2026-10-17`), `cargo-cyclonedx 0.5.10` installed with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. Steps 7 and 10 add to this section later.
+Build plan steps 8 and 9, on 2026-11-14, on macOS (workstation, not Linux and not CI). Commits `6cfef86` (step 9) and `7fb6052` (step 8: the `sbom` version check). Tools: `rustc 1.100.0`, `cargo-fuzz 0.13.2` on `rustc 1.101.0-nightly (5d8fec066 2026-10-16)` (toolchain `nightly-2026-10-17`), `cargo-cyclonedx 0.5.10` installed with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. Step 7 is commit `6c03124` (`scripts/prove-checks.sh`), run by its developer before the merge at `f6675e3`. Step 10 is recorded under [Step 10: workstation evidence on the final tree](#step-10-workstation-evidence-on-the-final-tree) below.
 
 ### UI / manual
 
 None for steps 8 and 9. Item 12 of "Document corrections" waits for Build plan step 11 (`NOT_RUN`, `owner: lead`).
+
+The four remote items of Build plan step 11 are not run by a build session. Each is run by the lead with the steps under [Remote proof](index.md#remote-proof), and the checker records the addresses here afterward.
+
+| Item | Criterion | Remote steps | Result |
+|---|---|---|---|
+| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 2 and 6 | `NOT_RUN`, `owner: lead` |
+| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 3 | `NOT_RUN`, `owner: lead` |
+| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
+| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 1 and 4 | `NOT_RUN`, `owner: lead` |
 
 ### Commands
 
@@ -361,7 +370,26 @@ Run from the repository root.
 | `scripts/check.sh fmt clippy test deny` and `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | exit 0 | exit 0, four `== ok:` lines and the summary; 134 tests passed, 0 failed; both `cargo deny` runs `advisories ok, bans ok, licenses ok, sources ok`; `configuration valid`, exit 0 | pass |
 | `scripts/check.sh all` on `78c9dab` (this branch merged with `main`, milestone 3 included) | exit 0 | exit 0, summary `ok` for `fmt`, `clippy`, `test`, `deny`, `guards`, `docs`; 205 tests passed (134 workspace, 71 `pool-repo-check`); `pool-repo-check docs: ok`, so rule D1 accepts every link written in step 9 | pass (step 10 repeats it on the final tree) |
 
-Not run in these steps: `scripts/prove-checks.sh` (step 7) and the final tree runs of step 10.
+Not run in steps 8 and 9: `scripts/prove-checks.sh` (step 7) and the final tree runs of step 10.
+
+### Step 10: workstation evidence on the final tree
+
+Build plan step 10, on 2026-11-14, on macOS 27.0.1, `arm64` (workstation, not Linux and not CI). Before the runs, commit `f58885f` removed the provisional skip of spec 0002 step 5 from `scripts/check.sh`: the function `repo_check_package_exists` and its three calls are gone, so `fmt`, `clippy` and `test` always run their `tools/repo-check` command. Every run below is on that commit, `f58885f38e1c46ae369ccdf96fe4831a3c282c06` (`git rev-parse HEAD`), with a clean tree. The commit that adds this record changes only documents; `scripts/check.sh docs` was run again on it (last row).
+
+Tools: `rustc 1.100.0 (0ef1bc386 2026-11-09)`; `cargo-deny 0.20.2`; `cargo-fuzz 0.13.2` on `rustc 1.101.0-nightly (5d8fec066 2026-10-16)` (toolchain `nightly-2026-10-17`); `cargo-cyclonedx 0.5.10` (it prints `cargo-cyclonedx-cyclonedx 0.5.10`), installed with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`; Docker server 29.9.2 (`docker info` exit 0); `git 2.54.0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | exit 0, `== ok:` for `fmt`, `clippy`, `test`, `deny`, `guards`, `docs`, no line saying a command was skipped | exit 0; summary `ok` for all six; 205 tests passed, 0 failed (134 workspace, 71 `pool-repo-check`); both `cargo deny` runs `advisories ok, bans ok, licenses ok, sources ok`; `pool-repo-check workspace: ok`, `ci: ok`, `docs: ok`; no `was skipped` line | pass |
+| `scripts/prove-checks.sh --with-linux-build` | 21 `PASS` lines, last line `all checks reject their bad change`, exit 0, `git status --short` empty | exit 0; `scripts/check.sh all` passed on the unchanged copy first; `PASS 1` to `PASS 21`, no `FAIL` and no `SKIPPED`; last line `all checks reject their bad change`; `git status --short` empty afterward | pass |
+| The matched text of each case in that run | the text the case table names | 1 `Diff in`; 2 `ptr_arg`; 3 `print_stdout`; 4 `test result: FAILED`; 5 `license is not explicitly allowed`; 6 `RUSTSEC-0000-0001`; 7 `cannot update the lock file`; 8 `W1 … zmij`; 9 `W2: crates/pool-core`; 10 `W3 … std::thread`; 11 `W4`; 12 `W5 … pool-config -> pool`; 13 `C1 … actions/checkout@v7`; 14 `C2 … job documents`; 15 `D1 … docs/missing-file.md`; 16 `D2 … no-such-heading`; 17 `D3`; 18 `D5` for the made up ID of line K; 19 `D6 … SEC-14`; 20 `test result: FAILED` in the container; 21 `W7` | pass |
+| `scripts/check.sh fuzz` (60 seconds) | exit 0, no file under `crates/pool-config/fuzz/artifacts/validate/` | exit 0, `Done 1774761 runs in 61 second(s)`, `== ok: fuzz`; `find crates/pool-config/fuzz/artifacts -type f` lists nothing; `git status --short` empty | pass |
+| `scripts/check.sh sbom`, `target/sbom` removed first | exit 0, one file `target/sbom/pool.cdx.json`, clean tree | exit 0, `== ok: sbom`; one file, 20258 bytes; `git status --short` empty. The command it runs is unchanged from step 8: `cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx` | pass |
+| Content of `target/sbom/pool.cdx.json`, compared with `tools/repo-check/baseline/lock-packages.txt` | CycloneDX 1.5 for `pool`, a license for every component, the same names as the baseline | `bomFormat` `CycloneDX`, `specVersion` `1.5`, `metadata.component` `pool`; 17 components, none without a license; 18 `dependencies` entries; the 17 component names plus `pool` equal the 18 baseline names. The one difference in placement is the same as in step 8: `pool` is the document's subject, not a component | pass |
+| `scripts/check.sh linux-build` | exit 0, `runner:`, `host: aarch64-unknown-linux-gnu`, last line `linux build check passed` | exit 0; `runner: Darwin arm64`, `host: aarch64-unknown-linux-gnu`; 136 tests passed in the container; every fixture with the wanted exit; `cb184231b4af3e5c927eb46bb1fd7ad289b5a357a7c8b62a14d45fd6b92d3532  target/release/pool`; `pool 0.1.0`; `linux build check passed`, `== ok: linux-build` | pass (workstation reproduction, not the `0002 AC-5` evidence) |
+| On a `git clone` of `f58885f` in a scratch directory, outside the worktree: delete `tools/repo-check/Cargo.toml`, then run `scripts/check.sh fmt`, `scripts/check.sh clippy` and `scripts/check.sh test` one at a time | each check fails with exit 1 (a command of the check exited with a status other than 0, which [the check entry point](index.md#the-check-entry-point) counts as a failed check), and none says it skipped the command | `fmt` exit 1: `` `cargo metadata` exited with an error: error: manifest path `tools/repo-check/Cargo.toml` does not exist ``, `== FAILED: fmt`. `clippy` exit 1 and `test` exit 1, each after the workspace command passed: `` error: manifest path `tools/repo-check/Cargo.toml` does not exist ``, `== FAILED: clippy`, `== FAILED: test`. No `skipped` line. The scratch copy was removed | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | exit 0 | exit 0, `configuration valid` (run inside `scripts/check.sh all` through the tests and by hand) | pass |
+| `scripts/check.sh docs` with this record, the two `docs/index.md` rows and the observed versions in place | exit 0 | exit 0, `pool-repo-check docs: ok`, `== ok: docs`; every link and ID written here resolves | pass |
 
 ### Acceptance-criteria coverage
 
@@ -372,5 +400,30 @@ Not run in these steps: `scripts/prove-checks.sh` (step 7) and the final tree ru
 | `0002 AC-19` | Items 1 to 3, 5 to 11 and 13 applied in `6cfef86`; no old sentence left | pass for those items; item 4 is step 6 (milestone 3), item 12 waits for step 11, `NOT_RUN`, `owner: lead` |
 | `0002 AC-14` | `CONTRIBUTING.md` names `scripts/check.sh` and the path to `main` through a pull request whose checks passed | pass (completes the milestone 2 file half) |
 | `0002 AC-18` | `docs/plan/risk-register.md` links the [reviewer roster](../../engineering-standards.md#reviewer-roster) | link half pass; the roster rows are not part of steps 8 and 9 |
-| `0002 AC-11`, `0002 AC-17` | Steps 7 and 10 | not run |
-| Other criteria | Not part of steps 8 and 9 | not run |
+| `0002 AC-11` | Step 7 (`6c03124`), run again on the final tree: `scripts/prove-checks.sh --with-linux-build`, 21 `PASS`, `all checks reject their bad change`, clean tree | pass |
+| `0002 AC-17` | The [technology evaluation](../../research/technology-evaluation.md#adopted-in-scope-002) names every adopted tool and now lists the versions observed on `f58885f`; the [testing strategy](../../testing/strategy.md#ci-progression) names the seven checks, the fuzz rule and how PostgreSQL 18 is supplied | pass |
+
+Step 10 evidence on the final tree `f58885f`, by criterion:
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0002 AC-1` | `scripts/check.sh all` exit 0, six `== ok:` lines; usage and could not run rules were recorded in milestone 2 and are unchanged; a missing `tools/repo-check` now fails `fmt`, `clippy` and `test` instead of being skipped | pass |
+| `0002 AC-2` | `guards` passes, so rules C1 to C5 accept `ci.yml`; cases 13 and 14 rejected | pass (file); the run is `0002 AC-3` |
+| `0002 AC-3` | Remote steps 2 and 6 | `NOT_RUN`, `owner: lead` |
+| `0002 AC-4` | `deny` in `all` passes on both lockfiles with `cargo-deny 0.20.2`; cases 5, 6 and 7 rejected | pass |
+| `0002 AC-5` | Script half: `linux-build` passes on the workstation, W7 passes, case 21 rejected, case 20 rejected in the container. The CI half is remote step 3 | script half pass; CI half `NOT_RUN`, `owner: lead` |
+| `0002 AC-6` | `pool-repo-check workspace: ok`; 71 `pool-repo-check` tests pass; cases 8 to 12 and 21 rejected | pass |
+| `0002 AC-7` | `pool-repo-check ci: ok`; cases 13 and 14 rejected | pass |
+| `0002 AC-8` | `pool-repo-check docs: ok`, also after this record's links were added; cases 15 and 16 rejected | pass |
+| `0002 AC-9` | `docs` passes; case 17 rejected | pass |
+| `0002 AC-10` | `docs` passes; cases 18 and 19 rejected (case 19 with `--base`) | pass |
+| `0002 AC-11` | 21 `PASS` on `f58885f` | pass |
+| `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
+| `0002 AC-13` | File half: `guards` passes on `main.json`. Remote half: remote steps 1 and 4 | file half pass; remote half `NOT_RUN`, `owner: lead` |
+| `0002 AC-14` | `.github/pull_request_template.md` unchanged since milestone 2 and now listed in [docs/index.md](../../index.md#project-root); `CONTRIBUTING.md` names `scripts/check.sh` | pass |
+| `0002 AC-15` | 60 second `scripts/check.sh fuzz` on `f58885f`, no crash file | pass |
+| `0002 AC-16` | `scripts/check.sh sbom` on `f58885f`: one CycloneDX 1.5 file, a license for each component, names equal to the baseline, clean tree | pass |
+| `0002 AC-17` | See the row above | pass |
+| `0002 AC-18` | The [reviewer roster](../../engineering-standards.md#reviewer-roster) has 12 rows, one for each of the 12 owner roles in the risk register (each review the standards name is held by one of them); each row names its holder (`Not assigned` for all today) and says whether a fresh model may do the review; the risk register links to it | pass |
+| `0002 AC-19` | Items 1 to 11 and 13 applied (milestones 3 and 4); `docs` passes | pass for those items; item 12 waits for step 11, `NOT_RUN`, `owner: lead` |
+| `0002 AC-20` | `clippy` in `all` passes with the denied lints; cases 2 and 3 rejected | pass |

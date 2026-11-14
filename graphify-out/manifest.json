@@ -108,10 +108,10 @@
     "semantic_hash": "700e37e9da7239f6fdfc8e5e0f50646e"
   },
   "docs/index.md": {
-    "mtime": 1794659447.9254224,
-    "seen": 1794659470.0807948,
+    "mtime": 1794660299.9711268,
+    "seen": 1794660309.630393,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "d03d6caaabbfc0b3d8b33dba2acd4aa8"
+    "semantic_hash": "a8afb5cf2ae006416ffd48cf643645a8"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -252,10 +252,10 @@
     "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
   },
   "docs/research/technology-evaluation.md": {
-    "mtime": 1794659447.9976392,
-    "seen": 1794659470.080797,
+    "mtime": 1794660299.9716043,
+    "seen": 1794660309.630399,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "5f2f4f09b434267c3a2cee845b545f23"
+    "semantic_hash": "d187d1e5d937782c500f2a0662df069e"
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794657721.7350848,
@@ -558,10 +558,10 @@
     "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
   },
   "docs/specs/0002-standards-and-tooling/verify.md": {
-    "mtime": 1794660211.2065492,
-    "seen": 1794660212.5525298,
+    "mtime": 1794660299.9719794,
+    "seen": 1794660309.6304,
     "ast_hash": "",
-    "semantic_hash": "2af6fe17c3e4349089dfdc62517c6617"
+    "semantic_hash": "4eb0edaeee7b1d5b53603a8e547c0c55"
   },
   "Cargo.toml": {
     "mtime": 1794658748.1588957,
