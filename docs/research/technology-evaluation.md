@@ -99,7 +99,7 @@ The Linux builder image is `rust:1.100.0-slim-bookworm`, index digest `sha256:7c
 
 ## Adopted in scope 002
 
-Scope 002 adopts tools, not product dependencies. `pool` and `pool-config` gain none. The decisions are in [spec 0002](../specs/0002-standards-and-tooling/index.md), with the alternatives in its [rationale](../specs/0002-standards-and-tooling/rationale.md#decisions-and-runner-ups). This is the review the [adoption gate](#adoption-gate) asks for, done on 2026-11-14 in a scratch directory outside the repository. What was run there and what was only read is listed under [evidence gathered](../specs/0002-standards-and-tooling/rationale.md#evidence-gathered). The versions the developer observes in the real build are added below when the build is done.
+Scope 002 adopts tools, not product dependencies. `pool` and `pool-config` gain none. The decisions are in [spec 0002](../specs/0002-standards-and-tooling/index.md), with the alternatives in its [rationale](../specs/0002-standards-and-tooling/rationale.md#decisions-and-runner-ups). This is the review the [adoption gate](#adoption-gate) asks for, done on 2026-11-14 in a scratch directory outside the repository. What was run there and what was only read is listed under [evidence gathered](../specs/0002-standards-and-tooling/rationale.md#evidence-gathered). The versions the developer observed in the real build are listed at the end of this section.
 
 | Tool | Version | Purpose | License | Native code | Cost at run time | Alternative |
 |---|---|---|---|---|---|---|
