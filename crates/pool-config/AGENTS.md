@@ -11,6 +11,7 @@ The library that decides whether a configuration file is valid. It depends on no
 | `src/lib.rs` | `validate`, `ValidatedConfig`, `Rejection`, `Finding`, `FindingCode`, `Location`, and the unit tests |
 | `tests/validate.rs` | Every fixture and every in memory case through `validate` |
 | `tests/fixtures/*.toml` | The shared fixtures, also read by the `pool` tests |
+| `fuzz/` | The fuzz package `pool-config-fuzz` with the target `validate`. It is outside the workspace and has its own lockfile ([spec 0002](../../docs/specs/0002-standards-and-tooling/index.md#fuzz-harness)) |
 
 ## Commands
 
@@ -18,6 +19,12 @@ Run only this package's tests:
 
 ```bash
 cargo test -p pool-config --locked
+```
+
+Run the fuzz target for 60 seconds (needs `cargo-fuzz` 0.13.2 and the toolchain `nightly-2026-10-17`):
+
+```bash
+scripts/check.sh fuzz
 ```
 
 ## Conventions

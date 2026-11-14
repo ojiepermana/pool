@@ -1,11 +1,11 @@
 # POOL agent guide
 
-POOL is a PostgreSQL 18 proxy, session pooler and cluster operations project in Rust. The current repository contains the planning package and the first workspace slice (scope 001: `apps/pool`, `crates/pool-config` and the offline `pool check-config` command), not an implemented proxy. The user asked for scope 001 on 2026-11-14 and nothing beyond it. Begin further implementation only when explicitly requested.
+POOL is a PostgreSQL 18 proxy, session pooler and cluster operations project in Rust. The current repository contains the planning package, the first workspace slice (scope 001: `apps/pool`, `crates/pool-config` and the offline `pool check-config` command) and the required checks of scope 002 (`scripts/check.sh`, `tools/repo-check`, `deny.toml` and the CI definition), not an implemented proxy. The user asked for scope 001 and then scope 002 on 2026-11-14 and nothing beyond them. Begin further implementation only when explicitly requested.
 
 ## Workflow
 
 1. Read [scope](docs/scope/index.md) and the relevant PRD from the [documentation index](docs/index.md). Before architecture or boundary changes, read [spec 0001](docs/specs/0001-initial-architecture/index.md) and the owning feature spec.
-2. Inspect the actual code, manifest, Git state and environment before relying on documentation. The Cargo workspace holds only the `pool` and `pool-config` packages, and there is no CI yet. Do not report a planned command as an executed check.
+2. Inspect the actual code, manifest, Git state and environment before relying on documentation. The Cargo workspace holds only the `pool` and `pool-config` packages. CI is defined in `.github/workflows/ci.yml`, and each of its jobs runs `scripts/check.sh <name>`, which you can run yourself ([spec 0002](docs/specs/0002-standards-and-tooling/index.md#the-check-entry-point)). Do not report a planned command as an executed check.
 3. For implementation, define the authorized slice, acceptance criteria and necessary tests before editing. The build approach is Tracer Bullet, one real path through the system before breadth. Workflow depth is GA: behavior verification, tests, fresh review and documentation.
 4. Apply [engineering standards](docs/engineering-standards.md). For protocol/auth/session work also read [protocol analysis](docs/research/protocol-analysis.md) and [security requirements](docs/security/security-requirements.md). For promotion/recovery/HA read [failover and recovery](docs/architecture/failover-recovery.md) and [threat model](docs/security/threat-model.md).
 5. Validate against real PostgreSQL and the declared profile, record evidence, and update scope/status without claiming unsupported capabilities. Public performance claims need [benchmark methodology](docs/testing/benchmark-plan.md).
@@ -32,6 +32,7 @@ Each rule below is owned by the linked file; edit it there.
 - Neither package opens a socket or starts a thread or async runtime, and `apps/pool-cli`, `crates/pool-protocol`, `crates/pool-core` and `crates/pool-control` do not exist yet. The checks are `0001 AC-12` and `0001 AC-13` in [spec 0001](docs/specs/0001-initial-architecture/index.md#requirements).
 - Configuration keys, exit status with command output, and log events follow the [shared conventions](docs/engineering-standards.md#shared-conventions). Public names come from the [glossary](docs/glossary.md).
 - Tests use the built in `cargo test` harness only, in the files [spec 0001](docs/specs/0001-initial-architecture/index.md#tests-and-who-owns-them) assigns to each package. The checks you can run today are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- `tools/repo-check/` (the `pool-repo-check` program) and `crates/pool-config/fuzz/` are packages outside the workspace, each with its own lockfile. A change to a locked package set, to a dependency between workspace packages or to the CI files also changes a baseline under `tools/repo-check/baseline/` or the rule text in [spec 0002](docs/specs/0002-standards-and-tooling/index.md#the-repository-check-program).
 - A commit names the Build plan step it implements ([change path](docs/specs/0001-initial-architecture/index.md#change-path)).
 
 ## Context files
