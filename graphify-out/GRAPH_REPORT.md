@@ -1,226 +1,153 @@
 # Graph Report - pool  (2026-11-14)
 
 ## Corpus Check
-- 69 files · ~45,939 words
+- 40 files · ~74,817 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 504 nodes · 1028 edges · 30 communities
-- Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 277 edges (avg confidence: 0.87)
-- Token cost: 144,733 input · 0 output
+- 591 nodes · 1521 edges · 15 communities
+- Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 411 edges (avg confidence: 0.87)
+- Token cost: 289,222 input · 82,073 output
 
 ## Community Hubs (Navigation)
-- Feature Matrix and Invariants
 - Agent Guides and Workflow
-- Control Journal and Deployment
-- Decision Ledger and Assumptions
-- Security Features and Requirements
-- Protocol Analysis and Contract
-- Roadmap and Delivery Slices
-- Repository Layout and Crates
-- SQL Routing PRD
-- Connection Pooling and Pool Identity
-- Promotion and Split Brain Risks
-- Cluster Health and Replica Lag
-- Milestones and Critical Path
-- Deployment, Failover and Fencing
-- Technology Evaluation
-- Pgpool Baseline and Config Coverage
-- Feasibility Study
-- Pgpool Option Families
+- Cluster and Control Plane Records
+- Security and Engineering Standards
+- Stack, Competitors and Feasibility
+- Pooling, Data Plane and Cancellation
+- Decision Ledger and Failover Authority
 - Core Safety Invariants
-- Data Plane and Admission
-- Competitor Analysis
-- Architecture Overview and Leases
-- Control Plane Records
-- Fencing Provider Risks
-- Fail Closed Routing
-- Dependency Supply Chain
-- Protocol Engine
-- Transaction and Prepared Statements
-- Replication Modes
-- Cancellation Safety
+- Protocol Contract and Core MVP
+- Feature Inventory and Parity
+- Health Monitoring and Admin API
+- Roadmap, Milestones and Slices
+- Repository Layout and Crates
+- Core Proxy and Pooling PRDs
+- Operation Journal and Idempotency
+- Benchmark KPIs and Gates
 
 ## God Nodes (most connected - your core abstractions)
-1. `Feature inventory and parity matrix` - 42 edges
-2. `Scope: POOL, order and status index` - 32 edges
-3. `Documentation index` - 31 edges
-4. `Security requirements` - 30 edges
-5. `Spec 0001. POOL initial architecture` - 27 edges
-6. `Risk register` - 27 edges
-7. `Testing strategy` - 26 edges
-8. `pool README` - 22 edges
-9. `Threat model` - 22 edges
-10. `Planning assumptions and decisions` - 19 edges
+1. `Documentation index` - 74 edges
+2. `Glossary` - 49 edges
+3. `Feature inventory and parity matrix` - 47 edges
+4. `Testing strategy` - 43 edges
+5. `Scope: POOL, order and status index` - 42 edges
+6. `Spec 0001. POOL initial architecture` - 38 edges
+7. `Security requirements` - 37 edges
+8. `Risk register` - 35 edges
+9. `4. One real primary path (planned)` - 26 edges
+10. `Health monitoring PRD` - 25 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Highest initial risk priorities (identity/state, unsafe routing, cancel races, uncertain outcomes, fencing)` --semantically_similar_to--> `POOL safety invariants`  [INFERRED] [semantically similar]
-  docs/plan/risk-register.md → AGENTS.md
 - `Invariant: automatic failover and result caching stay disabled until approved and proven` --semantically_similar_to--> `SEC-10 Disable automatic promotion and result caching by default`  [INFERRED] [semantically similar]
-  AGENTS.md → docs/security/security-requirements.md
-- `Credentials, cancellation secrets and sensitive SQL excluded from default telemetry` --semantically_similar_to--> `SEC-11 Logs/metrics/traces free of credentials, cancellation keys and raw SQL`  [INFERRED] [semantically similar]
   AGENTS.md → docs/security/security-requirements.md
 - `Administration requires authentication and authorization` --semantically_similar_to--> `SEC-6 Authenticate all administration`  [INFERRED] [semantically similar]
   AGENTS.md → docs/security/security-requirements.md
-- `License and source reuse policy` --semantically_similar_to--> `Competitor reference roles recommendation`  [INFERRED] [semantically similar]
-  docs/research/pgpool-baseline.md → docs/research/competitor-analysis.md
+- `Credentials, cancellation secrets and sensitive SQL excluded from default telemetry` --semantically_similar_to--> `SEC-11 Logs/metrics/traces free of credentials, cancellation keys and raw SQL`  [INFERRED] [semantically similar]
+  AGENTS.md → docs/security/security-requirements.md
+- `Engineering Workflow` --semantically_similar_to--> `Agent Workflow`  [INFERRED] [semantically similar]
+  docs/engineering-standards.md → AGENTS.md
+- `GA workflow depth` --semantically_similar_to--> `GA workflow depth (behavior verification, tests, fresh review, documentation)`  [INFERRED] [semantically similar]
+  docs/scope/index.md → AGENTS.md
 
 ## Hyperedges (group relationships)
-- **Competitor reference set for POOL comparisons** — docs_research_pgpool_baseline_pgpool_ii_4_7_3, docs_research_competitor_analysis_pgbouncer, docs_research_competitor_analysis_pgcat, docs_research_competitor_analysis_odyssey, docs_research_competitor_analysis_haproxy [EXTRACTED 1.00]
-- **Initial workspace: two applications and four internal crates** — docs_repository_structure_apps_pool, docs_repository_structure_apps_pool_cli, docs_repository_structure_pool_protocol, docs_repository_structure_pool_config, docs_repository_structure_pool_core, docs_repository_structure_pool_control [EXTRACTED 1.00]
-- **Deferred features outside the current release queue** — docs_scope_012_multiple_proxy_authority, docs_scope_013_checked_online_recovery, docs_scope_014_advanced_pooling_and_routing, docs_scope_015_optional_result_cache, docs_scope_016_additional_replication_modes, docs_scope_017_administrative_dashboard [EXTRACTED 1.00]
+- **Write Authority Verification (approved writer plus fresh matching observation)** — docs_glossary_approved_writer, docs_glossary_eligible_primary, docs_glossary_fresh, docs_glossary_observation, docs_glossary_topology_epoch, docs_feature_matrix_f_065, docs_plan_risk_register_r_19 [INFERRED 0.85]
+- **Release Gate Ladder (Walking slice to Eventual parity)** — docs_plan_milestones_walking_slice, docs_plan_milestones_core_mvp, docs_plan_milestones_routing_preview, docs_plan_milestones_v1, docs_plan_milestones_v1_5, docs_plan_milestones_v2, docs_plan_milestones_eventual_parity [EXTRACTED 1.00]
+- **POOL Workspace Units (two apps and four internal crates)** — docs_repository_structure_apps_pool, docs_repository_structure_apps_pool_cli, docs_repository_structure_pool_protocol, docs_repository_structure_pool_config, docs_repository_structure_pool_core, docs_repository_structure_pool_control [EXTRACTED 1.00]
 - **Foundation phase features (stack, standards, data model)** — docs_scope_001_stack_and_workspace, docs_scope_002_standards_and_tooling, docs_scope_003_control_and_session_data_model [EXTRACTED 1.00]
 - **V1 tracer bullet vertical slices 1 to 7 plus V1 gate** — docs_scope_004_one_real_primary_path, docs_scope_005_clean_session_reuse, docs_scope_006_protocol_breadth_and_cancellation, docs_scope_007_restricted_replica_sessions, docs_scope_008_health_diagnostics_and_drain, docs_scope_009_safe_topology_administration, docs_scope_010_fenced_manual_promotion, docs_scope_011_release_qualification_harness [EXTRACTED 1.00]
+- **Deferred features outside the current release queue** — docs_scope_012_multiple_proxy_authority, docs_scope_013_checked_online_recovery, docs_scope_014_advanced_pooling_and_routing, docs_scope_015_optional_result_cache, docs_scope_016_additional_replication_modes, docs_scope_017_administrative_dashboard [EXTRACTED 1.00]
+- **Competitor reference set for POOL comparisons** — docs_research_pgpool_baseline_pgpool_ii_4_7_3, docs_research_competitor_analysis_pgbouncer, docs_research_competitor_analysis_pgcat, docs_research_competitor_analysis_odyssey, docs_research_competitor_analysis_haproxy [EXTRACTED 1.00]
 - **Cancellation isolation across protocol, threat model and driver tests** — docs_research_protocol_analysis_variable_length_cancellation_keys, docs_research_protocol_analysis_virtual_cancellation_keys, docs_testing_compatibility_matrix_libpq_psql [INFERRED 0.85]
-- **Late cancellation safety: feature, risk and threat** — docs_feature_matrix_f_018_cancelrequest_and_backendkeydata, docs_plan_risk_register_r_05_incorrect_reuse_or_late_cancel, docs_security_threat_model_t_05_late_cancellation_affects_another_user [INFERRED 0.85]
+- **Late cancellation safety: feature, risk and threat** — docs_feature_matrix_f_018_cancelrequest_and_backendkeydata, docs_security_threat_model_t_05_late_cancellation_affects_another_user [INFERRED 0.85]
 - **Fenced manual promotion flow** — docs_architecture_failover_recovery_promotion_operation_stages, docs_architecture_failover_recovery_fencing_contract, docs_architecture_failover_recovery_all_writer_barrier, docs_architecture_control_plane_fencereceipt, docs_architecture_control_plane_approvedtopology, docs_architecture_control_plane_operation, docs_architecture_deployment_independent_fencing_authority [INFERRED 0.85]
-- **Fenced manual promotion and split brain prevention across invariants, features, risks, requirements and threats** — agents_promotion_requires_verified_fencing, docs_feature_matrix_f_067_manual_plan_and_promotion, docs_feature_matrix_f_069_old_primary_fencing, docs_feature_matrix_f_070_split_brain_prevention, docs_plan_risk_register_r_08_split_brain, docs_plan_risk_register_r_20_fencing_provider_unavailable, docs_security_security_requirements_sec_7_persist_intent_before_external_effect, docs_security_security_requirements_sec_9_allowlisted_fencing_recovery_adapters, docs_security_threat_model_t_10_split_brain_or_stale_leader [INFERRED 0.85]
-- **Fenced manual promotion safety flow** — docs_prd_007_manual_failover_promotionplan, docs_prd_007_manual_failover_fencereceipt, docs_prd_007_manual_failover_durable_intent_and_reconciliation, docs_prd_007_manual_failover_rpo_disclosure, docs_prd_007_manual_failover_retire_candidate_replica_leases, docs_prd_006_cluster_management_approved_writer_epoch_quarantine, docs_plan_decision_ledger_authoritative_write_barrier, docs_plan_dependencies_independent_fencing_provider [INFERRED 0.85]
+- **Fenced manual promotion and split brain prevention across invariants, features, risks, requirements and threats** — agents_promotion_requires_verified_fencing, docs_feature_matrix_f_067_manual_plan_and_promotion, docs_feature_matrix_f_069_old_primary_fencing, docs_feature_matrix_f_070_split_brain_prevention, docs_security_security_requirements_sec_7_persist_intent_before_external_effect, docs_security_security_requirements_sec_9_allowlisted_fencing_recovery_adapters, docs_security_threat_model_t_10_split_brain_or_stale_leader [INFERRED 0.85]
+- **Fenced manual promotion safety flow** — docs_prd_007_manual_failover_promotionplan, docs_prd_007_manual_failover_durable_intent_and_reconciliation, docs_prd_007_manual_failover_rpo_disclosure, docs_prd_007_manual_failover_retire_candidate_replica_leases, docs_prd_006_cluster_management_approved_writer_epoch_quarantine, docs_plan_decision_ledger_authoritative_write_barrier [INFERRED 0.85]
 - **Lease ownership and cancellation safety across core proxy, pooling and HA** — docs_prd_001_core_proxy_lease, docs_prd_001_core_proxy_cancellationentry, docs_prd_001_core_proxy_cancellation_through_lease_owner, docs_plan_decision_ledger_private_backend_keys, docs_prd_002_connection_pooling_reset_before_reuse, docs_prd_008_high_availability_cancellation_dispatch_to_owning_proxy [INFERRED 0.85]
 - **Restricted replica read routing: login selection, eligibility, pinned admission, no fallback** — docs_plan_decision_ledger_routing_decision, docs_prd_003_sql_routing_select_backend, docs_prd_003_sql_routing_admit_on_pinned_backend, docs_prd_003_sql_routing_restricted_replica_profile, docs_prd_004_load_balancing_eligibility_filter, docs_prd_004_load_balancing_weighted_round_robin, docs_prd_004_load_balancing_primary_fallback_disabled, docs_prd_005_health_monitoring_unknown_lag [INFERRED 0.85]
 - **Session pinned lease model** — docs_architecture_connection_pooling_session_pooling, docs_architecture_sql_routing_login_time_backend_selection, docs_architecture_data_plane_initial_admission, docs_architecture_data_plane_operation_admission, docs_architecture_sql_routing_no_primary_fallback, docs_architecture_data_plane_no_retry_after_dispatch, docs_specs_0001_initial_architecture_index_virtual_cancellation_credentials [INFERRED 0.85]
-- **Automatic failover and result caching disabled by default** — agents_automatic_failover_and_result_caching_disabled, docs_feature_matrix_f_075_automatic_failover, docs_feature_matrix_f_088_optional_memory_cache, docs_security_security_requirements_sec_10_disable_automatic_promotion_and_caching, docs_feature_matrix_initial_exclusions [INFERRED 0.95]
+- **Automatic failover and result caching disabled by default** — agents_automatic_failover_and_result_caching_disabled, docs_feature_matrix_f_088_optional_memory_cache, docs_security_security_requirements_sec_10_disable_automatic_promotion_and_caching, docs_feature_matrix_initial_exclusions [INFERRED 0.95]
 
-## Communities (30 total, 0 thin omitted)
+## Communities (15 total, 0 thin omitted)
 
-### Community 0 - "Feature Matrix and Invariants"
+### Community 0 - "Agent Guides and Workflow"
+Cohesion: 0.07
+Nodes (82): POOL agent guide (AGENTS.md), Agent workflow (read scope, inspect reality, define slice, apply standards, validate, update graph), Apache 2.0 project license, Documentation Ownership Roles (scope, specs, PRDs, ADRs), Documentation ownership model (scope, specs, PRDs, ADRs, research), GA workflow depth (behavior verification, tests, fresh review, documentation), Knowledge graph refresh before commit (graphify-out kept current), Tracer Bullet Build Approach (+74 more)
+
+### Community 1 - "Cluster and Control Plane Records"
+Cohesion: 0.05
+Nodes (66): Cluster management, Authenticated SQL health probes, Configured backend registration, Drain, attach and quarantine operations, Backend health state machine (Unknown, Healthy, Suspect, Unavailable, Recovering), Replication freshness and byte lag, Weighted round robin replica selection, Pool key (pool identity) (+58 more)
+
+### Community 2 - "Security and Engineering Standards"
+Cohesion: 0.05
+Nodes (63): Administration requires authentication and authorization, Credentials, cancellation secrets and sensitive SQL excluded from default telemetry, Safe first party Rust and bounded resources, Dependency and Configuration Change Rules, Rust and Runtime Standards, Security and Review Requirements, F-069 Old primary fencing (external verified exclusion), F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping) (+55 more)
+
+### Community 3 - "Stack, Competitors and Feasibility"
+Cohesion: 0.05
+Nodes (57): Technology Stack (Tokio, rustls, pg_query, Axum, SQLite journal), Configuration features F-115 to F-119, F-117 Pgpool Parameter Coverage (207 sample spellings), F-117 Pgpool parameter coverage (207 sample spellings mapped), Competitor analysis, Compare only equivalent pool modes at pinned releases, HAProxy (general TCP/HTTP proxy, GPL), Odyssey (C multithreaded pooler, BSD 3 Clause) (+49 more)
+
+### Community 4 - "Pooling, Data Plane and Cancellation"
+Cohesion: 0.07
+Nodes (53): Virtual Cancellation Model, Separate Frontend and Backend Identity, Connection pooling, Backend cleanup and reset (rollback, DISCARD ALL, idle ReadyForQuery), Backend connection lifecycle state machine (Connecting, Idle, Leased, Cleaning, Draining, Closed), Pool limits and operations, Statement pooling (not planned for V1), Data plane (+45 more)
+
+### Community 5 - "Decision Ledger and Failover Authority"
 Cohesion: 0.06
-Nodes (63): Invariant: automatic failover and result caching stay disabled until approved and proven, Invariant: health failure does not authorize promotion, Invariant: keep writes on the verified primary, Feature inventory and parity matrix, Balancing features F-048 to F-053, Cache features F-088 to F-093, Cluster features F-061 to F-066 (registry, topology), Coverage limits of the feature inventory (+55 more)
+Nodes (52): F-072 RPO and commit uncertainty (all-writer barrier, explicit unknown loss window), Fence Receipt, Policy Version, Write Barrier, Planning assumptions and decisions, Apache 2.0 license, Persisted approved writer, epoch and quarantine, Authoritative barrier across every write path (+44 more)
 
-### Community 1 - "Agent Guides and Workflow"
-Cohesion: 0.07
-Nodes (46): POOL agent guide (AGENTS.md), Agent workflow (read scope, inspect reality, define slice, apply standards, validate, update graph), Apache 2.0 project license, Documentation ownership model (scope, specs, PRDs, ADRs, research), GA workflow depth (behavior verification, tests, fresh review, documentation), Knowledge graph refresh before commit (graphify-out kept current), Tracer Bullet build approach, CLAUDE.md guidance for Claude Code (+38 more)
-
-### Community 2 - "Control Journal and Deployment"
-Cohesion: 0.07
-Nodes (46): Persisted approved writer, epoch and quarantine, Axum REST administration API plus CLI, First deployment: one proxy VM, primary and two replicas on Proxmox, SQLite journal for operations, audit and approved writer/epoch/quarantine, Durable operation journal, External prerequisites, Health and topology model, Independent fencing provider (+38 more)
-
-### Community 3 - "Decision Ledger and Assumptions"
-Cohesion: 0.07
-Nodes (42): Planning assumptions and decisions, Retry only before initial lease and ReadyForQuery exposure, Apache 2.0 license, Authoritative barrier across every write path, Manual failover first; automatic failover and cache disabled, GA verification depth for data safety features, Independent review resolutions (seven approved fixes), Operator map from verified principal and database to backend identity (+34 more)
-
-### Community 4 - "Security Features and Requirements"
+### Community 6 - "Core Safety Invariants"
 Cohesion: 0.08
-Nodes (37): Administration requires authentication and authorization, Credentials, cancellation secrets and sensitive SQL excluded from default telemetry, F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), F-101 TLS and mTLS verification, F-105 Administrative roles (viewer, operator, promoter, configuration), F-106 Audit and log redaction, F-107 Rate and resource limits (admission, frame and auth CPU budgets), F-108 Secure reload (validate entire generation before publication) (+29 more)
+Nodes (38): Invariant: automatic failover and result caching stay disabled until approved and proven, Invariant: fail closed on unknown role or unsafe routing, Invariant: health failure does not authorize promotion, POOL Safety Invariants, Invariant: never replay uncertain dispatched work, POOL: PostgreSQL 18 proxy, session pooler and cluster operations project in Rust, Invariant: preserve transaction and session ownership, Invariant: promotion requires a reviewed operation and independently verified fencing (+30 more)
 
-### Community 5 - "Protocol Analysis and Contract"
+### Community 7 - "Protocol Contract and Core MVP"
+Cohesion: 0.07
+Nodes (34): Invariant: close uncertain pooled state, F-030 Validation and reset (close uncertain sessions), Protocol Features (F-001 to F-022), Backend Login, Support Profile, Core MVP, R-01 Protocol incompatibility, Proposed stopping rules (+26 more)
+
+### Community 8 - "Feature Inventory and Parity"
 Cohesion: 0.09
-Nodes (26): Proposed stopping rules, PostgreSQL protocol analysis, Close uncertain sessions cleanup policy, Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk streaming, Extended Query and pipelining behavior, Independent backend credentials per mapped login identity, Proposed protocol limits (64 KiB startup, 16 MiB message) (+18 more)
+Nodes (34): Session Model (pinned backend lease), Feature inventory and parity matrix, Cache features F-088 to F-093, Cluster Features (F-061 to F-066), Inventory Coverage Limits, F-024 Transaction Mode (refused, session pooling only), F-024 Transaction mode pooling (refused; session pooling only), F-056 Primary Standby Role Observation (+26 more)
 
-### Community 6 - "Roadmap and Delivery Slices"
-Cohesion: 0.13
-Nodes (23): Tracer Bullet build approach, Routing preview milestone, V1.5 milestone (multiple proxies, external authority), Walking slice milestone, Roadmap, Delivery slices, Phase 0 Research and architecture, Phase 1 Foundation (+15 more)
+### Community 9 - "Health Monitoring and Admin API"
+Cohesion: 0.11
+Nodes (30): Health features F-054 to F-060, Axum REST administration API plus CLI, Health monitoring PRD, AC-1 Reachable wrong-role or wrong-cluster node cannot become eligible, AC-3 Expired observation refused at acquisition after publisher pause, Bounded authenticated probes with dedicated monitor role, Failure/recovery thresholds and flapping control, Health monitoring failure scenarios (SQL failure, revoked permission, clock jump, replay pause, primary isolation) (+22 more)
 
-### Community 7 - "Repository Layout and Crates"
-Cohesion: 0.19
-Nodes (18): TopologySnapshot, Protocol finite state machine, Repository proposal, apps/pool daemon, apps/pool-cli admin CLI, Documentation ownership, pool-config crate, pool-control crate (+10 more)
+### Community 10 - "Roadmap, Milestones and Slices"
+Cohesion: 0.11
+Nodes (28): HA Features (F-081 to F-087), Tracer Bullet build approach, Routing Preview, V1.5 Milestone, Walking Slice Milestone, R-21 Proxmox host correlated failure, R-24 Walking slice exceeds its estimate, Roadmap (+20 more)
 
-### Community 8 - "SQL Routing PRD"
-Cohesion: 0.20
-Nodes (17): SQL routing PRD, admit_on_pinned_backend(frame, session_state, classification, policy), Classification, classify(sql, parser_version), No primary fallback in V1, Primary profile sessions stay pinned, Restricted read only replica profile, RouteProfile (+9 more)
+### Community 11 - "Repository Layout and Crates"
+Cohesion: 0.23
+Nodes (22): Data Plane vs Control Plane Separation, Planned Architecture, ADR 0001. Initial architecture, Topology Snapshot, pool check-config Command, Repository proposal, apps/pool daemon, apps/pool-cli admin CLI (+14 more)
 
-### Community 9 - "Connection Pooling and Pool Identity"
-Cohesion: 0.20
-Nodes (14): Connection pooling, Backend cleanup and reset (rollback, DISCARD ALL, idle ReadyForQuery), Backend connection lifecycle state machine (Connecting, Idle, Leased, Cleaning, Draining, Closed), Pool key (pool identity), Statement pooling (not planned for V1), Transaction pooling (deferred), Durable approved writer authority, Initial admission boundary (+6 more)
+### Community 12 - "Core Proxy and Pooling PRDs"
+Cohesion: 0.14
+Nodes (20): Retry only before initial lease and ReadyForQuery exposure, Operator map from verified principal and database to backend identity, Private backend keys and virtual frontend cancellation credentials, Terminated SCRAM over TLS with optional mTLS and separate backend credentials, Core proxy PRD, Bounded admission, deadlines and graceful teardown, Cancellation forwarded only through the live lease owner, CancellationEntry (+12 more)
 
-### Community 10 - "Promotion and Split Brain Risks"
-Cohesion: 0.18
-Nodes (13): Invariant: promotion requires a reviewed operation and independently verified fencing, F-067 Manual plan and promotion (operator plan plus verified fence), F-070 Split brain prevention (mutation authority distinct from fencing), F-071 Uncertain promotion result (durable intent and reconciliation), F-072 RPO and commit uncertainty (all-writer barrier, explicit unknown loss window), Failover features F-067 to F-075, R-08 Split brain, R-09 Failover loses acknowledged commits (+5 more)
-
-### Community 11 - "Cluster Health and Replica Lag"
-Cohesion: 0.24
-Nodes (13): Cluster management, Authenticated SQL health probes, Configured backend registration, Backend health state machine (Unknown, Healthy, Suspect, Unavailable, Recovering), Replication freshness and byte lag, Weighted round robin replica selection, Observation record, Value sourcing table (+5 more)
-
-### Community 12 - "Milestones and Critical Path"
-Cohesion: 0.19
-Nodes (13): One daemon with separate modules plus separate CLI, Dependencies and critical path, Critical path (protocol state, auth identity, cleanup, routing semantics, promotion safety), Dependency boundaries (acyclic crate graph), Milestones, Core MVP milestone, Eventual parity milestone, Release practices (+5 more)
-
-### Community 13 - "Deployment, Failover and Fencing"
-Cohesion: 0.29
-Nodes (12): Deployment reference, Initial four VM lab, Independent fencing authority, Deployment ownership matrix, Failover and recovery, All-writer write barrier, Candidate and RPO policy, Fencing contract (allowlisted adapter) (+4 more)
-
-### Community 14 - "Technology Evaluation"
-Cohesion: 0.21
-Nodes (12): Rust technology evaluation, Dependency adoption gate, axum 0.8.9 (administration endpoints), Hybrid parser policy, pg_query 18.1.0 and libpg_query (PostgreSQL raw parser), proptest 1.12.0 (state and framing properties), rusqlite 0.42.0 (local operation journal store), rustls 0.23.46 (TLS) (+4 more)
-
-### Community 15 - "Pgpool Baseline and Config Coverage"
-Cohesion: 0.24
-Nodes (11): Configuration features F-115 to F-119, F-117 Pgpool parameter coverage (207 sample spellings mapped), Pgpool baseline, Baseline gaps (planning inventory, not parity certification), License and source reuse policy, PCP commands, SQL commands and pgpool_adm reference surface, Tagged sample and source manifest (V4_7_3), Pgpool configuration coverage inventory (+3 more)
-
-### Community 16 - "Feasibility Study"
-Cohesion: 0.18
-Nodes (11): Feasibility study, Automatic promotion (not ready for initial release), Go or no go milestones, Commercial and maintenance assumptions, Manual promotion (feasible with external dependencies), Query result caching (high uncertainty), Session pooling feasibility (high feasibility, high correctness risk), Transparent arbitrary read splitting (low confidence) (+3 more)
-
-### Community 17 - "Pgpool Option Families"
-Cohesion: 0.20
-Nodes (10): Pgpool Watchdog coordination, Connections and identity option family (48 options), Logs, files and reset option family (28 options), Relation metadata option family (6 options), Canonical runtime declaration census (RT-001 to RT-186), Source-only delta names (hidden aliases, health_check_test, replication_mode), Streaming and health option family (24 options), Streaming sample census (CFG-001 to CFG-207, 207 spellings) (+2 more)
-
-### Community 18 - "Core Safety Invariants"
+### Community 13 - "Operation Journal and Idempotency"
 Cohesion: 0.31
-Nodes (9): Invariant: close uncertain pooled state, POOL safety invariants, Invariant: never replay uncertain dispatched work, POOL: PostgreSQL 18 proxy, session pooler and cluster operations project in Rust, F-030 Validation and reset (close uncertain sessions), Highest initial risk priorities (identity/state, unsafe routing, cancel races, uncertain outcomes, fencing), R-03 Session state leakage, R-10 Ambiguous COMMIT replay (+1 more)
+Nodes (9): F-071 Uncertain promotion result (durable intent and reconciliation), Expected Generation, Operation (journaled administrative action), Request ID (idempotency key), R-18 Journal disk loss or replay, Operational security defaults, SEC-7 Persist administrative intent before an external effect, T-11 Journal tampering, loss or disk full (+1 more)
 
-### Community 19 - "Data Plane and Admission"
-Cohesion: 0.25
-Nodes (9): Pool limits and operations, Data plane, Frontend owner task, Operation admission boundary, Provisional resource defaults and backpressure, Application path sequence, Routing decision matrix, SQL classification through PostgreSQL 18 raw grammar (+1 more)
-
-### Community 20 - "Competitor Analysis"
-Cohesion: 0.47
-Nodes (9): Competitor analysis, Compare only equivalent pool modes at pinned releases, HAProxy (general TCP/HTTP proxy, GPL), Odyssey (C multithreaded pooler, BSD 3 Clause), PgBouncer (C event driven pooler, ISC), PgCat (Rust/Tokio routing proxy, MIT), Competitor reference roles recommendation, Pgpool-II 4.7.3 (selected baseline) (+1 more)
-
-### Community 21 - "Architecture Overview and Leases"
-Cohesion: 0.32
-Nodes (8): No automatic retry after dispatch, Future multi proxy deployment, Architecture overview, Failure behavior (no transparent failover, no implicit replay), Lease generation, Proposed public interfaces (FrameDecoder, SessionState, Lease, RouteDecision, ProbeObservation, OperationPlan), External etcd for future coordination, Per lease virtual cancellation credentials
-
-### Community 22 - "Control Plane Records"
-Cohesion: 0.52
-Nodes (7): Drain, attach and quarantine operations, Control plane, ApprovedTopology record, AuditEvent record, FenceReceipt record, Operation record, Local SQLite operation journal (single writer)
-
-### Community 23 - "Fencing Provider Risks"
-Cohesion: 0.33
-Nodes (7): F-069 Old primary fencing (external verified exclusion), Recovery features F-076 to F-080 (rejoin, pg_rewind, base backup), R-20 Fencing provider unavailable, Operational ownership boundaries, SEC-9 Allowlisted structured fencing/recovery adapters, Fencing infrastructure, T-09 Command injection through fencing/recovery hooks
-
-### Community 24 - "Fail Closed Routing"
-Cohesion: 0.40
-Nodes (6): Invariant: fail closed on unknown role or unsafe routing, F-033 SQL AST classification (PostgreSQL 18 grammar adapter), F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica), Routing features F-033 to F-047 (SQL classification, primary/replica), R-02 Incorrect SQL classification, T-06 Unsafe replica routing
-
-### Community 25 - "Dependency Supply Chain"
-Cohesion: 0.40
-Nodes (6): Safe first party Rust and bounded resources, R-16 Dependency drift or abandoned crate, R-17 License conflict or missing notices, SEC-13 Inventory dependencies and native components with notices and advisories, Residual risks, T-13 Dependency or native parser compromise
-
-### Community 26 - "Protocol Engine"
-Cohesion: 0.40
-Nodes (5): Protocol engine, Bounded frame validation, Authentication adapter (reviewed pgwire components), Transaction state tracking (ReadyForQuery status), Data and protocol safety rules
-
-### Community 27 - "Transaction and Prepared Statements"
-Cohesion: 0.50
-Nodes (4): Invariant: preserve transaction and session ownership, F-011 Prepared statements (session ownership, no cross backend replay), R-04 Prepared statement incompatibility, R-06 Transaction consistency change
-
-### Community 28 - "Replication Modes"
-Cohesion: 0.50
-Nodes (4): Pgpool baseline modes and POOL dispositions, native_replication and snapshot_isolation modes (deferred), streaming_replication mode (initial operating model), Replication and routing option family (17 options)
-
-### Community 29 - "Cancellation Safety"
-Cohesion: 1.00
-Nodes (3): F-018 CancelRequest and BackendKeyData (virtual per lease keys), R-05 Incorrect reuse or late cancel, T-05 Late cancellation affects another user
+### Community 14 - "Benchmark KPIs and Gates"
+Cohesion: 0.67
+Nodes (3): Failover safety KPI (zero unfenced promotions or silent replays), KPIs and proposed gates, Overhead investigation triggers (10 percent TPS, 1 ms p99)
 
 ## Knowledge Gaps
-- **59 isolated node(s):** `Dependency and configuration change rules`, `Scope file ownership rules`, `Apache 2.0 license`, `Prometheus metrics and tracing logs`, `rustls and tokio-rustls with one crypto provider` (+54 more)
+- **52 isolated node(s):** `Failover safety KPI (zero unfenced promotions or silent replays)`, `pgbench and purpose built workload generator`, `Benchmark workload matrix`, `Security triage scope`, `Configured backend registration` (+47 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Feature inventory and parity matrix` connect `Feature Matrix and Invariants` to `Agent Guides and Workflow`, `Control Journal and Deployment`, `Decision Ledger and Assumptions`, `Security Features and Requirements`, `Roadmap and Delivery Slices`, `SQL Routing PRD`, `Promotion and Split Brain Risks`, `Milestones and Critical Path`, `Pgpool Baseline and Config Coverage`, `Fencing Provider Risks`, `Fail Closed Routing`?**
-  _High betweenness centrality (0.237) - this node is a cross-community bridge._
-- **Why does `Spec 0001. POOL initial architecture` connect `Agent Guides and Workflow` to `Feature Matrix and Invariants`, `Control Journal and Deployment`, `Decision Ledger and Assumptions`, `Roadmap and Delivery Slices`, `Repository Layout and Crates`, `SQL Routing PRD`, `Connection Pooling and Pool Identity`, `Technology Evaluation`, `Architecture Overview and Leases`?**
-  _High betweenness centrality (0.167) - this node is a cross-community bridge._
-- **Why does `POOL agent guide (AGENTS.md)` connect `Agent Guides and Workflow` to `Feature Matrix and Invariants`, `Security Features and Requirements`, `Protocol Analysis and Contract`, `Deployment, Failover and Fencing`, `Core Safety Invariants`?**
-  _High betweenness centrality (0.132) - this node is a cross-community bridge._
-- **What connects `Dependency and configuration change rules`, `Scope file ownership rules`, `Apache 2.0 license` to the rest of the system?**
-  _59 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Feature Matrix and Invariants` be split into smaller, more focused modules?**
-  _Cohesion score 0.06093189964157706 - nodes in this community are weakly interconnected._
+- **Why does `Documentation index` connect `Agent Guides and Workflow` to `Cluster and Control Plane Records`, `Security and Engineering Standards`, `Stack, Competitors and Feasibility`, `Pooling, Data Plane and Cancellation`, `Decision Ledger and Failover Authority`, `Core Safety Invariants`, `Protocol Contract and Core MVP`, `Feature Inventory and Parity`, `Health Monitoring and Admin API`, `Roadmap, Milestones and Slices`, `Repository Layout and Crates`, `Core Proxy and Pooling PRDs`?**
+  _High betweenness centrality (0.431) - this node is a cross-community bridge._
+- **Why does `Feature inventory and parity matrix` connect `Feature Inventory and Parity` to `Agent Guides and Workflow`, `Security and Engineering Standards`, `Stack, Competitors and Feasibility`, `Pooling, Data Plane and Cancellation`, `Decision Ledger and Failover Authority`, `Core Safety Invariants`, `Protocol Contract and Core MVP`, `Health Monitoring and Admin API`, `Roadmap, Milestones and Slices`, `Core Proxy and Pooling PRDs`?**
+  _High betweenness centrality (0.115) - this node is a cross-community bridge._
+- **Why does `Spec 0001. POOL initial architecture` connect `Repository Layout and Crates` to `Agent Guides and Workflow`, `Cluster and Control Plane Records`, `Stack, Competitors and Feasibility`, `Pooling, Data Plane and Cancellation`, `Decision Ledger and Failover Authority`, `Core Safety Invariants`, `Health Monitoring and Admin API`, `Roadmap, Milestones and Slices`, `Core Proxy and Pooling PRDs`?**
+  _High betweenness centrality (0.107) - this node is a cross-community bridge._
+- **Are the 2 inferred relationships involving `Feature inventory and parity matrix` (e.g. with `Initial Package Checks` and `Testing strategy`) actually correct?**
+  _`Feature inventory and parity matrix` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 2 inferred relationships involving `Testing strategy` (e.g. with `Feature inventory and parity matrix` and `proptest 1.12.0 (state and framing properties)`) actually correct?**
+  _`Testing strategy` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `Failover safety KPI (zero unfenced promotions or silent replays)`, `pgbench and purpose built workload generator`, `Benchmark workload matrix` to the rest of the system?**
+  _52 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Agent Guides and Workflow` be split into smaller, more focused modules?**
-  _Cohesion score 0.07439613526570048 - nodes in this community are weakly interconnected._
-- **Should `Control Journal and Deployment` be split into smaller, more focused modules?**
-  _Cohesion score 0.06956521739130435 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07136404697380307 - nodes in this community are weakly interconnected._

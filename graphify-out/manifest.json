@@ -6,10 +6,10 @@
     "semantic_hash": "6a2a621b8ad6297803a7692988b1a653"
   },
   "CLAUDE.md": {
-    "mtime": 1794622415.6685483,
-    "seen": 1794623470.244072,
-    "ast_hash": "13810534a8efa90cf417f78e871f167a",
-    "semantic_hash": ""
+    "mtime": 1794624116.178988,
+    "seen": 1794625238.0692701,
+    "ast_hash": "55fe7d84f7ba3641b9fc9769c9b8451a",
+    "semantic_hash": "55fe7d84f7ba3641b9fc9769c9b8451a"
   },
   "CONTRIBUTING.md": {
     "mtime": 1794621975.196525,
@@ -90,10 +90,10 @@
     "semantic_hash": "302469f735651f3744288de61006e500"
   },
   "docs/engineering-standards.md": {
-    "mtime": 1794622902.3139555,
-    "seen": 1794623470.244083,
-    "ast_hash": "e5c82262590980650c8025fe303b53f4",
-    "semantic_hash": ""
+    "mtime": 1794624116.17774,
+    "seen": 1794625238.069272,
+    "ast_hash": "67328cf9bcc20369bf1e4aebd44fcb30",
+    "semantic_hash": "67328cf9bcc20369bf1e4aebd44fcb30"
   },
   "docs/feature-matrix.md": {
     "mtime": 1794624031.2750814,
@@ -102,16 +102,16 @@
     "semantic_hash": "702d355262649d49a3046101f7772ba2"
   },
   "docs/implementation-order.md": {
-    "mtime": 1794623326.4882605,
-    "seen": 1794623470.244084,
-    "ast_hash": "64b9fbace0199e4a98a61a2442100201",
-    "semantic_hash": ""
+    "mtime": 1794624116.1764202,
+    "seen": 1794625238.069294,
+    "ast_hash": "5bfdd5c5843108d9f1be1314aa0e412a",
+    "semantic_hash": "5bfdd5c5843108d9f1be1314aa0e412a"
   },
   "docs/index.md": {
-    "mtime": 1794623235.6506429,
-    "seen": 1794623470.244084,
-    "ast_hash": "078344fdc6215e538331aa3ceba16c7a",
-    "semantic_hash": ""
+    "mtime": 1794624116.1755009,
+    "seen": 1794625238.0692952,
+    "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
+    "semantic_hash": "0c29ef61cbd06c46cedd27eea63141e9"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -120,22 +120,22 @@
     "semantic_hash": "ac5e3f9cb55f9515d4a2ab33c3a2bdcf"
   },
   "docs/plan/dependencies.md": {
-    "mtime": 1794623415.6863036,
-    "seen": 1794623470.244086,
-    "ast_hash": "f11ab4ad8ecfb6ee2caf77ac58ac6827",
-    "semantic_hash": ""
+    "mtime": 1794624116.1769624,
+    "seen": 1794625238.0692952,
+    "ast_hash": "b02ea9c8ae3049c8c4b0ac61591640e1",
+    "semantic_hash": "b02ea9c8ae3049c8c4b0ac61591640e1"
   },
   "docs/plan/milestones.md": {
-    "mtime": 1794623415.687166,
-    "seen": 1794623470.244086,
-    "ast_hash": "ea7711b3822b2e473aa84c1a74cd9406",
-    "semantic_hash": ""
+    "mtime": 1794624116.1772323,
+    "seen": 1794625238.0692961,
+    "ast_hash": "2d7d6e4a3915e3a1821a5a13137603d9",
+    "semantic_hash": "2d7d6e4a3915e3a1821a5a13137603d9"
   },
   "docs/plan/planning-validation.md": {
-    "mtime": 1794623415.6853852,
-    "seen": 1794623470.244087,
-    "ast_hash": "f519643125bffec7efd2ff6cdcf73df5",
-    "semantic_hash": ""
+    "mtime": 1794624156.7492476,
+    "seen": 1794625238.0692968,
+    "ast_hash": "0fcb72f66791a377dc0936caf5a64cbf",
+    "semantic_hash": "0fcb72f66791a377dc0936caf5a64cbf"
   },
   "docs/plan/risk-register.md": {
     "mtime": 1794624116.1773562,
@@ -180,10 +180,10 @@
     "semantic_hash": "35d6e0d60603326f4ccf5df878f59f58"
   },
   "docs/prd/005-health-monitoring.md": {
-    "mtime": 1794623415.6868412,
-    "seen": 1794623470.244092,
-    "ast_hash": "1a48d8b876009dff51d8082aba4f7f0d",
-    "semantic_hash": ""
+    "mtime": 1794624116.1786447,
+    "seen": 1794625238.0693219,
+    "ast_hash": "3e8d0ae14b777b98dd52728b6b96abc6",
+    "semantic_hash": "3e8d0ae14b777b98dd52728b6b96abc6"
   },
   "docs/prd/006-cluster-management.md": {
     "mtime": 1794623235.6499333,
@@ -216,10 +216,10 @@
     "semantic_hash": "f2eba38f6d0df9e32fdc396f3897c50e"
   },
   "docs/repository-structure.md": {
-    "mtime": 1794623235.6507905,
-    "seen": 1794623470.244096,
-    "ast_hash": "133bf1153abac2dc31ebd6e2e7720786",
-    "semantic_hash": ""
+    "mtime": 1794624116.1785395,
+    "seen": 1794625238.069323,
+    "ast_hash": "e507143fbb3f313aaf4569bc0173e4f5",
+    "semantic_hash": "e507143fbb3f313aaf4569bc0173e4f5"
   },
   "docs/research/competitor-analysis.md": {
     "mtime": 1794620030.0528038,
@@ -258,16 +258,16 @@
     "semantic_hash": "0db82cc523cd656f46a085e12c09b188"
   },
   "docs/scope/001-stack-and-workspace.md": {
-    "mtime": 1794623130.2343082,
-    "seen": 1794623470.2441,
-    "ast_hash": "32b1953c01a371efd668183f5fe44341",
-    "semantic_hash": ""
+    "mtime": 1794624116.175853,
+    "seen": 1794625238.069323,
+    "ast_hash": "32faafab017d5597a22862193cc99ae1",
+    "semantic_hash": "32faafab017d5597a22862193cc99ae1"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794623340.74864,
-    "seen": 1794623470.244101,
-    "ast_hash": "f8ba6878d1e33b6ef5c1dc4387838114",
-    "semantic_hash": ""
+    "mtime": 1794624116.176001,
+    "seen": 1794625238.069324,
+    "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
+    "semantic_hash": "821d7d5a1cd17a6e41c40554ef04510f"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -318,10 +318,10 @@
     "semantic_hash": "457a3b9911c50a6f205cd7eb3f2a4184"
   },
   "docs/scope/011-release-qualification-harness.md": {
-    "mtime": 1794623130.2368972,
-    "seen": 1794623470.244106,
-    "ast_hash": "01374135c233a7f7280d0b2989245ce4",
-    "semantic_hash": ""
+    "mtime": 1794624116.1761339,
+    "seen": 1794625238.069325,
+    "ast_hash": "84cb038dd2448cb26df545dcb301d687",
+    "semantic_hash": "84cb038dd2448cb26df545dcb301d687"
   },
   "docs/scope/012-multiple-proxy-authority.md": {
     "mtime": 1794623130.2370927,
@@ -360,10 +360,10 @@
     "semantic_hash": "d894e0d3a8045f88571853f736396b49"
   },
   "docs/scope/index.md": {
-    "mtime": 1794623340.748965,
-    "seen": 1794623470.24411,
-    "ast_hash": "630dd7203c47b90cfd09cb0fe7987909",
-    "semantic_hash": ""
+    "mtime": 1794624116.1756995,
+    "seen": 1794625238.069325,
+    "ast_hash": "5aef3b02f87fb3e8058fdcd509457a4a",
+    "semantic_hash": "5aef3b02f87fb3e8058fdcd509457a4a"
   },
   "docs/security/security-requirements.md": {
     "mtime": 1794624116.17761,
@@ -402,9 +402,15 @@
     "semantic_hash": "aabfbc1739cffb6804b89ce122fd06da"
   },
   "docs/testing/strategy.md": {
-    "mtime": 1794623340.7484627,
-    "seen": 1794623470.2441149,
-    "ast_hash": "480cbdcf079f2174cf8802d01688a5d4",
-    "semantic_hash": ""
+    "mtime": 1794624116.1781523,
+    "seen": 1794625238.069366,
+    "ast_hash": "b7f4032681d4771d5f83d82c84f026a9",
+    "semantic_hash": "b7f4032681d4771d5f83d82c84f026a9"
+  },
+  "docs/glossary.md": {
+    "mtime": 1794624070.1007962,
+    "seen": 1794625238.069293,
+    "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
+    "semantic_hash": "e1eeb7e41e80e9ae848a45818764ded4"
   }
 }
