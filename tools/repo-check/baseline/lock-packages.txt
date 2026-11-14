@@ -1,0 +1,19 @@
+# Baseline of spec 0002 (docs/specs/0002-standards-and-tooling/index.md), rule W1: package names of Cargo.lock
+itoa
+memchr
+pool
+pool-config
+proc-macro2
+quote
+serde
+serde_core
+serde_derive
+serde_json
+serde_spanned
+syn
+toml
+toml_datetime
+toml_parser
+unicode-ident
+winnow
+zmij

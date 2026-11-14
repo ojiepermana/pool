@@ -1,0 +1,25 @@
+# Baseline of spec 0002 (docs/specs/0002-standards-and-tooling/index.md), rule W1: package names of crates/pool-config/fuzz/Cargo.lock
+arbitrary
+cc
+cfg-if
+find-msvc-tools
+getrandom
+jobserver
+libc
+libfuzzer-sys
+pool-config
+pool-config-fuzz
+proc-macro2
+quote
+r-efi
+serde
+serde_core
+serde_derive
+serde_spanned
+shlex
+syn
+toml
+toml_datetime
+toml_parser
+unicode-ident
+winnow
