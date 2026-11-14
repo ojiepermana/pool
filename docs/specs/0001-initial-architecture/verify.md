@@ -345,6 +345,8 @@ Recorded by the checker session `chk-f1-verify-2` on 2026-11-14, after the user 
 
 **Verdict**: `PASS` for both items. The command ended with exit status 0 and the line `linux build check passed`. With the second run, every criterion of spec 0001 now has a passing record.
 
+**Later change**: the declared Linux target is now `aarch64-unknown-linux-gnu`, so the evidence that counts for `0001 AC-2` is under [Linux evidence: container build for aarch64](#linux-evidence-container-build-for-aarch64). This section is kept as the history of the `x86_64` run.
+
 **Revision**: `18e9228c90beb254282c718c04216b8dbfeaa9df` (`main` when this session started). `git log --oneline b6ce165..18e9228 -- apps crates Cargo.toml Cargo.lock rust-toolchain.toml` prints nothing, so this is the same code as the second run. `main` moved to `7cba873` while this session worked. That commit changes only `docs/scope/coordination/` and `graphify-out/`.
 
 **Checkout**: `git status --short` was empty and there was no `target/` directory. The command sends the tree through `git archive HEAD`, so only committed files were built.
@@ -430,3 +432,97 @@ This table replaces only the two `BLOCKED` results in the coverage table of the 
 ### Evidence files
 
 The full output is kept outside the repository, in the session scratchpad and in the shared notes folder of this coordination (`chk-f1-verify-2/linux-build.log`, 327 lines, `sha256` `65a20e2c952c02d6e801840e3d345dc79fe10f15e16bde3d37a946e51b827e75`). The lead ran the same block from `main` at the same time. That run is not part of this record.
+
+## Linux evidence: container build for aarch64
+
+Recorded by the checker session `chk-f1-verify-3` on 2026-11-14. The checker did not write the code. This section covers only `0001 AC-2` and the `/dev/full` clause of `0001 AC-11`, for the Linux target the spec now declares. The other criteria were not run again. Their results stay as recorded in the second run.
+
+**Why this run**: you confirmed on 2026-11-14 that your VMs are ARM. The spec then changed its one declared Linux target from `x86_64-unknown-linux-gnu` to `aarch64-unknown-linux-gnu`, and the command under [Linux build](index.md#linux-build) now uses `--platform linux/arm64` and checks for `host: aarch64-unknown-linux-gnu`. The run under [Linux evidence: container build](#linux-evidence-container-build) is for `x86_64` only, so `0001 AC-2` had no evidence for the declared target until this run.
+
+**Verdict**: `PASS` for both items. The command ended with exit status 0 and the line `linux build check passed`.
+
+**Revision**: `41e8eda427a52f577650ada00934ad80718273e4`. This is `main` at `2bc4f90` plus the one spec commit of the branch `claude/arc-f1-update-2-29134c`, which changes only `index.md` and `rationale.md` of spec 0001. The merge was a fast forward, so there is no merge commit. `41e8eda` was not on `main` yet when this was recorded.
+
+**Same code as before**: `git diff --stat 2bc4f90 HEAD -- apps crates Cargo.toml Cargo.lock rust-toolchain.toml` prints nothing, so the code tree is the one at `2bc4f90`. `git log --oneline 18e9228..HEAD -- apps crates Cargo.toml Cargo.lock rust-toolchain.toml` prints one commit, `517b897 docs(agents): capture workspace conventions for scope 002 audit`. It adds four context files (`AGENTS.md` and `CLAUDE.md` in `apps/pool` and in `crates/pool-config`) and touches no Rust source, manifest, lock file or fixture. So the code that was built is the code of the `x86_64` run at `18e9228`.
+
+**Checkout**: `git status --short` was empty and there was no `target/` directory. The command sends the tree through `git archive HEAD`, so only committed files were built.
+
+**Docker**: `docker info` exited 0 just before the run (server 29.9.2, Docker Desktop, kernel `7.0.14-linuxkit`, `aarch64`).
+
+**Architecture**: the container ran as `linux/arm64` on Apple silicon, which is the host's own architecture, so no emulation was involved. This is evidence for `aarch64-unknown-linux-gnu` only.
+
+**Command**: the block under [Linux build](index.md#linux-build), taken from the spec file with `awk` (28 lines, compared with the spec text by `diff`, no difference) and run unchanged from the repository root. It started at 11:58:44 UTC and ended at 11:58:54 UTC with exit status 0.
+
+**Image**: `rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`. That pinned digest names an image index (one name for several platform variants). The variant that ran is the `linux/arm64/v8` manifest `sha256:a05e7b80377ed6099c177cad2b9f536e182b9574490c7b4c07acaa29a44fda57`. `docker image inspect --platform linux/arm64` on the pinned name reports that manifest digest, and `docker buildx imagetools inspect` lists the same digest for `linux/arm64/v8` in the index. The variant was already on the machine (1.13 GB on disk, 283 MB packed), and the log has no pull lines. For comparison, the `x86_64` run used the `linux/amd64` manifest `sha256:476f6598b8d14a1f1bc7e58efc67af206ac8a559c37a3401ce512db2582d0ff7` of the same index.
+
+**Compiler** (`rustc -vV` inside the container):
+
+```text
+rustc 1.100.0 (0ef1bc386 2026-11-09)
+binary: rustc
+commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a
+commit-date: 2026-11-09
+host: aarch64-unknown-linux-gnu
+release: 1.100.0
+LLVM version: 23.1.5
+```
+
+**Build**: `cargo build --locked --release -p pool` downloaded sixteen crates, the same names and versions as in `Cargo.lock`, and ended with ``Finished `release` profile [optimized] target(s) in 5.11s``. The log holds no warning.
+
+**Binary**: the `sha256sum` line is
+
+```text
+cb184231b4af3e5c927eb46bb1fd7ad289b5a357a7c8b62a14d45fd6b92d3532  target/release/pool
+```
+
+`./target/release/pool --version` printed `pool 0.1.0`. The binary was removed with the container, as the spec says. The checksum differs from the `x86_64` one, as it should for another architecture.
+
+### Test counts on Linux aarch64
+
+`cargo test --locked --workspace` passed inside the container with 136 tests passed, 0 failed and 0 ignored. The log has 136 lines of the form `test <name> ... ok` and no test line with another result. The 136 test names are the same as in the `x86_64` run (the two sorted lists were compared with `diff`, no difference).
+
+| Target | Passed on Linux `aarch64` | Passed on Linux `x86_64` (at `18e9228`) | Passed on macOS (second run) |
+|---|---|---|---|
+| `pool` unit tests | 3 | 3 | 3 |
+| `apps/pool/tests/check_config.rs` | 68 | 68 | 66 |
+| `pool-config` unit tests | 3 | 3 | 3 |
+| `crates/pool-config/tests/validate.rs` | 60 | 60 | 60 |
+| `pool-config` doc tests | 2 | 2 | 2 |
+| **Total** | **136** | **136** | **134** |
+
+The two Linux only tests ran and passed:
+
+```text
+test a_failed_write_exits_3_without_stderr ... ok
+test ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr ... ok
+```
+
+Both are under `#[cfg(target_os = "linux")]`, open `/dev/full` and give it to the `pool` binary as stdout (`apps/pool/tests/check_config.rs` lines 525 and 1781).
+
+### Fixture blocks on Linux aarch64
+
+The script printed 30 blocks of the form `== <fixture> <format> exit=<n>`, one for each of the fifteen fixtures in each of the two formats.
+
+| Fixtures | Blocks | Exit status |
+|---|---|---|
+| The three `valid-*` files, human and JSON | 6 | 0 |
+| The nine `invalid-*` and three `secret-*` files, human and JSON | 24 | 1 |
+
+The text `canary leaked` and the text `unexpected exit` are not in the log. The word `CANARY` is nowhere in the log. From the first block to the end, the log is the same, line for line, as the log of the `x86_64` run (96 lines compared with `diff`, no difference). The last line of the log is `linux build check passed`.
+
+### UI / manual
+
+- [x] **Linux build for `aarch64` (AC-2, and the `/dev/full` clause of AC-11)**: `PASS` → exit 0, `host: aarch64-unknown-linux-gnu`, 136 tests passed, 30 fixture blocks with the expected exit status, last line `linux build check passed` → AC-2, AC-11
+
+### Acceptance-criteria coverage
+
+This table gives the result of the two items for the declared target. Every other row of the coverage table in the second run stands.
+
+| Criterion | What was run on this revision | Result |
+|---|---|---|
+| `0001 AC-2` | The command under [Linux build](index.md#linux-build), unchanged, from a clean checkout of `41e8eda`. Exit status 0, `host: aarch64-unknown-linux-gnu` in the output, last line `linux build check passed`. The tree came from `git archive HEAD` | PASS |
+| `0001 AC-11`, the `/dev/full` clause | The two Linux only tests ran inside the `linux/arm64` container and printed `ok`. The first covers a valid file with stdout set to `/dev/full`, which is the case the criterion names. The second covers help, version and a rejected file | PASS. With the workstation part of the second run, `0001 AC-11` is PASS in full |
+
+### Evidence files
+
+The full output is kept outside the repository, in the session scratchpad and in the shared notes folder of this coordination (`chk-f1-verify-3/linux-build.log`, 327 lines, `sha256` `1ede6796695c83361e930c053f8f1f7e35b084c13c0b3fc8c6848000d87c9570`). The script that was run is beside it (`chk-f1-verify-3/linux-build.sh`). The lead reported a trial run of its own before this one. That trial was not observed by this session and is not part of this record.

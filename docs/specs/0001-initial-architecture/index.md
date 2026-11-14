@@ -22,7 +22,7 @@ These criteria cover the first build only, [scope 001](../../scope/001-stack-and
 **Acceptance criteria**:
 
 - **AC-1** (workspace and toolchain pin): From a clean checkout, `cargo build --locked --release -p pool` succeeds with Rust 1.100.0 selected by `rust-toolchain.toml`. `cargo metadata --no-deps --format-version 1` lists exactly two workspace members, `pool` and `pool-config`. `Cargo.lock` is committed.
-- **AC-2** (Linux build): The command under [Linux build](#linux-build) ends with exit status 0 and the line `linux build check passed`. Its output shows `host: x86_64-unknown-linux-gnu`. It builds only the committed tree. A build on macOS does not meet this criterion.
+- **AC-2** (Linux build): The command under [Linux build](#linux-build) ends with exit status 0 and the line `linux build check passed`. Its output shows `host: aarch64-unknown-linux-gnu`. It builds only the committed tree. A build on macOS does not meet this criterion.
 - **AC-3** (valid configuration): For each `valid-*` fixture, `pool check-config` exits 0, writes nothing to stderr, and writes exactly the valid report to stdout, in the human format and in the JSON format.
 - **AC-4** (off is safe, `SEC-10`): A reserved capability that is left out, given as an empty table, or set to `enabled = false` validates. The report shows `result_cache` and `automatic_promotion` as `disabled` in all three cases.
 - **AC-5** (result cache is refused, `SEC-10`): `invalid-result-cache-enabled.toml` exits 1 with exactly one finding, `config.unsupported_capability` at key `result_cache.enabled`.
@@ -53,7 +53,7 @@ These criteria cover the first build only, [scope 001](../../scope/001-stack-and
 
 The project is one product in a Cargo workspace, so its scope and specs use `docs/scope/` and `docs/specs/`. The requested research, architecture, PRD, and ADR directories are human reference views. This spec owns the initial architecture decision. Feature PRDs record proposed requirements; later feature specs own implementation decisions.
 
-**First build (build notes, 2026-11-14)**: The workspace starts with two packages, `apps/pool` and `crates/pool-config`, three direct dependencies (`serde`, `toml`, `serde_json`), Rust 1.100.0 pinned by file, and `x86_64-unknown-linux-gnu` as the Linux target. `pool check-config` speaks only in a fixed vocabulary of findings. Its output is built from constant text, schema key names, line numbers and column numbers, and never from the content of the file it reads. These notes add detail to the ratified foundation and change none of it. (basis: workspace handoff, `SEC-4`, `SEC-10`, `SEC-11`, `SEC-12`)
+**First build (build notes, 2026-11-14)**: The workspace starts with two packages, `apps/pool` and `crates/pool-config`, three direct dependencies (`serde`, `toml`, `serde_json`), Rust 1.100.0 pinned by file, and `aarch64-unknown-linux-gnu` as the one declared Linux target (you confirmed on 2026-11-14 that your VMs are ARM). `pool check-config` speaks only in a fixed vocabulary of findings. Its output is built from constant text, schema key names, line numbers and column numbers, and never from the content of the file it reads. These notes add detail to the ratified foundation and change none of it. (basis: workspace handoff, `SEC-4`, `SEC-10`, `SEC-11`, `SEC-12`)
 
 ## Proposed stack
 
@@ -145,8 +145,8 @@ Not in this build: a `run` command, a listener, a session pool, an administratio
 | Item | Value |
 |---|---|
 | Toolchain | Rust 1.100.0, edition 2024, minimum supported Rust version 1.100.0 |
-| Linux target | `x86_64-unknown-linux-gnu` (64 bit Intel or AMD, GNU C library) |
-| Linux builder | Container image `rust:1.100.0-slim-bookworm`, run as `linux/amd64` |
+| Linux target | `aarch64-unknown-linux-gnu` (64 bit ARM, GNU C library) |
+| Linux builder | Container image `rust:1.100.0-slim-bookworm`, run as `linux/arm64` |
 | Workstation | Any host with `rustup`. It proves formatting, lints and tests, not the Linux build |
 
 `rust-toolchain.toml` at the repository root has exactly this content:
@@ -159,6 +159,8 @@ components = ["rustfmt", "clippy"]
 ```
 
 It lists no targets. The Linux build is a native build inside the container, so no cross compiler is needed.
+
+`aarch64-unknown-linux-gnu` is the only declared Linux target. It is your value: you confirmed on 2026-11-14 that your PostgreSQL and proxy VMs are ARM. Until then the notes named `x86_64-unknown-linux-gnu`, which had been inferred and not confirmed. The one Linux build that was run for that earlier target stays in the [verification record](verify.md#linux-evidence-container-build) as history. It is not evidence for the declared target, and POOL does not claim to support `x86_64`. The reasons are in the [rationale](rationale.md#linux-target-update-2026-11-14).
 
 ### Workspace layout and manifests
 
@@ -627,14 +629,14 @@ The developer writes at least one test per criterion in these two files. The tes
 The workstation is macOS on Apple silicon, so the Linux build runs in a container. Run this from the repository root, with every change committed. It needs the Docker daemon; if `docker info` fails, do not run it. Record it in the verification record as blocked, with the owner set to the user.
 
 ```bash
-git archive --format=tar HEAD | docker run --rm -i --platform linux/amd64 \
+git archive --format=tar HEAD | docker run --rm -i --platform linux/arm64 \
   -e RUSTUP_TOOLCHAIN=1.100.0 -e CARGO_INCREMENTAL=0 -e CARGO_PROFILE_DEV_DEBUG=0 \
   rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37 \
   sh -euc '
 mkdir /work && tar -xf - -C /work && cd /work
 grep -q "channel = \"1.100.0\"" rust-toolchain.toml
 rustc -vV
-rustc -vV | grep -qx "host: x86_64-unknown-linux-gnu"
+rustc -vV | grep -qx "host: aarch64-unknown-linux-gnu"
 cargo build --locked --release -p pool
 cargo test --locked --workspace
 sha256sum target/release/pool
@@ -657,9 +659,9 @@ echo "linux build check passed"
 '
 ```
 
-What it does: `git archive` sends only the committed tree, so the build is from a clean checkout. `RUSTUP_TOOLCHAIN` selects the compiler already in the image, so nothing but crates is downloaded. It also means the container does not act on `rust-toolchain.toml`; the script only checks that the file names the same version. That the file selects the toolchain (**AC-1**) is shown on the workstation. The build output stays inside the container and is removed with it. Expect `host: x86_64-unknown-linux-gnu` in the `rustc -vV` output, a passing test run, one block per fixture and format, and the last line `linux build check passed`. Copy the image digest, the `sha256sum` line and the revision (`git rev-parse HEAD`) into the verification record.
+What it does: `git archive` sends only the committed tree, so the build is from a clean checkout. `RUSTUP_TOOLCHAIN` selects the compiler already in the image, so nothing but crates is downloaded. It also means the container does not act on `rust-toolchain.toml`; the script only checks that the file names the same version. That the file selects the toolchain (**AC-1**) is shown on the workstation. The build output stays inside the container and is removed with it. Expect `host: aarch64-unknown-linux-gnu` in the `rustc -vV` output, a passing test run, one block per fixture and format, and the last line `linux build check passed`. Copy the image digest, the `sha256sum` line and the revision (`git rev-parse HEAD`) into the verification record.
 
-On Apple silicon the `linux/amd64` container runs under emulation, so this takes a few minutes. The image is about 320 MB to download.
+The pinned digest names an image index (one name for several platform variants) that holds a `linux/arm64` variant, so `--platform` selects that variant and the pin stays as it is. On Apple silicon the `linux/arm64` container runs without emulation. On a 64 bit Intel or AMD host the same command would need emulation and take longer. The `linux/arm64` variant is about 283 MB to download.
 
 Workstation checks, run from the repository root:
 
@@ -707,7 +709,7 @@ From the first build:
 - The file is parsed twice (once for syntax, once for the schema). At a limit of 1 MiB this costs nothing you would notice.
 - Argument parsing is hand written. It is small now; if the daemon's command line grows, adopting a parser crate is a decision to record here.
 - The log convention is fixed before any log event exists, so it has not met real use. The first slice that logs may find a gap and must amend it here.
-- The Linux evidence is for `x86_64` only and runs under emulation on this workstation.
+- **AC-2** covers `aarch64` only. `x86_64` is not a declared target: the one `x86_64` run in the [verification record](verify.md#linux-evidence-container-build) is history, and no later build is checked on that target. Declaring it again would mean one more run of the Linux build for every change.
 - `check-config` reads a special file like any other file. That is what makes `/dev/zero` and `/dev/stdin` work. It also means that a path which never gives data or an end, such as a FIFO (a named pipe) with no writer, blocks the command with no time limit. This is a known limit. Scope 001 changes no code for it.
 
 **Neutral**:
@@ -722,10 +724,10 @@ From the first build:
 3. Optional Rust, Tokio, PostgreSQL, and operations skill or MCP discovery was deferred by you. Nothing has been searched or installed for that purpose.
 4. Apache 2.0 is your chosen project license and the official text is installed. Review each file and transitive component before source reuse.
 5. The independent critique completed. Its decision gaps and your resolution are recorded in the decision ledger before final acceptance.
-6. Confirm that your PostgreSQL and proxy VMs are `x86_64`. The target was inferred from Proxmox VE, which runs on 64 bit Intel and AMD hosts. If a VM is ARM, change the `--platform` value and the target in [Toolchain and Linux target](#toolchain-and-linux-target) and rerun the Linux build.
-7. Start Docker Desktop so the Linux build can run. Until then **AC-2** stays blocked with you as the owner.
+6. You confirmed on 2026-11-14 that your PostgreSQL and proxy VMs are ARM. The earlier target, `x86_64-unknown-linux-gnu`, had been inferred from Proxmox VE and was not confirmed. The same day the `--platform` value and the target in [Toolchain and Linux target](#toolchain-and-linux-target), **AC-2** and the [Linux build](#linux-build) command were changed to `linux/arm64` and `aarch64-unknown-linux-gnu`. The Linux build was then run again for the declared target, also on 2026-11-14, at revision `41e8eda`. It passed with exit status 0, `host: aarch64-unknown-linux-gnu` and the last line `linux build check passed`. The run is recorded under [Linux evidence: container build for aarch64](verify.md#linux-evidence-container-build-for-aarch64), so **AC-2** has evidence for the declared target and nothing is left open here.
+7. Docker Desktop was started on 2026-11-14 (`docker info` exits 0, server 29.9.2, `aarch64`), so **AC-2** is no longer blocked on it. Each run of the Linux build still needs the daemon. If `docker info` fails again, starting Docker Desktop is yours to do.
 8. When the workspace exists, the "Current state and commands" part of `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` should name the real commands. That belongs to the "Document it" step of scope 001.
-9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux runner without emulation.
+9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux `arm64` runner, so that the build for the declared target runs without emulation. Which runner that is belongs to the scope 002 spec.
 10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction).
 11. [Scope 002](../../scope/002-standards-and-tooling.md) should add automatic CI checks for the parts of **AC-12** and **AC-13** that are checked by hand today: the package set of `Cargo.lock` and the `grep` command (**AC-12**), and the four paths that must not exist plus the lint inheritance of both packages (**AC-13**). Until then nothing fails by itself when one of them regresses. This comes from the scope 001 review.
 
