@@ -98,6 +98,16 @@ delete_table() {
     !skip { print }'
 }
 
+# Replaces the first line that equals the given text.
+replace_line() {
+  rewrite "$1" awk -v a="$2" -v b="$3" '!done && $0 == a { $0 = b; done = 1 } { print }'
+}
+
+# Replaces the first line that starts with the given text.
+replace_line_starting() {
+  rewrite "$1" awk -v a="$2" -v b="$3" '!done && index($0, a) == 1 { $0 = b; done = 1 } { print }'
+}
+
 # Replaces the first commit hash after actions/checkout@ with v7.
 unpin_checkout() {
   rewrite "$1" awk '
@@ -312,6 +322,54 @@ fi
 
 replace_first "$C/scripts/linux-build.sh" 'linux build check passed' 'linux build check skipped'
 expect 21 guards 'W7'
+restore
+
+# Case 22: a dependency from a Git address, cloned from a folder on this machine.
+SOURCE=$TMP/prove-source
+mkdir -p "$SOURCE/src"
+: >"$SOURCE/src/lib.rs"
+cat >"$SOURCE/Cargo.toml" <<'SOURCE_MANIFEST'
+[package]
+name = "pool-prove-source"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+SOURCE_MANIFEST
+git -C "$SOURCE" init -q
+git -C "$SOURCE" add Cargo.toml src/lib.rs
+git -C "$SOURCE" -c user.name=prove -c user.email=prove@example.invalid -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -m 'prove source'
+insert_after "$C/crates/pool-config/Cargo.toml" '[dependencies]' "pool-prove-source = { git = \"file://$SOURCE\" }"
+rc=0
+(cd "$COPY" && cargo metadata --format-version 1 >/dev/null 2>"$OUT") || rc=$?
+if [ "$rc" -ne 0 ]; then
+  note 22 deny "cargo metadata could not add the Git dependency to Cargo.lock (exit $rc)"
+else
+  expect 22 deny 'source-not-allowed'
+fi
+restore
+
+replace_line_starting "$C/Cargo.toml" 'serde_json = ' 'serde_json = "*"'
+expect 23 deny 'error[wildcard]'
+restore
+
+replace_line "$C/.github/workflows/ci.yml" '    timeout-minutes: 15' '    continue-on-error: true'
+expect 24 guards 'C3' 'continue-on-error'
+restore
+
+replace_first "$C/.github/workflows/ci.yml" 'ubuntu-24.04-arm' 'ubuntu-latest'
+expect 25 guards 'C4'
+restore
+
+replace_line "$C/.github/workflows/ci.yml" '  contents: read' '  contents: write'
+expect 26 guards 'C5'
+restore
+
+: >"$C/docs/Cargo.lock"
+expect 27 guards 'W6' 'docs/Cargo.lock'
+restore
+
+append "$C/docs/security/security-requirements.md" '| SEC-14 | Fixture row used to prove the duplicate rule |'
+expect 28 docs 'D4' 'SEC-14'
 restore
 
 if [ -n "$failed" ]; then
