@@ -23,6 +23,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 
 | Path | Document |
 |---|---|
+| [.github/pull_request_template.md](../.github/pull_request_template.md) | Pull request template |
 | [AGENTS.md](../AGENTS.md) | POOL agent guide |
 | [CHANGELOG.md](../CHANGELOG.md) | Changelog |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code guidance |
@@ -163,6 +164,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/specs/0002-standards-and-tooling/index.md](specs/0002-standards-and-tooling/index.md) | 0002. Standards and tooling |
 | [docs/specs/0002-standards-and-tooling/rationale.md](specs/0002-standards-and-tooling/rationale.md) | Standards and tooling rationale |
+| [docs/specs/0002-standards-and-tooling/verify.md](specs/0002-standards-and-tooling/verify.md) | 0002. Verification record |
 
 ## docs/testing
 

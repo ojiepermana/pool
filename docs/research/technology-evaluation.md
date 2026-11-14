@@ -134,6 +134,19 @@ Once spec 0002 is built, licenses and advisories are checked by a tool on every 
 
 The PostgreSQL image was looked up and not pulled. On 2026-11-14 the newest Debian 12 tag was `postgres:18.7-bookworm`, pushed 2026-11-12, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`. Scope 004 reads the tag again when it adopts the image.
 
+Versions observed in the build, on 2026-11-14, on the final tree of Build plan step 10 (commit `f58885f`, macOS workstation). The evidence is in the [verification record](../specs/0002-standards-and-tooling/verify.md#milestone-4-proofs-inventory-documents-and-workstation-evidence).
+
+| Tool or package | Observed | Where it was read |
+|---|---|---|
+| cargo-deny | `cargo-deny 0.20.2` | `cargo deny --version`, the check that `scripts/check.sh deny` makes |
+| cargo-fuzz | `cargo-fuzz 0.13.2` | `cargo fuzz --version` |
+| Rust toolchain `nightly-2026-10-17` | `rustc 1.101.0-nightly (5d8fec066 2026-10-16)` | `rustc +nightly-2026-10-17 --version` |
+| cargo-cyclonedx | 0.5.10, installed with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`; it prints `cargo-cyclonedx-cyclonedx 0.5.10` | `cargo cyclonedx --version` |
+| libfuzzer-sys | 0.4.13 | `crates/pool-config/fuzz/Cargo.lock` |
+| The other nine fuzz only packages | The versions in the table above, unchanged | `crates/pool-config/fuzz/Cargo.lock` |
+| Product Rust toolchain | `rustc 1.100.0 (0ef1bc386 2026-11-09)` | `rustc --version` |
+| `actions/checkout`, `actions/cache`, hosted runner | Not observed on a workstation; they run only in CI | Build plan step 11 |
+
 ## Adoption gate
 
 Before installing a dependency, verify its stable version, selected features, MSRV, advisories, native dependencies, license files, and maintainer activity again. Commit Cargo.lock for binaries, generate an SBOM, and test Linux targets. First party production Rust should forbid unsafe code; a documented dependency exception covers native parser, TLS provider, and SQLite boundaries after review. The dependencies adopted so far are listed under [Adopted in scope 001](#adopted-in-scope-001) and [Adopted in scope 002](#adopted-in-scope-002).
