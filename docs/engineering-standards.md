@@ -28,9 +28,9 @@ Some surfaces are extended by every later slice. The slice that first exposes on
 
 | Surface | First fixed in | Rule |
 |---|---|---|
-| Configuration keys: naming, units, unknown keys, secret references and reserved names | [001](scope/001-stack-and-workspace.md) | Pending |
-| Process exit status, and command output for people and as JSON | [001](scope/001-stack-and-workspace.md) | Pending |
-| Log event fields and redaction | [001](scope/001-stack-and-workspace.md) | Pending |
+| Configuration keys: naming, units, unknown keys, secret references and reserved names | [001](scope/001-stack-and-workspace.md) | One TOML file with a required `config_version`. Lowercase `snake_case` names from the glossary. Integer quantities with a unit suffix. Unknown keys are rejected. Secrets only by a `_file` reference. A reserved capability is a table with `enabled`, default `false`, and `true` is rejected. Full rule: [spec 0001, configuration rules](specs/0001-initial-architecture/index.md#configuration-rules) |
+| Process exit status, and command output for people and as JSON | [001](scope/001-stack-and-workspace.md) | Exit 0 success, 1 input rejected, 2 usage error, 3 could not complete. The result goes to stdout, usage errors to stderr. JSON is one object on one line that starts with `output_version`, `command` and `result` and ends with `findings`. Output is constant text and never repeats input. Full rule: [spec 0001, exit status and output](specs/0001-initial-architecture/index.md#exit-status-and-output) |
+| Log event fields and redaction | [001](scope/001-stack-and-workspace.md) | One JSON object per line on stderr with `ts`, `level` and `event`, and named fields for anything that varies. Secrets are redacted by type, not by filter. Credentials, cancellation keys, SQL, database error text and configuration content are never logged by default. Fixed ahead of the first log event. Full rule: [spec 0001, log events and redaction](specs/0001-initial-architecture/index.md#log-events-and-redaction) |
 | Identifier and generation types | [003](scope/003-control-and-session-data-model.md) | Pending |
 | SQLSTATEs and messages that POOL itself generates | [004](scope/004-one-real-primary-path.md) | Pending |
 | Metric names, units and bounded labels | The first slice that exports a metric, no later than [006](scope/006-protocol-breadth-and-cancellation.md) | Pending |

@@ -90,10 +90,10 @@
     "semantic_hash": "302469f735651f3744288de61006e500"
   },
   "docs/engineering-standards.md": {
-    "mtime": 1794624116.17774,
-    "seen": 1794625238.069272,
+    "mtime": 1794643175.2720897,
+    "seen": 1794643854.812625,
     "ast_hash": "67328cf9bcc20369bf1e4aebd44fcb30",
-    "semantic_hash": "67328cf9bcc20369bf1e4aebd44fcb30"
+    "semantic_hash": "b8c6f0fd9de1c9888e0499e99a3cab81"
   },
   "docs/feature-matrix.md": {
     "mtime": 1794624031.2750814,
@@ -252,10 +252,10 @@
     "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
   },
   "docs/research/technology-evaluation.md": {
-    "mtime": 1794623415.6859944,
-    "seen": 1794623470.2440991,
+    "mtime": 1794643175.2728362,
+    "seen": 1794643854.812629,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "0db82cc523cd656f46a085e12c09b188"
+    "semantic_hash": "4f5deb579e157fa38a4f090a1a54effd"
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794624116.175853,
@@ -378,16 +378,16 @@
     "semantic_hash": "50d3096f5cd170587380dbaab9c8b21f"
   },
   "docs/specs/0001-initial-architecture/index.md": {
-    "mtime": 1794621622.2700002,
-    "seen": 1794623470.2441118,
+    "mtime": 1794643175.2732816,
+    "seen": 1794643854.81263,
     "ast_hash": "d273cb4d4139b2882af50db5d8277a24",
-    "semantic_hash": "d273cb4d4139b2882af50db5d8277a24"
+    "semantic_hash": "27cf84f286944ef789419d99d04632ed"
   },
   "docs/specs/0001-initial-architecture/rationale.md": {
-    "mtime": 1794623188.8470368,
-    "seen": 1794623470.244113,
+    "mtime": 1794643175.2736163,
+    "seen": 1794643854.8126311,
     "ast_hash": "a860a546265b8bf3e9bd55085f2b22e3",
-    "semantic_hash": "a860a546265b8bf3e9bd55085f2b22e3"
+    "semantic_hash": "448b6be43a6825abfdb42ef469e80139"
   },
   "docs/testing/benchmark-plan.md": {
     "mtime": 1794620680.8217707,
@@ -408,10 +408,10 @@
     "semantic_hash": "b7f4032681d4771d5f83d82c84f026a9"
   },
   "docs/glossary.md": {
-    "mtime": 1794624070.1007962,
-    "seen": 1794625238.069293,
+    "mtime": 1794643175.272426,
+    "seen": 1794643854.8126268,
     "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
-    "semantic_hash": "e1eeb7e41e80e9ae848a45818764ded4"
+    "semantic_hash": "da9a678891b2713dc52779bf248c79df"
   },
   "docs/scope/coordination/001-stack-and-workspace.brief-umum.md": {
     "mtime": 1794631706.8664336,

@@ -12,8 +12,9 @@ Each version link points to its primary registry record. Licenses are package de
 | rustls | [0.23.46](https://crates.io/crates/rustls/0.23.46) | Apache-2.0 OR ISC OR MIT | TLS with explicit verification | Crypto provider and native dependencies need review; OpenSSL alternative | Core |
 | tokio-rustls | [0.26.6](https://crates.io/crates/tokio-rustls/0.26.6) | MIT OR Apache-2.0 | Async TLS streams | Version coupling with rustls; native-tls alternative | Core |
 | axum | [0.8.9](https://crates.io/crates/axum/0.8.9) | MIT | Typed administration endpoints | Body limits, auth and exposure remain application duties; direct hyper alternative | Admin slice |
-| serde | [1.0.229](https://crates.io/crates/serde/1.0.229) | MIT OR Apache-2.0 | Config and API encoding | Deserialization is not semantic validation; manual parsing alternative | Core |
-| toml | [1.2.1+spec-1.1.0](https://crates.io/crates/toml/1.2.1+spec-1.1.0) | MIT OR Apache-2.0 | Human configuration | Validate schema and unknown keys; JSON alternative | Core |
+| serde | [1.0.229](https://crates.io/crates/serde/1.0.229) | MIT OR Apache-2.0 | Config and API encoding | Deserialization is not semantic validation; manual parsing alternative | Adopted in 001 |
+| serde_json | [1.0.154](https://crates.io/crates/serde_json/1.0.154) | MIT OR Apache-2.0 | JSON command output, later the administration API | A generic JSON map sorts its keys, so fixed field order needs derived structures; a hand written writer is the alternative | Adopted in 001 |
+| toml | [1.2.1+spec-1.1.0](https://crates.io/crates/toml/1.2.1+spec-1.1.0) | MIT OR Apache-2.0 | Human configuration | Validate schema and unknown keys; its error text can repeat file content, so only the span is used; JSON alternative | Adopted in 001 |
 | thiserror | [2.0.21](https://crates.io/crates/thiserror/2.0.21) | MIT OR Apache-2.0 | Typed library errors | Error contents need redaction; manual enums alternative | Core |
 | anyhow | [1.0.104](https://crates.io/crates/anyhow/1.0.104) | MIT OR Apache-2.0 | Binary boundary context | Avoid losing typed protocol semantics; typed errors elsewhere | Binary only |
 | tracing | [0.1.44](https://crates.io/crates/tracing/0.1.44) | MIT | Structured events and spans | Instrumentation can expose secrets or add cost; log facade alternative | Core |
@@ -60,6 +61,41 @@ Evaluate pgwire's low level SCRAM support before implementing protocol crypto. I
 For a local operation journal, recommend SQLite WAL with synchronous FULL, bounded checkpoints and a dedicated writer. Acknowledged journal operations must survive process and power loss within the storage system's guarantees. WAL is local concurrency, not distributed coordination. [SQLite WAL](https://www.sqlite.org/wal.html), [synchronous modes](https://www.sqlite.org/pragma.html).
 
 Do not add consensus to the initial proxy. For later HA, external etcd is the recommended candidate; OpenRaft is a credible embedded alternative but its evolving APIs and required storage/network integration enlarge POOL's responsibility. A lease alone cannot stop a paused old leader from promoting PostgreSQL. Fencing and operation epochs remain required. [etcd guarantees](https://etcd.io/docs/v3.6/learning/api_guarantees/), [OpenRaft](https://github.com/databendlabs/openraft).
+
+## Adopted in scope 001
+
+The first build adopts three direct dependencies, recorded in [spec 0001](../specs/0001-initial-architecture/index.md#adopted-dependencies). This is the review the [adoption gate](#adoption-gate) asks for, done on 2026-11-14 with a throwaway build outside the repository on Rust 1.99.1. The build with the pinned Rust 1.100.0 and the committed `Cargo.lock` is the developer's evidence, not this one.
+
+| Dependency | Version and features | Used by | Runtime cost | Native code |
+|---|---|---|---|---|
+| serde | 1.0.229, feature `derive` | `pool-config`, `pool` | Compile time code generation only | None |
+| toml | 1.2.1, no default features, features `parse` and `serde` | `pool-config` | Parses one file of at most 1 MiB per run | None |
+| serde_json | 1.0.154, default features | `pool` | Writes one small document per run | None |
+
+Locked packages in that build, sixteen in all. A different set of names in the real `Cargo.lock` is a finding to report, not to accept.
+
+| Package | Version | Declared license | Minimum Rust |
+|---|---|---|---|
+| itoa | 1.0.19 | MIT OR Apache-2.0 | 1.68 |
+| memchr | 2.8.3 | Unlicense OR MIT | 1.61 |
+| proc-macro2 | 1.0.107 | MIT OR Apache-2.0 | 1.71 |
+| quote | 1.0.47 | MIT OR Apache-2.0 | 1.71 |
+| serde | 1.0.229 | MIT OR Apache-2.0 | 1.56 |
+| serde_core | 1.0.229 | MIT OR Apache-2.0 | 1.56 |
+| serde_derive | 1.0.229 | MIT OR Apache-2.0 | 1.71 |
+| serde_json | 1.0.154 | MIT OR Apache-2.0 | 1.71 |
+| serde_spanned | 1.1.3 | MIT OR Apache-2.0 | 1.85 |
+| syn | 3.0.10 | MIT OR Apache-2.0 | 1.71 |
+| toml | 1.2.1+spec-1.1.0 | MIT OR Apache-2.0 | 1.85 |
+| toml_datetime | 1.1.3+spec-1.1.0 | MIT OR Apache-2.0 | 1.85 |
+| toml_parser | 1.1.5+spec-1.1.0 | MIT OR Apache-2.0 | 1.85 |
+| unicode-ident | 1.0.27 | (MIT OR Apache-2.0) AND Unicode-3.0 | 1.71 |
+| winnow | 1.0.5 | MIT | 1.65 |
+| zmij | 1.0.23 | MIT | 1.71 |
+
+`proc-macro2`, `quote`, `syn`, `serde_derive` and `unicode-ident` run only at build time. Advisories and license files were not checked by a tool; that check arrives with [scope 002](../scope/002-standards-and-tooling.md) under `SEC-13`. Not adopted for this build, with reasons in the [spec rationale](../specs/0001-initial-architecture/rationale.md#decisions-and-runner-ups): clap, thiserror, anyhow, tracing and tracing-subscriber.
+
+The Linux builder image is `rust:1.100.0-slim-bookworm`, index digest `sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`, read from the Docker Hub tag listing on 2026-11-14 and not yet pulled.
 
 ## Adoption gate
 
