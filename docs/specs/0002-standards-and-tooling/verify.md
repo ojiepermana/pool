@@ -347,10 +347,10 @@ The four remote items of Build plan step 11 are not run by a build session. Each
 
 | Item | Criterion | Remote steps | Result |
 |---|---|---|---|
-| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 1 and 6 | `NOT_RUN`, `owner: lead` |
-| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 2 | `NOT_RUN`, `owner: lead` |
-| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
-| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 3 and 4 | `NOT_RUN`, `owner: lead` |
+| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 1 and 6 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 2 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 3 and 4 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 
 ### Commands
 
@@ -409,17 +409,17 @@ Step 10 evidence on the final tree `f58885f`, by criterion:
 |---|---|---|
 | `0002 AC-1` | `scripts/check.sh all` exit 0, six `== ok:` lines; usage and could not run rules were recorded in milestone 2 and are unchanged; a missing `tools/repo-check` now fails `fmt`, `clippy` and `test` instead of being skipped | pass |
 | `0002 AC-2` | `guards` passes, so rules C1 to C5 accept `ci.yml`; cases 13 and 14 rejected | pass (file); the run is `0002 AC-3` |
-| `0002 AC-3` | Remote steps 1 and 6 | `NOT_RUN`, `owner: lead` |
+| `0002 AC-3` | Remote steps 1 and 6 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-4` | `deny` in `all` passes on both lockfiles with `cargo-deny 0.20.2`; cases 5, 6 and 7 rejected | pass |
-| `0002 AC-5` | Script half: `linux-build` passes on the workstation, W7 passes, case 21 rejected, case 20 rejected in the container. The CI half is remote step 2 | script half pass; CI half `NOT_RUN`, `owner: lead` |
+| `0002 AC-5` | Script half: `linux-build` passes on the workstation, W7 passes, case 21 rejected, case 20 rejected in the container. The CI half is remote step 2 | script half pass; CI half `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-6` | `pool-repo-check workspace: ok`; 71 `pool-repo-check` tests pass; cases 8 to 12 and 21 rejected | pass |
 | `0002 AC-7` | `pool-repo-check ci: ok`; cases 13 and 14 rejected | pass |
 | `0002 AC-8` | `pool-repo-check docs: ok`, also after this record's links were added; cases 15 and 16 rejected | pass |
 | `0002 AC-9` | `docs` passes; case 17 rejected | pass |
 | `0002 AC-10` | `docs` passes; cases 18 and 19 rejected (case 19 with `--base`) | pass |
 | `0002 AC-11` | 21 `PASS` on `f58885f` | pass |
-| `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
-| `0002 AC-13` | File half: `guards` passes on `main.json`. Remote half: remote steps 3 and 4 | file half pass; remote half `NOT_RUN`, `owner: lead` |
+| `0002 AC-12` | Remote step 5 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| `0002 AC-13` | File half: `guards` passes on `main.json`. Remote half: remote steps 3 and 4 | file half pass; remote half `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-14` | `.github/pull_request_template.md` unchanged since milestone 2 and now listed in [docs/index.md](../../index.md#project-root); `CONTRIBUTING.md` names `scripts/check.sh` | pass |
 | `0002 AC-15` | 60 second `scripts/check.sh fuzz` on `f58885f`, no crash file | pass |
 | `0002 AC-16` | `scripts/check.sh sbom` on `f58885f`: one CycloneDX 1.5 file, a license for each component, names equal to the baseline, clean tree | pass |
@@ -541,10 +541,10 @@ No screen. The four remote items are run by the lead with the steps under [Remot
 
 | Item | Criterion | Remote steps | Result |
 |---|---|---|---|
-| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 1 and 6 | `NOT_RUN`, `owner: lead` |
-| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 2 | `NOT_RUN`, `owner: lead` |
-| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
-| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 3 and 4 | `NOT_RUN`, `owner: lead` |
+| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 1 and 6 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 2 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 3 and 4 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | Item 12 of "Document corrections" | `0002 AC-19`, item 12 | After Build plan step 11 has passed | `NOT_RUN`, `owner: lead` |
 
 ### Commands
@@ -571,17 +571,17 @@ Run from the repository root at `535bd15`.
 |---|---|---|
 | `0002 AC-1` | `all` exits 0 with six `== ok:` lines in order. Usage errors exit 2 with the usage text on stderr. A missing tool, a wrong version, a stopped daemon and a tree with changes exit 3 with one line. `all` keeps going after a failure, and 1 wins over 3 (milestone 2 probes, and the missing manifest probe of this run) | met |
 | `0002 AC-2` | `ci.yml` equals the spec block; seven jobs, one runner label, `tools` before `deny`, three triggers, read access only, no secret, actions by full commit hash (milestone 2); `pool-repo-check ci: ok`; cases 13 and 14 rejected | met (file) |
-| `0002 AC-3` | Remote steps 1 and 6 | `NOT_RUN`, `owner: lead` |
+| `0002 AC-3` | Remote steps 1 and 6 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-4` | `deny.toml` equals the spec block; `scripts/check.sh deny` requires `cargo-deny 0.20.2` and passes its four checks on both lockfiles; three licenses and the one `NCSA` exception; `ignore = []`; cases 5, 6 and 7 rejected | met |
-| `0002 AC-5` | The script is the spec 0001 command, byte for byte; `pool-repo-check workspace` (rule W7) passes; case 21 rejected; the local run passes on `aarch64-unknown-linux-gnu`; case 20 rejected in the container. The CI log is remote step 2 | workstation half met; CI half `NOT_RUN`, `owner: lead` |
+| `0002 AC-5` | The script is the spec 0001 command, byte for byte; `pool-repo-check workspace` (rule W7) passes; case 21 rejected; the local run passes on `aarch64-unknown-linux-gnu`; case 20 rejected in the container. The CI log is remote step 2 | workstation half met; CI half `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-6` | `pool-repo-check workspace: ok`; a failing test for each of W1 to W7 (milestone 3, 71 tests pass today); cases 8 to 12 and 21 rejected | met |
 | `0002 AC-7` | `pool-repo-check ci: ok`; a failing test for each of C1 to C5 (milestone 3); cases 13 and 14 rejected | met |
 | `0002 AC-8` | `pool-repo-check docs: ok` on the committed tree; cases 15 and 16 rejected | met |
 | `0002 AC-9` | D3 probes of milestone 3; case 17 rejected | met |
 | `0002 AC-10` | D4, D5 and D6 probes of milestone 3; cases 18 and 19 rejected, case 19 with the base revision | met |
 | `0002 AC-11` | 21 `PASS`, `all checks reject their bad change`, exit 0, clean tree; the script fails when a check stops rejecting its case | met |
-| `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
-| `0002 AC-13` | `main.json` equals the spec block; rule C2 keeps its seven contexts equal to the job ids. The remote half is remote steps 3 and 4 | file half met; remote half `NOT_RUN`, `owner: lead` |
+| `0002 AC-12` | Remote step 5 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| `0002 AC-13` | `main.json` equals the spec block; rule C2 keeps its seven contexts equal to the job ids. The remote half is remote steps 3 and 4 | file half met; remote half `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-14` | The template equals the spec block; `CONTRIBUTING.md` describes the path to `main` and names `scripts/check.sh` | met |
 | `0002 AC-15` | The four package files equal the spec; `scripts/check.sh fuzz` runs `validate` for 60 seconds with `cargo-fuzz 0.13.2` on `nightly-2026-10-17`, exit 0, no crash file; the run is recorded here | met |
 | `0002 AC-16` | `scripts/check.sh sbom` writes the one CycloneDX 1.5 file with a license for each package and leaves the tree clean; names compared with `lock-packages.txt`, the one placement explained | met |
@@ -645,10 +645,10 @@ No screen. The remote items are run by the lead with the steps under [Remote pro
 
 | Item | Criterion | Remote steps | Result |
 |---|---|---|---|
-| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 1 and 6 | `NOT_RUN`, `owner: lead` |
-| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 2 | `NOT_RUN`, `owner: lead` |
-| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `NOT_RUN`, `owner: lead` |
-| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 3 and 4 | `NOT_RUN`, `owner: lead` |
+| The seven jobs pass on a real pull request, and the merge | `0002 AC-3` | Remote steps 1 and 6 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| The CI log of `linux-build` on `ubuntu-24.04-arm` | `0002 AC-5`, CI half | Remote step 2 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| A pull request with the format error of case 1 is blocked | `0002 AC-12` | Remote step 5 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
+| The branch rule applies to `main` and a direct push is refused | `0002 AC-13`, remote half | Remote steps 3 and 4 | `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | Item 12 of "Document corrections" and the closing evidence | `0002 AC-19`, item 12 | Remote step 7 | `NOT_RUN`, `owner: lead` |
 
 ### Commands
@@ -730,7 +730,7 @@ Only the criteria whose path changed in `535bd15..a3258e4`. For the rest, the fu
 |---|---|---|
 | `0002 AC-1` | `all` exits 0 twice with six `== ok:` lines. `linux-build` exits 0. Every could not run case of the Linux build script exits 3 before `docker run`. `sbom` exits 0, and exits 1 with a clean tree when its tool fails. An exported `CDPATH` does not move either script | met |
 | `0002 AC-4` | `deny.toml` equals the spec block, with `unsound = "all"`. `deny` passes on both lockfiles with `cargo-deny 0.20.2`. Cases 5, 6, 7, 22 and 23 rejected. The unsound probe fails with the line and passes without it | met |
-| `0002 AC-5` | The first 23 lines equal the spec 0002 block and the 28 lines after the marker equal the spec 0001 block. Rule W7 passes, case 21 rejected. The local run passes on `aarch64-unknown-linux-gnu`, case 20 rejected in the container. The CI log is remote step 2 | workstation half met; CI half `NOT_RUN`, `owner: lead` |
+| `0002 AC-5` | The first 23 lines equal the spec 0002 block and the 28 lines after the marker equal the spec 0001 block. Rule W7 passes, case 21 rejected. The local run passes on `aarch64-unknown-linux-gnu`, case 20 rejected in the container. The CI log is remote step 2 | workstation half met; CI half `PASS` on 2026-11-14, see [Remote evidence](#remote-evidence) |
 | `0002 AC-6` | `pool-repo-check workspace: ok`. The W4 and W5 probes above. Cases 8 to 12, 21 and 27 rejected. 198 `pool-repo-check` tests pass | met |
 | `0002 AC-7` | `pool-repo-check ci: ok` on the committed files. A rejected change for each of C3 (a) to (d), C4 and C5, with the rule ID, the path, the line, the job id and the key as written. Cases 13, 14, 24, 25 and 26 rejected | met |
 | `0002 AC-10` | `docs` passes with a base. A base that cannot be read, a root that is not the top of the work tree and a revision that is not a commit exit 3. Cases 18, 19 and 28 rejected | met |
@@ -762,3 +762,147 @@ None of these goes against a criterion.
 - `scripts/check.sh fuzz`: `check_fuzz`, the fuzz package and its lockfile did not change in `535bd15..a3258e4`.
 - The criteria whose path did not change (`0002 AC-2`, `0002 AC-8`, `0002 AC-9`, `0002 AC-14`, `0002 AC-15`, `0002 AC-17` to `0002 AC-20`) beyond what `scripts/check.sh all` and the proof cover.
 - A run without the network, and any run on Linux outside the container or on a GitHub runner.
+
+## Remote evidence
+
+Recorded by the checker session `chk-f2-verify` on 2026-11-15. The checker did not write the code and ran none of the remote steps. The lead ran remote steps 1 to 6 under [Remote proof](index.md#remote-proof) on 2026-11-14 (UTC), with the permission the repository owner gave for this scope. The merge of step 6, at 23:38 UTC, is 06:38 on 2026-11-15 in the local time of the repository owner. The checker then read each result back from GitHub with `gh`, with read requests only, and ran the workstation commands listed below. A value that could not be read back from GitHub is marked **reported by the lead**. Everything else was read by the checker. All times are UTC.
+
+**Verdict**: `PASS` for the four remote items. `0002 AC-12`, the CI half of `0002 AC-5` and the remote half of `0002 AC-13` are met. `0002 AC-3` is met for its runs (remote steps 1 and 6); its last clause, the link from scope 002, is an edit of the lead and reaches `main` with remote step 7. Remote step 7, item 12 of "Document corrections" and remote step 8 are not run yet. Two things went differently from the text of "Remote proof" as it stood at `d463c1d`. Neither goes against a criterion (see [Readings the checker assessed](#readings-the-checker-assessed-remote-evidence)).
+
+**Repository**: `ojiepermana/pool`, public, default branch `main`, no self hosted runner (`gh api repos/ojiepermana/pool/actions/runners` reports 0).
+
+**Revision on `main`**: `d463c1d8a6888e0b1f58a65d42f8449ca7757160`, the merge commit of pull request 1, with the parents `6de697005c5f23be9d176a7ee2109ff07becd1f2` (the earlier `main`) and `5452f9c0e09c3e50dd9647f5a5a2397896189966` (the head of the pull request). `git diff --quiet 5452f9c d463c1d` exits 0, so the tree on `main` is the tree the seven checks passed on. `git rev-parse main origin/main` and `git ls-remote origin refs/heads/main` all give that hash.
+
+The cells that say what the four remote items gave were changed from `NOT_RUN`, `owner: lead` to their result in the tables of milestone 4, of the full verify and of the verify after the review fixes. Nothing else was changed in those records. Their sentences, their "Not run" lists and the milestone 2 record still say what was true on their day; where they name one of the four items as `NOT_RUN`, this section is the later result.
+
+### What happened, in order
+
+Read from the pull request timelines, the run list, the repository activity list and the rule suite list.
+
+| Time (2026-11-14) | Event | Read from |
+|---|---|---|
+| 14:44:14 | Branch `scope/002-standards-and-tooling` is created at `6cbc33e` | `gh api repos/ojiepermana/pool/activity` |
+| 14:44:17 | Pull request 1 is opened. The only run for it is `Copilot`, run 43606433608. No `ci` run starts | `gh pr view 1`, `gh run list` |
+| 14:49:50, 14:49:55 | Pull request 1 is closed and opened again | `gh api repos/ojiepermana/pool/issues/1/timeline` |
+| 14:49:57 to 14:52:02 | `ci` run 1 (43606905477) on `6cbc33e`, `success`. GitHub lists the workflow `ci` as created at 14:49:57 | `gh run view`, `gh api .../actions/workflows` |
+| 14:50:22, 14:50:23 | The automatic Copilot review leaves two review threads on `6cbc33e` | `gh api .../pulls/1/comments` |
+| 14:52:43 | Ruleset 27266107 `main` is created, `active` | `gh api .../rulesets` |
+| 14:53:39, 14:53:41 | The probe commit is made and its push to `main` is evaluated: `fail` | `git log -1 2a7d9d2`, `gh api .../rulesets/rule-suites` |
+| 14:53:56 to 14:56:19 | Branch `prove/fmt-fails` is created at `a9870c6`, pull request 2 is opened, `ci` run 2 (43607256415) ends with `failure`, the pull request is closed and the branch is deleted | activity list, `gh pr view 2`, timeline |
+| 15:00:36 | Push to the scope branch, `6cbc33e` to `5452f9c` (the two fixes for the review threads) | activity list |
+| 15:00:42 to 15:02:36 | `ci` run 3 (43607823191) on `5452f9c`, `success` | `gh run view` |
+| 23:38:00 | Pull request 1 is merged: `main` goes from `6de6970` to `d463c1d`, activity type `pr_merge`, rule suite `pass` | activity list, rule suite list |
+| 23:38:04 to 23:39:55 | `ci` run 4 (43654217182) for the push to `main`, `success` | `gh run view` |
+
+The four `ci` runs have the run numbers 1 to 4 with no gap, so no `ci` run was removed. The rule was created 41 seconds after run 1 had ended with seven passes, as "Remote proof" asks.
+
+### Remote step 1: the seven checks on a pull request (`0002 AC-3`)
+
+- [x] `gh pr view 1 --json url,state,baseRefName,headRefName,headRefOid` → https://github.com/ojiepermana/pool/pull/1, base `main`, head branch `scope/002-standards-and-tooling`, head `5452f9c0e09c3e50dd9647f5a5a2397896189966`, not a draft → `0002 AC-3`
+- [x] `gh run view 43606905477` and `gh api repos/ojiepermana/pool/actions/runs/43606905477/jobs` → https://github.com/ojiepermana/pool/actions/runs/43606905477, workflow `ci`, event `pull_request`, head `6cbc33ec1e38859f39849dea04cf8e720f004203`, conclusion `success`. Seven jobs, `fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards` and `docs`, each with the conclusion `success`, the label `ubuntu-24.04-arm` and the runner group `GitHub Actions` → `0002 AC-3`
+- [x] The same two commands for run 43607823191 → https://github.com/ojiepermana/pool/actions/runs/43607823191, workflow `ci`, event `pull_request`, head `5452f9c0e09c3e50dd9647f5a5a2397896189966`, conclusion `success`, the same seven jobs with `success` on `ubuntu-24.04-arm`. This is the run on the head that was merged → `0002 AC-3`
+- [x] `gh pr checks 1` → seven lines marked `pass`, one for each of `clippy`, `deny`, `docs`, `fmt`, `guards`, `linux-build` and `test`, all from run 43607823191 → `0002 AC-3`
+- [x] The test counts in the `test` job logs → 334 on `6cbc33e` and 339 on `5452f9c`, 0 failed. In both, 136 in the workspace (3 + 68 + 3 + 60 + 2, the Linux count). In `pool-repo-check`, 198 (90 + 108) on `6cbc33e` and 203 (93 + 110) on `5452f9c` → `0002 AC-3`
+
+### Remote step 2: the Linux build lines (`0002 AC-5`, CI half)
+
+- [x] `gh run view 43607823191 --log`, the lines of the job `linux-build`, in this order → `runner: Linux aarch64`, `host: aarch64-unknown-linux-gnu`, `release: 1.100.0`, 136 tests passed (3 + 68 + 3 + 60 + 2), `cb184231b4af3e5c927eb46bb1fd7ad289b5a357a7c8b62a14d45fd6b92d3532  target/release/pool`, `pool 0.1.0`, `linux build check passed`, and then the one line that `scripts/check.sh` adds, `== ok: linux-build` → `0002 AC-5`
+- [x] The same lines in the log of run 43606905477 (`6cbc33e`), of run 43654217182 (`d463c1d`, the push to `main`) and of run 43607256415 (the failing pull request, where `linux-build` passed) → the same seven values, and the same `sha256sum` line in all four runs. It is also the hash of every workstation run recorded above → `0002 AC-5`
+- [x] The set up lines of that job → runner image `ubuntu-24.04-arm`, version `20261111.182.1`. The container image is pulled by digest, `rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`, and prints `rustc 1.100.0 (0ef1bc386 2026-11-09)`. The runner and the target have the same architecture, so nothing is emulated → `0002 AC-5`
+
+### Remote step 3: the branch rule (`0002 AC-13`, remote half)
+
+- [x] `gh api repos/ojiepermana/pool/rulesets` → one ruleset: `27266107 main active`, target `branch`. `gh api repos/ojiepermana/pool/rulesets/27266107` → `bypass_actors` is empty, `current_user_can_bypass` is `never`, and the condition is `~DEFAULT_BRANCH` → `0002 AC-13`
+- [x] `gh api repos/ojiepermana/pool/rules/branches/main --jq '[.[].type] | sort | join(",")'` → `deletion,non_fast_forward,pull_request,required_status_checks`, all four from ruleset 27266107 → `0002 AC-13`
+- [x] The same address with the filter of remote step 3 for the contexts → `clippy,deny,docs,fmt,guards,linux-build,test` → `0002 AC-13`
+- [x] The live ruleset compared with `.github/rulesets/main.json`, both sorted with `jq -S` → every key of the file is there with the same value. The live rule has three keys more, which GitHub returned and the file does not send: `require_extra_approval_for_unattributed_changes: true` and `required_reviewers: []` under `pull_request`, and `do_not_enforce_on_create: false` under `required_status_checks` → `0002 AC-13`
+- [x] `gh api repos/ojiepermana/pool/branches/main/protection` → 404, `Branch not protected`. So there is no older branch protection next to the ruleset, and the ruleset is the only rule on `main`
+- [ ] `mergeStateStatus` of pull request 1 right after the rule was applied → **reported by the lead**: `BLOCKED`, not the `CLEAN` that step 3 expects, and `CLEAN` before the merge. A past value of this field cannot be read back. What can be read agrees with it: the live rule has `required_review_thread_resolution: true`, and the two review threads were written at 14:50, before the rule existed at 14:52
+
+The two review threads, read with a GraphQL query on `reviewThreads` and with `gh api repos/ojiepermana/pool/pulls/1/comments`:
+
+| Thread | About | Fix | State now |
+|---|---|---|---|
+| https://github.com/ojiepermana/pool/pull/1#discussion_r4574073043 on `scripts/check.sh` line 164 | An exported `CDPATH` can send the child shell of `check_fuzz` to another folder | `8cfb720`: the line now starts with `CDPATH= cd --` | resolved by `Copilot`, outdated |
+| https://github.com/ojiepermana/pool/pull/1#discussion_r4574073117 on `tools/repo-check/src/text.rs` line 186 | A link inside a code span with two backticks on each side was read as a real link | `3bb3cd2`: runs of backticks of equal length are paired, with new tests | resolved by `ojiepermana`, outdated |
+
+Both fixes are in `6cbc33e..5452f9c` (`8cfb720`, `3bb3cd2`, the merge `6fc1838`, and the log commit `5452f9c`). That the second thread was marked resolved through the lead, after the repository owner allowed it, is **reported by the lead**; GitHub shows only the account `ojiepermana`.
+
+### Remote step 4: a direct push is refused (`0002 AC-13`, remote half)
+
+The output on the terminal of the lead (`GH013`, "Changes must be made through a pull request", "7 of 7 required status checks are expected", and two equal `git ls-remote` lines) is **reported by the lead**. The push did leave a trace on GitHub, and the checker read it:
+
+- [x] `gh api repos/ojiepermana/pool/rulesets/rule-suites` and `.../rule-suites/5118624627` → one evaluation for `refs/heads/main` at 14:53:41, from `6de697005c5f23be9d176a7ee2109ff07becd1f2` to `2a7d9d284f96fdbd981987a3b794e5cdfa9cf944`, result `fail`. `pull_request`: `fail`, "Changes must be made through a pull request." `required_status_checks`: `fail`, "7 of 7 required status checks are expected." `non_fast_forward` and `deletion`: `pass`. All four are from ruleset 27266107 with the enforcement `active` → `0002 AC-13`
+- [x] `gh api "repos/ojiepermana/pool/activity?ref=refs/heads/main"` → the last two entries are a `push` to `6de6970` at 12:10:07 and the `pr_merge` to `d463c1d` at 23:38:00. No entry puts `main` on the probe commit, and none is a forced push → `0002 AC-13`
+- [x] `git log -1 2a7d9d2` in the shared object store → the probe is a commit with the parent `6de6970` and the same tree as `6de6970`, with the message of remote step 4. `git merge-base --is-ancestor 2a7d9d2 origin/main` exits 1, and `git branch -a --contains 2a7d9d2` prints nothing → `0002 AC-13`
+- [x] `gh api repos/ojiepermana/pool/commits/2a7d9d2.../branches-where-head` → `[]`. No pull request and no check run belongs to the commit. GitHub still returns the commit when it is asked for by its hash, because it keeps the object of a refused push; no branch holds it → `0002 AC-13`
+
+### Remote step 5: a wrong change is blocked (`0002 AC-12`)
+
+- [x] `gh pr view 2 --json url,state,headRefName,headRefOid,mergedAt,mergeCommit,mergeStateStatus,statusCheckRollup` → https://github.com/ojiepermana/pool/pull/2, "Do not merge: proves the fmt check", head branch `prove/fmt-fails`, head `a9870c6b895d425992dab3f45b39aee6bc138cba`, state `CLOSED`, `mergedAt` and `mergeCommit` empty, `mergeStateStatus` `BLOCKED`, `fmt=FAILURE`, `clippy=FAILURE` and `SUCCESS` for the other five → `0002 AC-12`
+- [x] `gh run view 43607256415` → https://github.com/ojiepermana/pool/actions/runs/43607256415, event `pull_request`, head `a9870c6b895d425992dab3f45b39aee6bc138cba`, conclusion `failure`. `gh pr checks 2` exits 1 and shows `fmt` and `clippy` as `fail` and the other five as `pass` → `0002 AC-12`
+- [x] `gh api repos/ojiepermana/pool/commits/a9870c6...` → one parent, `6cbc33e`, and one changed file: `apps/pool/src/main.rs`, one line added, `fn  prove_fmt( ){}`. That is the change of proof case 1. The failed log of `fmt` shows `Diff in /home/runner/work/pool/pool/apps/pool/src/main.rs:91:` and `== FAILED: fmt`. The log of `clippy` shows ``error: function `prove_fmt` is never used``, as step 5 says it would → `0002 AC-12`
+- [x] The timeline of pull request 2 → opened at 14:53:58, `closed` at 14:56:18, `head_ref_deleted` at 14:56:19, and no `merged` or `reopened` event. `git ls-remote origin refs/heads/prove/fmt-fails` prints nothing, and `gh api .../branches/prove/fmt-fails` gives 404 → `0002 AC-12`
+- [x] The pull request was opened at 14:53:58, after the rule existed (14:52:43), and no entry in the activity list of `main` comes from it → `0002 AC-12`
+
+### Remote step 6: the merge (`0002 AC-3`)
+
+- [x] `gh pr view 1 --json state,mergeCommit,mergedAt,mergedBy` → `MERGED`, merge commit `d463c1d8a6888e0b1f58a65d42f8449ca7757160`, at 23:38:00, by `ojiepermana`. `gh api repos/ojiepermana/pool/pulls/1` → `base.sha` is `6de6970`, so the branch was up to date with `main`, which the strict status check setting asks for → `0002 AC-3`
+- [x] `gh api .../rulesets/rule-suites/5123565289` → the update of `refs/heads/main` from `6de6970` to `d463c1d` at 23:38:00 has the result `pass`, with `pass` for `required_status_checks`, `pull_request`, `non_fast_forward` and `deletion`. The activity type is `pr_merge`. So the merge went through the rule and not around it → `0002 AC-3`, `0002 AC-13`
+- [x] `gh run view 43654217182` → https://github.com/ojiepermana/pool/actions/runs/43654217182, workflow `ci`, event `push`, branch `main`, head `d463c1d8a6888e0b1f58a65d42f8449ca7757160`, conclusion `success`, seven jobs with `success` on `ubuntu-24.04-arm`. The run had ended when the checker read it. 339 tests passed in its `test` job (136 + 93 + 110) → `0002 AC-3`
+- [x] `git ls-remote origin 'refs/heads/*'` → `main` at `d463c1d`, `scope/002-standards-and-tooling` at `5452f9c` (it stays, as step 6 says), and `docs/cross-check-before-development`, which is older than this scope. `gh pr list --state all` → two pull requests, 1 `MERGED` and 2 `CLOSED`
+- [ ] `mergeStateStatus` `CLEAN` right before the merge → **reported by the lead**. The rule suite above is the stronger evidence for the same thing
+
+### The revision that was pushed (review finding r2-m1)
+
+"Remote proof" asks that `scripts/check.sh all` and `scripts/prove-checks.sh` pass on exactly the revision that step 1 pushes, and that the checker records that revision and its test counts first. The record before this one names `a3258e4`. Two later revisions were pushed.
+
+- `a3258e4` to `6cbc33e`, the first head. `git diff --stat a3258e4 6cbc33e`, outside `docs/` and `graphify-out/`: `apps/pool/tests/check_config.rs` (the fix for the closed pipe tests, `648db59`), `AGENTS.md`, `CLAUDE.md`, `crates/pool-config/AGENTS.md` and `CHANGELOG.md`. No product source, script, guard or CI file changed.
+- `6cbc33e` to `5452f9c`, the merged head. Outside `graphify-out/`: `scripts/check.sh` (one line), `tools/repo-check/src/text.rs`, `tools/repo-check/src/docs.rs`, `tools/repo-check/tests/repo_check/docs.rs` and the coordination log. These are the two fixes for the review threads.
+- That `scripts/check.sh all` and `scripts/prove-checks.sh --with-linux-build` (28 `PASS`) passed on `6cbc33e` and on `5452f9c` before each push is **reported by the lead**.
+
+The checker ran both on `d463c1d`, whose tree equals `5452f9c`. Workstation: macOS 27.0.1, `arm64`, `rustc 1.100.0 (0ef1bc386 2026-11-09)`, `cargo-deny 0.20.2`, Docker server 29.9.2 (`linux/aarch64`), `git 2.54.0`, `gh 2.96.0`. Not Linux and not CI. `git status --short` was empty and there was no `target/` directory before the first command.
+
+- [x] `scripts/check.sh all` at `d463c1d` → exit 0. `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` each end with `== ok: <name>`, and the summary repeats the six lines. No line says a command was skipped. **337 tests passed, 0 failed**: 134 in the workspace (3 + 66 + 3 + 60 + 2) and 203 in `pool-repo-check` (93 unit tests and 110 integration tests). Both `cargo deny` runs print `advisories ok, bans ok, licenses ok, sources ok`, with the one expected warning `license-exception-not-encountered`. `pool-repo-check workspace: ok`, `pool-repo-check ci: ok`, `pool-repo-check docs: ok`. `git status --short` is empty afterward and `tools/repo-check/target` does not exist → `0002 AC-1`, `0002 AC-4`, `0002 AC-6`, `0002 AC-7`, `0002 AC-8`
+- [x] `scripts/prove-checks.sh --with-linux-build` at `d463c1d` → exit 0, `PASS 1` to `PASS 28`, no `FAIL` and no `SKIPPED` line, last line `all checks reject their bad change`. Case 20 was rejected in the container (`test result: FAILED. 62 passed; 6 failed`). Afterward `git status --short` is empty, `HEAD` is still `d463c1d` and the temporary copy is gone → `0002 AC-11`
+- [x] The fix `3bb3cd2`, probed in a `git clone` in a scratch directory with the binary that `scripts/check.sh all` had built. A line in `README.md` that holds a link to a missing file inside a code span with two backticks on each side → `pool-repo-check docs: ok`, exit 0. The same link outside a code span → exit 1, `D1: README.md:47: link target docs/nope.md does not exist`. The same link after a run of two backticks that is never closed → exit 1 with the same line, so a run with no partner hides nothing. The clone was removed → `0002 AC-8`
+- [x] The fix `8cfb720`, read only: line 164 of `scripts/check.sh` on `main` starts its child shell with `CDPATH= cd -- crates/pool-config`. `scripts/check.sh fuzz` was not run again (see "Not run")
+- [x] `scripts/check.sh docs` with this section in place → exit 0, `pool-repo-check docs: ok`, so every link and ID written here resolves → `0002 AC-8`
+
+The 337 tests here and the 339 in CI are the same tests: two of the `pool-config` tests exist on Linux only (66 against 68), as in every earlier record.
+
+### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0002 AC-3` | Pull request https://github.com/ojiepermana/pool/pull/1 to `main`. Seven jobs with `success` on the hosted runner `ubuntu-24.04-arm`, in https://github.com/ojiepermana/pool/actions/runs/43606905477 on `6cbc33ec1e38859f39849dea04cf8e720f004203` and in https://github.com/ojiepermana/pool/actions/runs/43607823191 on `5452f9c0e09c3e50dd9647f5a5a2397896189966`. Merged as `d463c1d8a6888e0b1f58a65d42f8449ca7757160`, and the run for that push, https://github.com/ojiepermana/pool/actions/runs/43654217182, is `success` | `PASS` for the runs and for this record. The link from scope 002 is the edit of the lead in remote step 7 |
+| `0002 AC-5`, CI half | The `linux-build` log of run 43607823191 on `ubuntu-24.04-arm`: `runner: Linux aarch64`, then `host: aarch64-unknown-linux-gnu`, and `linux build check passed` as the last line of the script. The same in the three other runs | `PASS`. With the script half above, the criterion is met |
+| `0002 AC-12` | Pull request https://github.com/ojiepermana/pool/pull/2 holds the format error of case 1. `fmt` is `FAILURE` in https://github.com/ojiepermana/pool/actions/runs/43607256415, GitHub reports `BLOCKED`, and it is `CLOSED` with no merge | `PASS` |
+| `0002 AC-13`, remote half | Ruleset 27266107 `main`, `active`, no bypass. The rules on `main` are the four types with the seven check names. Rule suite 5118624627 shows the direct push refused by two rules, and `main` never held the probe commit | `PASS`. With the file half above, the criterion is met |
+| `0002 AC-19`, item 12 | Remote step 7 | `NOT_RUN`, `owner: lead` |
+
+### Readings the checker assessed (remote evidence)
+
+The first two readings compare what happened with the text of "Remote proof" at `d463c1d`, the text the steps were run from. The spec owner has since written both cases into the spec (`818179b`, on the local `main` when this record was committed): a note under remote step 1 for a pull request that starts no run, and the review threads under remote step 3 and under "Branch rule and change path".
+
+- **Pull request 1 was closed and opened again.** Step 1 expected the `ci` run to start when the pull request is opened. It did not: the only run for that event is the `Copilot` review, the workflow `ci` is listed as created at 14:49:57, and run number 1 of `ci` starts two seconds after the `reopened` event. `0002 AC-3` asks for seven jobs with `success` on a real pull request to `main` on a hosted runner. It does not name the event. Runs 1 and 3 are `pull_request` runs of that pull request, so the criterion is met. Why the first event started no run cannot be read from GitHub; the lead suspects that the pull request was opened too soon after the first push that carried the workflow (the branch was created at 14:44:14 and the pull request at 14:44:17). It was not a lasting state: pull request 2 started run 2 on `opened`, and the push at 15:00:36 started run 3. So all three ways a pull request starts the workflow have been seen to work.
+- **`BLOCKED` in place of `CLEAN` after step 3.** Step 3 expected `CLEAN` and named only a new run of the checks as the answer to `BLOCKED`. The cause here was another one: two open review threads and `required_review_thread_resolution: true`. That value is in `.github/rulesets/main.json` and in the spec block, so the rule did what the spec says. `0002 AC-13` asks for the four rule types, the seven names and a refused push. It does not ask for `CLEAN`. The criterion is met. Both comments were answered with a commit and not waved away, and the seven checks passed again on the new head.
+- **The condition before step 1.** The checker did not record the pushed revision first; the record came after the push, and the head changed once more for the review fixes. Review finding r2-m1 already says the sentence cannot be met word for word. What the sentence is for holds: the tree that reached `main` passed `all` and the 28 proof cases on the workstation of the checker, and the seven checks twice on a GitHub runner (runs 3 and 4).
+- **`0002 AC-5`, "ends with".** The last line of `scripts/linux-build.sh` in the log is `linux build check passed`. One line follows it, `== ok: linux-build`, which is the line `0002 AC-1` asks `scripts/check.sh` to print. The checker reads the criterion as met.
+- **`0002 AC-12`, what the pull request held.** When pull request 2 was open, `main` was still `6de6970`, so its diff against `main` was the whole scope plus the one line. Its head commit adds the one line only, on top of the head that had just passed seven checks, and only `fmt` and `clippy` failed. So the failure comes from that line.
+
+### For the lead
+
+None of these goes against a criterion.
+
+- The repository runs an automatic Copilot review on every pull request (pull requests 1 and 2 both show `review_requested` and a `Copilot` run). Together with `required_review_thread_resolution: true` it means that any pull request on which that review leaves a thread is `BLOCKED` until the thread is resolved. This will also hold for the closing pull request of remote step 7. The spec at `d463c1d` did not describe it, and its remote steps 1 and 3 did not cover what happened; `818179b` adds both, and leaves the choice about the setting open as a follow-up of the spec.
+- The live rule has three keys that `.github/rulesets/main.json` does not send (remote step 3 above). `require_extra_approval_for_unattributed_changes: true` is not a value the spec decided. The checker cannot tell from the API whether it is a default.
+- `8cfb720` and `3bb3cd2` changed a script and the guard after both review rounds. They are covered here by `all`, the proof, the probe above and two CI runs, and by the Copilot thread that asked for them. No `/check review` has read them.
+- The probe commit `2a7d9d2` can still be fetched from GitHub by its hash. It is in no branch and does no harm.
+
+### Not run
+
+- Remote step 7, the closing pull request that carries this record, the scope 002 status and item 12 of "Document corrections": `NOT_RUN`, `owner: lead`.
+- Remote step 8, the first daily run: `NOT_RUN`. `gh run list --workflow ci --event schedule --limit 1 --json conclusion,createdAt,url` gave `[]` at 23:44 on 2026-11-14; the first run is due at 03:17 on 2026-11-15. It does not hold the scope open.
+- `scripts/check.sh fuzz` and `scripts/check.sh sbom` on `d463c1d`. `check_sbom` did not change since the last record. `check_fuzz` changed by the one `CDPATH` line, which was read and not run.
+- Any command of "Remote proof" that writes to GitHub. The checker sent read requests only.
