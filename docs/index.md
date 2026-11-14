@@ -133,6 +133,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/specs/0001-initial-architecture/index.md](specs/0001-initial-architecture/index.md) | 0001. POOL initial architecture |
 | [docs/specs/0001-initial-architecture/rationale.md](specs/0001-initial-architecture/rationale.md) | Initial architecture rationale |
+| [docs/specs/0001-initial-architecture/verify.md](specs/0001-initial-architecture/verify.md) | 0001. Verification record |
 
 ## docs/testing
 

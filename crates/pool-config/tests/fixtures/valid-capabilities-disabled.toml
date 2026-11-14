@@ -1,0 +1,7 @@
+config_version = 1
+
+[result_cache]
+enabled = false
+
+[automatic_promotion]
+enabled = false

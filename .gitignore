@@ -14,3 +14,4 @@ graphify-out/.graphify_semantic.json
 graphify-out/.graphify_semantic_new.json
 graphify-out/.graphify_uncached.txt
 graphify-out/.needs_update
+/target/
