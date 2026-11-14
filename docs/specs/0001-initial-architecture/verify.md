@@ -155,6 +155,8 @@ exit=1
 
 Recorded by the checker session `chk-f1-verify` on 2026-11-14. The checker did not write the code. Every command below was run again from this session's own checkout, and each criterion was checked against the real `pool` binary, not only through the tests. The developer's record above is kept as it was.
 
+This run is for revision `5f44d88`. The tester's tests and the review fixes came after it. For the current tree, read [Full verify, second run](#full-verify-second-run-merged-tree-after-the-review-fixes) below, which replaces the results of this section. The text here is kept as the record of what was true at `5f44d88`.
+
 **Verdict**: `BLOCKED`. Eleven criteria are met. `0001 AC-2` and the Linux clause of `0001 AC-11` could not be run because the Docker daemon is off. Nothing failed.
 
 **Revision**: `5f44d88bdc28a6bf958ab02b0ca3d07bee866cd9` (`main` after the scaffold merge). `git diff d493fca 5f44d88` shows no change under `apps/`, `crates/`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml` or `.gitignore`, so this is the same code the developer recorded.
@@ -226,3 +228,111 @@ Two things were also run that the spec does not ask a test for. As a user who is
 
 - `ValidatedConfig::config_version()` returns the constant `SUPPORTED_CONFIG_VERSION`, not the number that was parsed (`crates/pool-config/src/lib.rs` line 267). The output is right today because only `1` validates. The [value sourcing](index.md#value-sourcing) table says the value comes from the file's key, so this would go wrong without notice if a second version were ever supported.
 - A not UTF-8 argument written as `--config=<bytes>` is `unexpected argument`. The spec allows such a path only as the separate argument after `--config`, so this is as written, but an operator may find it surprising.
+
+## Full verify, second run: merged tree after the review fixes
+
+Recorded by the checker session `chk-f1-verify` on 2026-11-14, after the tester's tests and the review fixes were merged. Every command was run again from a clean checkout, and each rule the review made clearer was checked against the real `pool` binary. This section replaces the results of the run at `5f44d88` above.
+
+**Verdict**: `BLOCKED`, for the same single reason as before. Eleven criteria are met and nothing failed. `0001 AC-2` and the Linux clause of `0001 AC-11` could not be run because the Docker daemon is off.
+
+**Revision**: `b6ce165c09c858c9e072f0b0fcbb115213c705a9` (`main`). The code is the code of `4ebcf93`, the merge of the review fixes; `b6ce165` adds only a scope log entry.
+
+**What changed since `5f44d88`** (`git diff --stat 5f44d88..4ebcf93`): `crates/pool-config/src/lib.rs`, `apps/pool/src/cli.rs`, `apps/pool/src/main.rs`, the two test files, and the spec text (`index.md`, `rationale.md`). `Cargo.toml`, `Cargo.lock`, both package manifests, `rust-toolchain.toml`, `.gitignore` and the fifteen fixtures did not change.
+
+**Checkout**: `git status --short` was empty and there was no `target/` directory before the first command.
+
+**Workstation**: macOS on Apple silicon, `rustc 1.100.0`, selected by `rust-toolchain.toml` (`rustup show active-toolchain` says so). This is not the Linux build.
+
+**Binary under test**: `target/release/pool` (Mach-O arm64, `sha256` `1914331edd730d5356f9ae8e2b2b79a67fb20e7589f9b4b11287d21d15c80c8e`). That checksum is for the macOS build only and is not the AC-2 record.
+
+### Test counts on the merged tree (milestone 5, "Test it")
+
+`cargo test --workspace --locked` exits 0 on macOS with 134 tests passed, 0 failed and 0 ignored.
+
+| Target | Passed on macOS | At `5f44d88` (developer) | Added by the tester (`02bdcbe`) | Added with the review fixes (`4ebcf93`) |
+|---|---|---|---|---|
+| `pool` unit tests (`apps/pool/src/cli.rs`) | 3 | 3 | 0 | 0 |
+| `apps/pool/tests/check_config.rs` | 66 | 12 | 52 | 2 |
+| `pool-config` unit tests (`crates/pool-config/src/lib.rs`) | 3 | 3 | 0 | 0 |
+| `crates/pool-config/tests/validate.rs` | 60 | 13 | 44 | 3 |
+| `pool-config` doc tests (`compile_fail`) | 2 | 0 | 0 | 2 |
+| **Total** | **134** | **31** | **96** | **7** |
+
+Two more tests in `check_config.rs` are compiled only on Linux, so they are not in the 134: `a_failed_write_exits_3_without_stderr` (developer) and `ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr` (tester). With the second one the tester added 97 tests in all. Both wait for the Linux build, where the run should show 136 tests. Neither has run anywhere yet.
+
+### UI / manual
+
+- [ ] **Linux build (AC-2, and the `/dev/full` clause of AC-11)**: `BLOCKED`
+  - **reason**: `docker info` exited 1 again on 2026-11-14 at 09:17 UTC (`failed to connect to the docker API at unix:///Users/ojiepermana/.docker/run/docker.sock`). The daemon is still not running, so the command was not run, as the spec asks.
+  - **owner**: user
+  - The prerequisites, the exact command and what to record are in the developer's step under [Milestone 3](#milestone-3-scaffold-from-the-decision) and under [Linux build](index.md#linux-build). The command did not change in the review round. The expected result now includes both Linux only tests named above.
+
+### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+- [x] `cargo fmt --all --check` → exit 0 → AC-13
+- [x] `cargo clippy --workspace --all-targets --locked -- -D warnings` → exit 0, no warning → AC-13
+- [x] `cargo test --workspace --locked` → exit 0, 134 passed (3 + 66 + 3 + 60 + 2), as in the table above → AC-13
+- [x] `cargo build --locked --release -p pool` → exit 0 → AC-1
+- [x] `cargo metadata --no-deps --format-version 1` → packages `['pool', 'pool-config']`, 2 workspace members → AC-1
+- [x] `git ls-files Cargo.lock rust-toolchain.toml` → both tracked → AC-1
+- [x] Package names in `Cargo.lock` → 18 entries, the same names and versions as before. `cargo tree -e features` shows no `unbounded` feature of `toml` → AC-12
+- [x] `grep -rnE 'std::net|TcpListener|TcpStream|UdpSocket|UnixListener|UnixStream|tokio|std::thread' apps crates --include='*.rs'` → prints nothing, exit 1 → AC-12
+- [x] `nm -u target/release/pool` searched for socket, connect, bind, listen, accept, `getaddrinfo` and `pthread_create` → none of them is imported → AC-12 (extra)
+- [x] `ls -d apps/pool-cli crates/pool-protocol crates/pool-core crates/pool-control` → `No such file or directory` for all four → AC-13
+- [x] `unsafe_code = "forbid"` under `[workspace.lints.rust]`, and `[lints] workspace = true` in both package manifests → AC-13
+- [x] The four `cargo run -q --locked -p pool -- check-config ...` commands under [Linux build](index.md#linux-build), workstation part → exit 0, 1, 1, 1 with the same output as before → AC-3, AC-5, AC-6, AC-9
+- [x] The fifteen fixture files compared with the text under [Fixtures](index.md#fixtures) → byte for byte the same, no other file → AC-3 to AC-9
+- [x] Every fixture through `target/release/pool check-config` in both formats → 30 runs, exit 0 for the three `valid-*` files and 1 for the other twelve, stderr empty every time. The output is identical to the run at `5f44d88` → AC-3 to AC-9
+- [x] Byte for byte probe of the binary (the scratch script from the first run plus the review cases, 398 checks, 0 failed) → AC-3 to AC-12
+- [x] Scratch crate that depends on `pool-config` by path (5 programs that must not compile, 2 that run) → AC-7, AC-8, AC-9
+
+### Rules made clearer in the review, each checked on the binary
+
+| Rule | What was run | Observed | Result |
+|---|---|---|---|
+| An array in place of a reserved table gives exactly one `config.schema` (AC-7, AC-8, `SEC-10`) | For `result_cache` and for `automatic_promotion`: `= [false]`, `= [true]`, `= []`, `= [false, true]`, `= [[true]]`, `= [{ enabled = true }]`, `= [{ enabled = false }]`, an array of tables (`[[result_cache]]`) with `enabled = true` and with `enabled = false`, both formats | Exit 1, `findings: 1`, `config.schema` with a line and a column, every time. Never valid and never `config.unsupported_capability`. `result_cache = [false]`, which the review found was accepted at `5f44d88`, is now `config.schema at line 2, column 16` | PASS |
+| A long array that holds the canary (AC-9) | `result_cache = [...]` and `automatic_promotion = [...]` with 2000 copies of the canary string, both formats, and the same input through `validate` in the scratch crate | Exit 1, one `config.schema`. `CANARY` is in neither stdout nor stderr, and not in the `Debug` or `Display` text of the `Rejection` | PASS |
+| Other values in place of a table, or in place of `enabled` (AC-7) | A string, a boolean, a float and a date for each reserved table; `enabled = [true]` and `enabled = { enabled = true }`; `config_version = [1]` | Exit 1, one `config.schema` at the listed line | PASS |
+| The schema step ends the run (AC-8) | `config_version = 2` together with `result_cache = [true]` | One `config.schema` only. The version finding is not added, because the meaning step is not reached | PASS |
+| A dotted key with 81 parts is `config.syntax` with no location (AC-7) | `a.a. ... .a = 1` with 81 parts on line 2, both formats. The same as a table header, and as 80 more parts under `result_cache` | Exit 1. Human: `config.syntax: the file is not valid TOML`. JSON: `line` and `column` are `null` | PASS |
+| A dotted key with 80 parts is inside the parser limit (AC-7) | The same with 80 parts, as a key and as a table header | Exit 1, `config.schema at line 2, column 1` (an unknown key), so the parser read it | PASS |
+| A file of brackets does not use up the stack (AC-12) | 1 MiB of `[` in a value, 500000 nested arrays, 1 MiB of `{`, 200000 nested inline tables, 1 MiB of `[` at the start, both formats | Exit 1 with one `config.syntax` every time. No crash, no signal, no exit 101 | PASS |
+| `--format=<bytes>` and `--config=<bytes>` that are not UTF-8 (AC-11) | `--format=\xff` after and before `--config`, `--config=\xff\xfe.toml` | Exit 2, `error: unexpected argument` and the usage line, stdout empty | PASS |
+| A not UTF-8 value as the separate argument after `--format` (AC-11) | `--format \xff --config a` | Exit 2, `error: --format must be human or json` | PASS |
+| `--help=x` and `-h=x` where an option is expected (AC-11) | `check-config --help=x`, `check-config -h=x`, `check-config --help=`, `check-config --config a --help=x --bogus` | Exit 0, the exact help text, stderr empty | PASS |
+| The first argument is compared whole (AC-11) | `pool --help=x`, `pool -h=x`, `pool --version=x`, `pool -V=x` | Exit 2, `error: unknown command` | PASS |
+| `--version` and `-V` are not options of `check-config` (AC-11) | `check-config --version`, `check-config -V`, `check-config --version=x`, `check-config --config a --version` | Exit 2, `error: unknown option` | PASS |
+| A file with mode `000` (Findings, `io.permission_denied`) | A file with mode `000`, run as a user who is not root, both formats | Exit 3. Human: `error: io.permission_denied: the configuration file cannot be read: permission denied` on stderr, stdout empty. JSON: the one line error document, stderr empty. The new test `ac11_a_file_that_cannot_be_opened_is_permission_denied` also passed in the test run | PASS |
+| The column counts characters, not bytes (AC-7) | A file whose line 2 is `x = "éé" junk`, both formats, and the same text through `validate` | `config.syntax at line 2, column 10`. A count of bytes would give 12 | PASS |
+| `config_version()` comes from the parsed number (value sourcing) | `validate` on `config_version = 1` in the scratch crate, and reading `crates/pool-config/src/lib.rs` | Returns 1. The field is now set from the parsed value. Only `1` can validate, so no other value can be shown at run time | PASS, as far as it can be observed |
+| The read bound fallback (AC-12) | `--config /dev/zero` in both formats, and reading `apps/pool/src/main.rs` | Exit 1 with `config.too_large`. The fallback of the limit is now `1_048_577`, not `u64::MAX` | PASS |
+| Special files are read like any other file (known limit) | `--config /dev/stdin` with a valid file on stdin, and `--config /dev/null` | Valid report and exit 0; `config.missing_key at config_version` and exit 1. A FIFO with no writer was not run, because the spec records that it blocks | PASS for what was run |
+| No value can be built outside the crate (AC-8) | The two new `compile_fail` doc tests, and the five scratch programs | The doc tests pass. The struct literal fails with `E0451`; `Default`, `DeserializeOwned` and `Clone` fail with `E0277` | PASS |
+
+### Acceptance-criteria coverage
+
+| Criterion | Touched by the review round | What was run on this revision | Result |
+|---|---|---|---|
+| `0001 AC-1` | no | Clean checkout, release build exit 0 with 1.100.0 selected by `rust-toolchain.toml`, two workspace members, `Cargo.lock` tracked | PASS |
+| `0001 AC-2` | no | Not run. `docker info` exited 1 | BLOCKED, owner: user |
+| `0001 AC-3` | no | The three `valid-*` fixtures, both formats, byte for byte | PASS |
+| `0001 AC-4` (`SEC-10`) | no | Left out, empty table, `enabled = false`, plus the dotted and inline forms: all valid and `disabled` | PASS |
+| `0001 AC-5` (`SEC-10`) | no | `invalid-result-cache-enabled.toml` and the dotted and inline spellings: exit 1, exactly one `config.unsupported_capability` at `result_cache.enabled` | PASS |
+| `0001 AC-6` (`SEC-10`) | no | `invalid-automatic-promotion-enabled.toml` and the dotted and inline spellings: exit 1, exactly one finding at `automatic_promotion.enabled` | PASS |
+| `0001 AC-7` | yes | All fixtures and made inputs from the first run again, every row of the bad value table with its two new rows (arrays, nesting depth), the exact column case | PASS |
+| `0001 AC-8` (`SEC-12`) | yes | `invalid-multiple.toml` gives three findings in order. An array can no longer produce a `ValidatedConfig`. The compile checks above | PASS |
+| `0001 AC-9` (`SEC-4`, `SEC-11`) | yes | The three `secret-*` fixtures in both formats, the fifteen extra canary cases from the first run, and the long canary arrays: no canary in stdout, stderr, `Debug` or `Display` | PASS |
+| `0001 AC-10` | no | Every JSON run is one line, one object, in the spec's field order, with stderr empty | PASS |
+| `0001 AC-11` | yes | 49 usage cases, 11 help cases, 4 version cases, missing file, directory, mode `000`, on the workstation. Linux part (`/dev/full`): not run | PASS on the workstation. The `/dev/full` clause is BLOCKED with AC-2, owner: user |
+| `0001 AC-12` | yes | `grep` prints nothing, `Cargo.lock` holds the same 18 packages, `/dev/zero` ends with `config.too_large`, the bracket files end with a finding | PASS |
+| `0001 AC-13` | yes | The four paths do not exist, both packages inherit `unsafe_code = "forbid"`, `cargo fmt`, `cargo clippy` and `cargo test` exit 0 with 134 tests | PASS |
+
+With stdout or stderr connected to a pipe that has no reader, every command still exits 3 with no other output and no panic, as in the first run. This supports the write failure rule but is not the Linux `/dev/full` case.
+
+### Notes from this run
+
+- Both notes under "For `/check review`" in the first run are closed. `config_version()` now returns the parsed number, and the spec now says in words that `--config=<bytes>` is an unexpected argument.
+- One check in the scratch script was wrong and was corrected, not the product. It expected line 2 for a file with `result_cache = [true]` on line 2 and `automatic_promotion = [true]` on line 3. The binary reports line 3. The spec asks for exactly one `config.schema` there and does not say which of two schema errors is reported, so this is not a failure.
+- That case shows a behavior worth knowing. When a file has two schema errors, the one reported is the one whose key comes first in alphabetical order, not the one that comes first in the file (`zzz = 1` on line 2 and `aaa = 1` on line 3 report line 3). It is the same on every run. Whether `5f44d88` behaved the same way was not checked. The consequences in the spec say "only the first such error is reported", which a reader may take as first in the file. One sentence there would remove the doubt. No criterion depends on it.
