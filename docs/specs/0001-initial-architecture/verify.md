@@ -235,6 +235,8 @@ Recorded by the checker session `chk-f1-verify` on 2026-11-14, after the tester'
 
 **Verdict**: `BLOCKED`, for the same single reason as before. Eleven criteria are met and nothing failed. `0001 AC-2` and the Linux clause of `0001 AC-11` could not be run because the Docker daemon is off.
 
+**Later result**: both blocked items were run after the user started Docker Desktop, and both passed. See [Linux evidence: container build](#linux-evidence-container-build). Every `BLOCKED` entry in this section is kept as the record of this run.
+
 **Revision**: `b6ce165c09c858c9e072f0b0fcbb115213c705a9` (`main`). The code is the code of `4ebcf93`, the merge of the review fixes; `b6ce165` adds only a scope log entry.
 
 **What changed since `5f44d88`** (`git diff --stat 5f44d88..4ebcf93`): `crates/pool-config/src/lib.rs`, `apps/pool/src/cli.rs`, `apps/pool/src/main.rs`, the two test files, and the spec text (`index.md`, `rationale.md`). `Cargo.toml`, `Cargo.lock`, both package manifests, `rust-toolchain.toml`, `.gitignore` and the fifteen fixtures did not change.
@@ -262,8 +264,8 @@ Two more tests in `check_config.rs` are compiled only on Linux, so they are not 
 
 ### UI / manual
 
-- [ ] **Linux build (AC-2, and the `/dev/full` clause of AC-11)**: `BLOCKED`
-  - **reason**: `docker info` exited 1 again on 2026-11-14 at 09:17 UTC (`failed to connect to the docker API at unix:///Users/ojiepermana/.docker/run/docker.sock`). The daemon is still not running, so the command was not run, as the spec asks.
+- [x] **Linux build (AC-2, and the `/dev/full` clause of AC-11)**: `BLOCKED` in this run, `PASS` later at `18e9228`. The box was ticked by the run under [Linux evidence: container build](#linux-evidence-container-build).
+  - **reason** (as it was in this run): `docker info` exited 1 again on 2026-11-14 at 09:17 UTC (`failed to connect to the docker API at unix:///Users/ojiepermana/.docker/run/docker.sock`). The daemon is still not running, so the command was not run, as the spec asks.
   - **owner**: user
   - The prerequisites, the exact command and what to record are in the developer's step under [Milestone 3](#milestone-3-scaffold-from-the-decision) and under [Linux build](index.md#linux-build). The command did not change in the review round. The expected result now includes both Linux only tests named above.
 
@@ -336,3 +338,95 @@ With stdout or stderr connected to a pipe that has no reader, every command stil
 - Both notes under "For `/check review`" in the first run are closed. `config_version()` now returns the parsed number, and the spec now says in words that `--config=<bytes>` is an unexpected argument.
 - One check in the scratch script was wrong and was corrected, not the product. It expected line 2 for a file with `result_cache = [true]` on line 2 and `automatic_promotion = [true]` on line 3. The binary reports line 3. The spec asks for exactly one `config.schema` there and does not say which of two schema errors is reported, so this is not a failure.
 - That case shows a behavior worth knowing. When a file has two schema errors, the one reported is the one whose key comes first in alphabetical order, not the one that comes first in the file (`zzz = 1` on line 2 and `aaa = 1` on line 3 report line 3). It is the same on every run. Whether `5f44d88` behaved the same way was not checked. The consequences in the spec say "only the first such error is reported", which a reader may take as first in the file. One sentence there would remove the doubt. No criterion depends on it.
+
+## Linux evidence: container build
+
+Recorded by the checker session `chk-f1-verify-2` on 2026-11-14, after the user started Docker Desktop. The checker did not write the code. This section covers only the two items that were `BLOCKED` in [Full verify, second run](#full-verify-second-run-merged-tree-after-the-review-fixes): `0001 AC-2`, and the `/dev/full` clause of `0001 AC-11`. The other criteria were not run again. Their results stay as recorded in the second run.
+
+**Verdict**: `PASS` for both items. The command ended with exit status 0 and the line `linux build check passed`. With the second run, every criterion of spec 0001 now has a passing record.
+
+**Revision**: `18e9228c90beb254282c718c04216b8dbfeaa9df` (`main` when this session started). `git log --oneline b6ce165..18e9228 -- apps crates Cargo.toml Cargo.lock rust-toolchain.toml` prints nothing, so this is the same code as the second run. `main` moved to `7cba873` while this session worked. That commit changes only `docs/scope/coordination/` and `graphify-out/`.
+
+**Checkout**: `git status --short` was empty and there was no `target/` directory. The command sends the tree through `git archive HEAD`, so only committed files were built.
+
+**Docker**: `docker info` exited 0 at 11:30 UTC (server 29.9.2, Docker Desktop, `aarch64`).
+
+**Architecture**: the container ran as `linux/amd64` under emulation on Apple silicon, so this is evidence for `x86_64-unknown-linux-gnu` only. The architecture of the target VM (`F1-N1`, assumed `x86_64`) is still the user's to confirm.
+
+**Command**: the block under [Linux build](index.md#linux-build), taken from the spec file with `sed` and run unchanged from the repository root. It started at 11:30:43 UTC and ended at 11:32:04 UTC with exit status 0.
+
+**Image**: `rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`. The image was already on the machine, and `docker image inspect` shows the same digest under `RepoDigests`. The log has no pull lines.
+
+**Compiler** (`rustc -vV` inside the container):
+
+```text
+rustc 1.100.0 (0ef1bc386 2026-11-09)
+binary: rustc
+commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a
+commit-date: 2026-11-09
+host: x86_64-unknown-linux-gnu
+release: 1.100.0
+LLVM version: 23.1.5
+```
+
+**Build**: `cargo build --locked --release -p pool` downloaded sixteen crates, the same names and versions as in `Cargo.lock`, and ended with ``Finished `release` profile [optimized] target(s) in 46.26s``. The log holds no warning.
+
+**Binary**: the `sha256sum` line is
+
+```text
+0481be185960bc48d842a22a70c14e709a66581c95fdd4f1a0ccd09444f7bdb3  target/release/pool
+```
+
+`./target/release/pool --version` printed `pool 0.1.0`. The binary was removed with the container, as the spec says.
+
+### Test counts on Linux
+
+`cargo test --locked --workspace` passed inside the container with 136 tests passed, 0 failed and 0 ignored. The log has 136 lines of the form `test <name> ... ok` and no test line with another result.
+
+| Target | Passed on Linux | Passed on macOS (second run) |
+|---|---|---|
+| `pool` unit tests | 3 | 3 |
+| `apps/pool/tests/check_config.rs` | 68 | 66 |
+| `pool-config` unit tests | 3 | 3 |
+| `crates/pool-config/tests/validate.rs` | 60 | 60 |
+| `pool-config` doc tests | 2 | 2 |
+| **Total** | **136** | **134** |
+
+The two extra tests are the Linux only tests, and both ran here for the first time:
+
+```text
+test a_failed_write_exits_3_without_stderr ... ok
+test ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr ... ok
+```
+
+Both open `/dev/full` and give it to the `pool` binary as stdout (`apps/pool/tests/check_config.rs` lines 525 and 1781).
+
+### Fixture blocks
+
+The script printed 30 blocks of the form `== <fixture> <format> exit=<n>`, one for each of the fifteen fixtures in each of the two formats.
+
+| Fixtures | Blocks | Exit status |
+|---|---|---|
+| The three `valid-*` files, human and JSON | 6 | 0 |
+| The nine `invalid-*` and three `secret-*` files, human and JSON | 24 | 1 |
+
+The text `canary leaked` and the text `unexpected exit` are not in the log. The word `CANARY` is nowhere in the log. The output under each block is the same, line for line, as the output of the macOS binary in the second run (95 lines compared with `diff`, no difference). The last line of the log is `linux build check passed`.
+
+### UI / manual
+
+- [x] **Linux build (AC-2, and the `/dev/full` clause of AC-11)**: `PASS` → exit 0, `host: x86_64-unknown-linux-gnu`, 136 tests passed, 30 fixture blocks with the expected exit status, last line `linux build check passed` → AC-2, AC-11
+
+The two older boxes for this step, under [Milestone 3](#milestone-3-scaffold-from-the-decision) and under the first full verify, are left unticked. They are the record of runs where the daemon was off.
+
+### Acceptance-criteria coverage
+
+This table replaces only the two `BLOCKED` results in the coverage table of the second run. Every other row there stands.
+
+| Criterion | What was run on this revision | Result |
+|---|---|---|
+| `0001 AC-2` | The command under [Linux build](index.md#linux-build), unchanged, from a clean checkout of `18e9228`. Exit status 0, `host: x86_64-unknown-linux-gnu` in the output, last line `linux build check passed`. The tree came from `git archive HEAD` | PASS |
+| `0001 AC-11`, the `/dev/full` clause | The two Linux only tests ran inside the container and printed `ok`. The first covers a valid file with stdout set to `/dev/full`, which is the case the criterion names. The second covers help, version and a rejected file | PASS. With the workstation part of the second run, `0001 AC-11` is PASS in full |
+
+### Evidence files
+
+The full output is kept outside the repository, in the session scratchpad and in the shared notes folder of this coordination (`chk-f1-verify-2/linux-build.log`, 327 lines, `sha256` `65a20e2c952c02d6e801840e3d345dc79fe10f15e16bde3d37a946e51b827e75`). The lead ran the same block from `main` at the same time. That run is not part of this record.
