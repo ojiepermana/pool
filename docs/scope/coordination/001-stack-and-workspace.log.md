@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `001-stack-and-workspace.brief-umum.md` · **Langkah manual:** `001-stack-and-workspace.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-14`
-- **Diperbarui:** `2026-11-14 20:20`
+- **Diperbarui:** `2026-11-14 21:10`
 
 ## Sub sesi wave `1`
 
@@ -19,7 +19,7 @@
 | `dev-f1-build` (dipakai ulang) | developer (fix review) | F1 · fix temuan `Review it`: Major `RawCapability`, Minor 1 sampai 5, Nit kode dan test | `001-stack-and-workspace.md` | `crates/pool-config/src/lib.rs`; `apps/pool/src/{main,cli,report}.rs`; `crates/pool-config/tests/validate.rs`; `apps/pool/tests/check_config.rs` | `claude/dev-f1-build-1d7f18` | `opus-5-5 · medium` | `dipakai ulang`; laporan `done` 2026-11-14 (commit `a705659`, `5a99563`, `b18b288`, `453ae73`): Major, Minor 1 sampai 5, dan semua Nit kode/test diperbaiki; test 127 → 134; `merged` bersama `arc-f1-update` dalam satu commit merge (induk langsung commit `docs(scope): record 001 review round`) (`local_c358a9e3`) |
 | `arc-f1-update` (dipakai ulang) | architect (update) | F1 · klarifikasi spec 0001 dari review (sembilan butir) | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/index.md`, `rationale.md`; `docs/glossary.md` (istilah baru saja) | `claude/arc-f1-update-9bd0bc` | `fable-5-2 · high` | `dipakai ulang`; laporan `done` 2026-11-14 (commit `5f1e995`): sembilan klarifikasi di `index.md` dan tabel baru di `rationale.md`, tanpa AC baru atau berubah; `merged` bersama `dev-f1-build` (`local_bee8f476`) |
 | `chk-f1-verify` (lanjutan) | checker (verify) | F1 · verify ulang pada tree gabungan sesudah fix review (menutup Minor 6) | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/verify.md` | `claude/chk-f1-verify-8687b8` | `fable-5-2 · high` | laporan `blocked` 2026-11-14 (commit `cf928e7`): revisi `b6ce165`, 11 AC PASS, 134 test, 398 pemeriksaan probe, semua klarifikasi terbukti pada binary, tidak ada FAIL; `AC-2` dan klausa `/dev/full` `AC-11` tetap `BLOCKED` (Docker mati, owner user); `merged` bersama `chk-f1-review` (`local_313d3224`) |
-| `arc-f1-update` (lanjutan) | architect (update) | F1 · dua kalimat spec: frasa `deny_unknown_fields` di langkah 4, aturan satu temuan sintaks/skema adalah pilihan parser | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/index.md`, `rationale.md` | `claude/arc-f1-update-9bd0bc` | `fable-5-2 · high` | `aktif` sejak 2026-11-14 20:15 (`local_bee8f476`) |
+| `arc-f1-update` (lanjutan) | architect (update) | F1 · dua kalimat spec: frasa `deny_unknown_fields` di langkah 4, aturan satu temuan sintaks/skema adalah pilihan parser | `001-stack-and-workspace.md` | `docs/specs/0001-initial-architecture/index.md`, `rationale.md` | `claude/arc-f1-update-9bd0bc` | `fable-5-2 · high` | laporan `done` 2026-11-14 (commit `5670851`): frasa langkah 4 dan aturan satu temuan, tanpa AC berubah; gerbang lead lulus (worktree bersih, diff hanya dua file spec); `merged` (commit merge = induk commit `docs(changelog): 001 stack and workspace`) (`local_bee8f476`) |
 
 ## Keputusan
 
@@ -57,6 +57,10 @@
 | 2026-11-14 | Merge ronde fix review = `4ebcf93`; log ronde review = `b6ce165`. Re-review `chk-f1-review` pada `02bdcbe..4ebcf93`: Major tertutup (37 file probe), Minor 1 sampai 4 tertutup, Minor 5 tertutup sebagian (doctest `AC-8` ada; cek CI `AC-12`/`AC-13` menjadi Follow-up 11 spec untuk scope 002), Minor 6 ditutup `chk-f1-verify` (bagian "Full verify, second run" di `verify.md`), 10 dari 11 Nit tertutup. Lima Nit baru, opsional: frasa `deny_unknown_fields` di spec (dikirim ke `arc-f1-update`), `lib.rs:354`, `main.rs:89`, `lib.rs:28`, baris basi `CLAUDE.md`/`AGENTS.md` (langkah `/sync`). | lead |
 | 2026-11-14 | Observasi `chk-f1-verify`: di antara dua kesalahan schema, yang dilaporkan adalah yang key-nya lebih dulu secara alfabet, bukan urutan file. Tidak ada AC yang bergantung. Diambil (mode `auto`, mengikuti kode): spec menyatakan pilihan itu milik parser; runner-up: mengurutkan menurut posisi file di kode. Dikirim ke `arc-f1-update`. | lead |
 | 2026-11-14 | Sesudah semua kotak dicentang, fitur 1 TIDAK ditandai `done` dan spec 0001 tetap `In Progress`: `0001 AC-2` (build Linux) belum pernah berjalan, "Done when" scope 001 menyebut build di Linux, dan `docs/scope/index.md` serta `AGENTS.md` meminta evidence build dan test sebelum status maju. Ini menyimpang dari bawaan skill ("fitur `done` saat kotak terakhir dicentang"). Fitur menjadi `done` sesudah user menjalankan `F1-1` dan `F1-2` dengan hasil `PASS`. | lead |
+| 2026-11-14 | `Document it` dijalankan lead lewat skill `document` (`changelog`, rentang `a2dca30..HEAD`): `CHANGELOG.md` baru (Keep a Changelog, bagian Unreleased, Added). Sesuai Follow-up 8 spec 0001, bagian perintah di `CLAUDE.md`, `CONTRIBUTING.md`, dan `README.md` kini menyebut perintah nyata. | lead |
+| 2026-11-14 | `/sync` (`MODE=branch`, `MERGE_BASE=591317f`): `AGENTS.md` dua kalimat dikoreksi (repo kini memuat slice workspace scope 001; workspace Cargo ada, CI belum); `CLAUDE.md` bagian "Current state and commands", kalimat status spec, dan langkah berikutnya; `docs/index.md` (baris `CHANGELOG.md`); `docs/testing/strategy.md` (perintah kini nyata); `docs/scope/index.md` (kalimat keadaan fitur 1); `docs/scope/001-stack-and-workspace.md` (pointer `code in` dan baris evidence). Status spec 0001 sudah `In Progress`, cocok dengan fitur `in-progress`. Tidak ada centang yang ditolak dari `/sync`. Penemuan Agent Skill dan MCP dilewati: `AGENTS.md` mencatat user menundanya pada 2026-11-14, dan dependensi baru (`serde`, `toml`, `serde_json`) adalah pustaka utilitas. Tidak ada `AGENTS.md` bersarang yang dibuat. | lead |
+| 2026-11-14 | Follow-up 11 spec 0001 (cek CI otomatis untuk `AC-12` dan `AC-13`) belum disalin ke `docs/scope/002-standards-and-tooling.md`: menambah sub tugas di scope adalah urusan `/scope` dan menunggu persetujuan user. | lead |
+| 2026-11-14 | Push penutupan ditahan: `git status --short` belum kosong karena dua file untracked (`.graphifyignore`, `graphify-out/cache/last_query_stamp`). Lead mengusulkan meng-commit `.graphifyignore` dan menambahkan `graphify-out/cache/last_query_stamp` ke `.gitignore`; menunggu jawaban user. Pembersihan worktree dan branch menyusul sesudah push. | lead |
 
 ## Keputusan delegasi
 
@@ -85,11 +89,24 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 - F1 · `Verify it` · laporan `chk-f1-verify` 2026-11-14 (commit `7167f8f`; `verify.md` bagian `## Full verify`: 11 AC PASS, `AC-2` dan klausa Linux `AC-11` `BLOCKED` dengan `reason` dan `owner: user`) · `claude/chk-f1-verify-8687b8` → commit merge induk commit centang · pemeriksaan lead: worktree bersih, diff hanya `verify.md` · commit yang sama · (manual NOT_RUN: `F1-1`, `F1-2`, owner user)
 - F1 · `Test it` · laporan `done` `tst-f1-test` 2026-11-14 (commit `5ad687d`, `fae4bc6`) · `claude/tst-f1-test-143cf4` → commit merge yang sama · pemeriksaan lead di `main`: fmt, clippy, `cargo test --workspace --locked` 127 test hijau · commit yang sama · (manual NOT_RUN: `F1-2` untuk dua test khusus Linux, owner user)
 - F1 · `Review it (fresh model)` · laporan `chk-f1-review` 2026-11-14: review pertama `4a9d5e9` (Changes requested, 1 Major), re-review `b898d37` (Approve with nits, 0 Blocker dan 0 Major terbuka); file `docs/reviews/2026-11-14-scope-001-stack-and-workspace.md`; reviewer Fable, penulis kode Opus, sesi yang belum melihat implementasi · fix `claude/dev-f1-build-1d7f18` dan `claude/arc-f1-update-9bd0bc` → `4ebcf93`; `claude/chk-f1-review-203c07` dan `claude/chk-f1-verify-8687b8` (`cf928e7`, verify ulang) → commit merge induk commit centang · pemeriksaan lead di `main`: fmt, clippy, `cargo test --workspace --locked` 134 test, tiga probe array ditolak dengan `config.schema` · dicatat di commit `docs(scope): tick 001 review` · (manual NOT_RUN: `F1-1`, `F1-2`, owner user)
+- F1 · `Document it` · dijalankan lead 2026-11-14: `CHANGELOG.md` (rentang `a2dca30..HEAD`), perintah nyata di `CLAUDE.md`, `CONTRIBUTING.md`, `README.md` · tidak ada branch · dicatat di commit `docs(changelog): 001 stack and workspace` · (manual NOT_RUN: `F1-1`, `F1-2`, owner user)
 
 ## Riwayat wave
 
-- belum ada
+- Wave `1` (2026-11-14 sampai 2026-11-14, hash awal `591317f`): ketujuh kotak scope 001 dicentang. Terbuka: build Linux (`0001 AC-2`, klausa `/dev/full` `0001 AC-11`, dua test khusus Linux), jadi fitur 1 tetap `in-progress` dan spec 0001 tetap `In Progress`. Blocker: daemon Docker mati (`F1-1`, `F1-2`), arsitektur VM belum dikonfirmasi (`F1-N1`), dua file untracked menahan push. Tidak ada kotak di file scope lain yang terbuka oleh merge wave ini; scope 002 adalah fitur berikutnya dan Follow-up 11 spec 0001 menunggu `/scope`.
 
 ## Penutupan
 
-- belum dimulai
+- **Semua branch hijau di-merge:** 2026-11-14; `git branch --no-merged main` kosong sesudah commit merge terakhir
+- **Merge:** `claude/arc-f1-update-9bd0bc` → `bed9fad` (build notes), `4ebcf93` (klarifikasi review, bersama developer), dan commit merge kalimat spec (`5670851`, induk commit `docs(changelog): 001 stack and workspace`)
+- **Merge:** `claude/dev-f1-build-1d7f18` → `5f44d88` (Build plan langkah 1 sampai 5), `4ebcf93` (fix review)
+- **Merge:** `claude/chk-f1-verify-8687b8` → `02bdcbe` (verify penuh), `1eee041` (verify ulang)
+- **Merge:** `claude/tst-f1-test-143cf4` → `02bdcbe`
+- **Merge:** `claude/chk-f1-review-203c07` → `1eee041`
+- **Document:** F1 · rentang `a2dca30..HEAD` · commit `docs(changelog): 001 stack and workspace`
+- **/sync:** 2026-11-14, rentang `591317f..HEAD`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/index.md`, `docs/testing/strategy.md`, `docs/scope/index.md`, `docs/scope/001-stack-and-workspace.md`; tidak ada centang yang ditolak
+- **Commit penutup:** belum
+- **Push:** belum; ditahan dua file untracked, menunggu user
+- **Dibersihkan:** belum; menyusul sesudah push
+- **Disimpan:** belum ditentukan
+- **Blocker tersisa:** build Linux `0001 AC-2` (`F1-1`, `F1-2`, owner user) menahan status `done` fitur 1; arsitektur VM (`F1-N1`); dua file untracked menahan push

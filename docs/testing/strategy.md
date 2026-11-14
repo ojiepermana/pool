@@ -36,7 +36,7 @@ Close an implementation slice after its criteria pass in the declared environmen
 
 On each implementation PR, format, lint, compile supported targets, run unit/property and targeted integration tests. Protocol/auth/pooling changes add driver and fuzz regression suites. Promotion changes add operation crash and fencing tests. Nightly or scheduled project CI can run broader chaos, load and soak suites once the project exists. Expensive performance runs use controlled hosts rather than noisy shared runners for release decisions.
 
-For later Rust code, proposed checks include `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, dependency/license checks and documented Linux builds. These are future commands; this workspace currently has no Cargo project.
+For Rust code, the checks are `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`, dependency/license checks and documented Linux builds. The first three run today on the scope 001 workspace, and the Linux build command is in [spec 0001](../specs/0001-initial-architecture/index.md#linux-build). Dependency and license checks arrive with scope 002.
 
 ## Release gates
 

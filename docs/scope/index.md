@@ -6,7 +6,7 @@ You are building an open source PostgreSQL proxy, session pooler and cluster ope
 **Workflow:** GA, behavior verification, tests, independent review and documentation.
 **Confirmed:** Two experienced engineers, conservative lab validation, Apache 2.0 and one modular daemon plus CLI. Exact scope decisions remain proposals until their specs are ratified.
 
-You ratified the initial architecture on 2026-11-14 after independent review. Feature 1 is in progress because its design is complete; all execution boxes remain queued. No implementation is complete.
+You ratified the initial architecture on 2026-11-14 after independent review. Feature 1 is in progress: every box is ticked and its workstation evidence is recorded, and it stays in progress until the Linux build named in its Done when has run. No proxy behavior is implemented.
 
 ## At a glance
 

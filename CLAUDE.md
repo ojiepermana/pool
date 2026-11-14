@@ -8,22 +8,23 @@ AGENTS.md above is the canonical agent guide (workflow, invariants, documentatio
 
 ## Current state and commands
 
-The repository is documentation only: root guidance files, `LICENSE` and `docs/`. There is no `Cargo.toml`, source code, test suite or CI, so there is nothing to build, lint or run today. Check for a manifest before assuming otherwise.
+The repository holds the planning package plus the scope 001 workspace: `apps/pool` (the `pool` binary) and `crates/pool-config`. The only command is the offline `pool check-config`. There is no listener, proxy path or CI yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
 
-Once the workspace slice exists, the checks proposed in [docs/testing/strategy.md](docs/testing/strategy.md) are:
+These checks exist today and are run by hand (CI arrives with scope 002):
 
 ```bash
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
 cargo test -p <crate> <test_name>   # single test
+cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml
 ```
 
-These are planned commands. When a real manifest and CI appear, replace this section with what they actually define.
+The Linux container build is the command under "Linux build" in [spec 0001](docs/specs/0001-initial-architecture/index.md#linux-build). It needs a running Docker daemon, and a build on macOS is not Linux evidence. Its latest result is in the [verification record](docs/specs/0001-initial-architecture/verify.md). When CI appears, replace this section with what it defines.
 
 ## Planned architecture
 
-[Spec 0001](docs/specs/0001-initial-architecture/index.md) is the owning decision. Its content was ratified on 2026-11-14, but its lifecycle status stays "Proposed" until the foundation is built. That is intentional, not an inconsistency to fix.
+[Spec 0001](docs/specs/0001-initial-architecture/index.md) is the owning decision. Its content was ratified on 2026-11-14. Its lifecycle status mirrors scope feature 1: "In Progress" while the foundation is being built and proven, "Accepted" when the feature is done. That is intentional, not an inconsistency to fix.
 
 - **Shape:** one Rust daemon (`apps/pool`) plus a separate admin CLI (`apps/pool-cli`), and four internal crates. `pool-protocol` (framing, protocol state) and `pool-config` (validated config) depend on no other POOL crate. `pool-core` (auth integration, leases, sessions, routing, backend I/O) depends on protocol and config. `pool-control` (probes, topology, SQLite operation journal, admin operations) depends on config only.
 - **Core and control never depend on each other.** Each owns its boundary types; the daemon maps control topology snapshots into core's route view. The CLI talks only to the versioned admin API. There is no `common` crate. Auth, pooling, router, balancer, health, failover and similar candidates start as modules inside core or control and are extracted only with a documented decision ([docs/repository-structure.md](docs/repository-structure.md)).
@@ -38,7 +39,7 @@ The ten numbered safety contracts in spec 0001 are the detailed form of the AGEN
 ## Working with the docs
 
 - [docs/scope/index.md](docs/scope/index.md) is the work queue: 17 features, the last 6 deferred. A status change must update both the index row and the feature file's heading. Feature numbers are stable across renames.
-- Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. The next queued step is `/develop stack and workspace`, then the first walking slice whose acceptance is in [docs/testing/strategy.md](docs/testing/strategy.md).
+- Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. Feature 1 is built and stays in progress until its Linux build evidence exists. The next queued feature is 2 (standards and tooling), then the first walking slice whose acceptance is in [docs/testing/strategy.md](docs/testing/strategy.md).
 - [docs/implementation-order.md](docs/implementation-order.md) gives the first handoff and the entry steps for later slices; the scope index owns the order. Create only what the current slice needs; do not scaffold the full proposed tree from `docs/repository-structure.md`.
 - Each fact has one owning file (see "Documentation ownership" in `docs/repository-structure.md`). Edit it there and link from other views. Terms are owned by [docs/glossary.md](docs/glossary.md). Adding or moving a document also means updating [docs/index.md](docs/index.md).
 - Feature status advances only with linked build and test evidence. Documentation alone never moves a scope feature to `done` or a feature inventory row to Implemented or Tested. The states are defined once in the scope index's status lifecycle.

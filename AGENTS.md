@@ -1,11 +1,11 @@
 # POOL agent guide
 
-POOL is a PostgreSQL 18 proxy, session pooler and cluster operations project in Rust. The current repository contains a planning package, not an implemented proxy. The user's current instruction stops after planning. Begin implementation only when explicitly requested.
+POOL is a PostgreSQL 18 proxy, session pooler and cluster operations project in Rust. The current repository contains the planning package and the first workspace slice (scope 001: `apps/pool`, `crates/pool-config` and the offline `pool check-config` command), not an implemented proxy. The user asked for scope 001 on 2026-11-14 and nothing beyond it. Begin further implementation only when explicitly requested.
 
 ## Workflow
 
 1. Read [scope](docs/scope/index.md) and the relevant PRD from the [documentation index](docs/index.md). Before architecture or boundary changes, read [spec 0001](docs/specs/0001-initial-architecture/index.md) and the owning feature spec.
-2. Inspect the actual code, manifest, Git state and environment before relying on documentation. There is no Cargo workspace yet. Do not report a planned command as an executed check.
+2. Inspect the actual code, manifest, Git state and environment before relying on documentation. The Cargo workspace holds only the `pool` and `pool-config` packages, and there is no CI yet. Do not report a planned command as an executed check.
 3. For implementation, define the authorized slice, acceptance criteria and necessary tests before editing. The build approach is Tracer Bullet, one real path through the system before breadth. Workflow depth is GA: behavior verification, tests, fresh review and documentation.
 4. Apply [engineering standards](docs/engineering-standards.md). For protocol/auth/session work also read [protocol analysis](docs/research/protocol-analysis.md) and [security requirements](docs/security/security-requirements.md). For promotion/recovery/HA read [failover and recovery](docs/architecture/failover-recovery.md) and [threat model](docs/security/threat-model.md).
 5. Validate against real PostgreSQL and the declared profile, record evidence, and update scope/status without claiming unsupported capabilities. Public performance claims need [benchmark methodology](docs/testing/benchmark-plan.md).
