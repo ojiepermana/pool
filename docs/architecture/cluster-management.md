@@ -15,12 +15,11 @@ stateDiagram-v2
     Suspect --> Healthy: recovery evidence
     Unavailable --> Recovering: probes resume
     Recovering --> Healthy: recovery threshold and role verified
-    Healthy --> Draining: operator maintenance
-    Draining --> Detached: leases ended
-    Detached --> Unknown: explicit attach
 ```
 
-Health changes never invoke promotion by themselves. Maintenance prevents new leases; existing sessions drain until the configured deadline. Attach requires fresh identity, role and replication evidence. A returned former primary remains quarantined until explicit rejoin.
+The diagram describes observations. A node can stay healthy throughout a drain and after detach. A successful probe cannot clear an operator's maintenance, detach or quarantine decision. Admission checks observation expiry on the local monotonic clock even if the probe publisher stalls. An unexpected role change also revokes affected leases under the [routing contract](sql-routing.md).
+
+Drain stops new acquisitions and exposes the remaining leases. The [data plane](data-plane.md) owns the deadline and visible closure of remaining sockets. Attach requires an explicit operation and fresh identity, role and replication evidence. Quarantine survives restart under the [control plane contract](control-plane.md).
 
 ## Replication freshness
 

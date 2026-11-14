@@ -1,6 +1,6 @@
 # SQL routing PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.
 
 ## Problem statement
 
@@ -16,7 +16,7 @@ No arbitrary session virtualization, semantic proof from an AST, transparent ret
 
 ## Functional requirements
 
-1. Select the initial backend from authenticated profile and fresh topology at login; parse later SQL with the PostgreSQL 18 grammar adapter for admission on that pinned backend.
+1. Select the backend at login from the authenticated profile and fresh topology. Use PostgreSQL 18 grammar when checking subsequent SQL for admission on a restricted replica lease.
 2. Keep primary profile sessions pinned, including after writes.
 3. Restrict replica profiles to approved query/object and trusted schema contracts.
 4. Reject unsafe or uncertain operations in restricted replica profiles; do not migrate the session.
@@ -24,11 +24,11 @@ No arbitrary session virtualization, semantic proof from an AST, transparent ret
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Classification has a finite byte and time budget. Check the [pinned session policy](../architecture/sql-routing.md) even when classification fails.
 
 ## Dependencies
 
-Core session contract, pg_query adapter, validated policies and topology/lag observations.
+The [restricted replica slice](../scope/007-restricted-replica-sessions.md) needs the Core MVP session contract, a bounded parser adapter, an approved query surface and fresh role/lag observations. It can demonstrate retirement on request. The [manual promotion slice](../scope/010-fenced-manual-promotion.md) verifies that retirement completes before the promotion side effect.
 
 ## Data structures
 
@@ -56,15 +56,15 @@ Differential parser corpus, adversarial comments/multi statements, prepared stat
 
 ## Acceptance criteria
 
-1. **AC-1:** Every write, unknown or stateful sample is primary routed or rejected by a replica profile.
+1. **AC-1:** In a primary session each supported sample stays on its original backend. In a restricted replica session a disallowed write, stateful operation or ambiguous statement is refused before dispatch. Include a disallowed statement inside a multi-statement Query and a disallowed prepared operation in an extended pipeline. Check the replica trace and subsequent protocol/transaction state for each refusal.
 2. **AC-2:** A configured read profile selects an eligible replica at login using an admission-time lag screen, remains eventual and pinned thereafter, and retires affected leases before controlled promotion. It has no primary fallback in V1.
 3. **AC-3:** A primary session reads its committed write using the same backend and normal PostgreSQL semantics.
-4. **AC-4:** SQL parser failure cannot silently authorize replica routing.
+4. **AC-4:** A parser error, input over the classification limit or parser timeout on a replica session produces a refusal. The operation reaches neither the selected replica nor a substitute backend.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[SQL routing decision matrix](../architecture/sql-routing.md#decision-matrix).

@@ -1,6 +1,6 @@
 # Core proxy PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** Core MVP. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** Core MVP.
 
 ## Problem statement
 
@@ -24,11 +24,11 @@ No automatic replay, query cache, live session migration, PostgreSQL replication
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Bound frame sizes, concurrent handshakes and admission time. The [data plane resource proposal](../architecture/data-plane.md#resource-proposal) supplies lab values for the spec to qualify.
 
 ## Dependencies
 
-Initial architecture, protocol contract, identity mapping and a PostgreSQL 18 test instance.
+The [walking slice](../scope/004-one-real-primary-path.md) needs a mapped login, an authorized writer with fresh matching identity and role evidence, and a direct PostgreSQL 18 baseline. Start AC-1 and the applicable admission and failure cases of AC-3/AC-4 there. The [protocol breadth slice](../scope/006-protocol-breadth-and-cancellation.md) qualifies the remaining corpus and driver combinations for the Core MVP.
 
 ## Data structures
 
@@ -56,15 +56,15 @@ Golden fragmented frames, state model properties, malformed protocol fuzzing, li
 
 ## Acceptance criteria
 
-1. **AC-1:** A TLS authenticated psql session can INSERT and SELECT through one primary with results matching direct PostgreSQL.
+1. **AC-1:** A TLS authenticated psql session reaches the mapped login and database on the authorized primary. INSERT, SELECT and a server error match a direct session under that login, including SQLSTATE. A second connection confirms that a write left uncommitted at disconnect was rolled back. An unmapped principal/database pair or conflicting writer evidence is refused before application SQL can run.
 2. **AC-2:** The declared extended/COPY/cancellation corpus passes for 3.0 and 3.2 without cross lease effects, including delayed delivery after completion and attempted release/reuse.
-3. **AC-3:** Exceeding configured frame, connection and queue limits produces bounded memory and an explicit failure.
-4. **AC-4:** Backend loss after COMMIT dispatch never causes POOL to replay the transaction.
+3. **AC-3:** Submit an oversized frame and saturate the configured connection and waiting limits. Observe the specified refusal or deadline, memory within the budget declared in the feature spec, and permits returned after disconnect.
+4. **AC-4:** Break the backend connection after PostgreSQL receives COMMIT and before POOL receives the response. The client observes connection loss, the session ends, and a backend trace shows one dispatch. POOL never retries the transaction or reports a definite rollback for that lost response.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Protocol inventory](../research/protocol-analysis.md) and [protocol engine](../architecture/protocol-engine.md).

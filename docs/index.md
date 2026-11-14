@@ -2,20 +2,20 @@
 
 **Package date:** 2026-11-14. This index covers every generated Markdown document plus the project license. All application capabilities remain planned. A ratified foundation still does not mean it has been built.
 
-Read the architecture decision for the chosen foundation, the scope for work order, PRDs for behavior, and research for dated evidence. The final [decision ledger](plan/decision-ledger.md) records your answers and the independent critique outcome.
+For the next development task, start with the [workspace handoff](implementation-order.md#first-handoff-the-workspace). Use the [readiness review](plan/planning-validation.md#development-readiness-review) to see what changed and which decisions still gate later work.
 
-## Package map
+## Where a change belongs
 
-| Area | Purpose |
-|---|---|
-| Root guidance | Identity, contribution, license, security and agent workflow |
-| Scope | Coarse queue and lifecycle status |
-| Specs and ADR | Canonical architecture decision and its history index |
-| Research | Baseline, competitors, protocol, dependencies, census and feasibility |
-| Architecture | Data/control contracts, pooling, routing, topology, failover and deployment |
-| Plan | Milestones, effort, risks, dependencies and decision record |
-| PRDs | Ten proposed feature contracts and 41 acceptance criteria |
-| Testing and security | Evidence strategy, driver coverage, benchmarks and threat model |
+| If the question is… | Update this owner | Link from other views |
+|---|---|---|
+| What is in scope, in what order, and what is its status? | The [numbered feature and scope index](scope/index.md) | Plan references feature numbers. A feature may deliver parts of several PRDs. |
+| What must a user or operator observe? | The relevant [PRD](#docsprd), including its acceptance criteria | Cite document and local ID together, e.g. `PRD-001 AC-1`. IDs stay stable when wording is clarified; retire superseded criteria explicitly. |
+| How does the product meet that contract? | The owning feature spec; [0001](specs/0001-initial-architecture/index.md) governs the foundation | Architecture explains interactions; the ADR points to the decision. A PRD's suggested types and defaults are inputs until the spec settles them. |
+| What blocks delivery, and what qualifies a release? | [Dependencies](plan/dependencies.md), [risks](plan/risk-register.md) or [milestones](plan/milestones.md), according to the question | Record a decision once in its spec; the [ledger](plan/decision-ledger.md) records its disposition. |
+| How is a requirement proved? | [Testing strategy](testing/strategy.md#acceptance-evidence) for the method; the slice verification record for results | Scope and release reports link to that evidence. Use the [driver matrix](testing/compatibility-matrix.md) for the supported profile. |
+| What global rule or upstream behavior applies? | [Engineering standards](engineering-standards.md), [security requirements](security/security-requirements.md) or dated research | The [feature inventory](feature-matrix.md) records parity dispositions. A research entry is neither a release commitment nor a test result. |
+
+When one change crosses these boundaries, change the owner first and follow its references to the affected scope, plan and tests. Unaffected documents need no matching paragraph. All ten PRDs are proposed contracts, subject to these shared standards and the governing spec.
 
 ## Project root
 
@@ -143,4 +143,4 @@ Read the architecture decision for the chosen foundation, the scope for work ord
 
 [LICENSE](../LICENSE) contains the official Apache License 2.0 text selected by you. Its appendix contains the standard example notice fields; those are part of the canonical license, not unfinished project documentation.
 
-This index lists 67 other Markdown documents and itself, plus LICENSE. No source files, build scaffolding or deployment assets are represented as implemented.
+The [planning validation record](plan/planning-validation.md) describes the coverage and limits of the documentation checks.

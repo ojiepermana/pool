@@ -10,7 +10,7 @@ Use rustfmt and Clippy. First party crates should forbid unsafe code. A technica
 
 ## Data and protocol safety
 
-Preserve transaction boundaries and backend session identity. Keep writes on the eligible primary. Fail new admission closed when role or authority is uncertain. Never silently retry non idempotent operations or automatically replay a transaction with uncertain commit outcome. A replica observation is not proof of full catch up. Separate health evidence from promotion authority; require verified fencing before promotion.
+Preserve transaction boundaries and backend session identity. Keep writes on the eligible primary. Fail new admission closed when role or authority is uncertain. Once bytes may have reached a backend, never replay the statement or transaction, even if it appears idempotent. A lost COMMIT response leaves the outcome for the application to reconcile. Follow the [initial architecture safety contracts](specs/0001-initial-architecture/index.md#safety-contracts) for replica admission, cancellation and promotion authority.
 
 Validate message lengths and arithmetic before allocation, support partial reads/writes, preserve asynchronous messages and SQLSTATE, and model every state transition. Cancellation belongs to the live lease and must be safe across completion and reuse. Unknown session cleanup closes the backend. Bound large payloads and auth/parser work explicitly.
 
@@ -24,11 +24,11 @@ Follow [security requirements](security/security-requirements.md). Keep secrets 
 
 ## Tests and evidence
 
-Critical logic requires unit and integration coverage plus appropriate state, property, fuzz, driver or chaos tests. A mock response cannot establish real protocol or failover behavior. Benchmark claims include environment, equivalent mode/config, raw data and distributions. Feature status advances only with linked evidence. Test code should check externally meaningful behavior and invariants rather than mirror private implementation details.
+Test observable behavior and safety invariants. Choose the test layer and record the result using the [testing strategy](testing/strategy.md#acceptance-evidence). Follow the [benchmark method](testing/benchmark-plan.md) for performance claims.
 
 ## Git and releases
 
-Use protected main, pull requests, required CI and review for safety changes. Keep changes small and use conventional commits. Never commit secrets. Keep a changelog, semantic versioning policy, release tags, checksums, SBOM, notices, functioning examples and an upgrade/rollback guide. Branch protection cannot be configured here because no Git repository or remote exists yet.
+Use protected main, pull requests, required CI and review for safety changes. Keep changes small and use conventional commits. Never commit secrets. Keep a changelog, semantic versioning policy, release tags, checksums, SBOM, notices, functioning examples and an upgrade/rollback guide. Verify branch protection and required checks on the remote when setting up [standards and tooling](scope/002-standards-and-tooling.md).
 
 ## Workflow
 

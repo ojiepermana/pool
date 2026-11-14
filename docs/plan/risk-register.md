@@ -28,4 +28,6 @@ Probability is an initial engineering judgment, not a measured frequency. Critic
 | Scope expansion | High | High | MVP/V1 boundary, advanced go or no go gates | Review roadmap at each release | Project lead |
 | Single maintainer dependency | High | High | Two release maintainers and documented operations | Independent release/restore exercise | Project lead |
 
+At slice entry, the implementer assigns a person to each applicable risk with the reviewer. Link the mitigating decision and the negative test or drill in the spec. At the milestone review, identify any remaining exposure, its owner and the decision it blocks. An open fencing or identity safety failure cannot be waived by reporting a good benchmark. See [handoffs](dependencies.md) and [release gates](milestones.md).
+
 The highest initial priorities are protocol identity and state, unsafe routing, cancellation reuse races, uncertain outcomes, and fencing. No throughput optimization takes precedence over these invariants.

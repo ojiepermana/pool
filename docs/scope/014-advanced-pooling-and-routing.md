@@ -6,4 +6,6 @@ Evaluate transaction multiplexing and broader transparent routing under an expli
 
 **Done when:** Session features, prepared statements, consistency and unsupported behavior have verified boundaries.
 
+Reopen with a measured need and a proposed compatibility contract. The V1 exclusions remain in the [pooling](../prd/002-connection-pooling.md#non-goals) and [routing](../prd/003-sql-routing.md#non-goals) PRDs.
+
 - [ ] Design it (spec): `/architect advanced pooling and routing`

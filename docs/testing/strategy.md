@@ -1,6 +1,6 @@
 # Testing strategy
 
-Tests establish the declared support profile; they do not prove every PostgreSQL behavior. Map cases to PRD acceptance IDs and feature matrix IDs. Save binary hashes, configs, fixture version, environment and test logs with release evidence. No runtime test has been executed during this documentation phase.
+This strategy defines how to qualify the declared support profile. All runtime evidence is pending.
 
 | Layer | Test method | Required evidence |
 |---|---|---|
@@ -20,7 +20,17 @@ Tests establish the declared support profile; they do not prove every PostgreSQL
 
 ## First walking slice acceptance
 
-Use one primary and one real client, verified TLS, actual authentication, bounded framing and admission, a successful INSERT and SELECT, disconnect and observed rollback of any incomplete transaction. Record the direct PostgreSQL baseline. Shared connection reuse, replica routing and failover are later slices, so this success is not reported as a complete MVP.
+Run the same fixture through direct PostgreSQL 18 and through POOL with the mapped login, verified TLS and one dedicated backend. Compare the committed INSERT/SELECT result and a deliberately generated server SQLSTATE. Then disconnect during a second, uncommitted insert. Observe the backend exit, the permit return and the absence of that row from a fresh connection. With a configured connection or frame limit exceeded, verify bounded rejection and a subsequent successful login. This covers the first slice of the [core proxy PRD](../prd/001-core-proxy.md#acceptance-criteria).
+
+## Acceptance evidence
+
+Before implementation, use the owning feature spec to identify the acceptance criteria in this slice. Qualify each PRD reference with its document number (for example, `PRD-001 AC-1`). For each case identify the fixture, supported profile, expected observation and applicable negative or fault case. Link relevant inventory IDs (`F-*`) and security requirements (`SEC-*`) where they apply. A foundation slice can use its scope or spec criteria directly.
+
+Keep the verification record with the feature spec. Record the revision and artifact digest where applicable, a reproducible command or CI run, fixture and dependency versions, redacted configuration, expected and observed behavior, and the result for each criterion. Mark a failed, blocked or unrun case explicitly. Tests and logs containing credentials, cancel keys or sensitive SQL must use sanitized fixtures or redacted artifacts.
+
+For a design or feasibility slice, record the reviewed decision, evidence considered and its limits. A no-go decision can conclude the study; it does not qualify a runtime capability.
+
+Close an implementation slice after its criteria pass in the declared environment, critical regression cases are committed, an independent reviewer has examined the applicable safety changes, and operator or configuration instructions reflect the behavior. Link the verification record from the owning scope feature. A release report can cite the same record for the same artifact and profile. If the candidate or profile changes, identify affected claims and rerun their cases.
 
 ## CI progression
 
@@ -30,4 +40,4 @@ For later Rust code, proposed checks include `cargo fmt --check`, `cargo clippy 
 
 ## Release gates
 
-No unresolved critical safety defect. Every claimed matrix capability has test evidence and known limits. Driver releases and PostgreSQL package versions are pinned. A fresh reviewer examines protocol identity and failover assumptions. Benchmark changes report methodology and confidence, not only a winning throughput number. Failed gates keep the feature planned or in progress; documentation alone never changes it to Implemented/Tested.
+Apply the [milestone gates](../plan/milestones.md) to a pinned release candidate. Record results for the applicable [driver profiles](compatibility-matrix.md), soak duration above, failure cases, and [benchmark method](benchmark-plan.md). For operational V1, retain the four VM topology, sanitized operation history and independent fence evidence from the drill. Keep blocked or unrun cases visible. An unresolved critical safety defect or a failed required case blocks the corresponding release claim.

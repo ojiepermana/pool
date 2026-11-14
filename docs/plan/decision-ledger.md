@@ -34,7 +34,7 @@
 
 The initial architecture is ratified. Each safety sensitive feature still gets a scoped build specification with concrete defaults, interfaces, acceptance criteria, and source values. The PRDs in this package are proposed product contracts, not evidence that those features exist. Future amendments record an explicit decision rather than silently changing the accepted foundation.
 
-The confirmed routing restriction matters: automatic replica selection is available inside an explicit read only profile with eventual-read semantics and admission-time lag screening. Arbitrary application sessions do not move between servers. Continuous staleness guarantees and transparent mixed-session routing remain deferred product decisions.
+For open choices, the numbered scope file identifies the owner role and the first slice that needs a decision. Use the [dependency handoffs](dependencies.md) to see which work is blocked. Record alternatives, the chosen value or interface, reviewer, date and affected criteria in that slice's spec. If a new choice changes a ratified safety contract, amend the governing decision and link the superseding spec here before building against it. A proposed default, an assigned role or a passing experiment alone does not ratify a change.
 
 ## Independent review resolutions
 

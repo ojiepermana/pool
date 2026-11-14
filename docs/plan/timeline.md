@@ -22,6 +22,8 @@ Elapsed ranges are rounded up from effort divided by capacity. The realistic col
 | V1.5, through Phase 5 | 64 to 100 | 32 to 50 | 50 to 77 |
 | Selected V2, through Phase 6 | 88 to 148 | 44 to 74 | 68 to 114 |
 
+The totals above include the original research and planning allowance. They are not a forecast of remaining effort from this review. Refresh the remaining estimate from the actual team, lab availability and completed gates when implementation is authorized.
+
 The first walking slice is a proposed 1 to 2 engineer week experiment after prerequisites. It is included in Phase 2 and is not added again. A failed experiment may change the range. Native/snapshot replication and complete parity are not bounded by the selected V2 estimate; they may be declined after feasibility review.
 
 One engineer roughly doubles capacity based elapsed time and requires external review rather than eliminating it. Three or four engineers can parallelize harnesses, operations and documentation, but protocol, auth and routing contracts stay on the critical path. Do not divide the entire schedule by four. Reestimate after the first two completed slices using measured effort and defect discovery.

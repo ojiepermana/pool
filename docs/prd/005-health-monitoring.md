@@ -1,6 +1,6 @@
 # Health monitoring PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.
 
 ## Problem statement
 
@@ -24,7 +24,7 @@ No promotion caused by health failure and no freshness guarantee derived only fr
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Reserve probe capacity and measure the age of the observation at admission. A delayed publisher cannot extend its lifetime. See [health and topology](../architecture/cluster-management.md#health-and-topology).
 
 ## Dependencies
 
@@ -58,13 +58,13 @@ Network delay/drop, permission removal, replay pause, wrong system ID and monoto
 
 1. **AC-1:** A reachable wrong-role or wrong-cluster node cannot become eligible.
 2. **AC-2:** Missing or expired WAL evidence is visible as unknown and excludes replica admission.
-3. **AC-3:** With proposed 2 second period and 1 second timeout, failures are observed and eligibility expires within the configured 6 second freshness bound plus documented scheduler tolerance.
+3. **AC-3:** With the probe publisher paused past the configured freshness deadline, a new acquisition refuses the expired observation even if the last published status was Healthy. Using the [lab settings](../architecture/cluster-management.md), inject failed probes and record the first refusal and first diagnostic update. Eligibility must expire by its freshness bound; set a separate scheduler tolerance for reporting in the feature spec and test against it.
 4. **AC-4:** Health failure alone produces no promotion action.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Health diagnostics and drain](../scope/008-health-diagnostics-and-drain.md).

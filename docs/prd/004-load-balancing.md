@@ -1,6 +1,6 @@
 # Load balancing PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.
 
 ## Problem statement
 
@@ -24,19 +24,19 @@ No per query backend switching, latency feedback policy or least connections per
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Selection must finish within the acquisition deadline. Publish selection counts only for configured nodes; never create selector state for arbitrary client input.
 
 ## Dependencies
 
-Routing profiles, topology snapshots, admission budgets and health checks.
+The [restricted replica slice](../scope/007-restricted-replica-sessions.md) consumes approved profiles, admission budgets and fresh topology under the [cluster health contract](../architecture/cluster-management.md). The selector takes eligibility as input.
 
 ## Data structures
 
-ReplicaPolicy: positive weights keyed by backend ID, admission-time lag byte limit, observation age cap and fallback=false. SelectorState: bounded per policy sequence counter. CandidateSet: snapshot generation plus eligible IDs. Weight changes affect new sessions only. The lag screen does not guarantee ongoing result freshness.
+ReplicaPolicy contains weights keyed by backend ID, an admission lag limit in bytes, an observation age cap and fallback=false. Only eligible replicas with positive weight can receive new sessions. SelectorState keeps bounded state per policy. CandidateSet contains the snapshot generation and eligible IDs.
 
 ## Interfaces
 
-`choose(profile, snapshot, selector_state)` returns backend ID and reason. Configuration reload rejects negative/all-zero unusable weights. Diagnostics show eligibility exclusions and weights.
+`choose(profile, snapshot, selector_state)` returns a backend ID or an unavailable reason. Configuration reload rejects negative weights and a policy with all weights zero. The feature spec must settle whether a single zero weight explicitly disables that replica or makes the configuration invalid. Diagnostics show exclusions and weights.
 
 ## Failure scenarios
 
@@ -56,15 +56,15 @@ Deterministic weighted trials, all-stale cases, concurrent selection, maintenanc
 
 ## Acceptance criteria
 
-1. **AC-1:** An ineligible replica is selected zero times in the controlled corpus.
-2. **AC-2:** At least 10,000 equal-duration synthetic acquisitions follow configured weights within a documented five percentage point absolute tolerance.
+1. **AC-1:** No client obtains an ineligible replica. Cover a matching snapshot at selection followed by stale evidence, drain or a role mismatch before lease handoff.
+2. **AC-2:** With fixed eligibility, available capacity and unequal positive weights, run at least 10,000 successful synthetic acquisitions. Each replica's share of initial leases falls within five percentage points of its weight divided by the total eligible weight.
 3. **AC-3:** Weight reload never moves an already leased session.
-4. **AC-4:** No eligible replica produces a bounded wait or explicit refusal, with zero primary fallback selections in V1.
+4. **AC-4:** With all replicas ineligible, a new replica session fails by its configured admission deadline. The trace shows zero acquisitions on the primary.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Selection policies](../architecture/cluster-management.md#selection-policies) and [replica session scope](../scope/007-restricted-replica-sessions.md).

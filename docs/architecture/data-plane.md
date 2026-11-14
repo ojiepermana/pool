@@ -7,10 +7,12 @@ You can model each frontend as one owner task with bounded read and write state.
 | Listener | Socket, listener configuration generation | Connection permit or explicit overload rejection |
 | Startup | Framed bytes and TLS policy | Validated startup identity, negotiated protocol |
 | Auth | Identity and verifier/certificate reference | Verified principal, then operator map to allowed cluster/database/backend login/secret reference/profile |
-| Initial admission | Mapped principal/database/profile, pool key and fresh topology | One eligible endpoint and initial lease, or bounded wait/refusal, before ReadyForQuery |
-| Operation admission | Later syntax classification, pinned session state and policy | Allow or refuse on the existing lease, with reason and policy generation, never a new endpoint |
+| Initial admission | Mapped identity/profile and current topology | Select an eligible endpoint, derive its pool key, acquire and recheck eligibility before exposing the lease to the client |
+| Restricted replica admission | Later operation, its classification, pinned session state and policy | Allow or refuse on the existing lease, with reason and policy generation |
 | Relay | Frontend/backend frame streams | Ordered messages, counters, updated protocol state |
 | Release | Terminal frontend state and outstanding work | Clean idle backend or socket closure |
+
+Even the dedicated primary path consumes approved writer identity and fresh matching PostgreSQL observations from the [control plane](control-plane.md). The simple query path can run on its pinned primary before a replica policy or parser is introduced. Before cancel forwarding is qualified, keep real backend cancellation credentials private and leave forwarding disabled. The protocol slice defines the client-visible behavior for each supported version.
 
 ## Resource proposal
 

@@ -28,6 +28,8 @@ Read only profiles accept eventual reads. A fresh lag sample screens admission; 
 
 Use PostgreSQL 18 raw grammar through an adapter. Classification reports effects, statement boundaries, uncertainty and reason codes. It is not an authorization engine. Views, rules, RLS, overloaded operators, casts, FDWs, SECURITY DEFINER functions and external side effects cannot be proven safe by a raw AST. A read profile needs trusted schema/extension ownership, approved query surface, database permissions and an operational change process. Volatility annotations are promises, not a proof against a malicious extension.
 
+The restricted profile spec must define how to reject an operation before forwarding unsafe bytes. For a simple Query, check the entire message. For extended operations, bind admission to the exact prepared statement and portal on the lease, including replacement of unnamed objects. Cover changes to schema or policy between Parse and Execute. If a refusal occurs after earlier frames reached PostgreSQL, the spec must show how the client and backend stay synchronized through Sync and report the true transaction state, or close the session. See the [protocol state model](protocol-engine.md).
+
 ## Consistency
 
 Primary sessions provide normal PostgreSQL behavior on their pinned backend. Replica sessions provide eventual reads, not primary freshness or cross session causality. Lag thresholds screen new session admission only. An LSN based causal token would need cluster identity, timeline history, a commit flush source and replay verification; this is deferred rather than approximated by a time based sticky window. After write, a primary session stays primary for its lifetime.

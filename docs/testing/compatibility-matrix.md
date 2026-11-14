@@ -1,6 +1,6 @@
 # Driver compatibility matrix
 
-**State:** Planned, not tested. PostgreSQL 18 is the initial server major. Pin actual driver versions and build flags when the harness is implemented; rolling latest versions are not a reproducible test target.
+**State:** Planned, not tested. PostgreSQL 18 is the initial server major. The walking slice uses one pinned psql/libpq build. Core MVP qualifies the first two rows, including each listed Rust client. V1 must cover those rows and the remaining clients on its release candidate.
 
 | Client | Required paths | Important cases | Release gate |
 |---|---|---|---|
@@ -18,4 +18,4 @@ Each client runs direct PostgreSQL and proxied variants with equivalent SQL and 
 
 Test all supported protocol/auth combinations, including unsupported option errors. Protocol 2, legacy MD5, GSS encryption/auth, OAuth, logical replication clients and arbitrary PostgreSQL extensions are outside the initial support claim until separately qualified. A refused unsupported feature is different from silent corruption.
 
-The V1 report must contain exact versions, environment and evidence links in this table before any row is marked tested. No checkmark is present because no executable proxy exists yet.
+For each result record the client and server builds, requested and negotiated protocol, auth/TLS mode, direct and proxied observations, and a link to the [verification record](strategy.md#acceptance-evidence). Record any driver limitation alongside the applicable case. For example, a run negotiated at 3.0 supplies no evidence for the 3.2 cancellation path. List unrun and excluded combinations separately from passing ones. Link results for the candidate from its release report.

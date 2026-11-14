@@ -1,6 +1,6 @@
 # Repository proposal
 
-This is a proposed target layout. Only documentation and the chosen project license are created during planning. The initial workspace would contain two applications and four internal crates; you can defer every other crate until a real interface boundary emerges.
+This is a proposed target layout. Only documentation and the chosen project license are created during planning. The initial architecture defines boundaries for two applications and four internal crates. Create the directories only as a slice uses them; the first build is the [workspace handoff](implementation-order.md#first-handoff-the-workspace).
 
 ```text
 pool/
@@ -73,4 +73,4 @@ The controller executable, consensus crate, cache crate, dashboard and middlewar
 
 ## Documentation ownership
 
-Scope tracks coarse features and status. Specs own architecture and later implementation decisions. PRDs state product behavior. ADR files index canonical decisions. Research stores dated evidence. Architecture docs explain contracts. Testing docs define proof. Operations docs explain deployment/recovery. Update a fact in its owning file and link from other views instead of maintaining contradictory copies.
+Use the [documentation ownership table](index.md#where-a-change-belongs) when changing a requirement, decision, milestone or test. The operations directory in the proposed layout is for tested operator procedures as each feature becomes available.

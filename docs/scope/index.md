@@ -30,13 +30,15 @@ You ratified the initial architecture on 2026-11-14 after independent review. Fe
 | 16 | [Additional replication modes](016-additional-replication-modes.md) | Deferred | planned |
 | 17 | [Administrative dashboard](017-administrative-dashboard.md) | Deferred | planned |
 
+Use the [first development handoff](../implementation-order.md) to start, [dependencies](../plan/dependencies.md) for prerequisites and [milestones](../plan/milestones.md) for release gates. Feature numbers identify work; PRD numbers identify contracts. For example, scope 004 delivers part of PRD-001, not PRD-004. Each feature links to its contract and names what will prove its part.
+
 ## File ownership
 
 This index manages build order, phase, project defaults, and the status overview. Feature filenames use a three digit prefix matching their feature number, such as `001-stack-and-workspace.md` through `017-administrative-dashboard.md`. The central index remains `index.md`. Each linked feature file owns its intent, Done when criteria, checklist, and spec/evidence pointers. When a feature changes status, update both its index row and its heading. Keep its existing number when renaming or moving the file, and update the link here.
 
 ## Legend
 
-Only the foundation is in progress, reflecting your accepted design. Other features remain planned, including deferred features. A decision box is checked only after you accept its spec. Later feature specs add a coarse build milestone rollup and GA verification boxes; atomic tasks stay in the spec. Build and test evidence are required before completed implementation is claimed.
+Only the foundation is in progress, reflecting your accepted design. Other features remain planned, including deferred features. A decision box is checked only after you accept its spec. Later feature specs add a coarse build milestone rollup and GA verification boxes; atomic tasks stay in the spec. A design or feasibility decision can unblock its dependent slice; it does not mark a capability implemented. Build and test evidence are required before completed implementation is claimed.
 
 Needs a decision means behavior or safety is not yet fully settled. Deferred means outside the current release queue, not silently removed from the parity inventory. You can revisit scope after each shipped slice.
 

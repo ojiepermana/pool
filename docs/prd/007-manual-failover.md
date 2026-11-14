@@ -1,6 +1,6 @@
 # Manual failover PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.
 
 ## Problem statement
 
@@ -20,11 +20,11 @@ No automatic promotion, transparent client transaction replay, automatic reverse
 2. Bind operator approval to plan hash, target, expected epoch, RPO disclosure and expiration.
 3. Obtain and independently validate a fencing receipt for the exact old-primary infrastructure identity.
 4. Write durable intent before fencing and promotion, retire candidate replica leases, and reconcile unknown external outcomes.
-5. After observing the new primary, durably commit approved writer, epoch, quarantine and operation result before publishing eligibility. A known final flush target requires a barrier across all writer paths and proof that candidate replay reaches it on compatible timeline history; otherwise keep a required catch-up plan closed or replan with an explicitly acknowledged loss bound.
+5. After observing the new primary, durably commit approved writer, epoch, quarantine and operation result before publishing eligibility. Follow the [candidate and recovery point policy](../architecture/failover-recovery.md#candidate-and-rpo-policy) for a known flush target or an unknown loss window.
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Keep the cluster closed while the outcome of fencing or promotion is unknown. Preserve enough durable evidence to reconcile the exact operation after restart.
 
 ## Dependencies
 
@@ -58,14 +58,14 @@ Crash at each phase, partitioned old primary, independent fence verification fai
 
 1. **AC-1:** Missing, stale or target-mismatched fencing evidence prevents promotion.
 2. **AC-2:** A health timeout alone produces no executable promotion operation.
-3. **AC-3:** Crash or lost promotion response enters reconciliation and never blindly replays promotion.
+3. **AC-3:** Drop the provider's fence response or PostgreSQL's promotion response after the effect. Retrying execution or restarting returns the operation to reconciliation. An inconclusive result keeps admission closed and prevents a second irreversible action.
 4. **AC-4:** Promotion permanently crosses the rollback boundary; the old primary remains fenced/quarantined and approved writer/epoch survive restart. Candidate replica leases are retired before promotion.
-5. **AC-5:** Unknown loss window is shown and explicitly acknowledged; a known flush target is claimed only after a verified barrier covering POOL and direct database writers.
+5. **AC-5:** A plan requiring catch up stops if any writer bypasses the barrier or the candidate has not replayed the final flush target on compatible history. Switching to an unknown loss window requires a new plan and explicit approval of that disclosure.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Manual promotion scope](../scope/010-fenced-manual-promotion.md) and [fencing contract](../architecture/failover-recovery.md#fencing-contract).

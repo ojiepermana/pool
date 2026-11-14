@@ -1,6 +1,6 @@
 # Query cache PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V2 research, deferred. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V2 research, deferred.
 
 ## Problem statement
 
@@ -24,7 +24,7 @@ No cache in MVP/V1, no TTL based correctness claim, no arbitrary MVCC snapshot c
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+The feasibility study must budget memory, eviction and invalidation work, including behavior when its dependency information is unavailable.
 
 ## Dependencies
 
@@ -56,15 +56,15 @@ Role/RLS separation, external writes, DDL, transaction snapshots, failover epoch
 
 ## Acceptance criteria
 
-1. **AC-1:** Default and omitted configuration produce no result caching.
+1. **AC-1:** Until a separate cache contract is approved and proven, omitted or disabled configuration produces no caching and an attempt to enable it is rejected under [SEC-10](../security/security-requirements.md).
 2. **AC-2:** No implementation is released before an external-write invalidation or deliberately restricted immutable-data contract is proven.
 3. **AC-3:** Role and session variants never receive another context's cached result.
 4. **AC-4:** Cache outage or uncertainty bypasses safely without replaying already executed work.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Optional result cache scope](../scope/015-optional-result-cache.md) and [feasibility study](../research/feasibility-study.md).

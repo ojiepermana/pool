@@ -18,7 +18,7 @@ POOL is technically feasible as a PostgreSQL focused proxy. A correct session pr
 
 ## Proposed stopping rules
 
-If parser coverage cannot meet the declared PostgreSQL 18 subset, route that subset to primary or disable routing; do not substitute prefix checks. If a session cannot be reset confidently, close the backend. If fencing cannot be independently verified, do not promote through POOL. If benchmark overhead is unacceptable, profile and fix the measured bottleneck before adding policies.
+If parser coverage cannot meet the declared PostgreSQL 18 subset, narrow or disable the restricted read profile. A rejected operation on an established replica lease never falls back to the primary; ordinary primary sessions remain pinned. See the [routing contract](../architecture/sql-routing.md). If a session cannot be reset confidently, close the backend. If fencing cannot be independently verified, do not promote through POOL. If benchmark overhead is unacceptable, profile and fix the measured bottleneck before adding policies.
 
 ## Operational ownership
 
@@ -30,4 +30,4 @@ This plan assumes an open source project without hosted account management or bi
 
 ## Go or no go milestones
 
-You can proceed from research to the first proxy slice after the initial decision is ratified. Proceed to shared backend reuse only after authentication and cleanup evidence. Proceed to replica profiles only after routing invariants pass. Proceed to V1 only after manual failover drills and driver compatibility pass on the actual lab. Advanced features do not block the core MVP.
+Ratifying the initial design leaves the [workspace handoff](../implementation-order.md) queued until implementation is requested. Proceed to shared backend reuse only after authentication and cleanup evidence. Proceed to replica profiles only after routing invariants pass. Proceed to V1 only after manual failover drills and driver compatibility pass on the actual lab. Advanced features do not block the core MVP.

@@ -17,7 +17,7 @@ flowchart TB
 
 Use a dedicated unprivileged POOL account, restrictive secret files, systemd supervision and limits, a persistent local journal directory, verified backend certificates, and a separate administrative listener. Private networking does not replace encryption or authentication. Do not give the daemon a general Proxmox administrator token.
 
-A provisional benchmark lab can use 4 vCPU and 8 GiB for POOL, 4 vCPU and 16 GiB per database node, and a separate load generator. These are budget assumptions, not sizing advice. Record CPU pinning, NUMA, storage, cache state, network bandwidth, host contention and overcommit. Four VMs on one Proxmox host have a shared host failure domain; replication alone cannot survive that host's loss.
+Use the [benchmark plan](../testing/benchmark-plan.md#method) for provisional lab sizing and the conditions to record. Four VMs on one Proxmox host have a shared host failure domain; replication alone cannot survive that host's loss.
 
 ## Future deployment
 

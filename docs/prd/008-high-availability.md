@@ -1,6 +1,6 @@
 # High availability PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.5, deferred. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.5, deferred.
 
 ## Problem statement
 
@@ -12,7 +12,7 @@ Support multiple proxies with one tested operation authority and safe endpoint f
 
 ## Non goals
 
-No homegrown consensus, no transparent migration of active transactions, no automatic failover enabled by default.
+Custom consensus and migration of active transactions are outside this feature. Automatic database promotion stays disabled pending a separate approved safety case.
 
 ## Functional requirements
 
@@ -24,7 +24,7 @@ No homegrown consensus, no transparent migration of active transactions, no auto
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Keep consensus off the query path. The HA spec must define expiry under isolation and prove the stale controller cannot authorize irreversible work.
 
 ## Dependencies
 
@@ -63,8 +63,8 @@ Partition/stale leader histories, consensus outage, restarted nodes, VIP duplica
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Multiple proxy authority](../scope/012-multiple-proxy-authority.md) and [deployment reference](../architecture/deployment.md#future-deployment).

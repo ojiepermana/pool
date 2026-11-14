@@ -16,14 +16,16 @@ stateDiagram-v2
     ErrorDrain --> Ready: Sync then ReadyForQuery
     Simple --> Copy: COPY response
     Extended --> Copy: COPY response
-    Copy --> Ready: completed protocol cycle
+    Copy --> Simple: COPY ends in simple cycle
+    Copy --> Extended: COPY ends in extended cycle
+    Copy --> ErrorDrain: extended COPY error
     Simple --> Ready: ReadyForQuery
     Extended --> Ready: Sync then ReadyForQuery
     Ready --> Closed: Terminate or socket failure
     Closed --> [*]
 ```
 
-This is an overview, not a substitute for the full transition table. COPY may finish within an extended cycle that still needs Sync. Transaction state is orthogonal, taken from ReadyForQuery as idle, transaction, or failed transaction. The implementation spec needs exact transitions for every message in each state, including early disconnects.
+Transaction state is tracked separately from the message cycle, using the idle, transaction or failed status in ReadyForQuery. A completed COPY resumes its enclosing cycle. The protocol spec must define the expected response, next state or close action for each supported message, including an early disconnect. The [PostgreSQL 18 message flow](https://www.postgresql.org/docs/18/protocol-flow.html) defines recovery at Sync and the boundary between COPY and the enclosing cycle.
 
 Startup packets have no message tag. Ordinary message lengths include their length field but exclude the tag. Validate minimum lengths, integer overflow, NUL boundaries, field counts and state legality before allocating. Forward bulk payloads without decoding SQL values. Preserve format codes and unknown notice fields. Unsupported protocol paths should fail explicitly, never fall through as normal query data.
 

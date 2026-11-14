@@ -1,31 +1,15 @@
 # Dependencies and critical path
 
-```mermaid
-flowchart TD
-    A[Initial architecture ratified] --> B[Minimal workspace and test lab]
-    B --> C[Framing, TLS and authentication]
-    C --> D[Pinned forwarding and protocol corpus]
-    D --> E[Reset isolation and session reuse]
-    E --> F[Core MVP]
-    F --> G[Restricted routing and eligibility]
-    H[Health and topology model] --> G
-    B --> H
-    G --> V[V1 operating scenario]
-    J[Durable operation journal] --> M[Manual fenced failover]
-    H --> M
-    X[Independent fencing provider] --> M
-    M --> V
-    V --> Q[Multi proxy authority and recovery]
-    Q --> Z[Optional automatic failover]
-    F --> ADV[Separately justified advanced features]
-```
+The [scope index](../scope/index.md) owns sequence and status. These are the handoffs where an assumption made by one engineer could invalidate another engineer's work. The two engineers can prepare fixtures and review contracts in parallel. Start the dependent behavior only once the evidence or decision it uses is available.
 
-Protocol state, authentication identity, cleanup, routing semantics, and promotion safety are the critical path. Tooling, telemetry definitions and lab automation can overlap after interfaces are stable. Do not parallelize conflicting implementations of the same lease or topology authority.
+| Before this work | Required handoff | What can wait |
+|---|---|---|
+| [001 workspace](../scope/001-stack-and-workspace.md) and [002 tooling](../scope/002-standards-and-tooling.md) | After explicit authorization, use the [first handoff](../implementation-order.md#first-handoff-the-workspace). The maintainer identifies a Linux build target and reviewer; pin and test the dependencies actually used. | Database VMs, routing parser, admin framework and a fencing provider. |
+| [004 first write](../scope/004-one-real-primary-path.md) | [003](../scope/003-control-and-session-data-model.md) defines identity mapping, authorization of the writer and the restart rule. Prepare one disposable PostgreSQL 18 primary, the intended client, TLS identities, nonproduction credentials, least privilege for the identity/role check and a direct SQL baseline. The first write needs durable approved writer identity and fresh matching observations. | Shared reuse, replica lag, public administration and the full mutation journal. |
+| [005 reuse](../scope/005-clean-session-reuse.md) then [006 protocol breadth](../scope/006-protocol-breadth-and-cancellation.md) | First prove teardown on a dedicated backend; then demonstrate genuine reuse with isolation. As COPY, portals and forwarded cancellation are added, rerun the affected reuse cases. | Replica fixtures and operational failover are outside the Core MVP gate. |
+| [007 restricted replica sessions](../scope/007-restricted-replica-sessions.md) | A qualified core plus a physical replica lab with comparable, expiring identity/role/lag observations, least privilege monitor grants and a reviewed read profile. Implement the eligibility checks here; [008](../scope/008-health-diagnostics-and-drain.md) extends diagnostics and drain. | Full operator API. Faulty or missing eligibility evidence excludes the replica. |
+| [009 topology administration](../scope/009-safe-topology-administration.md) | Use 003 authority records and the drain handles from 008. Agree mutation preconditions, retry identity, audit durability and restart reconciliation before exposing a mutating route. | Promotion privilege and a provider adapter. |
+| [010 manual promotion](../scope/010-fenced-manual-promotion.md) | A working operation service plus an infrastructure operator who can demonstrate independent fencing on a disposable target, supply writer-path and backup/restore evidence, and exercise the approved loss policy. Without verified fencing this slice cannot qualify. | External consensus, automatic promotion and automated recovery of the former primary. |
+| [011 operational V1](../scope/011-release-qualification-harness.md) | A pinned candidate, all applicable slice evidence, the four VM lab, a separate load generator and independent reviewers. Staff the release and security contacts before publishing. | Deferred features 012–017 need separate decisions; none is a prerequisite for V1. |
 
-## External prerequisites
-
-You need PostgreSQL 18 primary and physical replicas, verified TLS identities, a restricted monitor role, an actual out of band fencing method, tested backups, and a separate load generator. HA later needs independent failure domains and an operated consensus service or an external cluster manager. None is assumed to exist merely because a Proxmox VM can be created.
-
-## Dependency boundaries
-
-Protocol does not depend on control or administration. Core does not read SQLite. Control does not consume arbitrary frontend query bytes. Administration mutations call the same operation service as CLI actions. Metrics and log exporters cannot block leases or become a source of unbounded queues. [Workspace proposal](../repository-structure.md) records the acyclic crate graph.
+The [deployment reference](../architecture/deployment.md) identifies operator and infrastructure responsibilities. The [milestones](milestones.md) own release decisions. Internal crate dependencies are defined once in the [workspace proposal](../repository-structure.md); there is no separate dependency graph to keep in sync here.

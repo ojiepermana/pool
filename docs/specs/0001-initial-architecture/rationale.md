@@ -2,7 +2,7 @@
 
 ## Context
 
-POOL is intended to carry arbitrary PostgreSQL application traffic and eventually manage failure sensitive infrastructure. Incorrect routing, session reuse, or promotion can damage data even when the Rust program has no memory safety defect. Your first environment has one proxy VM and three PostgreSQL VMs. No existing implementation, source files, manifests, Git history, or project conventions were present on 2026-11-14.
+POOL is intended to carry arbitrary PostgreSQL application traffic and eventually manage failure sensitive infrastructure. Incorrect routing, session reuse, or promotion can damage data even when the Rust program has no memory safety defect. Your first environment has one proxy VM and three PostgreSQL VMs. At the start of the initial planning exercise, the project had no implementation, manifests or Git history. This describes the starting point of the decision, not the current checkout.
 
 The full Pgpool feature set is larger than a safe first release. Your initial scenario still requires health, replica lag, routing, diagnostics, and manual failover. The roadmap therefore distinguishes a core proxy MVP from an operational V1 rather than quietly removing those requirements.
 

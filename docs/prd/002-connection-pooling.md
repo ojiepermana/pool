@@ -1,6 +1,6 @@
 # Connection pooling PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** Core MVP. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** Core MVP.
 
 ## Problem statement
 
@@ -24,15 +24,15 @@ No transaction or statement multiplexing in V1; no promise of backend reduction 
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Charge connecting, cleaning and idle backends against the same limits as active ones. Use the [pool budgets](../architecture/connection-pooling.md#limits-and-operations) when testing contention across keys.
 
 ## Dependencies
 
-Core proxy, authentication boundary and configuration model.
+The [clean session reuse slice](../scope/005-clean-session-reuse.md) builds on the dedicated primary path and its identity map. Exercise cleanup with the operations available at that point. Re-run isolation with portals, asynchronous traffic and cancellation as those paths arrive in [protocol breadth](../scope/006-protocol-breadth-and-cancellation.md).
 
 ## Data structures
 
-PoolKey: cluster ID, endpoint ID, login role, database, startup profile, TLS policy hash, credential generation and epoch, all required. PoolState: idle deque and waiters bounded by config. Lease uses unique owner and generation. No shared session state is persisted across frontend owners.
+PoolKey uses the [pool identity and lifecycle](../architecture/connection-pooling.md#pool-identity-and-lifecycle). PoolState tracks idle backends and waiters within the configured budgets. Each lease has one owner and a unique generation.
 
 ## Interfaces
 
@@ -56,15 +56,15 @@ Alternating tenant state histories, unknown extension cleanup, queue fairness, p
 
 ## Acceptance criteria
 
-1. **AC-1:** Repeated disconnect/reconnect cycles reuse validated backends without another user seeing GUCs, temp objects, locks, portals or notifications.
+1. **AC-1:** Two successive clients with the same pool key use the same physical PostgreSQL backend in a reusable case. The second sees its startup defaults and none of the first client's GUC changes, temp objects, locks, portals or notifications. A separate test varies the login, database or cluster and confirms that those keys never share a backend.
 2. **AC-2:** Aggregate backend count never exceeds configured global limits across many pool keys.
 3. **AC-3:** Reset uncertainty closes the socket instead of returning it idle.
-4. **AC-4:** Credential/config generation changes prevent new acquisition of retired backends.
+4. **AC-4:** Retire a credential or configuration generation while a client is waiting and again during a backend handshake. The client never receives a lease from the retired generation. A backend returned by an earlier owner cannot re-enter the eligible pool under that generation.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Pool identity and lifecycle](../architecture/connection-pooling.md#pool-identity-and-lifecycle).

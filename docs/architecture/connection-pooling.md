@@ -4,7 +4,7 @@ Session pooling is the initial mode. One frontend owns one backend lease for its
 
 ## Pool identity and lifecycle
 
-The pool key includes cluster ID, actual backend login identity, database, endpoint, protocol/startup profile, TLS identity policy, credential generation and topology epoch. Never merge pools merely because usernames have the same display text in different clusters.
+The pool key includes cluster ID, actual backend login identity, database, endpoint, protocol/startup profile, TLS identity policy, credential generation and topology epoch. At handoff, check that the key and its configuration generation are still eligible. If the key or its generation retired during the handshake, close the connection rather than lease or relabel it under a newer generation.
 
 ```mermaid
 stateDiagram-v2
@@ -21,6 +21,8 @@ stateDiagram-v2
 ```
 
 After frontend termination, revoke virtual cancellation credentials and serialize retirement with any cancellation dispatch. V1 closes a physical backend after any forwarded cancellation rather than reusing it while delivery could remain in flight. Consume other outstanding responses only within a bounded cleanup state. Roll back an open or failed transaction when possible, then reset known state outside a transaction and require idle ReadyForQuery. `DISCARD ALL` helps reset documented PostgreSQL session resources but is not a universal guarantee for extension state. Close sessions with unknown state, active COPY, uncertain protocol synchronization, or failed cleanup.
+
+Before reusing a backend, establish the startup settings promised to the new owner. The cleanup spec must list which startup profiles it can restore and validate, and assign socket closure to all remaining cases. The first positive isolation test should observe two frontend sessions on the same physical backend. Varying only the login exercises pool partitioning and cannot establish successful cleanup.
 
 ## Limits and operations
 

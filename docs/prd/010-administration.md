@@ -1,6 +1,6 @@
 # Administration PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.
 
 ## Problem statement
 
@@ -24,7 +24,7 @@ No PCP wire protocol, pgpool_adm extension, management dashboard or arbitrary sh
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+Bound management requests independently of client traffic. Operators must still be able to inspect a saturated daemon without exposing SQL, credentials or cancellation secrets.
 
 ## Dependencies
 
@@ -37,6 +37,8 @@ AdminPrincipal: transport identity and role set required. APIError: stable code,
 ## Interfaces
 
 GET `/v1/status`, `/v1/cluster`, `/v1/nodes`, `/v1/pools`, `/v1/operations/{id}` for viewers. POST `/v1/config/validate` and `/reload` for configuration role. Node and failover routes use their PRD contracts. 400 invalid, 401 unauthenticated, 403 denied, 409 generation conflict, 412 unsafe, 429 limited and 503 unavailable. CLI offers JSON and human output.
+
+After authenticating and authorizing the caller, resolve a mutation retry by actor, action and request ID. Within the documented retry window, the same request returns the original operation ID and current outcome, including after a lost response or restart. Reuse with a different target, payload or precondition returns a conflict. The administration spec defines that window and how callers reconcile older or incomplete requests. Config validation reports errors without activating a generation.
 
 ## Failure scenarios
 
@@ -56,15 +58,15 @@ Role/action denial matrix, redaction snapshots, idempotent request replay, schem
 
 ## Acceptance criteria
 
-1. **AC-1:** Every supported mutation has denial, idempotency and audit evidence.
+1. **AC-1:** For each supported mutation, test denial, an identical retry after response loss, and the same key with a changed target or payload. The accepted request produces one logical operation and an attributable audit history.
 2. **AC-2:** Invalid reload retains the prior safe generation and returns a clear error.
 3. **AC-3:** Diagnostics omit credentials, SQL parameters, cancellation secrets and raw SQL by default.
 4. **AC-4:** All 15 PCP operations have a documented equivalent or explicit deferred/excluded disposition.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Topology administration](../scope/009-safe-topology-administration.md) and [PCP dispositions](../feature-matrix.md).

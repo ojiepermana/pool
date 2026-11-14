@@ -1,6 +1,6 @@
 # Cluster management PRD
 
-**State:** Proposed product contract, 2026-11-14. **Milestone:** V1. This PRD does not authorize implementation or claim working functionality. The feature spec will settle exact APIs, defaults and migrations before building.
+**State:** Proposed product contract, 2026-11-14. **Milestone:** V1.
 
 ## Problem statement
 
@@ -24,7 +24,7 @@ No discovery by arbitrary DNS, automatic former-primary attach, direct backup en
 
 ## Non functional requirements
 
-Correctness and identity isolation precede throughput. All queues, buffers, tasks and external calls have explicit budgets. Provisional limits and measured release gates are in the architecture and testing documents. No feature may silently replay uncertain work.
+A completed mutation must survive restart. Use the [control records](../architecture/control-plane.md) to distinguish durable restrictions from observations that must be sampled again.
 
 ## Dependencies
 
@@ -32,11 +32,11 @@ Health, validated config, durable journal, admin authentication and lease draini
 
 ## Data structures
 
-Cluster 1:N Backend; Backend 1:N ProbeObservation. ApprovedTopology has unique cluster ID, approved writer ID, durable epoch, quarantine and transition operation ID. Config generation and topology generation required. Operation ID primary key, actor required, expected generation required, idempotency key unique within actor/action scope, phase and outcome required. Bootstrap approved authority once from config, then require explicit transitions. See control plane record table.
+The [control plane records](../architecture/control-plane.md) distinguish configured nodes, approved membership and writer authority, live observations and the operation that changed the approved state.
 
 ## Interfaces
 
-GET `/v1/cluster`, GET `/v1/nodes`; POST `/v1/nodes/{id}/drain`, `/detach`, `/attach` accept expected_generation and request_id. Returns operation ID, state and generation; 400 invalid, 403 denied, 409 stale/conflict, 503 evidence unavailable.
+GET `/v1/cluster` and `/v1/nodes` expose the generation a caller needs for its next mutation. POST operations for drain, detach and attach take that expected generation and follow the [administration retry contract](010-administration.md). They return an operation ID and state.
 
 ## Failure scenarios
 
@@ -56,15 +56,15 @@ Concurrent compare-and-swap requests, crash reconciliation, dual-primary observa
 
 ## Acceptance criteria
 
-1. **AC-1:** Stale expected_generation requests cannot overwrite newer topology.
+1. **AC-1:** Stale mutations are rejected. For conflicting attach and detach requests against the same generation, at most one takes effect.
 2. **AC-2:** Two observed primaries close write admission until explicit reconciliation.
-3. **AC-3:** Approved writer, epoch and quarantine survive restart; conflicting config or observations cannot silently change authority, and a returned old primary stays quarantined until rejoin evidence passes.
-4. **AC-4:** Journal failure rejects mutations before external side effects.
+3. **AC-3:** Approved writer, epoch, maintenance, detach and quarantine survive restart. A healthy observation cannot clear a restriction, a conflicting configuration cannot replace authority, and a returned old primary stays quarantined until rejoin evidence passes.
+4. **AC-4:** Failure to persist intent prevents the external action. If storage fails after the action, the caller receives no success confirmation and restart reconciles the recorded intent before another action can run.
 
 ## Definition of Done
 
-You can close this feature after its acceptance criteria pass against the declared real environment, critical tests are committed, a fresh reviewer examines the safety changes, operational/configuration documentation is current, and evidence is linked from the scope. Deferred features stay planned. No checkbox in this package records a build or test as passed.
+Apply the shared [acceptance evidence and closure rules](../testing/strategy.md#acceptance-evidence) to the criteria above.
 
 ## References
 
-The [feature matrix](../feature-matrix.md) supplies official baseline sources. The [architecture decision](../specs/0001-initial-architecture/index.md), [security requirements](../security/security-requirements.md), and [test strategy](../testing/strategy.md) govern shared constraints.
+[Topology administration](../scope/009-safe-topology-administration.md) and [control plane](../architecture/control-plane.md).
