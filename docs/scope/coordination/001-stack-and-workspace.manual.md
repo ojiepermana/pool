@@ -8,8 +8,8 @@ Keputusan yang diambil atas namamu ada di `001-stack-and-workspace.log.md` bagia
 
 | ID | Langkah | AC | Kotak yang dicentang dengan langkah ini `NOT_RUN` | Bisa dijalankan sesudah | Hasil |
 | --- | --- | --- | --- | --- | --- |
-| `F1-1` | Nyalakan Docker Desktop supaya build Linux bisa dijalankan sesi developer dan verify | `0001 AC-2` | F1 · `Scaffold from the decision`, `Verify it` | kapan saja | `NOT_RUN` |
-| `F1-2` | Jalankan perintah build Linux spec 0001 (hanya bila sesi tidak sempat menjalankannya karena daemon mati) | `0001 AC-2`, klausa `/dev/full` `0001 AC-11` | F1 · `Scaffold from the decision`, `Verify it`, `Test it` (dua test khusus Linux) | `F1-1` lulus; sekarang juga, kode sudah di `main` | `NOT_RUN` |
+| `F1-1` | Nyalakan Docker Desktop supaya build Linux bisa dijalankan sesi developer dan verify | `0001 AC-2` | F1 · `Scaffold from the decision`, `Verify it` | kapan saja | `PASS` 2026-11-14: user menyalakan Docker Desktop, `docker info` exit 0 (server 29.9.2) |
+| `F1-2` | Jalankan perintah build Linux spec 0001 (hanya bila sesi tidak sempat menjalankannya karena daemon mati) | `0001 AC-2`, klausa `/dev/full` `0001 AC-11` | F1 · `Scaffold from the decision`, `Verify it`, `Test it` (dua test khusus Linux) | `F1-1` lulus; sekarang juga, kode sudah di `main` | `PASS` 2026-11-14 pada `18e9228`, dijalankan sesi `chk-f1-verify-2` dan lead (bukan user): exit 0, 136 test, `0481be185960bc48d842a22a70c14e709a66581c95fdd4f1a0ccd09444f7bdb3  target/release/pool`; bukti di `verify.md` bagian "Linux evidence: container build" |
 
 ## Nilai dari user
 

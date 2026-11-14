@@ -6,13 +6,13 @@ You are building an open source PostgreSQL proxy, session pooler and cluster ope
 **Workflow:** GA, behavior verification, tests, independent review and documentation.
 **Confirmed:** Two experienced engineers, conservative lab validation, Apache 2.0 and one modular daemon plus CLI. Exact scope decisions remain proposals until their specs are ratified.
 
-You ratified the initial architecture on 2026-11-14 after independent review. Feature 1 is in progress: every box is ticked and its workstation evidence is recorded, and it stays in progress until the Linux build named in its Done when has run. No proxy behavior is implemented.
+You ratified the initial architecture on 2026-11-14 after independent review. Feature 1 is done: every box is ticked, and its workstation evidence and its Linux build evidence are recorded. No proxy behavior is implemented.
 
 ## At a glance
 
 | # | Feature | Phase | Status |
 |---|---|---|---|
-| 1 | [Stack and workspace](001-stack-and-workspace.md) | Foundation | in-progress |
+| 1 | [Stack and workspace](001-stack-and-workspace.md) | Foundation | done |
 | 2 | [Standards and tooling](002-standards-and-tooling.md) | Foundation | planned |
 | 3 | [Control and session data model](003-control-and-session-data-model.md) | Foundation | planned |
 | 4 | [One real primary path](004-one-real-primary-path.md) | Slice 1 | planned |
@@ -38,7 +38,7 @@ This index manages build order, phase, project defaults, and the status overview
 
 ## Legend
 
-Only the foundation is in progress, reflecting your accepted design. Other features remain planned, including deferred features. A decision box is checked only after you accept its spec. Later feature specs add a coarse build milestone rollup and GA verification boxes; atomic tasks stay in the spec. A design or feasibility decision can unblock its dependent slice; it does not mark a capability implemented. Build and test evidence are required before completed implementation is claimed.
+Feature 1 is done, reflecting your accepted design and its recorded evidence. Other features remain planned, including deferred features. A decision box is checked only after you accept its spec. Later feature specs add a coarse build milestone rollup and GA verification boxes; atomic tasks stay in the spec. A design or feasibility decision can unblock its dependent slice; it does not mark a capability implemented. Build and test evidence are required before completed implementation is claimed.
 
 Needs a decision means behavior or safety is not yet fully settled. Deferred means outside the current release queue, not silently removed from the parity inventory. You can revisit scope after each shipped slice.
 
