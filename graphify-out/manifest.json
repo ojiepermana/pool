@@ -412,5 +412,23 @@
     "seen": 1794625238.069293,
     "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
     "semantic_hash": "e1eeb7e41e80e9ae848a45818764ded4"
+  },
+  "docs/scope/coordination/001-stack-and-workspace.brief-umum.md": {
+    "mtime": 1794631706.8664336,
+    "seen": 1794632270.3960252,
+    "ast_hash": "",
+    "semantic_hash": "0bb45b9a96696d4ae62c57a866dc0f55"
+  },
+  "docs/scope/coordination/001-stack-and-workspace.manual.md": {
+    "mtime": 1794631714.667037,
+    "seen": 1794632270.3960268,
+    "ast_hash": "",
+    "semantic_hash": "718018503c9fd4260af349552f6588fd"
+  },
+  "docs/scope/coordination/001-stack-and-workspace.log.md": {
+    "mtime": 1794631733.2423959,
+    "seen": 1794632270.396029,
+    "ast_hash": "",
+    "semantic_hash": "dac4f8e556047c5dedc9a0fde38ed9cf"
   }
 }
