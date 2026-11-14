@@ -1,0 +1,4 @@
+config_version = 1
+
+[automatic_promotion]
+enabled = true
