@@ -13,7 +13,7 @@ Use the [workspace handoff](../implementation-order.md#first-handoff-the-workspa
 - [x] Scaffold from the decision: `/develop stack and workspace`
 - [x] Verify it: `/check verify stack and workspace`
 - [x] Test it: `/test stack and workspace`
-- [ ] Review it (fresh model): `/check review stack and workspace`
+- [x] Review it (fresh model): `/check review stack and workspace`
 - [ ] Document it: `/document stack and workspace`
 
 Spec [0001](../specs/0001-initial-architecture/index.md).
