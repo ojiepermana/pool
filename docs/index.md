@@ -35,6 +35,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 | Path | Document |
 |---|---|
 | [docs/adr/0001-initial-architecture.md](adr/0001-initial-architecture.md) | ADR 0001. Initial architecture |
+| [docs/adr/0002-standards-and-tooling.md](adr/0002-standards-and-tooling.md) | ADR 0002. Standards and tooling |
 
 ## docs/architecture
 
@@ -141,6 +142,13 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/specs/0001-initial-architecture/index.md](specs/0001-initial-architecture/index.md) | 0001. POOL initial architecture |
 | [docs/specs/0001-initial-architecture/rationale.md](specs/0001-initial-architecture/rationale.md) | Initial architecture rationale |
 | [docs/specs/0001-initial-architecture/verify.md](specs/0001-initial-architecture/verify.md) | 0001. Verification record |
+
+## docs/specs/0002-standards-and-tooling
+
+| Path | Document |
+|---|---|
+| [docs/specs/0002-standards-and-tooling/index.md](specs/0002-standards-and-tooling/index.md) | 0002. Standards and tooling |
+| [docs/specs/0002-standards-and-tooling/rationale.md](specs/0002-standards-and-tooling/rationale.md) | Standards and tooling rationale |
 
 ## docs/testing
 
