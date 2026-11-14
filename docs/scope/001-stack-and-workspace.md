@@ -18,4 +18,4 @@ Use the [workspace handoff](../implementation-order.md#first-handoff-the-workspa
 
 Spec [0001](../specs/0001-initial-architecture/index.md) · code in `apps/pool/`, `crates/pool-config/`.
 
-Evidence: [verification record](../specs/0001-initial-architecture/verify.md), [independent review](../reviews/2026-11-14-scope-001-stack-and-workspace.md) and [changelog](../../CHANGELOG.md). The Linux container build (`0001 AC-2`) and the two Linux only tests passed at `18e9228`; the record is under "Linux evidence: container build" in the verification record. The evidence is for `x86_64` and ran under emulation.
+Evidence: [verification record](../specs/0001-initial-architecture/verify.md), [independent review](../reviews/2026-11-14-scope-001-stack-and-workspace.md) and [changelog](../../CHANGELOG.md). The Linux container build (`0001 AC-2`) and the two Linux only tests passed for the declared target, `aarch64-unknown-linux-gnu`, at `41e8eda`; the record is under "Linux evidence: container build for aarch64" in the verification record. An earlier run for `x86_64` at `18e9228` stays there as history.
