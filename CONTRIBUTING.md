@@ -7,12 +7,10 @@ For a change, describe the problem, relevant feature/spec, intended behavior, sa
 The workspace pins Rust 1.100.0 in `rust-toolchain.toml`. Before you propose a change, you can run these from the repository root:
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
+scripts/check.sh all
 ```
 
-The Linux container build is the command under [Linux build](docs/specs/0001-initial-architecture/index.md#linux-build) in spec 0001. There is no CI yet; it arrives with [scope 002](docs/scope/002-standards-and-tooling.md). Later checks will include property tests, PostgreSQL integration, and targeted compatibility/fuzz/chaos tests. Do not invent passing results while these facilities are still planned.
+The Linux container build is the command under [Linux build](docs/specs/0001-initial-architecture/index.md#linux-build) in spec 0001. Every pull request runs seven required checks. To reproduce a failed check named `X`, run `scripts/check.sh X`. A change reaches `main` only through a pull request whose checks passed. The checks and that path are described in [spec 0002](docs/specs/0002-standards-and-tooling/index.md). Later checks will include property tests, PostgreSQL integration, and targeted compatibility/fuzz/chaos tests. Do not invent passing results while these facilities are still planned.
 
 POOL uses Apache 2.0. Contributions should be compatible with that license and preserve required attribution. Do not copy third party code without a per file license review and provenance record. A separate contributor agreement is not required by this initial plan; any future governance change needs maintainer discussion.
 

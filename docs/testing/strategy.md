@@ -1,6 +1,6 @@
 # Testing strategy
 
-This strategy defines how to qualify the declared support profile. All runtime evidence is pending.
+This strategy defines how to qualify the declared support profile. Evidence exists only where a verification record says so. The first one is the [record for spec 0001](../specs/0001-initial-architecture/verify.md), for the offline configuration check. No proxy behavior has been run.
 
 | Layer | Test method | Required evidence |
 |---|---|---|

@@ -136,4 +136,4 @@ The PostgreSQL image was looked up and not pulled. On 2026-11-14 the newest Debi
 
 ## Adoption gate
 
-Before installing a dependency, verify its stable version, selected features, MSRV, advisories, native dependencies, license files, and maintainer activity again. Commit Cargo.lock for binaries, generate an SBOM, and test Linux targets. First party production Rust should forbid unsafe code; a documented dependency exception covers native parser, TLS provider, and SQLite boundaries after review. No application dependencies were installed during this phase.
+Before installing a dependency, verify its stable version, selected features, MSRV, advisories, native dependencies, license files, and maintainer activity again. Commit Cargo.lock for binaries, generate an SBOM, and test Linux targets. First party production Rust should forbid unsafe code; a documented dependency exception covers native parser, TLS provider, and SQLite boundaries after review. The dependencies adopted so far are listed under [Adopted in scope 001](#adopted-in-scope-001) and [Adopted in scope 002](#adopted-in-scope-002).

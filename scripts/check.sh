@@ -176,7 +176,8 @@ check_fuzz() {
   seconds=${POOL_FUZZ_SECONDS:-60}
   mkdir -p crates/pool-config/fuzz/corpus/validate
   run env CARGO_TARGET_DIR="$ROOT/target/fuzz" sh -c 'cd crates/pool-config && exec cargo "+$1" fuzz run validate fuzz/corpus/validate tests/fixtures -- "-max_total_time=$2" -max_len=4096' fuzz "$FUZZ_TOOLCHAIN" "$seconds" || return 1
-  if [ -d crates/pool-config/fuzz/artifacts/validate ] && [ -n "$(ls -A crates/pool-config/fuzz/artifacts/validate)" ]; then
+  # cargo-fuzz creates the directory even when nothing crashed, so only a file in it is a finding.
+  if [ -d crates/pool-config/fuzz/artifacts/validate ] && [ -n "$(find crates/pool-config/fuzz/artifacts/validate -type f | head -n 1)" ]; then
     echo "fuzz: a crash file exists under crates/pool-config/fuzz/artifacts/validate/; report it with its bytes" >&2
     status=1
     return 1
@@ -185,10 +186,10 @@ check_fuzz() {
 
 check_sbom() {
   need_command cargo sbom || return 1
-  if ! tool_is cyclonedx cargo-cyclonedx "$CARGO_CYCLONEDX_VERSION"; then
+  # cargo-cyclonedx 0.5.10 prints its name twice: `cargo-cyclonedx-cyclonedx 0.5.10`.
+  if ! tool_is cyclonedx cargo-cyclonedx-cyclonedx "$CARGO_CYCLONEDX_VERSION"; then
     missing "cargo-cyclonedx $CARGO_CYCLONEDX_VERSION is required; run cargo install --locked --root target/tools cargo-cyclonedx@$CARGO_CYCLONEDX_VERSION" || return 1
   fi
-  # provisional: spec 0002 step 8 fixes the flags against cargo-cyclonedx 0.5.10.
   run cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx || return 1
   mkdir -p target/sbom
   run mv apps/pool/pool.cdx.json target/sbom/pool.cdx.json || return 1

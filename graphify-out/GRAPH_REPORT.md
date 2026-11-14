@@ -1,7 +1,7 @@
 # Graph Report - pool  (2026-11-14)
 
 ## Corpus Check
-- 15 files · ~132,049 words
+- 1 files · ~133,302 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -29,9 +29,7 @@
 - check.sh
 - Load Balancing and Replica Selection
 - Report
-- Leases, Cancellation and Login Routing
 - Tracing, Log Redaction and Logging Decisions
-- Standards, Tooling and Release Qualification
 - Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende
 - Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture
 - Scope 002 Brief Rules
@@ -39,8 +37,10 @@
 - text.rs
 - Doc
 - workspace.rs
+- Standards, Tooling and Release Qualification
 - Safety Invariants and Session Risks
 - Rust Technology Evaluation
+- Leases, Cancellation and Login Routing
 - Configuration Keys and Secret References
 - Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene
 - Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories
@@ -56,6 +56,7 @@
 - Security Requirements and Features F-100 to F-108: V1 Release Gate
 - Review Clarifications and check-config Usage Rules: Unreleased, Added: the first workspace slice of 
 - Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table
+- Load Balancing and Replica Selection: SQL routing PRD
 - Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,
 - Protocol Contract and Driver Compatibility: Driver compatibility matrix
 - Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)
@@ -72,7 +73,6 @@
 - Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207
 - Scaffold Step and dev-f1-build Gate: Manual step F1-1: start Docker Desktop so the de
 - IoFinding and Permission Denied Path
-- Security Requirements and Features F-100 to F-108: SEC-2 Independently authenticated frontend and b
 - Safety Invariants and Session Risks: Routing Features (F-033 to F-047)
 - Pgpool Baseline, Competitors and Feasibility: Pgpool baseline modes and POOL dispositions
 - .fmt()
@@ -88,8 +88,8 @@
 6. `AC-2 Linux build (container check ends with 'linux build check passed' and shows host aarch64-unknown-linux-gnu)` - 52 edges
 7. `Scope: POOL, order and status index` - 45 edges
 8. `Testing strategy` - 43 edges
-9. `Feature inventory and parity matrix` - 42 edges
-10. `Risk register` - 42 edges
+9. `Report` - 42 edges
+10. `Feature inventory and parity matrix` - 42 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Highest initial risk priorities (identity/state, unsafe routing, cancel races, uncertain outcomes, fencing)` --semantically_similar_to--> `POOL Safety Invariants`  [INFERRED] [semantically similar]
@@ -223,59 +223,59 @@ Nodes (33): ci workflow (.github/workflows/ci.yml): seven required checks on Git
 
 ### Community 17 - "Load Balancing and Replica Selection"
 Cohesion: 0.09
-Nodes (32): Planning assumptions and decisions, Apache 2.0 license, Persisted approved writer, epoch and quarantine, Authoritative barrier across every write path, First deployment: one proxy VM, primary and two replicas on Proxmox, GA verification depth for data safety features, Independent review resolutions (seven approved fixes), One daemon with separate modules plus separate CLI (+24 more)
+Nodes (30): Planning assumptions and decisions, Retry only before initial lease and ReadyForQuery exposure, Apache 2.0 license, Persisted approved writer, epoch and quarantine, Authoritative barrier across every write path, First deployment: one proxy VM, primary and two replicas on Proxmox, GA verification depth for data safety features, Independent review resolutions (seven approved fixes) (+22 more)
 
 ### Community 18 - "Report"
 Cohesion: 0.16
 Nodes (22): Into, feature_heading(), is_feature_file(), scope(), Problem, Report, Display, Fn (+14 more)
 
-### Community 19 - "Leases, Cancellation and Login Routing"
-Cohesion: 0.12
-Nodes (29): Pooling Features (F-023 to F-032), Protocol Features (F-001 to F-022), Support Profile, Retry only before initial lease and ReadyForQuery exposure, Operator map from verified principal and database to backend identity, Private backend keys and virtual frontend cancellation credentials, Terminated SCRAM over TLS with optional mTLS and separate backend credentials, Critical Path Handoffs (+21 more)
-
-### Community 20 - "Tracing, Log Redaction and Logging Decisions"
+### Community 19 - "Tracing, Log Redaction and Logging Decisions"
 Cohesion: 0.11
 Nodes (29): tracing 0.1.44 (structured events and spans), Decision mode auto (architect asks lead to accept spec; others interpret ambiguous criteria, needs-decision only when spec text must change), Decision: build notes summary 'Accept this spec?' answered accept without changes (mode auto), checked by lead, Delegated decisions (biasa, 0001 AC-1, AC-12): 17 build notes choices (pinned rust slim bookworm image and git archive HEAD, std argument parsing, serde_json, no thiserror/anyhow/tracing, two pass validation, 1 MiB limit, ...), Keputusan delegasi (delegated spec decisions taken on the user's behalf; four berat rows plus one biasa summary), Delegated decision (berat, 0001 AC-9): check-config diagnostics contain only constant text, schema key path, line and column, never file content, Delegated decision (0001 AC-7, AC-11): nine spec clarifications from the review, spec follows the existing code and the reviewer and tester recommendation; runner up change the code (--format=<bytes> as wrong format value); status berlaku, SEC-11 Logs/metrics/traces free of credentials, cancellation keys and raw SQL (+21 more)
 
-### Community 21 - "Standards, Tooling and Release Qualification"
-Cohesion: 0.11
-Nodes (28): Invariant: health failure does not authorize promotion, Fence Receipt, Axum REST administration API plus CLI, pool check-config, GET /v1/nodes node status route, Health failure alone produces no promotion, Cluster management PRD, Drain, detach and attach node operations (+20 more)
-
-### Community 22 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende"
+### Community 20 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende"
 Cohesion: 0.09
 Nodes (28): Technology Stack (Tokio, rustls, pg_query, Axum, SQLite journal), Rust technology evaluation, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Dependency adoption gate, axum 0.8.9 (administration endpoints), External etcd for later HA (no consensus in initial proxy), Hybrid parser policy, Linux builder image rust:1.100.0-slim-bookworm by index digest (+20 more)
 
-### Community 23 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture"
+### Community 21 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture"
 Cohesion: 0.11
 Nodes (28): ADR 0002. Standards and tooling, AC-1 One entry point, AC-10 Stable requirement IDs, AC-7 CI definition guard, AC-8 Links and anchors, AC-9 Scope status agreement, Build plan step 5: Repository check program, workspace and CI rules, Build plan step 6: Repository check program, document rules (+20 more)
 
-### Community 24 - "Scope 002 Brief Rules"
+### Community 22 - "Scope 002 Brief Rules"
 Cohesion: 0.11
 Nodes (28): Git and Release Standards (main only via PR with seven required checks, scripts/check.sh <name>, empty bypass list), GitHub Actions hosted runner ubuntu-24.04-arm (seven required checks, 64 bit ARM), Build it: /develop standards and tooling (four milestones, open), Milestone: dependency policy and fuzz harness, Build plan steps 1-2 (AC-4, AC-15, AC-20), Milestone: check entry point and CI files, steps 3-4 (AC-1, AC-2, AC-5, AC-13, AC-14), needs spec 0001 ARM update on main, Milestone: repository guards and document checks, steps 5-6 (AC-6 to AC-10), Milestone: proofs, inventory, documents and workstation evidence, steps 7-10 (AC-11, AC-16 to AC-19), Tooling choices owed by feature 2 (CI service, dependency/license/advisory checker, SBOM generator, fuzz harness, PostgreSQL 18 supply) (+20 more)
 
-### Community 25 - "Spec 0002: Standards and tooling"
+### Community 23 - "Spec 0002: Standards and tooling"
 Cohesion: 0.15
 Nodes (28): Delegated (berat) 0002 AC-13: main protected by a GitHub ruleset with no bypass, PR only with seven checks, merge commits only, Delegated (berat) 0002 AC-13: /coordinate closes a scope through a PR per scope; lead no longer pushes main, Delegated (berat) 0002 AC-13: zero required approvals now, one when a second maintainer account exists, F2-N3 Whether and when a second maintainer GitHub account exists (approvals 0 to 1), Spec 0002: Standards and tooling, AC-11 Each check catches a wrong change, locally, AC-12 A failed check blocks a merge, on the remote, AC-13 Branch rule (+20 more)
 
-### Community 26 - "text.rs"
+### Community 24 - "text.rs"
 Cohesion: 0.12
 Nodes (22): baseline_lines(), code_lines(), fence_closes(), fence_open(), key_value(), Option, String, Vec (+14 more)
 
-### Community 27 - "Doc"
+### Community 25 - "Doc"
 Cohesion: 0.16
 Nodes (24): Anchors, Doc, doc_anchors(), find_links(), has_scheme(), heading(), inline_target(), Link (+16 more)
 
-### Community 28 - "workspace.rs"
+### Community 26 - "workspace.rs"
 Cohesion: 0.21
 Nodes (26): assert_ok(), assert_problem(), good(), good_tree_passes(), lock(), w1_counts_duplicates(), w1_extra_package_in_lockfile(), w1_missing_lockfile_is_a_fault() (+18 more)
 
-### Community 29 - "Safety Invariants and Session Risks"
+### Community 27 - "Standards, Tooling and Release Qualification"
+Cohesion: 0.12
+Nodes (26): Invariant: health failure does not authorize promotion, Fence Receipt, Axum REST administration API plus CLI, GET /v1/nodes node status route, Health failure alone produces no promotion, Cluster management PRD, Drain, detach and attach node operations, Two observed primaries close write admission (+18 more)
+
+### Community 28 - "Safety Invariants and Session Risks"
 Cohesion: 0.11
 Nodes (25): F-011 Prepared statements (session ownership, no cross backend replay), F-018 CancelRequest and BackendKeyData (virtual per lease keys), F-030 Validation and reset (close uncertain sessions), Pool Key, Verification Record, Starting development (implementation order), Handoff for Later Slices, Dependencies and critical path (+17 more)
 
-### Community 30 - "Rust Technology Evaluation"
+### Community 29 - "Rust Technology Evaluation"
 Cohesion: 0.11
 Nodes (25): Release Practices, Cross Check Before Development, R-16 Dependency drift or abandoned crate, criterion 0.8.2 (microbenchmarks), 11. Release qualification harness (planned), Qualified release artifacts (tagged package or image, checksums, SBOM, notices), Initial operating scenario: one proxy, one primary, two replica VMs, Disclosure and support (private reporting channel) (+17 more)
+
+### Community 30 - "Leases, Cancellation and Login Routing"
+Cohesion: 0.14
+Nodes (24): F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), Pooling Features (F-023 to F-032), Protocol Features (F-001 to F-022), Support Profile, Critical Path Handoffs, Core MVP, R-11 Authentication or role confusion, Connection pooling PRD (+16 more)
 
 ### Community 31 - "Configuration Keys and Secret References"
 Cohesion: 0.16
@@ -337,73 +337,73 @@ Nodes (18): Added: pool check-config --config <PATH> [--format human|json], offl
 Cohesion: 0.22
 Nodes (18): Added: three shared conventions in the engineering standards (configuration keys, exit status with command output, log event fields with redaction), ADR 0001. Initial architecture, Configuration keys convention (config_version, snake_case, unit suffixes, _file secrets, reserved tables), Exit status and command output convention (0/1/2/3, stdout result, one line JSON), Log event fields and redaction convention (ts, level, event; redaction by type), Pending shared conventions (identifier/generation types 003, SQLSTATEs 004, metric names by 006, admin API versioning 009), Shared Conventions Table, Output Version (output_version field) (+10 more)
 
-### Community 46 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,"
+### Community 46 - "Load Balancing and Replica Selection: SQL routing PRD"
+Cohesion: 0.20
+Nodes (17): SQL routing PRD, admit_on_pinned_backend(frame, session_state, classification, policy), Classification, classify(sql, parser_version), No primary fallback in V1, Primary profile sessions stay pinned, Restricted read only replica profile, RouteProfile (+9 more)
+
+### Community 47 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,"
 Cohesion: 0.15
 Nodes (16): A review is never done by the session or person that wrote the change, Repository owner decides while Project lead, Maintainer or Release maintainer is not assigned, Reviewer roster (12 review and risk owner roles, all Not assigned, with fresh model eligibility per role), Security and Review Requirements, Fresh Model (session that did not write or design a change), Reviewer Roster (glossary term), Reviewer roster (who holds each review role, where a fresh model may review), Session model per role (architect/checker fable-5-2, developer/tester opus-5-5) (+8 more)
 
-### Community 47 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix"
+### Community 48 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix"
 Cohesion: 0.17
 Nodes (15): Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk streaming, Extended Query and pipelining behavior, Variable length cancellation keys (protocol 3.2, up to 256 bytes), Virtual per lease cancellation keys, Driver compatibility matrix, Python asyncpg (V1 gate), Bun SQL/PostgreSQL client (V1 gate) (+7 more)
 
-### Community 48 - "Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)"
+### Community 49 - "Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)"
 Cohesion: 0.21
 Nodes (15): 2. Standards and tooling (in-progress), Done when: documented conventions match the workspace and format, lint, test and dependency checks run in CI, GA boxes: verify, test, review (fresh model), document (open), Verify the required checks on a pull request and link the result (open), Decision: after the fix merge chk-f1-verify reverifies into verify.md, chk-f1-review confirms the fix diff; stale CLAUDE.md and AGENTS.md tidied by /sync at close; spec 0001 Follow-up 11 copied to scope 002 at close, Decision: checker merged the architect branch into its worktree so the spec update and evidence reach main in one merge commit and one graph update; built revision 41e8eda; x86_64 no longer declared (architect, biasa, as the lead recommended), 18e9228 record stays as history; lead told the scope 002 lead Follow-up 9 now means a Linux arm64 runner, Decision: spec 0001 Follow-up 11 (CI checks for AC-12 and AC-13) not yet copied into scope 002; adding sub tasks belongs to /scope and waits for user approval, History wave 1 (from 591317f): all seven scope 001 boxes ticked; open at that time the Linux build (AC-2, /dev/full clause of AC-11, two Linux only tests), so feature 1 and spec 0001 stayed in progress; blockers Docker off (F1-1, F1-2), VM architecture (F1-N1); the two untracked files that held the push done at d2fda37; scope 002 next, Follow-up 11 waits for /scope (+7 more)
 
-### Community 49 - "Security Requirements and Features F-100 to F-108: Trust boundaries"
+### Community 50 - "Security Requirements and Features F-100 to F-108: Trust boundaries"
 Cohesion: 0.24
 Nodes (14): F-069 Old primary fencing (external verified exclusion), R-13 Memory exhaustion, R-20 Fencing provider unavailable, SEC-8 Global and per principal connection, byte, queue, parser and auth CPU budgets, Control module, Data plane, Database trust domain, Fencing infrastructure (+6 more)
 
-### Community 50 - "pool CLI Entry and Argument Parsing"
+### Community 51 - "pool CLI Entry and Argument Parsing"
 Cohesion: 0.33
 Nodes (12): Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Decision: non-blocking spec gap from tst-f1-test: --format=<bytes not UTF-8> gives unexpected argument but the spec lacks 'separate'; architect to add a sentence, joined with the review round; checker notes config_version() constant and --config=<bytes not UTF-8>, Decision: review Minors (config_version() constant, Location::None untested, io.permission_denied untested, loose column test, no automatic AC-8/AC-12/AC-13 guard, verify.md only at 5f44d88) routed to the developer fix, scope 002 Follow-up and reverify; cheap Nits fixed, --format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument, Value sourcing (where each output value comes from), Clarification 2: --format=<bytes> and --config=<bytes> are unexpected argument; runner up byte level split, For /check review: notes handed to the review (+4 more)
 
-### Community 51 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende"
+### Community 52 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende"
 Cohesion: 0.24
 Nodes (13): actions/cache v6.1.0 pinned by commit (keeps built cargo-deny), actions/checkout v7.0.1 pinned by commit, Adopted in scope 002 (tools, not product dependencies; pool and pool-config gain none), cargo-cyclonedx 0.5.10 (CycloneDX JSON SBOM, run by hand until scope 011), cargo-deny 0.20.2 (advisories, licenses, bans, sources), cargo deny check passed on both lockfiles in the scratch build (advisories, bans, licenses, sources ok), cargo-fuzz 0.13.2 (builds and runs fuzz targets), Ten extra packages in crates/pool-config/fuzz/Cargo.lock (+5 more)
 
-### Community 52 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Workspace guards W1-W7"
+### Community 53 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Workspace guards W1-W7"
 Cohesion: 0.15
 Nodes (13): W1 lockfile package set guard, W2 forbidden paths guard, W3 forbidden source patterns guard, W4 lint inheritance guard, W5 internal dependencies guard, W6 unexpected Cargo.lock guard, Workspace guards W1-W7, Baseline W2: paths that must not exist (apps/pool-cli, crates/pool-protocol, crates/pool-core, crates/pool-control) (+5 more)
 
-### Community 53 - "Pgpool Baseline, Competitors and Feasibility: Pgpool configuration coverage inventory"
+### Community 54 - "Pgpool Baseline, Competitors and Feasibility: Pgpool configuration coverage inventory"
 Cohesion: 0.23
 Nodes (12): Configuration features F-115 to F-119, F-117 Pgpool Parameter Coverage (207 sample spellings), F-117 Pgpool parameter coverage (207 sample spellings mapped), Pgpool baseline, Baseline gaps (planning inventory, not parity certification), License and source reuse policy, PCP commands, SQL commands and pgpool_adm reference surface, Tagged sample and source manifest (V4_7_3) (+4 more)
 
-### Community 54 - "Slices, Milestones and Readiness Gates: Engineering standards"
+### Community 55 - "Slices, Milestones and Readiness Gates: Engineering standards"
 Cohesion: 0.22
 Nodes (11): Engineering standards, Data and Protocol Safety Standards, Dependency and Configuration Change Rules (dependency policy checks advisories, licenses and sources on every PR; locked package change updates its baseline file), No Replay After Dispatch Rule, Rust and Runtime Standards (pinned toolchain defaults, lint tables in root Cargo.toml, no rustfmt.toml or clippy.toml), Workspace unsafe_code = "forbid" inherited by every member (guarded by spec 0002 rule W4), Engineering Workflow, R-12 Malformed frame vulnerability (+3 more)
 
-### Community 55 - "Pgpool Baseline, Competitors and Feasibility: Feasibility study"
+### Community 56 - "Pgpool Baseline, Competitors and Feasibility: Feasibility study"
 Cohesion: 0.18
 Nodes (11): Feasibility study, Automatic promotion (not ready for initial release), Go or no go milestones, Commercial and maintenance assumptions, Manual promotion (feasible with external dependencies), Operational ownership boundaries, Query result caching (high uncertainty), Session pooling feasibility (high feasibility, high correctness risk) (+3 more)
 
-### Community 56 - "Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling: Agent workflow (read scope, inspect reality, def"
+### Community 57 - "Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling: Agent workflow (read scope, inspect reality, def"
 Cohesion: 0.22
 Nodes (9): Agent workflow (read scope, inspect reality, define slice, apply standards, validate, update graph), GA workflow depth (behavior verification, tests, fresh review, documentation), Knowledge graph refresh before commit (graphify-out kept current), Tracer Bullet Build Approach, Agent Workflow, Cargo workspace holds only the pool and pool-config packages, and there is no CI yet (inspect it before relying on documentation), Scope 001 lead closed feature 1 and pushed main (spec 0001 Accepted; Docker running so F2-2 PASS), Agreement with scope 001 lead to alternate commits on shared main checkout (per-path git add, no concurrent graph updates) (+1 more)
 
-### Community 57 - "Pgpool Baseline, Competitors and Feasibility: Competitor analysis"
+### Community 58 - "Pgpool Baseline, Competitors and Feasibility: Competitor analysis"
 Cohesion: 0.47
 Nodes (9): Competitor analysis, Compare only equivalent pool modes at pinned releases, HAProxy (general TCP/HTTP proxy, GPL), Odyssey (C multithreaded pooler, BSD 3 Clause), PgBouncer (C event driven pooler, ISC), PgCat (Rust/Tokio routing proxy, MIT), Competitor reference roles recommendation, Pgpool-II 4.7.3 (selected baseline) (+1 more)
 
-### Community 58 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix: PostgreSQL protocol analysis"
+### Community 59 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix: PostgreSQL protocol analysis"
 Cohesion: 0.22
 Nodes (9): Proposed stopping rules, PostgreSQL protocol analysis, Close uncertain sessions cleanup policy, Independent backend credentials per mapped login identity, Proposed protocol limits (64 KiB startup, 16 MiB message), Replication and special clients, SCRAM channel binding per terminated TLS channel, Session state inventory (+1 more)
 
-### Community 59 - "Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207"
+### Community 60 - "Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207"
 Cohesion: 0.22
 Nodes (9): Pgpool Watchdog coordination, Connections and identity option family (48 options), Logs, files and reset option family (28 options), Relation metadata option family (6 options), Canonical runtime declaration census (RT-001 to RT-186), Source-only delta names (hidden aliases, health_check_test, replication_mode), Streaming and health option family (24 options), Streaming sample census (CFG-001 to CFG-207, 207 spellings) (+1 more)
 
-### Community 60 - "Scaffold Step and dev-f1-build Gate: Manual step F1-1: start Docker Desktop so the de"
+### Community 61 - "Scaffold Step and dev-f1-build Gate: Manual step F1-1: start Docker Desktop so the de"
 Cohesion: 0.44
 Nodes (9): Linux build evidence (a macOS build is not proof of the Linux build), Local toolchain (Rust stable 1.99.1, 1.100.0 available via rustup, host aarch64-apple-darwin, Docker 29.9.2 with daemon off), Manual steps policy (Docker Desktop, GitHub settings, PR, push, system tools, real PostgreSQL or VM are user only; blocked steps recorded as BLOCKED owner user), Resolved former blocker: Linux build evidence blocked while the Docker daemon was off; user started Docker Desktop (F1-1 PASS), Resolved former blocker: 0001 AC-2 and the /dev/full clause of AC-11 not run; Linux build passed at 18e9228 with 136 tests (F1-2 PASS), no longer holds feature 1 done, History after closing (2026-11-14): Linux build passed at 18e9228 (F1-1, F1-2 PASS), evidence merged from claude/chk-f1-verify-2-dcd4b8, feature 1 done, spec 0001 Accepted; remaining VM architecture (F1-N1) and Follow-up 11, Langkah manual: 001-stack-and-workspace (manual steps for the user), Manual step F1-1: start Docker Desktop so the developer and verify sessions can run the Linux build (0001 AC-2); PASS 2026-11-14, user started Docker Desktop, docker info exit 0 (server 29.9.2) (+1 more)
 
-### Community 61 - "IoFinding and Permission Denied Path"
+### Community 62 - "IoFinding and Permission Denied Path"
 Cohesion: 0.43
 Nodes (7): Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, io.permission_denied test under cfg(unix): file of mode 000; returns as passed when the process can still open it (root in the container), else checks exit 3 and exact output in both formats, Tests and who owns them, Clarification 5: a self-skipping cfg(unix) mode 000 test for io.permission_denied; runner up keep it untested, io.permission_denied has no test, as the spec says, Rule check: a mode 000 file exits 3 io.permission_denied in both formats; new test ac11_a_file_that_cannot_be_opened_is_permission_denied passed, ErrorKind
-
-### Community 62 - "Security Requirements and Features F-100 to F-108: SEC-2 Independently authenticated frontend and b"
-Cohesion: 0.36
-Nodes (8): F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), R-11 Authentication or role confusion, SEC-2 Independently authenticated frontend and backend identities, SEC-3 SCRAM PLUS only with valid channel binding; bounded work factors, T-02 Password or SCRAM downgrade, T-04 Role confusion and cross tenant reuse, Authentication tests (SCRAM/PLUS/mTLS/rotation/denial), Pool isolation tests
 
 ### Community 63 - "Safety Invariants and Session Risks: Routing Features (F-033 to F-047)"
 Cohesion: 0.38
@@ -414,24 +414,24 @@ Cohesion: 0.50
 Nodes (4): Pgpool baseline modes and POOL dispositions, native_replication and snapshot_isolation modes (deferred), streaming_replication mode (initial operating model), Replication and routing option family (17 options)
 
 ## Knowledge Gaps
-- **92 isolated node(s):** `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica)`, `F-060 Network partitions (health changes eligibility only)` (+87 more)
+- **92 isolated node(s):** `User asked for scope 001 on 2026-11-14 and nothing beyond it; further implementation begins only when explicitly requested`, `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)` (+87 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **3 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table` to `Glossary and Routing Profiles`, `SQL Routing and Replica Profiles: Protocol engine`, `Slices, Milestones and Readiness Gates`, `Scaffold Step and dev-f1-build Gate`, `Offline Bounds, Parser Depth and Known Limits`, `Scope 001 Coordination Brief, Log and Authorization`, `Linux Build Evidence, AC-2 and VM Architecture`, `Scope 002 Brief Rules: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit`, `Load Balancing and Replica Selection`, `Leases, Cancellation and Login Routing`, `Tracing, Log Redaction and Logging Decisions`, `Standards, Tooling and Release Qualification`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture`, `Scope 002 Brief Rules`, `Spec 0002: Standards and tooling`, `Safety Invariants and Session Risks`, `Configuration Keys and Secret References`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Feature Families and Planned Scopes: Roadmap`, `Changelog, Feature 1 Done and Spec Status`, `Hand Written Deserialize and Reserved Capability Probes`, `Security Requirements and Features F-100 to F-108`, `Administration, Cluster and Health PRDs: Administration PRD`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling`, `Review Clarifications and check-config Usage Rules: Unreleased, Added: the first workspace slice of `, `Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Workspace guards W1-W7`, `Slices, Milestones and Readiness Gates: Engineering standards`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling: Agent workflow (read scope, inspect reality, def`?**
-  _High betweenness centrality (0.299) - this node is a cross-community bridge._
-- **Why does `Spec 0002: Standards and tooling` connect `Spec 0002: Standards and tooling` to `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Glossary and Routing Profiles`, `Slices, Milestones and Readiness Gates`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Slices, Milestones and Readiness Gates: Engineering standards`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture`, `Scope 002 Brief Rules`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`?**
-  _High betweenness centrality (0.150) - this node is a cross-community bridge._
-- **Why does `Workspace guards W1-W7` connect `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Workspace guards W1-W7` to `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture`?**
-  _High betweenness centrality (0.131) - this node is a cross-community bridge._
+- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table` to `Glossary and Routing Profiles`, `SQL Routing and Replica Profiles: Protocol engine`, `Slices, Milestones and Readiness Gates`, `Scaffold Step and dev-f1-build Gate`, `Offline Bounds, Parser Depth and Known Limits`, `Scope 001 Coordination Brief, Log and Authorization`, `Linux Build Evidence, AC-2 and VM Architecture`, `Scope 002 Brief Rules: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit`, `Load Balancing and Replica Selection`, `Tracing, Log Redaction and Logging Decisions`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture`, `Scope 002 Brief Rules`, `Spec 0002: Standards and tooling`, `Standards, Tooling and Release Qualification`, `Safety Invariants and Session Risks`, `Leases, Cancellation and Login Routing`, `Configuration Keys and Secret References`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Feature Families and Planned Scopes: Roadmap`, `Changelog, Feature 1 Done and Spec Status`, `Hand Written Deserialize and Reserved Capability Probes`, `Security Requirements and Features F-100 to F-108`, `Administration, Cluster and Health PRDs: Administration PRD`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling`, `Review Clarifications and check-config Usage Rules: Unreleased, Added: the first workspace slice of `, `Load Balancing and Replica Selection: SQL routing PRD`, `Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Workspace guards W1-W7`, `Slices, Milestones and Readiness Gates: Engineering standards`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling: Agent workflow (read scope, inspect reality, def`?**
+  _High betweenness centrality (0.289) - this node is a cross-community bridge._
+- **Why does `Workspace guards W1-W7` connect `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Workspace guards W1-W7` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table`?**
+  _High betweenness centrality (0.137) - this node is a cross-community bridge._
+- **Why does `Spec 0002: Standards and tooling` connect `Spec 0002: Standards and tooling` to `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Glossary and Routing Profiles`, `Slices, Milestones and Readiness Gates`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Slices, Milestones and Readiness Gates: 2. Standards and tooling (in-progress)`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture`, `Scope 002 Brief Rules`, `Slices, Milestones and Readiness Gates: Engineering standards`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`?**
+  _High betweenness centrality (0.132) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Spec 0002: Standards and tooling` (e.g. with `docs/adr section row: ADR 0002. Standards and tooling` and `F2-N3 Whether and when a second maintainer GitHub account exists (approvals 0 to 1)`) actually correct?**
   _`Spec 0002: Standards and tooling` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 6 inferred relationships involving `AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` (e.g. with `Added: exit status convention for POOL commands (0 success, 1 input rejected, 2 usage error, 3 could not finish)` and `Review strengths: no file text reaches any output (toml error used for its span only), bounded read checked twice, locked writes with exit 3 on closed pipe, byte for byte tests on the real binary`) actually correct?**
   _`AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` has 6 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)` to the rest of the system?**
+- **What connects `User asked for scope 001 on 2026-11-14 and nothing beyond it; further implementation begins only when explicitly requested`, `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114` to the rest of the system?**
   _92 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**
   _Cohesion score 0.06841448189762797 - nodes in this community are weakly interconnected._
