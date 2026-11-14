@@ -22,3 +22,19 @@ Use safe first party Rust and bounded resources. Native/unsafe exceptions requir
 Scope owns coarse work/status; specs own decisions; PRDs describe behavior; ADRs link decisions. Research is dated evidence, not proof of current runtime behavior. Apache 2.0 is the chosen project license; review per file and transitive notices before source reuse.
 
 No project community skills or MCP dependencies have been installed. Optional stack discovery was deferred by the user on 2026-11-14. Do not install dependencies, scaffold all future crates, deploy infrastructure, or mutate a database as part of documentation work.
+
+## Workspace conventions
+
+Each rule below is owned by the linked file; edit it there.
+
+- Every member inherits the five `[workspace.package]` fields and sets `[lints] workspace = true`, so `unsafe_code = "forbid"` applies to it ([workspace layout and manifests](docs/specs/0001-initial-architecture/index.md#workspace-layout-and-manifests)).
+- A dependency is declared once under `[workspace.dependencies]` and taken with `workspace = true`, only when the current path uses it ([adopted dependencies](docs/specs/0001-initial-architecture/index.md#adopted-dependencies)). `Cargo.lock` is committed and its package set is part of `0001 AC-12`. No package has `dev-dependencies` or a build script.
+- Neither package opens a socket or starts a thread or async runtime, and `apps/pool-cli`, `crates/pool-protocol`, `crates/pool-core` and `crates/pool-control` do not exist yet. The checks are `0001 AC-12` and `0001 AC-13` in [spec 0001](docs/specs/0001-initial-architecture/index.md#requirements).
+- Configuration keys, exit status with command output, and log events follow the [shared conventions](docs/engineering-standards.md#shared-conventions). Public names come from the [glossary](docs/glossary.md).
+- Tests use the built in `cargo test` harness only, in the files [spec 0001](docs/specs/0001-initial-architecture/index.md#tests-and-who-owns-them) assigns to each package. The checks you can run today are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- A commit names the Build plan step it implements ([change path](docs/specs/0001-initial-architecture/index.md#change-path)).
+
+## Context files
+
+- [apps/pool/AGENTS.md](apps/pool/AGENTS.md) (the `pool` binary: output, exit status and test rules for `check-config`)
+- [crates/pool-config/AGENTS.md](crates/pool-config/AGENTS.md) (the validation library: its public boundary, findings and fixtures)

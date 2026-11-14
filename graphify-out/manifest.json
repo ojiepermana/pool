@@ -1,9 +1,9 @@
 {
   "AGENTS.md": {
-    "mtime": 1794648647.8559582,
-    "seen": 1794649040.506897,
+    "mtime": 1794655899.7476175,
+    "seen": 1794656203.326158,
     "ast_hash": "6a2a621b8ad6297803a7692988b1a653",
-    "semantic_hash": "9f6e63df35ff79f0e4e14f0e221183b4"
+    "semantic_hash": "e74ed764700f4efda554d0b2e5b9b6c7"
   },
   "CLAUDE.md": {
     "mtime": 1794648647.8562598,
@@ -108,10 +108,10 @@
     "semantic_hash": "5bfdd5c5843108d9f1be1314aa0e412a"
   },
   "docs/index.md": {
-    "mtime": 1794648647.8575087,
-    "seen": 1794649040.506905,
+    "mtime": 1794655899.7484782,
+    "seen": 1794656203.326166,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "0ddede4f7c94d3bbc8ed1d399a86d522"
+    "semantic_hash": "fee9b64dc6abcb0b7321b779191ed0b5"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -264,10 +264,10 @@
     "semantic_hash": "6ccb2a3d179e860652e99a50c3ba82e3"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794624116.176001,
-    "seen": 1794625238.069324,
+    "mtime": 1794655940.7070508,
+    "seen": 1794656203.326168,
     "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
-    "semantic_hash": "821d7d5a1cd17a6e41c40554ef04510f"
+    "semantic_hash": "052038794167a55a94a03a94abad9447"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -504,15 +504,39 @@
     "semantic_hash": "31e53c95ee25f053a147836be27456b1"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794655549.6170754,
-    "seen": 1794655781.245836,
+    "mtime": 1794655940.720526,
+    "seen": 1794656203.326169,
     "ast_hash": "",
-    "semantic_hash": "ddd6b590b8d9dd253d87148bb77702ed"
+    "semantic_hash": "7d6fb41ea53e3e748f29d8fe6ceb3e90"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
     "mtime": 1794655356.847045,
     "seen": 1794655781.2458382,
     "ast_hash": "",
     "semantic_hash": "91e60dc627b58a126c377a8e23a67ff6"
+  },
+  "apps/pool/AGENTS.md": {
+    "mtime": 1794655899.747823,
+    "seen": 1794656203.326161,
+    "ast_hash": "",
+    "semantic_hash": "797f5115ba3054aa8aa63e3d23ec435f"
+  },
+  "apps/pool/CLAUDE.md": {
+    "mtime": 1794655899.7479439,
+    "seen": 1794656203.326163,
+    "ast_hash": "",
+    "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
+  },
+  "crates/pool-config/AGENTS.md": {
+    "mtime": 1794655899.748113,
+    "seen": 1794656203.326164,
+    "ast_hash": "",
+    "semantic_hash": "f65d65ba7c457b7f96a1ec624f723538"
+  },
+  "crates/pool-config/CLAUDE.md": {
+    "mtime": 1794655899.7482288,
+    "seen": 1794656203.326165,
+    "ast_hash": "",
+    "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
   }
 }
