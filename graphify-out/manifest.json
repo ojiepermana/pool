@@ -378,10 +378,10 @@
     "semantic_hash": "50d3096f5cd170587380dbaab9c8b21f"
   },
   "docs/specs/0001-initial-architecture/index.md": {
-    "mtime": 1794657747.7122753,
-    "seen": 1794658147.1805172,
+    "mtime": 1794659284.6874626,
+    "seen": 1794659285.235847,
     "ast_hash": "d273cb4d4139b2882af50db5d8277a24",
-    "semantic_hash": "6fc864541d9227c03cd2632218c20f3c"
+    "semantic_hash": "dca37393a8a433b7e5da314bea0398dd"
   },
   "docs/specs/0001-initial-architecture/rationale.md": {
     "mtime": 1794657747.7125878,
@@ -546,10 +546,10 @@
     "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
   },
   "docs/specs/0002-standards-and-tooling/index.md": {
-    "mtime": 1794658748.161685,
-    "seen": 1794658831.301249,
+    "mtime": 1794659284.687863,
+    "seen": 1794659285.235851,
     "ast_hash": "",
-    "semantic_hash": "882347dece1a7a6ce4b5c230dd65a69a"
+    "semantic_hash": "a0a13335ce99802aff8e174e7ef945a0"
   },
   "docs/specs/0002-standards-and-tooling/rationale.md": {
     "mtime": 1794658233.5374477,
