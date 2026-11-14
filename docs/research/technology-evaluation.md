@@ -103,7 +103,7 @@ Scope 002 adopts tools, not product dependencies. `pool` and `pool-config` gain 
 
 | Tool | Version | Purpose | License | Native code | Cost at run time | Alternative |
 |---|---|---|---|---|---|---|
-| GitHub Actions, hosted runner `ubuntu-24.04` | Service; the image label is fixed | Runs the seven required checks on every pull request, on a push to `main` and once a day | Service terms, not a package | Not applicable | None in the product. Seven short jobs per run | A self hosted runner |
+| GitHub Actions, hosted runner `ubuntu-24.04-arm` | Service; the image label is fixed. 64 bit ARM, the architecture of the Linux target | Runs the seven required checks on every pull request, on a push to `main` and once a day | Service terms, not a package | Not applicable | None in the product. Seven short jobs per run, free for a public repository | A self hosted runner; `ubuntu-24.04` (Intel or AMD), which would emulate the Linux build |
 | `actions/checkout` | `v7.0.1`, commit `3d3c42e5aac5ba805825da76410c181273ba90b1` | Fetches the repository in a job | MIT | Runs on the runner's Node runtime | None in the product | `git clone` in a `run:` step |
 | `actions/cache` | `v6.1.0`, commit `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` | Keeps the built `cargo-deny` binary between runs | MIT | Runs on the runner's Node runtime | None in the product | Build the tool in every run |
 | cargo-deny | [0.20.2](https://crates.io/crates/cargo-deny/0.20.2), minimum Rust 1.88.0 | Advisories, licenses, banned and duplicate packages, package sources | MIT OR Apache-2.0 | A separate program, not linked into the product | None in the product. About 3 seconds per check locally once the advisory database is fetched | cargo-audit plus cargo-about |
@@ -111,7 +111,7 @@ Scope 002 adopts tools, not product dependencies. `pool` and `pool-config` gain 
 | libfuzzer-sys | [0.4.13](https://crates.io/crates/libfuzzer-sys/0.4.13), pinned with `=` | The libFuzzer runtime that a fuzz target links | (MIT OR Apache-2.0) AND NCSA | Yes: LLVM libFuzzer, C++, compiled by the `cc` crate. Only in `crates/pool-config/fuzz/` | None in the product; it is never a dependency of `pool` or `pool-config` | AFL |
 | Rust toolchain `nightly-2026-10-17` | Pinned by date | Needed by cargo-fuzz for the sanitizer flags | Same as Rust | Not applicable | Used for fuzz runs only. The product builds with 1.100.0 | None; cargo-fuzz needs a nightly toolchain |
 | cargo-cyclonedx | [0.5.10](https://crates.io/crates/cargo-cyclonedx/0.5.10), minimum Rust 1.86.0 | Writes the software inventory (SBOM) in CycloneDX JSON | Apache-2.0 | A separate program | None in the product. Run by hand until scope 011 | cargo-sbom 0.10.0 |
-| PostgreSQL container image | `postgres:18.<minor>-bookworm` by digest. Not adopted yet; the rule is fixed and scope 004 pins the tag | The database for integration tests, the same locally and in CI | PostgreSQL License | A separate container | None in the product | Distribution packages; a `services:` block in the workflow |
+| PostgreSQL container image | `postgres:18.<minor>-bookworm` by digest, which has an ARM variant. Not adopted yet; the rule is fixed and scope 004 pins the tag | The database for integration tests, the same locally and in CI | PostgreSQL License | A separate container | None in the product | Distribution packages; a `services:` block in the workflow |
 
 The fuzz package has its own lockfile, `crates/pool-config/fuzz/Cargo.lock`. Besides the packages the product already locks, the scratch build resolved these ten:
 

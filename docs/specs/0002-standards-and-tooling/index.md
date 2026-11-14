@@ -23,11 +23,11 @@ These criteria cover [scope 002](../../scope/002-standards-and-tooling.md). Cite
 **Acceptance criteria**:
 
 - **AC-1** (one entry point): `scripts/check.sh <name>` runs each check named under [The check entry point](#the-check-entry-point). On the committed tree, each of `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` exits 0 and ends with the line `== ok: <name>`. `scripts/check.sh all` runs those six in that order, keeps going after a failure, and exits 0 only when all six passed. An unknown name exits 2 with the usage text on stderr. A missing tool or a stopped Docker daemon exits 3 with one line that says what is missing.
-- **AC-2** (CI definition): `.github/workflows/ci.yml` has exactly the seven jobs `fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards` and `docs`. Every job runs on `ubuntu-24.04` and its project command is `scripts/check.sh <job id>`; the job `deny` runs `scripts/check.sh tools` before it. The workflow runs on a pull request, on a push to `main` and once a day. It asks for read access to the repository content only, uses no secret, and names each action by a full commit hash.
+- **AC-2** (CI definition): `.github/workflows/ci.yml` has exactly the seven jobs `fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards` and `docs`. Every job runs on `ubuntu-24.04-arm` and its project command is `scripts/check.sh <job id>`; the job `deny` runs `scripts/check.sh tools` before it. The workflow runs on a pull request, on a push to `main` and once a day. It asks for read access to the repository content only, uses no secret, and names each action by a full commit hash.
 - **AC-3** (the checks run in CI): On a real pull request to `main`, all seven jobs finish with the result `success` on a GitHub hosted runner. The run address and the commit hash are recorded in `verify.md` and linked from scope 002.
 - **AC-4** (dependencies, licenses and advisories, `SEC-13`, `R-16`, `R-17`): `deny.toml` has the content under [Dependency policy](#dependency-policy). `scripts/check.sh deny` requires `cargo-deny` 0.20.2 and runs its four checks (advisories, bans, licenses, sources) on the product lockfile and on the fuzz lockfile. Both pass on the committed tree. The allowed licenses are exactly `Apache-2.0`, `MIT` and `Unicode-3.0`, plus one exception, `NCSA` for `libfuzzer-sys`. No advisory is ignored.
-- **AC-5** (Linux build without emulation, spec 0001 Follow-up 9): `scripts/linux-build.sh` runs the [Linux build](../0001-initial-architecture/index.md#linux-build) command of spec 0001 with the same image digest and the same inner script. In the CI job `linux-build` the log shows `runner: Linux x86_64`, then `host: x86_64-unknown-linux-gnu`, and ends with `linux build check passed`. A run on Apple silicon is emulated and does not meet this criterion.
-- **AC-6** (workspace guards, spec 0001 Follow-up 11, `R-16`): `pool-repo-check workspace` enforces the rules W1 to W6 under [Workspace guards](#workspace-guards): the package set of each lockfile, the paths that must not exist, the source patterns that must not appear, lint inheritance, and the allowed dependencies between workspace packages. It passes on the committed tree. Each rule has at least one test that feeds it a failing input.
+- **AC-5** (Linux build without emulation, spec 0001 Follow-up 9): `scripts/linux-build.sh` runs the [Linux build](../0001-initial-architecture/index.md#linux-build) command of spec 0001, copied without a change, and rule W7 fails when the two differ. The CI job `linux-build` runs on a hosted runner that has the architecture of the Linux target spec 0001 names. Its log shows `runner: Linux aarch64`, then the `host:` line that `0001 AC-2` asks for, and ends with `linux build check passed`. A run on a workstation is how you reproduce the job; it is not this evidence.
+- **AC-6** (workspace guards, spec 0001 Follow-up 11, `R-16`): `pool-repo-check workspace` enforces the rules W1 to W7 under [Workspace guards](#workspace-guards): the package set of each lockfile, the paths that must not exist, the source patterns that must not appear, lint inheritance, the allowed dependencies between workspace packages, and the copy of the Linux build command. It passes on the committed tree. Each rule has at least one test that feeds it a failing input.
 - **AC-7** (CI definition guard): `pool-repo-check ci` enforces the rules C1 to C5 under [CI definition guards](#ci-definition-guards). It passes on the committed tree, and each rule has a failing test.
 - **AC-8** (links and anchors): `pool-repo-check docs` fails when a local link in a Markdown file points to a file that does not exist, or to a heading that the target file does not have. It passes on the committed tree.
 - **AC-9** (scope status agreement): `pool-repo-check docs` fails when a row of the scope index and the first line of its feature file disagree on number, name or status, when a status is not one of `planned`, `in-progress`, `done` or `dropped`, or when a feature file has no row.
@@ -67,7 +67,7 @@ AC-3, AC-12, the remote half of AC-13 and the CI half of AC-5 need a real pull r
 
 The parts of that decision:
 
-- **CI service**: GitHub Actions on the hosted runner `ubuntu-24.04`, which is a 64 bit Intel or AMD machine, so the Linux build runs without emulation. (basis: the repository is on GitHub with Actions on; spec 0001 Follow-up 9)
+- **CI service**: GitHub Actions on the hosted runner `ubuntu-24.04-arm`. It is a 64 bit ARM machine, the same architecture as the Linux target of spec 0001 (your VMs are ARM), so the Linux build runs without emulation. All seven checks run there. No check builds for 64 bit Intel or AMD. (basis: the repository is on GitHub with Actions on; spec 0001 Follow-up 9)
 - **Dependency, license and advisory checker**: `cargo-deny` 0.20.2, one tool for all three. (basis: `SEC-13`, `R-16`, `R-17`)
 - **Repository checks**: a small Rust program, `pool-repo-check`, in `tools/repo-check/`. It has no dependencies, sits outside the Cargo workspace, and holds the workspace guards, the CI definition guards and the document checks. (basis: spec 0001 Follow-up 11; the scope 001 criteria on workspace members and locked packages stay true)
 - **SBOM generator** (an SBOM is a machine readable list of every component in a build): `cargo-cyclonedx` 0.5.10, CycloneDX JSON. It is a command you run, not a required check, until the release work of scope 011. (basis: `SEC-13`)
@@ -145,7 +145,7 @@ scripts/check.sh <name> [<name>...]
 | Name | Meaning |
 |---|---|
 | `fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards`, `docs` | The required checks above |
-| `all` | `fmt`, `clippy`, `test`, `deny`, `guards`, `docs`, in that order. It does not stop at a failure. `linux-build` is not part of `all`, because it needs Docker and takes minutes under emulation |
+| `all` | `fmt`, `clippy`, `test`, `deny`, `guards`, `docs`, in that order. It does not stop at a failure. `linux-build` is not part of `all`, because it needs Docker and a clean tree |
 | `tools` | Makes `cargo-deny` 0.20.2 available (see below) |
 | `fuzz` | The fuzz run under [Fuzz harness](#fuzz-harness). Not a required check |
 | `sbom` | The inventory under [Software inventory](#software-inventory). Not a required check |
@@ -165,11 +165,14 @@ To reproduce a failed CI job named `X`, check out the same commit and run `scrip
 
 ### Linux build script
 
-`scripts/linux-build.sh` is the executable copy of the command under [Linux build](../0001-initial-architecture/index.md#linux-build) in spec 0001. Spec 0001 stays the owner of what the inner script checks.
+`scripts/linux-build.sh` is the executable copy of the command under [Linux build](../0001-initial-architecture/index.md#linux-build) in spec 0001. Spec 0001 owns that command: its platform, its image digest and everything the inner script checks. This spec does not repeat any of them.
+
+The script has two parts. The first part is fixed here:
 
 ```sh
 #!/bin/sh
 # Linux build check of spec 0001 (0001 AC-2). Needs a running Docker daemon.
+# The command below the marker line is copied from spec 0001, "Linux build". Do not edit it here.
 set -eu
 cd "$(dirname "$0")/.."
 echo "runner: $(uname -sm)"
@@ -181,13 +184,14 @@ if [ -n "$(git status --porcelain)" ]; then
   echo "linux-build: commit or remove local changes first; this check builds only the committed tree" >&2
   exit 3
 fi
-git archive --format=tar HEAD | docker run --rm -i --platform linux/amd64 \
-  -e RUSTUP_TOOLCHAIN=1.100.0 -e CARGO_INCREMENTAL=0 -e CARGO_PROFILE_DEV_DEBUG=0 \
-  rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37 \
-  sh -euc '<the inner script of spec 0001, copied byte for byte>'
+# --- spec 0001, Linux build ---
 ```
 
-Copy the inner script (everything between the single quotes in spec 0001, from `mkdir /work` to `echo "linux build check passed"`) without a change. The line `runner:` is what tells a native run from an emulated one: `Linux x86_64` on the CI runner, `Darwin arm64` on the workstation of this project.
+The second part is everything after the marker line `# --- spec 0001, Linux build ---`. It is the content of the first code block under the heading "Linux build" in `docs/specs/0001-initial-architecture/index.md` (the block that starts with `git archive`), byte for byte, and nothing else. Copy it from spec 0001 as it stands on `main` when you build this step. Rule W7 compares the two on every pull request, so a later change to that command in spec 0001 must change this script in the same pull request.
+
+The line `runner:` shows where the check ran: `Linux aarch64` on the CI runner, `Darwin arm64` on the workstation of this project. On that workstation Docker runs ARM Linux containers without emulation, so the local run takes about as long as the CI run.
+
+The runner and the Linux target must have the same architecture. If spec 0001 ever names a different Linux target, the `runs-on` label of this spec changes with it, in this spec.
 
 ### Dependency policy
 
@@ -307,6 +311,7 @@ pool-repo-check docs      [--root <DIR>] [--base <REVISION>]
 | W4 | The root `Cargo.toml` has `unsafe_code = "forbid"` in `[workspace.lints.rust]`, and the manifest of every workspace member has a `[lints]` table with `workspace = true` | none |
 | W5 | The dependencies between workspace members are exactly the listed pairs | `internal-dependencies.txt` |
 | W6 | Every file named `Cargo.lock` in the repository is one of the three lockfiles of W1. Directories named `target` and directories whose name starts with a dot are skipped | none |
+| W7 | The text of `scripts/linux-build.sh` after its marker line equals the first code block under the heading `### Linux build` in `docs/specs/0001-initial-architecture/index.md` | none |
 
 Baseline files live in `tools/repo-check/baseline/`. A line that is empty or starts with `#` is ignored. Each file starts with a comment line that names this spec.
 
@@ -385,6 +390,7 @@ Details:
 - W1 reads a lockfile line by line: a `name = "<x>"` line that follows a `[[package]]` line is a package name. Names are compared as a sorted list, so a package that appears twice must be listed twice. The message names each missing and each extra package. If Cargo resolves a different set for the fuzz lockfile than the one above, stop and report it to the lead; do not edit the baseline to fit.
 - W3 compares plain text, not patterns. The eight lines are the alternatives of the `grep` in `0001 AC-12`. A match in a comment counts, as it does for that `grep`.
 - W4 and W5 read manifests line by line, without a TOML parser. Workspace members are the quoted strings in the `members` array of the root `Cargo.toml`; a `*` in a member string is a problem of rule W4, because the guard cannot follow it. A member's package name is the `name` in its `[package]` table. A dependency is a key in a table whose name is `dependencies`, `dev-dependencies` or `build-dependencies`, or ends with a dot and one of those names, or a table named `<one of those>.<key>`. The key is the text before the first dot, space or equals sign. Only keys that are member package names count for W5.
+- W7 finds the heading line `### Linux build` in spec 0001, takes the lines between the first fence that follows it and that fence's closing line, and compares them with the lines of the script after the line `# --- spec 0001, Linux build ---`. Both sides are compared line by line, ignoring one trailing newline at the end of the file. A missing marker line or a missing block is a problem.
 - A baseline file changes only in the pull request that carries the spec or Build plan step that calls for the change, and the pull request names that spec. The first slice that opens a socket removes lines from `forbidden-source-patterns.txt`; the slice that creates `crates/pool-protocol` removes that line from `forbidden-paths.txt` and adds its pairs to `internal-dependencies.txt`.
 
 #### CI definition guards
@@ -396,7 +402,7 @@ These rules read `.github/workflows/ci.yml` and `.github/rulesets/main.json` lin
 | C1 | In every file under `.github/workflows/`, each `uses:` value is `<owner>/<name>@<40 hexadecimal characters>` followed by a comment that starts with `# v` |
 | C2 | The job ids of `ci.yml` (lines of the form two spaces, an id, a colon, directly under `jobs:`) are exactly the `"context"` values of the `required_status_checks` rule in `main.json` |
 | C3 | Each job has a step whose `run:` value is exactly `scripts/check.sh <its job id>` |
-| C4 | Every `runs-on:` value is `ubuntu-24.04` |
+| C4 | Every `runs-on:` value is `ubuntu-24.04-arm` |
 | C5 | `ci.yml` has one `permissions:` line, at the start of a line, followed by `  contents: read`. No workflow file contains `pull_request_target` or `secrets.` |
 
 #### Document checks
@@ -537,7 +543,7 @@ env:
 
 jobs:
   fmt:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -547,7 +553,7 @@ jobs:
       - run: scripts/check.sh fmt
 
   clippy:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -557,7 +563,7 @@ jobs:
       - run: scripts/check.sh clippy
 
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -567,7 +573,7 @@ jobs:
       - run: scripts/check.sh test
 
   deny:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -577,12 +583,12 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: target/tools
-          key: tools-${{ runner.os }}-${{ hashFiles('scripts/check.sh') }}
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/check.sh') }}
       - run: scripts/check.sh tools
       - run: scripts/check.sh deny
 
   linux-build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -591,7 +597,7 @@ jobs:
       - run: scripts/check.sh linux-build
 
   guards:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -601,7 +607,7 @@ jobs:
       - run: scripts/check.sh guards
 
   docs:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -614,7 +620,8 @@ jobs:
 
 Notes:
 
-- `rustup toolchain install` with no name installs the toolchain that `rust-toolchain.toml` selects, with its components. The version is written in that one file only. This was read from rustup 1.29.2 on the workstation, not seen on the runner. If the runner refuses that form, report it; do not write the version into the workflow as a quick fix.
+- `ubuntu-24.04-arm` is a standard GitHub hosted runner, free for a public repository, with 64 bit ARM processors. Its image list of 2026-11-11 names Docker 28.0.4 and rustup 1.29.3.
+- `rustup toolchain install` with no name installs the toolchain that `rust-toolchain.toml` selects, with its components. The version is written in that one file only. This form was tried with rustup 1.29.2 on the workstation and is not yet seen on the runner. If the runner refuses it, report it; do not write the version into the workflow as a quick fix.
 - No job has a `name:` key, so the check name GitHub reports is the job id.
 - The workflow needs no secret and gets a read only token, so a pull request from a fork runs the same checks with nothing to steal.
 - `POOL_CHECK_BASE` is a commit hash supplied by GitHub (the base of the pull request, or the commit before a push). On the daily run it is empty and `docs` falls back to `origin/main`. The `docs` job fetches the full history so that the base commit is present.
@@ -741,6 +748,7 @@ For each case the check must exit with a status other than 0 and its output must
 | 18 | `docs` | Append line K to `README.md` | `D5` |
 | 19 | `docs` | Delete the table row of `SEC-14` from `docs/security/security-requirements.md`, with `POOL_CHECK_BASE=HEAD` | `D6` and `SEC-14` |
 | 20 | `linux-build` | Apply case 4 and commit it in the copy | `unexpected exit` or `test result: FAILED` |
+| 21 | `guards` | In `scripts/linux-build.sh`, replace the text `linux build check passed` with `linux build check skipped` | `W7` |
 
 ```text
 A  fn  prove_fmt( ){}
@@ -815,10 +823,10 @@ Expected: `gh pr checks` ends with seven lines marked `pass`, one for each check
 
 ```bash
 RUN=$(gh run list --branch scope/002-standards-and-tooling --workflow ci --limit 1 --json databaseId -q '.[0].databaseId')
-gh run view "$RUN" --log | grep -E 'runner: |host: x86_64-unknown-linux-gnu|target/release/pool|linux build check passed'
+gh run view "$RUN" --log | grep -E 'runner: |host: |target/release/pool|linux build check passed'
 ```
 
-Expected: the lines `runner: Linux x86_64`, `host: x86_64-unknown-linux-gnu`, the `sha256sum` line of `target/release/pool`, and `linux build check passed`.
+Expected: the line `runner: Linux aarch64`, the `host:` line that `0001 AC-2` asks for, the `sha256sum` line of `target/release/pool`, and `linux build check passed`.
 
 **Remote step 4: a direct push is refused** (**AC-13**). Run it only after step 2 passed. Then, if the rule were not active and the push went through, what landed would still be content that passed all seven checks, and this step would be recorded as failed.
 
@@ -872,7 +880,7 @@ These are decisions with nothing to build today. The slice named in each rule bu
 **PostgreSQL 18 for integration tests** (first used by [scope 004](../../scope/004-one-real-primary-path.md)):
 
 - The database is the official `postgres` container image, Debian variant, with a tag of the form `18.<minor>-bookworm`, pinned by its index digest. The tag and digest are written in one script and recorded in the technology evaluation when the slice adopts them. On 2026-11-14 the newest such tag was `18.7-bookworm`.
-- A new check name, `integration`, is added to `scripts/check.sh`. It starts the containers it needs with `docker run`, runs the tests, and removes the containers, also after a failure. CI gets a job with the same name that runs `scripts/check.sh integration` on `ubuntu-24.04`, where Docker is already installed. The workflow does not use a `services:` block, because that path cannot be run on a workstation.
+- A new check name, `integration`, is added to `scripts/check.sh`. It starts the containers it needs with `docker run`, runs the tests, and removes the containers, also after a failure. CI gets a job with the same name that runs `scripts/check.sh integration` on the same runner label as the other jobs, where Docker is already installed. The official image has an ARM variant. The workflow does not use a `services:` block, because that path cannot be run on a workstation.
 - Tests reach only a database that this script started. They read its address from the environment the script sets. They never contact another database and use fixture credentials only.
 - Without a running Docker daemon the check exits 3. It is never reported as passed or silently skipped.
 
@@ -1001,7 +1009,8 @@ The replacement texts are in code blocks because their links are written for the
 | Check names | The table under [Required checks](#required-checks). The workflow job ids and the branch rule contexts repeat them, and rule C2 keeps them equal |
 | Rust toolchain in CI | `rust-toolchain.toml`, through `rustup toolchain install` |
 | Tool versions | Variables at the top of `scripts/check.sh` |
-| Linux builder image and inner script | Spec 0001, "Linux build" |
+| Linux platform, builder image and inner script | Spec 0001, "Linux build", copied into `scripts/linux-build.sh` and guarded by rule W7 |
+| Runner label | This spec: `ubuntu-24.04-arm`, the hosted runner with the architecture of spec 0001's Linux target |
 | Action commit hashes | GitHub API, read on 2026-11-14, written in `ci.yml` |
 | Base revision for D6 | `POOL_CHECK_BASE`, set by the workflow from the event, else `origin/main` |
 | Lockfile package names | The scratch runs recorded in the [rationale](rationale.md#evidence-gathered) |
@@ -1019,11 +1028,11 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 
 1. **Lint rules and dependency policy.** Add the Clippy table to the root `Cargo.toml` ([Lint rules](#lint-rules)) and create `deny.toml` ([Dependency policy](#dependency-policy)). Set this spec's `**Status**` line to `In Progress`. Files: `Cargo.toml`, `deny.toml`, this file's status line. Satisfies **AC-20**, and the policy half of **AC-4**.
 2. **Fuzz harness.** Create the four files under `crates/pool-config/fuzz/` ([Fuzz harness](#fuzz-harness)). Build once with the pinned nightly to create `Cargo.lock`, compare its package names with `fuzz-lock-packages.txt` in this spec, and commit it. Files: `crates/pool-config/fuzz/`. Satisfies the package half of **AC-15**.
-3. **Check entry point.** Write `scripts/check.sh` with every name in [The check entry point](#the-check-entry-point), and `scripts/linux-build.sh` ([Linux build script](#linux-build-script)). `fmt`, `clippy`, `test` and `deny` pass after steps 1 and 2; `guards` and `docs` pass after steps 5 and 6. Files: `scripts/check.sh`, `scripts/linux-build.sh`. Satisfies **AC-1**, completes **AC-4**, and the script half of **AC-5**.
+3. **Check entry point.** Write `scripts/check.sh` with every name in [The check entry point](#the-check-entry-point), and `scripts/linux-build.sh` ([Linux build script](#linux-build-script)). This step needs the update of spec 0001 that moves its Linux target to ARM to be on `main` first, because the script copies that command. `fmt`, `clippy`, `test` and `deny` pass after steps 1 and 2; `guards` and `docs` pass after steps 5 and 6. Files: `scripts/check.sh`, `scripts/linux-build.sh`. Satisfies **AC-1**, completes **AC-4**, and the script half of **AC-5**.
 4. **CI definition, branch rule and pull request template.** Create the three files under `.github/` exactly as given in [CI definition](#ci-definition), [Branch rule and change path](#branch-rule-and-change-path) and [Pull request template](#pull-request-template). Files: `.github/workflows/ci.yml`, `.github/rulesets/main.json`, `.github/pull_request_template.md`. Satisfies **AC-2**, and the file halves of **AC-13** and **AC-14**.
-5. **Repository check program, workspace and CI rules.** Create the package `tools/repo-check/` with the commands `workspace` and `ci`, the six baseline files and tests for rules W1 to W6 and C1 to C5. Files: `tools/repo-check/`. Satisfies **AC-6**, **AC-7**.
+5. **Repository check program, workspace and CI rules.** Create the package `tools/repo-check/` with the commands `workspace` and `ci`, the six baseline files and tests for rules W1 to W7 and C1 to C5. Files: `tools/repo-check/`. Satisfies **AC-6**, **AC-7**.
 6. **Repository check program, document rules.** Add the command `docs` with rules D1 to D6 and their tests. Change the citation example in `docs/index.md` ([Document corrections](#document-corrections)). `scripts/check.sh all` passes from here on. Files: `tools/repo-check/src/`, `docs/index.md` (the example only). Satisfies **AC-8**, **AC-9**, **AC-10**.
-7. **Proof that the checks bite.** Write `scripts/prove-checks.sh` with the twenty cases ([Proving the checks](#proving-the-checks)) and run it. Files: `scripts/prove-checks.sh`. Satisfies **AC-11**.
+7. **Proof that the checks bite.** Write `scripts/prove-checks.sh` with the twenty one cases ([Proving the checks](#proving-the-checks)) and run it. Files: `scripts/prove-checks.sh`. Satisfies **AC-11**.
 8. **Fuzz run and inventory run.** Run `scripts/check.sh fuzz` and `scripts/check.sh sbom` once each. `cargo-cyclonedx` 0.5.10 is installed for this with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. No committed file changes, except a fix to `scripts/check.sh` if the inventory flags had to change. Completes **AC-15**, satisfies **AC-16**.
 9. **Document corrections.** Apply items 1 to 3, 5 to 11 and 13 of [Document corrections](#document-corrections). Fill the observed versions into the technology evaluation section. Files: `CONTRIBUTING.md`, `README.md`, `docs/implementation-order.md`, `docs/index.md` (line 5), `docs/repository-structure.md`, `docs/testing/strategy.md` (line 3), `docs/plan/risk-register.md`, `docs/research/technology-evaluation.md`. Satisfies **AC-19**, completes **AC-14**, **AC-17**, **AC-18**.
 10. **Workstation evidence.** Run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` if `docker info` succeeds) and the fuzz and inventory commands on the final tree. Record commands, results, the revision and tool versions in `verify.md`, and add that file to `docs/index.md`. Record the four remote items as `NOT_RUN`, `owner: lead`. Files: `docs/specs/0002-standards-and-tooling/verify.md`, `docs/index.md` (one row). Evidence for **AC-1**, **AC-2**, **AC-4**, **AC-6** to **AC-11** and **AC-14** to **AC-20**.
@@ -1037,7 +1046,7 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 
 - A failed CI check is one command away on your own machine, and it is the same command.
 - A new package, a new license, a known advisory, a socket in the source or a forbidden crate fails a check by itself. The parts of `0001 AC-12` and `0001 AC-13` that were checked by hand no longer are.
-- The Linux build runs on real `x86_64` hardware on every pull request, with the very command spec 0001 names.
+- The Linux build runs on every pull request, on hardware of the architecture you deploy to, with the very command spec 0001 names. A guard keeps the script and the spec equal.
 - Every check has a recorded case that it refuses, so a green result means something.
 - The product still has sixteen third party packages. The tooling added none to it.
 
@@ -1052,7 +1061,8 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 - The fuzz package is not compiled by any required check, and the fuzz run and the inventory are commands, not checks. Each can stop working without a red check until the slice that makes it one.
 - The fuzz harness brings ten third party packages and compiled C++ (libFuzzer) into a test only package, on a nightly toolchain. None of it can reach the product, and rule W1 on the product lockfile shows that.
 - The daily run can fail on a day when nobody changed anything, because a new advisory was published. That is its purpose, and it is also an interruption.
-- `scripts/linux-build.sh` holds a second copy of the command in spec 0001. If one changes, the other must change with it; nothing checks that.
+- Nothing is built or tested for 64 bit Intel or AMD Linux. A contributor on such a machine can meet a failure that CI never saw.
+- `scripts/linux-build.sh` holds a second copy of the command in spec 0001. Rule W7 makes a difference fail, at the price of one more thing to update when spec 0001 changes.
 
 **Neutral**:
 
