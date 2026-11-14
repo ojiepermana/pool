@@ -6,7 +6,7 @@ These requirements govern implementation. The workspace they apply to today is t
 
 Use stable Rust, safe first party code, explicit ownership and typed errors. Keep hot paths free of unnecessary allocations and blocking work. Never hold a general lock across await without a documented necessity and a contention/cancellation test. Use bounded channels, buffers, task counts and queues. Handle OS errors without uncontrolled panics. `unwrap()` and `expect()` in production hot paths require a documented invariant and review. Public APIs and configuration need documentation.
 
-Use rustfmt and Clippy with the defaults of the pinned toolchain; the project has no `rustfmt.toml` or `clippy.toml`, and lint levels live in the lint tables of the root `Cargo.toml`. First party crates forbid unsafe code: the workspace sets `unsafe_code = "forbid"`, and every package inherits it (rule W4 of [spec 0002](specs/0002-standards-and-tooling/index.md#workspace-guards) guards that). A technical exception needs a narrow interface, documented invariants, alternatives considered, review and targeted tests. Native parser, TLS provider and SQLite dependencies need their own boundary review; a safe wrapper is not proof that its internals are safe.
+Use rustfmt and Clippy with the defaults of the pinned toolchain; the project has no `rustfmt.toml` or `clippy.toml`, and lint levels live in the lint tables of the root `Cargo.toml`. First party crates forbid unsafe code: the workspace sets `unsafe_code = "forbid"`, and every workspace member inherits it (rule W4 of [spec 0002](specs/0002-standards-and-tooling/index.md#workspace-guards) guards that). A technical exception needs a narrow interface, documented invariants, alternatives considered, review and targeted tests. Native parser, TLS provider and SQLite dependencies need their own boundary review; a safe wrapper is not proof that its internals are safe.
 
 ## Data and protocol safety
 
@@ -24,9 +24,9 @@ Follow [security requirements](security/security-requirements.md). Keep secrets 
 
 ### Reviewer roster
 
-This table names who holds each review named above and each owner role in the [risk register](plan/risk-register.md). The rule for what a fresh model may review, and its two limits, are decided in [spec 0002](specs/0002-standards-and-tooling/index.md#reviewer-roster-and-fresh-model-reviews). A fresh model is a model session that did not write or design the change and starts without the author's conversation. A review is never done by the session or person that wrote the change.
+This table names who holds each review named above and each owner role in the [risk register](plan/risk-register.md). The rule for what a fresh model may review, and its limits, are decided in [spec 0002](specs/0002-standards-and-tooling/index.md#reviewer-roster-and-fresh-model-reviews). [Fresh model](glossary.md#delivery) is a glossary term. A review is never done by the session or person that wrote the change.
 
-Change a holder here, in one edit. `Not assigned` means nobody holds the role yet. Where the last column says a person is required and the role is not assigned, the gate that needs that review stays open.
+Change a holder here, in one edit. `Not assigned` means nobody holds the role yet. While Project lead, Maintainer or Release maintainer is not assigned, the repository owner decides in that role and the record says so. For every other role, where the last column says a person is required and the role is not assigned, the gate that needs that review stays open.
 
 | Role | Reviews or owns | Holder | May a fresh model do the review? |
 |---|---|---|---|
@@ -65,7 +65,7 @@ Test observable behavior and safety invariants. Choose the test layer and record
 
 ## Git and releases
 
-Use protected main, pull requests, required CI and review for safety changes. [Spec 0002](specs/0002-standards-and-tooling/index.md#branch-rule-and-change-path) fixes how: a change reaches `main` only through a pull request on which the seven required checks passed, each check is one command (`scripts/check.sh <name>`) that also runs on a workstation, and nobody is on the bypass list. Whether the rule is active on the remote is recorded in that spec's verification record, not assumed. Keep changes small and use conventional commits. Never commit secrets. Keep a changelog, semantic versioning policy, release tags, checksums, SBOM, notices, functioning examples and an upgrade/rollback guide. Verify branch protection and required checks on the remote when setting up [standards and tooling](scope/002-standards-and-tooling.md).
+Use protected main, pull requests, required CI and review for safety changes. [Spec 0002](specs/0002-standards-and-tooling/index.md#branch-rule-and-change-path) fixes how: a change reaches `main` only through a pull request on which the seven required checks passed, each check is one command (`scripts/check.sh <name>`) that also runs on a workstation, and nobody is on the bypass list. Whether the rule is active on the remote is recorded in that spec's verification record, not assumed. Keep changes small and use conventional commits. Never commit secrets. Keep a changelog, semantic versioning policy, release tags, checksums, SBOM, notices, functioning examples and an upgrade/rollback guide. Verify the branch rule and required checks on the remote when setting up [standards and tooling](scope/002-standards-and-tooling.md).
 
 ## Workflow
 

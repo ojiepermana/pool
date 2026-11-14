@@ -130,7 +130,7 @@ The fuzz package has its own lockfile, `crates/pool-config/fuzz/Cargo.lock`. Bes
 
 This is the one native code exception so far, and it is test only. The justification the [adoption gate](#adoption-gate) asks for: fuzzing is the validation the [risk register](../plan/risk-register.md) names for malformed input (`R-12`), libFuzzer is the standard engine for it, and the package that links it is outside the workspace, is never published and cannot become a dependency of the product. The guard on the product lockfile (rule W1 of spec 0002) fails if any of these ten packages appears there.
 
-Licenses and advisories are now checked by a tool. `cargo deny check` with the configuration in spec 0002 passed on both lockfiles in the scratch build: `advisories ok, bans ok, licenses ok, sources ok`. That replaces the sentence under [Adopted in scope 001](#adopted-in-scope-001) which says they were not checked by a tool, for the state from scope 002 on.
+Once spec 0002 is built, licenses and advisories are checked by a tool on every pull request. In the scratch build, `cargo deny check` with the configuration in spec 0002 passed on both lockfiles: `advisories ok, bans ok, licenses ok, sources ok`. The sentence under [Adopted in scope 001](#adopted-in-scope-001) which says they were not checked by a tool describes the state before that.
 
 The PostgreSQL image was looked up and not pulled. On 2026-11-14 the newest Debian 12 tag was `postgres:18.7-bookworm`, pushed 2026-11-12, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`. Scope 004 reads the tag again when it adopts the image.
 

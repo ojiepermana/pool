@@ -40,7 +40,7 @@ These criteria cover [scope 002](../../scope/002-standards-and-tooling.md). Cite
 - **AC-16** (inventory, `SEC-13`): `scripts/check.sh sbom` writes `target/sbom/pool.cdx.json`, a CycloneDX document that names the third party packages `pool` is built from, with a license for each, and leaves `git status --short` empty. One run is recorded in `verify.md`, with its component names compared to `lock-packages.txt` and every difference explained.
 - **AC-17** (choices recorded): The [technology evaluation](../../research/technology-evaluation.md#adopted-in-scope-002) names every tool this spec adopts, with version, purpose, license, native code, cost and alternative. After the build it holds the locked versions that the developer observed. The [testing strategy](../../testing/strategy.md#ci-progression) names the seven checks, the fuzz rule and how PostgreSQL 18 is supplied to integration tests.
 - **AC-18** (reviewer roster, `R-25`): The [reviewer roster](../../engineering-standards.md#reviewer-roster) has one row for each review named in the standards and for each owner role in the risk register. Each row names its holder, or says `Not assigned`, and says whether a fresh model may do that review. The risk register links to it.
-- **AC-19** (documents match the workspace): Each sentence listed under [Document corrections](#document-corrections) is replaced by the text given there. A search for each old sentence finds nothing. Item 12 is the one exception: it waits for the remote evidence.
+- **AC-19** (documents match the workspace): Each sentence listed under [Document corrections](#document-corrections) is replaced by the text given there. The file each item names no longer contains the old sentence. Item 12 is the one exception: it waits for the remote evidence.
 - **AC-20** (lint rules that were only written down): The root `Cargo.toml` denies the Clippy lints `dbg_macro`, `print_stderr`, `print_stdout`, `todo` and `unimplemented` for the whole workspace, and `scripts/check.sh clippy` passes.
 
 | Criterion | Source it answers |
@@ -60,6 +60,8 @@ These criteria cover [scope 002](../../scope/002-standards-and-tooling.md). Cite
 | AC-19, AC-20 | "Done when": documented conventions match the workspace. "Reconcile the planning rules with the actual scaffold" |
 
 AC-3, AC-12, the remote half of AC-13 and the CI half of AC-5 need a real pull request on GitHub. No build session writes to GitHub. Those four are collected in the last Build plan step, which the lead runs with the permission you gave for this scope on 2026-11-14, using the exact commands under [Remote proof](#remote-proof). Everything else is proven on the workstation.
+
+The scope box "Capture conventions: `/audit`" belongs to the audit session and is already ticked on `main`. It has no criterion here.
 
 ## Decision
 
@@ -128,7 +130,9 @@ A required check is a check that must pass on a pull request before it can be me
 | `guards` | `pool-repo-check workspace`, then `pool-repo-check ci` | The workspace guards and the CI definition guards |
 | `docs` | `pool-repo-check docs`, with `--base` when a base revision is known | Links, anchors, scope status and requirement IDs |
 
-`pool-repo-check <args>` above stands for `cargo run -q --locked --manifest-path tools/repo-check/Cargo.toml -- <args>`.
+`pool-repo-check <args>` above stands for `cargo run -q --locked --manifest-path tools/repo-check/Cargo.toml --target-dir target/repo-check -- <args>`.
+
+Every `cargo clippy`, `cargo test` and `cargo run` on `tools/repo-check/Cargo.toml` passes `--target-dir target/repo-check`. The package is its own workspace root, so without that option it would build into `tools/repo-check/target/`, which `.gitignore` does not cover, and the tree would no longer be clean.
 
 The product run of `deny` prints one warning, `license-exception-not-encountered`, because the `NCSA` exception is used only by the fuzz lockfile. That warning is expected and does not fail the check.
 
@@ -154,11 +158,12 @@ Rules:
 
 - For each name the script prints `== check: <name>` first. After the commands of that check it prints `== ok: <name>` or `== FAILED: <name>`. With more than one name, or with `all`, it runs every name and then prints one line per name again as a summary.
 - Exit status follows the [shared convention](../../engineering-standards.md#shared-conventions): 0 when every named check passed, 1 when a check failed, 2 for a usage error (no name, or a name not in the table; usage text on stderr, nothing run), 3 when a check could not run (a tool is missing or has the wrong version, the Docker daemon is not running, the tree has uncommitted changes where a clean tree is required). If both 1 and 3 occur in one call, the status is 1.
+- How the status of a command maps to that: exit 3 from `pool-repo-check` or from `scripts/linux-build.sh` counts as could not run. A failed `cargo install` in `tools` counts as could not run. Any other status that is not 0, from any command of a check, counts as a failed check.
 - The script sets `CARGO_INCREMENTAL=0` and `CARGO_PROFILE_DEV_DEBUG=0` unless they are already set, and puts `target/tools/bin` at the front of `PATH`.
 - Pinned tool versions are written once, as variables at the top of this script: `cargo-deny` 0.20.2, `cargo-fuzz` 0.13.2, `cargo-cyclonedx` 0.5.10 and the fuzz toolchain `nightly-2026-10-17`.
 - `deny` first compares the output of `cargo deny --version` with `cargo-deny 0.20.2`. If the tool is missing or the version differs, it prints `cargo-deny 0.20.2 is required; run scripts/check.sh tools` and counts as could not run.
 - `tools` does nothing when `cargo deny --version` already prints `cargo-deny 0.20.2`. Otherwise it runs `cargo install --locked --root target/tools cargo-deny@0.20.2`. It never installs anything outside `target/tools`.
-- `docs` picks the base revision this way: the value of `POOL_CHECK_BASE` if it is set and not empty; otherwise `origin/main` if `git rev-parse --verify -q origin/main` succeeds; otherwise none. With a base it passes `--base <revision>`.
+- `docs` picks the base revision this way: the value of `POOL_CHECK_BASE` if it is set, not empty and not forty zeros (GitHub sends forty zeros when a push has no earlier commit); otherwise `origin/main` if `git rev-parse --verify -q origin/main` succeeds; otherwise none. With a base it passes `--base <revision>`.
 - `fuzz` and `sbom` check their tool the same way as `deny` and name the install command in their message: `cargo install --locked --root target/tools cargo-fuzz@0.13.2` and `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. A missing toolchain `nightly-2026-10-17` is reported with the command `rustup toolchain install nightly-2026-10-17`; the script does not install toolchains.
 
 To reproduce a failed CI job named `X`, check out the same commit and run `scripts/check.sh X`. That is the whole rule.
@@ -245,7 +250,7 @@ Rules for changing it:
 
 ### Lint rules
 
-Add this table to the root `Cargo.toml`, after `[workspace.lints.rust]`. Change nothing else in that file.
+Add this table to the root `Cargo.toml`, after `[workspace.lints.rust]`. Change nothing else in that file. Spec 0001 lists the content of that file as the contract of the first build; this table is the one addition since, and no criterion of spec 0001 depends on its absence.
 
 ```toml
 [workspace.lints.clippy]
@@ -400,8 +405,8 @@ These rules read `.github/workflows/ci.yml` and `.github/rulesets/main.json` lin
 | Rule | What must hold |
 |---|---|
 | C1 | In every file under `.github/workflows/`, each `uses:` value is `<owner>/<name>@<40 hexadecimal characters>` followed by a comment that starts with `# v` |
-| C2 | The job ids of `ci.yml` (lines of the form two spaces, an id, a colon, directly under `jobs:`) are exactly the `"context"` values of the `required_status_checks` rule in `main.json` |
-| C3 | Each job has a step whose `run:` value is exactly `scripts/check.sh <its job id>` |
+| C2 | The job ids of `ci.yml` (lines of the form two spaces, an id, a colon, anywhere after the `jobs:` line) are exactly the `"context"` values of the `required_status_checks` rule in `main.json` |
+| C3 | Every `run:` value in `ci.yml` is either `rustup toolchain install` or `scripts/check.sh <name>`, and the last `run:` of each job is `scripts/check.sh <its job id>`. This is what keeps CI free of logic of its own |
 | C4 | Every `runs-on:` value is `ubuntu-24.04-arm` |
 | C5 | `ci.yml` has one `permissions:` line, at the start of a line, followed by `  contents: read`. No workflow file contains `pull_request_target` or `secrets.` |
 
@@ -424,7 +429,7 @@ Lines inside a fenced code block are never read as links, headings or IDs. A fen
 
 A fragment is checked only when the target is a `.md` file. The anchors of a file come from its headings, lines of one to six `#` characters and a space, outside code blocks. Take the heading text, replace each link `[text](target)` by its text, make it lowercase, drop every character that is not a letter, a digit, a space, a hyphen or an underscore (letters and digits of any script count), and turn each space into a hyphen. A second heading with the same result gets `-1` added, a third `-2`. For example, `## Where a change belongs` gives `where-a-change-belongs` and `## docs/prd` gives `docsprd`.
 
-**Scope status (D3).** In `docs/scope/index.md`, a feature row is a table row of the form `| <n> | [<name>](<file>) | <phase> | <status> |`. For each row: `<file>` exists in `docs/scope/`, its name starts with `<n>` written with three digits and a hyphen, its first line is exactly `# <n>. <name> · <status>`, and `<status>` is `planned`, `in-progress`, `done` or `dropped`. A feature file is a direct child of `docs/scope/` whose name is three digits, a hyphen, then lowercase letters, digits and hyphens, then `.md`. Every feature file has exactly one row, and no number appears twice.
+**Scope status (D3).** In `docs/scope/index.md`, a feature row is a table row of the form `| <n> | [<name>](<file>) | <phase> | <status> |`. For each row: `<file>` exists in `docs/scope/`, its name starts with `<n>` written with three digits and a hyphen, its first line is `# <n>. <name> · <status>`, optionally followed by one or more tags, each written as ` · <tag>`, and `<status>` is `planned`, `in-progress`, `done` or `dropped`. The tags are `needs a decision` and `deferred`. A tag is not a status and the index row does not carry it. Fourteen of the seventeen feature files carry `needs a decision` today, so write a passing test for a heading with a tag. A feature file is a direct child of `docs/scope/` whose name is three digits, a hyphen, then lowercase letters, digits and hyphens, then `.md`. Every feature file has exactly one row, and no number appears twice.
 
 **Requirement IDs (D4, D5, D6).** These are the citation forms the [documentation index](../../index.md#where-a-change-belongs) names.
 
@@ -442,7 +447,26 @@ A fragment is checked only when the target is a `.md` file. The anchors of a fil
 - A citation is any place the citation form appears in a checked file outside a fenced code block, text between backticks included, because that is how the documents cite. The form must start at a word boundary, so `RUSTSEC-0000-0001` is not a citation of a security requirement. IDs are compared as text, so the same number written with and without a leading zero is two different IDs.
 - D4: within its owner (the file for the first four families, the PRD or spec number for the others) an ID is defined once.
 - D5: every citation has a definition. A citation of a PRD or spec that does not exist is a problem. A bare `AC-3` with no document number in front is not a citation and is not checked, because a reader of that file knows which document it means.
-- D6: the program reads the same owner files at the base revision with `git ls-tree -r --name-only <revision>` and `git show <revision>:<path>`. Every ID defined there must be defined now, in the same family and under the same PRD or spec number. For the two positional families the list must not be shorter than it was. A requirement that is withdrawn keeps its row or item and says so in its text; its ID is never removed or used again.
+- D6: the program reads the same owner files at the base revision with `git ls-tree -r --name-only <revision>` and `git show <revision>:<path>`. Every ID defined there must be defined now, in the same family and under the same PRD or spec number. For the two positional families an item's number is the number written at the start of the list item, and the list must not be shorter than it was. A requirement that is withdrawn keeps its row or item and says so in its text; its ID is never removed or used again.
+
+#### What each message must name
+
+The wording of a message is yours, but a message must contain the rule ID and the items below, written exactly as shown, because `scripts/prove-checks.sh` looks for them.
+
+| Rule | The message contains |
+|---|---|
+| W1 | The lockfile path and the package name that is missing from the baseline or from the lockfile |
+| W2 | The forbidden path as written in the baseline, for example `crates/pool-core` |
+| W3 | The file, the line number and the forbidden text as written in the baseline, for example `std::thread` |
+| W4 | The manifest path |
+| W5 | The pair as `<from> -> <to>`, for example `pool-config -> pool`, and whether it is not allowed or is missing |
+| W6 | The path of the unexpected `Cargo.lock` |
+| W7 | `scripts/linux-build.sh` and the first line number that differs |
+| C1 to C5 | The workflow or ruleset path and, for C2 and C3, the job id |
+| D1 | The file, the line number and the link target as written, for example `docs/missing-file.md` |
+| D2 | The file, the line number and the fragment as written, for example `no-such-heading` |
+| D3 | The feature file, and which of number, name or status disagrees |
+| D4, D5, D6 | The ID as cited or defined, for example `SEC-14`, and for D4 and D5 the file and line number |
 
 ### Fuzz harness
 
@@ -506,7 +530,7 @@ It creates `fuzz/corpus/validate` first if it is missing. The fixture directory 
 
 `scripts/check.sh sbom` writes one file, `target/sbom/pool.cdx.json`: a CycloneDX JSON document, specification version 1.5, for the package `pool` with all of its dependencies, direct and indirect.
 
-`cargo-cyclonedx` writes its output next to the manifest it describes, so the script moves the file into `target/sbom/` and leaves the tree clean. Start from this command, and adjust the flags if version 0.5.10 behaves differently; the result above is the contract, the flags are not:
+`cargo-cyclonedx` writes its output next to the manifest it describes, and may write one file for each workspace member. The script moves the file for `pool` into `target/sbom/`, removes any other file the tool wrote, and leaves the tree clean. Start from this command, and adjust the flags if version 0.5.10 behaves differently; the result above is the contract, the flags are not:
 
 ```bash
 cargo cyclonedx --manifest-path apps/pool/Cargo.toml --format json --spec-version 1.5 --all --override-filename pool.cdx
@@ -534,7 +558,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -664,19 +688,21 @@ Notes:
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          { "context": "fmt" },
-          { "context": "clippy" },
-          { "context": "test" },
-          { "context": "deny" },
-          { "context": "linux-build" },
-          { "context": "guards" },
-          { "context": "docs" }
+          { "context": "fmt", "integration_id": 15368 },
+          { "context": "clippy", "integration_id": 15368 },
+          { "context": "test", "integration_id": 15368 },
+          { "context": "deny", "integration_id": 15368 },
+          { "context": "linux-build", "integration_id": 15368 },
+          { "context": "guards", "integration_id": 15368 },
+          { "context": "docs", "integration_id": 15368 }
         ]
       }
     }
   ]
 }
 ```
+
+`integration_id` 15368 is the GitHub Actions app (read with `gh api /apps/github-actions` on 2026-11-14). With it, only a check reported by Actions can satisfy a required check; a status with the same name from somewhere else cannot.
 
 What it does: `main` cannot be deleted or rewritten. A change reaches it only through a pull request. The pull request must be up to date with `main` and all seven checks must have passed on it. Only a merge commit is allowed, so the commits of each Build plan step stay visible. Nobody is on the bypass list, the repository owner included.
 
@@ -722,7 +748,7 @@ If the rule itself must change, or must be switched off in an emergency, the rep
 
 ### Proving the checks
 
-`scripts/prove-checks.sh` shows that each check fails when it should. It refuses to run with uncommitted changes (exit 3). It makes one private copy of the committed tree with `git clone` into a temporary directory, applies one case, runs the check inside the copy, restores the copy (`git checkout -- .` and `git clean -fdq`), and goes on to the next case. It shares one build directory, `<root>/target/prove`, through `CARGO_TARGET_DIR`, and puts `<root>/target/tools/bin` on `PATH` so that the copy finds the same tools. It never changes the working tree it was started from. Where a case needs a commit in the copy, it commits with a throwaway name and address given on the command line (`git -c user.name=... -c user.email=...`).
+`scripts/prove-checks.sh` shows that each check fails when it should. It refuses to run with uncommitted changes (exit 3). It makes one private copy of the committed tree: `git clone` of the repository into a temporary directory, then `git checkout --detach <commit>`, where `<commit>` is the `HEAD` it was started from. It applies one case, runs the check inside the copy, restores the copy (`git reset --hard <commit>` and `git clean -fdq`), and goes on to the next case. It sets `POOL_CHECK_BASE=<commit>` for every run in the copy, so the base revision never depends on what the clone calls `origin/main`. It shares one build directory, `<root>/target/prove`, through `CARGO_TARGET_DIR`, and puts `<root>/target/tools/bin` on `PATH` so that the copy finds the same tools. It never changes the working tree it was started from. Where a case needs a commit in the copy, it commits with a throwaway identity given on the command line (`git -c user.name=prove -c user.email=prove@example.invalid commit`); the restore step removes that commit again.
 
 For each case the check must exit with a status other than 0 and its output must contain the text in the last column. The script prints `PASS <case> <check> rejected the change` or `FAIL <case> ...`, and ends with `all checks reject their bad change` (exit 0) or with the list of failed cases (exit 1). Before the cases it runs `scripts/check.sh all` in the copy and requires exit 0, so that a failure in a case can only come from the change.
 
@@ -746,7 +772,7 @@ For each case the check must exit with a status other than 0 and its output must
 | 16 | `docs` | Append line J to `README.md` | `D2` and `no-such-heading` |
 | 17 | `docs` | In the first line of `docs/scope/003-control-and-session-data-model.md`, replace `planned` with `done` | `D3` |
 | 18 | `docs` | Append line K to `README.md` | `D5` |
-| 19 | `docs` | Delete the table row of `SEC-14` from `docs/security/security-requirements.md`, with `POOL_CHECK_BASE=HEAD` | `D6` and `SEC-14` |
+| 19 | `docs` | Delete the table row of `SEC-14` from `docs/security/security-requirements.md` | `D6` and `SEC-14` |
 | 20 | `linux-build` | Apply case 4 and commit it in the copy | `unexpected exit` or `test result: FAILED` |
 | 21 | `guards` | In `scripts/linux-build.sh`, replace the text `linux build check passed` with `linux build check skipped` | `W7` |
 
@@ -909,9 +935,11 @@ A fresh model is a model session that did not write or design the change, starts
 | | Handling a security report |
 | | Changing the branch rule or the required checks on the remote |
 
-Two limits:
+Limits:
 
-- A review is never done by the session or person that wrote the change (`R-25`). If a review in the right column has no named holder, its gate stays open and the feature does not become `done`.
+- A review is never done by the session or person that wrote the change (`R-25`).
+- While Project lead, Maintainer or Release maintainer has no named holder, the repository owner decides in that role, and the record of the decision says so. Without this, a new advisory or the branch rule itself could not be acted on by anyone. For this scope it means: accepting this spec approves the first license list, and the permission you gave the lead covers applying the branch rule.
+- The other roles in the right column have no such stand in. If a promotion, fencing, recovery or HA design, or a drill result, has no named holder to approve it, its gate stays open and the feature does not become `done`.
 - A fresh model review carries a slice. It does not by itself qualify a release. At a [milestone gate](../../plan/milestones.md), a role that still has no named person for authentication, cancellation, routing or promotion is recorded as open exposure, with the release claim it blocks, as the risk register already asks.
 
 ### Document corrections
@@ -1016,7 +1044,7 @@ The replacement texts are in code blocks because their links are written for the
 | Lockfile package names | The scratch runs recorded in the [rationale](rationale.md#evidence-gathered) |
 | Allowed licenses | The licenses the two lockfiles need today, checked with `cargo-deny` |
 | Owner and repository name for the manual steps | `gh repo view --json nameWithOwner`, run by the person who does the step |
-| Holders in the roster | You. Until you name them, each row says `Not assigned` |
+| Holders in the roster | The repository owner, through the lead. No session guesses a name. Until a name is given, the row says `Not assigned` |
 
 ### Evidence
 
@@ -1034,11 +1062,11 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 6. **Repository check program, document rules.** Add the command `docs` with rules D1 to D6 and their tests. Change the citation example in `docs/index.md` ([Document corrections](#document-corrections)). `scripts/check.sh all` passes from here on. Files: `tools/repo-check/src/`, `docs/index.md` (the example only). Satisfies **AC-8**, **AC-9**, **AC-10**.
 7. **Proof that the checks bite.** Write `scripts/prove-checks.sh` with the twenty one cases ([Proving the checks](#proving-the-checks)) and run it. Files: `scripts/prove-checks.sh`. Satisfies **AC-11**.
 8. **Fuzz run and inventory run.** Run `scripts/check.sh fuzz` and `scripts/check.sh sbom` once each. `cargo-cyclonedx` 0.5.10 is installed for this with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. No committed file changes, except a fix to `scripts/check.sh` if the inventory flags had to change. Completes **AC-15**, satisfies **AC-16**.
-9. **Document corrections.** Apply items 1 to 3, 5 to 11 and 13 of [Document corrections](#document-corrections). Fill the observed versions into the technology evaluation section. Files: `CONTRIBUTING.md`, `README.md`, `docs/implementation-order.md`, `docs/index.md` (line 5), `docs/repository-structure.md`, `docs/testing/strategy.md` (line 3), `docs/plan/risk-register.md`, `docs/research/technology-evaluation.md`. Satisfies **AC-19**, completes **AC-14**, **AC-17**, **AC-18**.
-10. **Workstation evidence.** Run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` if `docker info` succeeds) and the fuzz and inventory commands on the final tree. Record commands, results, the revision and tool versions in `verify.md`, and add that file to `docs/index.md`. Record the four remote items as `NOT_RUN`, `owner: lead`. Files: `docs/specs/0002-standards-and-tooling/verify.md`, `docs/index.md` (one row). Evidence for **AC-1**, **AC-2**, **AC-4**, **AC-6** to **AC-11** and **AC-14** to **AC-20**.
+9. **Document corrections.** Apply items 1 to 3, 5 to 11 and 13 of [Document corrections](#document-corrections). The texts about CI and pull requests describe `main` as it is once the pull request of step 11 is merged; they reach `main` only with that pull request. Files: `CONTRIBUTING.md`, `README.md`, `docs/implementation-order.md`, `docs/index.md` (line 5), `docs/repository-structure.md`, `docs/testing/strategy.md` (line 3), `docs/plan/risk-register.md`, `docs/research/technology-evaluation.md` (item 9 only). Satisfies **AC-19**, completes **AC-14**, **AC-18**.
+10. **Workstation evidence.** Run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` if `docker info` succeeds) and the fuzz and inventory commands on the final tree. Record commands, results, the revision and tool versions in `verify.md`. Fill the locked versions you observed into the "Adopted in scope 002" section of the technology evaluation. Add two rows to `docs/index.md`: `verify.md` under this spec, and `.github/pull_request_template.md` under "Project root". Record the four remote items as `NOT_RUN`, `owner: lead`. Files: `docs/specs/0002-standards-and-tooling/verify.md`, `docs/research/technology-evaluation.md` (observed versions), `docs/index.md` (two rows). Completes **AC-17**. Evidence for **AC-1**, **AC-2**, **AC-4**, **AC-6** to **AC-11** and **AC-14** to **AC-20**.
 11. **Remote evidence (run by the lead, not by a build session).** With everything merged into the local `main` and `scripts/check.sh all` green there, run remote steps 1 to 6 under [Remote proof](#remote-proof) in order: apply the branch rule, push the branch and open the pull request, read the Linux build lines from the run, try a direct push, open and close the failing pull request, and merge. The checker records the addresses in `verify.md` and the lead links them from scope 002. Then apply item 12 of [Document corrections](#document-corrections) in the next pull request. Satisfies **AC-3**, **AC-12**, completes **AC-5** and **AC-13**.
 
-**Parallel sessions.** Steps 1, 2, 3, 4 and 9 touch files that do not overlap and can run at the same time; the developer of step 3 reads the commands from this spec and does not wait for steps 1 and 2. Steps 5 and 6 share one package and run one after the other in one session; they can start at once, because their tests use their own inputs, but their run on the real tree is green only after steps 1 to 4 are merged. Step 7 comes after steps 1 to 6. Step 8 needs steps 2 and 3. Step 10 comes after everything else, and step 11 after step 10 is merged.
+**Parallel sessions.** Steps 1, 2, 3, 4 and 9 touch files that do not overlap and can run at the same time (step 3 once the spec 0001 update it names is on `main`); the developer of step 3 reads the commands from this spec and does not wait for steps 1 and 2. Steps 5 and 6 share one package and run one after the other in one session; they can start at once, because their tests use their own inputs, but their run on the real tree is green only after steps 1 to 4 are merged. Step 7 comes after steps 1 to 6. Step 8 needs steps 2 and 3. Step 10 comes after everything else, and step 11 after step 10 is merged.
 
 ## Consequences
 
@@ -1074,7 +1102,7 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 
 1. Name the holder of each role in the [reviewer roster](../../engineering-standards.md#reviewer-roster), or confirm that it stays `Not assigned`. The rows that need a person block the gates named there.
 2. When a second maintainer has a GitHub account, raise the required approvals to 1 in `main.json` and on the remote.
-3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Marking them in spec 0001, and pointing its "Linux build" section at `scripts/linux-build.sh`, is the lead's edit.
+3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Marking them in spec 0001, pointing its "Linux build" section at `scripts/linux-build.sh`, and noting there that the root `Cargo.toml` gained a Clippy lint table, are the lead's edits.
 4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. The CI job `linux-build` runs the same command on a native runner on every pull request from now on. Nothing in spec 0001 needs to change for that.
 5. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
 6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).

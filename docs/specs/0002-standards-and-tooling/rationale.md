@@ -114,10 +114,11 @@ Each line is a decision taken on your behalf under the `auto` decision mode. Tag
 | 25 | `rustfmt.toml` and `clippy.toml` | None | Add both with explicit settings | ordinary | Defaults of a pinned toolchain are already fixed. A file of defaults is one more thing to keep true |
 | 26 | Requirement ID stability | Compare with the base revision in `git` | A committed list of all IDs | ordinary | A second list is a second owner of the same fact. `git` already knows what the IDs were |
 | 27 | Where the reviewer roster lives | The engineering standards | This spec, or a new file | ordinary | Holders change. A spec that is accepted should not be edited for a new name |
+| 27a | Who decides while a role has no holder | The repository owner, for Project lead, Maintainer and Release maintainer only | Every gate that needs a person stays open until a name is given | heavy | With every row unassigned, nobody could add an advisory exception, approve a license or apply the branch rule, and `main` would freeze on the first new advisory. The owner is the one person who certainly exists. The HA and infrastructure roles get no stand in, because those approvals need specialist judgment |
 | 28 | What a fresh model may review | The independent review of any slice. Not approvals that need authority over infrastructure, licenses, risk, releases, security reports or the remote | Fresh model for everything; or a person for every security review | heavy | Scope 001 already used a fresh model for `SEC-14`. The right column is where a wrong approval cannot be undone by a later review |
 | 29 | Negative proof | A committed script with twenty cases, plus one failing pull request on the remote | A list of commands in the verification record | ordinary | A script can be run again by the checker and after every change to a check |
 
-Decisions 3, 4, 5, 12 and 28 are the ones to look at before you accept.
+Decisions 3, 4, 5, 12, 27a and 28 are the ones to look at before you accept.
 
 ## Evidence gathered
 
@@ -125,14 +126,16 @@ All of this was done on 2026-11-14, in a scratch directory outside the repositor
 
 - **Repository settings, read only.** `gh` reports: public, owned by a user account, default branch `main`, one collaborator, merge commits allowed. `main` is not protected and there are no rulesets. Actions are enabled with `allowed_actions: all`, and the default workflow token is read only. Private vulnerability reporting is off. The local `main` was one commit ahead of the remote.
 - **Documents.** A throwaway scan of 75 Markdown files found 519 local links and none broken, using the anchor rule written in the spec. The ID survey found 14 `SEC`, 25 `R`, 165 `F` and 14 `T` definitions and no citation without one, except the example in `docs/index.md` that cites a spec which does not exist.
-- **cargo-deny 0.20.2.** With the `deny.toml` in the spec, `cargo deny --locked check` on a copy of the workspace printed `advisories ok, bans ok, licenses ok, sources ok`. Changing the workspace license to `GPL-3.0-only` failed with `license is not explicitly allowed`. Adding an unused license to the list failed with `license-not-encountered`. Adding a dependency without updating the lockfile failed with `cannot update the lock file`. A made up advisory for `itoa`, added as a file to the downloaded advisory database, failed with `RUSTSEC-0000-0001`, and the file survived a second run that fetched again. A `file:` address for the database is refused by the tool, which is why case 6 works on the downloaded copy.
-- **Fuzz harness.** `cargo fuzz init` wrote a wrong package name and no `[workspace]` table, so the manifest in the spec is written by hand. With it, `cargo +nightly-2026-10-17 fuzz run validate` built in 17 seconds and did 599095 runs in 21 seconds with no crash. Its lockfile held the 24 package names listed in the spec. `cargo deny` on that lockfile failed only on the `NCSA` part of the `libfuzzer-sys` license, and passed with the one exception. The same configuration on the product lockfile then prints one warning and passes.
+- **cargo-deny 0.20.2.** With the `deny.toml` in the spec, `cargo deny --locked check` on a copy of the workspace printed `advisories ok, bans ok, licenses ok, sources ok`. Changing the workspace license to `GPL-3.0-only` failed with `license is not explicitly allowed`. Adding an unused license to the list failed with `license-not-encountered`. Adding a dependency without updating the lockfile failed with `cannot update the lock file`. A made up advisory for `itoa`, added as a file to the downloaded advisory database, failed with `RUSTSEC-0000-0001`, and the file survived a second run that fetched again. A `file:` address for the database is refused by the tool, which is why case 6 works on the downloaded copy. `--config` is an option of `cargo deny` itself and goes before `check`; after `check` the tool rejects it. The two command lines in the spec are the ones that were run.
+- **Fuzz harness.** `cargo fuzz init` wrote a wrong package name and no `[workspace]` table, so the manifest in the spec is written by hand. With it, `cargo +nightly-2026-10-17 fuzz run validate` built in 17 seconds and did 599095 runs in 21 seconds with no crash, with `CARGO_TARGET_DIR` pointing outside the package, as the spec asks. Its lockfile held the 24 package names listed in the spec. `cargo deny` on that lockfile failed only on the `NCSA` part of the `libfuzzer-sys` license, and passed with the one exception. The same configuration on the product lockfile then prints one warning and passes.
 - **Lints.** With the five Clippy lints denied, `cargo clippy --workspace --all-targets --locked -- -D warnings` passes with no source change. `expect_used` would report 73 places and `panic` 7, all in tests; none in library or binary code.
 - **Bad changes.** Lines A, B, C and D of the spec were applied one at a time. `cargo fmt --all --check` printed `Diff in`. Clippy printed `ptr_arg` for B and `print_stdout` for C. The test run printed `test result: FAILED` for D.
 - **Versions read from registries.** crates.io: `cargo-deny` 0.20.2 (MIT OR Apache-2.0), `cargo-fuzz` 0.13.2 (MIT OR Apache-2.0), `libfuzzer-sys` 0.4.13 ((MIT OR Apache-2.0) AND NCSA), `cargo-cyclonedx` 0.5.10 (Apache-2.0), `cargo-sbom` 0.10.0. GitHub API: `actions/checkout` `v7.0.1` at `3d3c42e5aac5ba805825da76410c181273ba90b1`, `actions/cache` `v6.1.0` at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`, both MIT. Docker Hub: `postgres:18.7-bookworm`, pushed 2026-11-12, digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, not pulled.
 - **Documentation read.** The GitHub REST reference for repository rulesets (rule types, the `pull_request` and `required_status_checks` parameters, `~DEFAULT_BRANCH`). The `cargo-cyclonedx` and `cargo-sbom` readme files (options and where output goes). `rustup toolchain install --help` on rustup 1.29.2 says it installs the active toolchain when no name is given.
 - **Runner.** The GitHub documentation page for hosted runners lists `ubuntu-24.04-arm`, `ubuntu-22.04-arm` and `ubuntu-26.04-arm` as standard arm64 runners for public repositories (4 processors, 16 GB), and says standard runners are free and unlimited there. The image list for Ubuntu 24.04 Arm64 (image version 20261111.182.1) names Docker 28.0.4, rustup 1.29.3, Rust 1.99.1 and Git 2.56.1. `docker info` on the workstation reports `aarch64 linux`.
 - **Docker.** `docker info` succeeded during this work. The lead ran the Linux build of spec 0001 in the container the same day (`0001 AC-2` passed), so checks that need a container run locally after a `docker info` test. The lead also reports a passing trial of the same command as an ARM container from `main`, with the same image digest, which is an index that holds an ARM variant.
+- **GitHub Actions app.** `gh api /apps/github-actions` reports id 15368, the value used as `integration_id` in the branch rule.
+- **Scope headings.** Fourteen of the seventeen feature files end their first line with the tag `needs a decision`. The cross check found this; the status rule allows tags because of it.
 - **Not verified.** Nothing was run on a GitHub runner. The workflow file and the ruleset file are specified, not observed, and the runner facts above were read, not run. `cargo-cyclonedx` was not installed or run; its flags come from its readme. The `pool-repo-check` program, `scripts/check.sh` and `scripts/prove-checks.sh` do not exist yet.
 
 ## References
@@ -155,3 +158,34 @@ All of this was done on 2026-11-14, in a scratch directory outside the repositor
 - A license allow list that holds only what is needed
 - A check is trusted only after it has been seen to fail
 - CycloneDX as the inventory format
+
+## Independent cross check
+
+A different model (Claude Opus) read the drafted spec and the related document edits without changing files, fetching links or running builds. It tried the document rules by hand on the real files. Its verdict: the design is sound and most of it can be built as written, and five things would have stopped it from going green. Under the `auto` decision mode its recommended fixes were applied, except where noted.
+
+| Finding | What was done |
+|---|---|
+| The scope status rule rejected 14 of 17 real feature files, whose first line ends with the tag `needs a decision` | The rule now allows tags after the status and asks for a test with one |
+| Building `tools/repo-check` would write into `tools/repo-check/target/`, which is not ignored, and leave the tree dirty | Every cargo command on that package passes `--target-dir target/repo-check` |
+| `scripts/prove-checks.sh` could not find `cargo-deny` inside its copy | It puts the original `target/tools/bin` on `PATH` |
+| `--config` might belong after `check` | Not changed. The order in the spec is the one that was run; the other order is rejected by the tool. Recorded under evidence |
+| No rule for how a command's exit status becomes the status of `scripts/check.sh` | Added |
+| The cases of the proof look for text that the messages were only allowed, not required, to contain | A table now says what each message must name |
+| The remote commands were left to a file that did not hold them | They are in the spec, under "Remote proof" (added before the cross check returned, when you gave the lead permission) |
+| With every roster row unassigned, the branch rule, an advisory exception and the license list could be decided by nobody | The repository owner decides for three roles until they are named (decision 27a) |
+| Step 9 had to record versions that exist only after later steps | Moved to step 10 |
+| The contributing text about CI is applied before CI exists on `main` | Kept in step 9, with the reason: that text reaches `main` only inside the pull request that makes it true. The one sentence about remote settings still waits for the remote evidence |
+| Clone details of the proof script: detached commit, restore, identity, base revision | All fixed in the spec |
+| A push event can carry forty zeros as its earlier commit | Treated as no base |
+| "A search for each old sentence finds nothing" was false, since this spec quotes them | Now "the file each item names no longer contains it" |
+| The pull request template is a new Markdown file and the index lists every one | Step 10 adds its row |
+| `CARGO_TARGET_DIR` with cargo-fuzz was thought untested | It was the way the scratch run was done. Recorded under evidence |
+| The Clippy table departs from the manifest text in spec 0001 | One sentence under "Lint rules", and a pointer for the lead |
+| The duplicated Linux build command had no guard | Rule W7 (added before the cross check returned, when the target moved to ARM) |
+| The CI guard required one matching step, not the absence of other logic | Rule C3 now covers every `run:` value |
+| A status with the same name from another source could satisfy a required check | `integration_id` 15368 on each check |
+| A scheduled run and a push run shared one queue | The concurrency group now includes the event name |
+| Recommendation to record the fuzz harness only and build it with the first socket parsing slice | Not taken. Decision 21 stands: one target is built now. It is listed for you with its runner up |
+| Doc edits that stated things as true too early: "every package inherits it", "are now checked by a tool", present tense in the testing strategy, "branch protection" | Each reworded |
+
+The cross check read the spec before the Linux target moved to ARM, so the runner label, rule W7 and the "Remote proof" section were not part of what it reviewed.
