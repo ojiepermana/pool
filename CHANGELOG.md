@@ -15,6 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A JSON report (`--format json`) that is one line with a fixed field order, for scripts.
 - An exit status convention for POOL commands: 0 for success, 1 when the input is rejected, 2 for a usage error, 3 when the command could not finish, for example when the file is missing or cannot be read.
 - `pool --help` and `pool --version`.
-- Fifteen configuration fixtures and 134 automated tests that cover every acceptance criterion of the first build on the workstation.
-- Workspace build notes, acceptance criteria `0001 AC-1` to `AC-13` and a five step build plan in spec 0001, a verification record (`docs/specs/0001-initial-architecture/verify.md`) and an independent review (`docs/reviews/2026-11-14-scope-001-stack-and-workspace.md`). The Linux container build (`0001 AC-2`) is recorded as blocked in the verification record; it has not run yet.
+- Fifteen configuration fixtures and 134 automated tests that cover every acceptance criterion of the first build on the workstation. On Linux 136 tests run, because two of them need `/dev/full`.
+- Workspace build notes, acceptance criteria `0001 AC-1` to `AC-13` and a five step build plan in spec 0001, a verification record (`docs/specs/0001-initial-architecture/verify.md`) and an independent review (`docs/reviews/2026-11-14-scope-001-stack-and-workspace.md`). The Linux container build (`0001 AC-2`) passed for `x86_64-unknown-linux-gnu` under emulation, and the verification record holds the image digest and the binary checksum.
 - Three shared conventions in the engineering standards: configuration keys, exit status with command output, and log event fields with redaction.

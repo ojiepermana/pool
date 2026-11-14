@@ -1,7 +1,7 @@
 # 0001. POOL initial architecture
 
 **Date**: 2026-11-14
-**Status**: In Progress
+**Status**: Accepted
 
 ## Summary
 

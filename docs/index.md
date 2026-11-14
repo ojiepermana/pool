@@ -30,6 +30,20 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [README.md](../README.md) | pool |
 | [SECURITY.md](../SECURITY.md) | Security policy |
 
+## apps/pool
+
+| Path | Document |
+|---|---|
+| [apps/pool/AGENTS.md](../apps/pool/AGENTS.md) | apps/pool agent guide |
+| [apps/pool/CLAUDE.md](../apps/pool/CLAUDE.md) | Claude Code pointer to apps/pool/AGENTS.md |
+
+## crates/pool-config
+
+| Path | Document |
+|---|---|
+| [crates/pool-config/AGENTS.md](../crates/pool-config/AGENTS.md) | crates/pool-config agent guide |
+| [crates/pool-config/CLAUDE.md](../crates/pool-config/CLAUDE.md) | Claude Code pointer to crates/pool-config/AGENTS.md |
+
 ## docs/adr
 
 | Path | Document |
