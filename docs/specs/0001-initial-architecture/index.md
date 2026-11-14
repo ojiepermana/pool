@@ -49,7 +49,7 @@ These criteria cover the first build only, [scope 001](../../scope/001-stack-and
 
 ## Decision
 
-**Chosen option**: A modular daemon with an independent CLI. The separate controller executable is deferred until multiple proxy instances need a single authority. You ratified this foundation on 2026-11-14 after the independent critique and approved fixes. Implementation is queued. The lifecycle status remains Proposed because its linked buildable scope feature is unbuilt. (basis: your four VM scenario, small operational surface, vertical delivery)
+**Chosen option**: A modular daemon with an independent CLI. The separate controller executable is deferred until multiple proxy instances need a single authority. You ratified this foundation on 2026-11-14 after the independent critique and approved fixes. Your ratification settles the content. The `**Status**` line above is a separate thing: it follows scope feature 001, as the [status lifecycle](../../scope/index.md#status-lifecycle) defines. (basis: your four VM scenario, small operational surface, vertical delivery)
 
 The project is one product in a Cargo workspace, so its scope and specs use `docs/scope/` and `docs/specs/`. The requested research, architecture, PRD, and ADR directories are human reference views. This spec owns the initial architecture decision. Feature PRDs record proposed requirements; later feature specs own implementation decisions.
 
@@ -216,7 +216,7 @@ Only what this path uses. Nothing else from the stack table is adopted yet: no T
 | `toml` (features `parse`, `serde`, no default features) | 1.2.1 | `pool-config` | Reads TOML 1.1 and reports where an error is |
 | `serde_json` | 1.0.154 | `pool` | Writes the JSON report with correct escaping and field order |
 
-`Cargo.lock` holds exactly these sixteen packages besides `pool` and `pool-config`: `itoa`, `memchr`, `proc-macro2`, `quote`, `serde`, `serde_core`, `serde_derive`, `serde_json`, `serde_spanned`, `syn`, `toml`, `toml_datetime`, `toml_parser`, `unicode-ident`, `winnow`, `zmij`. All are pure Rust with no native code. If Cargo resolves a different set of names, stop and report it to the lead; do not accept it. The locked versions are recorded in the verification record. Review notes are in the [technology evaluation](../../research/technology-evaluation.md#adopted-in-scope-001).
+`Cargo.lock` holds exactly these sixteen packages besides `pool` and `pool-config`: `itoa`, `memchr`, `proc-macro2`, `quote`, `serde`, `serde_core`, `serde_derive`, `serde_json`, `serde_spanned`, `syn`, `toml`, `toml_datetime`, `toml_parser`, `unicode-ident`, `winnow`, `zmij`. All are pure Rust with no native code. The `unbounded` feature of `toml` stays off. With it off, the parser stops at a fixed nesting depth (80 levels in `toml` 1.2.1), and that limit is what keeps a 1 MiB file of brackets from using up the stack. If Cargo resolves a different set of names, stop and report it to the lead; do not accept it. The locked versions are recorded in the verification record. Review notes are in the [technology evaluation](../../research/technology-evaluation.md#adopted-in-scope-001).
 
 Arguments are parsed with the standard library. The command line is two flags, so a parser crate would add more packages than code it saves.
 
@@ -257,12 +257,12 @@ pool --version
 Rules for arguments:
 
 - Arguments are read with `std::env::args_os()` (never `std::env::args()`, which panics on bytes that are not UTF-8), once, from left to right. The first usage error ends the run.
-- The first argument is `check-config`, `--help`, `-h`, `--version` or `-V`. `--help` or `-h` prints the help text and exits 0 at once. `--version` or `-V` prints the version and exits 0 at once. In both cases anything after it is not read.
+- The first argument is `check-config`, `--help`, `-h`, `--version` or `-V`. `--help` or `-h` prints the help text and exits 0 at once. `--version` or `-V` prints the version and exits 0 at once. In both cases anything after it is not read. The first argument is compared whole, so `--help=x`, `-h=x`, `--version=x` and `-V=x` are each an unknown command.
 - After `check-config`, options come in any order. A value follows its option as the next argument (`--config a.toml`) or after an equals sign (`--config=a.toml`); only the first equals sign splits, so the value may contain more. After an option that takes a value, the next argument is always taken as that value, even if it starts with a dash or is `--help`.
-- Where an option is expected, `--help` or `-h` prints the help text and exits 0 at once. Arguments after it are not read. An error met before it still wins, because it ended the run first.
+- Where an option is expected, `--help` or `-h` prints the help text and exits 0 at once. Arguments after it are not read. An error met before it still wins, because it ended the run first. An option name is the text before the first equals sign, so `--help=x` and `-h=x` print the help too. `--version` and `-V` are not options of `check-config`; there each is an unknown option.
 - `--config` is required and takes the path as given, with no change. `--format` is optional and defaults to `human`; its value must be exactly `human` or `json`, in lowercase. Each may appear once.
 - An empty value (`--config=`, `--format=`, or an empty argument after the option) counts as no value.
-- An argument that is not valid UTF-8 is accepted only as the separate argument that follows `--config`. As the value of `--format` it is a wrong format value. As the first argument it is an unknown command. Anywhere else it is an unexpected argument.
+- An argument that is not valid UTF-8 is accepted only as the separate argument that follows `--config`. As the value of `--format` it is a wrong format value. As the first argument it is an unknown command. Anywhere else it is an unexpected argument. "The value of `--format`" here means the separate argument that follows `--format`. An argument that holds the option name, an equals sign and bytes that are not UTF-8 in one piece (`--format=<bytes>`, `--config=<bytes>`) is an unexpected argument, because the name cannot be read without decoding the whole argument.
 - When an option name is met, check in this order: is it a repeat, does it have a value that is not empty, and (for `--format`) is the value allowed.
 
 Usage errors exit 2. stdout stays empty. stderr gets exactly two lines, `error: <message>` and `Run 'pool --help' for usage.`. The message never repeats what you typed.
@@ -271,14 +271,14 @@ Usage errors exit 2. stdout stays empty. stderr gets exactly two lines, `error: 
 |---|---|---|
 | No argument at all | `a command is required` | `pool` |
 | First argument is not one of the five listed above | `unknown command` | `pool run` |
-| Where an option is expected after `check-config`: an argument that starts with a dash and is not `--config`, `--format`, `--help` or `-h` (with or without `=value`) | `unknown option` | `pool check-config --bogus` |
+| Where an option is expected after `check-config`: an argument that starts with a dash and is not `--config`, `--format`, `--help` or `-h` (with or without `=value`) | `unknown option` | `pool check-config --bogus`, `pool check-config --version` |
 | Where an option is expected after `check-config`: any other argument | `unexpected argument` | `pool check-config a.toml` |
 | `--config` or `--format` is the last argument, or its value is empty | `option requires a value` | `pool check-config --config`, `pool check-config --config=` |
 | `--config` or `--format` appears a second time | `option given more than once` | `pool check-config --config a --config b`, `pool check-config --config a --config` |
 | `--format` value is not exactly `human` or `json` | `--format must be human or json` | `pool check-config --config a --format xml`, `pool check-config --config a --format JSON` |
 | All arguments were read without error and `--config` was not given | `--config is required` | `pool check-config`, `pool check-config --format json` |
 
-Usage errors look the same whatever `--format` says. More examples: `pool check-config --bogus --help` is `unknown option`; `pool check-config --help --bogus` and `pool --help anything` print the help; `pool check-config --format json --help` prints the help as plain text; `pool check-config --config --help` takes `--help` as the path and then reports `io.not_found` unless such a file exists.
+Usage errors look the same whatever `--format` says. More examples: `pool check-config --bogus --help` is `unknown option`; `pool check-config --help --bogus` and `pool --help anything` print the help; `pool check-config --help=x` prints the help; `pool --help=x` and `pool --version=x` are `unknown command`; `pool check-config --format json --help` prints the help as plain text; `pool check-config --config --help` takes `--help` as the path and then reports `io.not_found` unless such a file exists.
 
 `pool --version` writes `pool 0.1.0` and a newline to stdout. The number is the package version of `pool` (`CARGO_PKG_VERSION`).
 
@@ -414,10 +414,12 @@ Which code a bad value gets:
 | `config_version` that is negative, from 4294967296 to 9223372036854775807, a float such as `1.0`, a string such as `"1"`, or any other type | `config.schema` |
 | `config_version` larger than 9223372036854775807 (the TOML parser refuses it) | `config.syntax` |
 | `enabled` that is not a boolean; `result_cache` or `automatic_promotion` that is not a table; any key or table not in the schema | `config.schema` |
+| `result_cache` or `automatic_promotion` given as an array, whatever the array holds, for example `result_cache = [false]` or `result_cache = [true]` | Exactly one `config.schema`, never `config.unsupported_capability` |
 | A key written twice, in any of the three TOML spellings | `config.syntax` |
+| Nesting deeper than the `toml` parser allows, for example a dotted key with 81 parts | `config.syntax`. For a dotted key or a table header the parser gives no span, so the finding has no location (`line` and `column` are null) |
 | An empty file, or a file with only comments | `config.missing_key` at `config_version` |
 
-Line endings may be LF or CRLF and give the same line numbers. A byte order mark at the start is accepted today because the TOML parser accepts it; that is the parser's behavior and not a promise of this spec. There is no test for the permission denied case, because the Linux build runs as root, which can read any file.
+Line endings may be LF or CRLF and give the same line numbers. A byte order mark at the start is accepted today because the TOML parser accepts it; that is the parser's behavior and not a promise of this spec. The permission denied case has a test under `#[cfg(unix)]` that gives the command a file with mode `000`. The test first tries to open that file itself. If the open succeeds (root in the Linux container can read any file), the test returns at once and counts as passed. Otherwise it checks exit status 3 and compares stdout and stderr byte for byte in both formats.
 
 ### Validation order
 
@@ -426,11 +428,11 @@ Line endings may be LF or CRLF and give the same line numbers. A byte order mark
 1. Length. More than 1048576 bytes gives `config.too_large`.
 2. UTF-8. Invalid bytes give `config.not_utf8`.
 3. Syntax. Parse the text as a generic TOML table (`toml::Table`). An error gives one `config.syntax`.
-4. Schema. Deserialize the same text with `toml::from_str` into private Serde structures that use `deny_unknown_fields` and in which every key is optional (`config_version` as `Option<u32>`, each reserved table as an optional structure with an optional `enabled`). An error gives one `config.schema`.
+4. Schema. Deserialize the same text with `toml::from_str` into private Serde structures that use `deny_unknown_fields` and in which every key is optional (`config_version` as `Option<u32>`, each reserved table as an optional structure with an optional `enabled`). An error gives one `config.schema`. A structure that stands for a table in the file accepts a table only. An array or any other value in its place is an error at this step, also when the first element of the array is a boolean (`result_cache = [false]`). So such a structure implements `Deserialize` by hand, with a visitor that accepts a map and nothing else. A derived `Deserialize` is not used for it, because a derive also accepts a sequence and reads the fields by position. The top level structure may keep its derive, because a TOML document is always a table. Later slices follow the same rule for every table they add.
 5. Meaning. Check in this fixed order and keep every finding: `config_version` (`config.missing_key` if absent, `config.unsupported_version` if not `1`), then `result_cache.enabled`, then `automatic_promotion.enabled` (`config.unsupported_capability` if `true`).
 6. No findings: return the `ValidatedConfig`.
 
-For steps 3 and 4, take the location from `toml::de::Error::span()` and nothing else from that error. Never use its `Display` text or its `message()`: the first prints the source line and the second can repeat a value from the file. The line is 1 plus the number of line feed characters before the start of the span. The column is 1 plus the number of characters (Unicode scalar values) between the start of that line and the start of the span. If the error has no span, the finding has no location. Which character of a bad construct the parser points to is its own choice, so tests check the line exactly and the column only as a whole number of at least 1.
+For steps 3 and 4, take the location from `toml::de::Error::span()` and nothing else from that error. Never use its `Display` text or its `message()`: the first prints the source line and the second can repeat a value from the file. The line is 1 plus the number of line feed characters before the start of the span. The column is 1 plus the number of characters (Unicode scalar values) between the start of that line and the start of the span. If the error has no span, the finding has no location. Which character of a bad construct the parser points to is its own choice, so tests check the line exactly and the column only as a whole number of at least 1. One kind of test checks the exact column: a made input, given to `validate` from memory, where the error position is not in doubt and a character of more than one byte stands before it on the same line. That test must fail for a count of bytes. For example, with `x = "éé" junk` as line 2 the finding is `config.syntax` at line 2, column 10; a count of bytes would give 12.
 
 The binary opens the path and reads it through a reader limited to 1048577 bytes (`std::io::Read::take(MAX_CONFIG_BYTES as u64 + 1)`), so it never holds more than that, and passes the bytes to `pool_config::validate`. A file of 1048577 bytes or more is therefore reported as `config.too_large`. The read limit is checked by reading the code and by the too large test.
 
@@ -610,11 +612,11 @@ Tests use the built in `cargo test` harness only.
 | `pool-config` | `crates/pool-config/tests/validate.rs`, plus unit tests beside the code | Every fixture through `validate`: findings, order, locations (AC-4 to AC-8). Canary absent from `Debug` and `Display` of the `Rejection` (AC-9). Size limit and UTF-8 |
 | `pool` | `apps/pool/tests/check_config.rs` | The built binary (`env!("CARGO_BIN_EXE_pool")`) with `std::process::Command`: exit status, exact stdout and stderr in both formats, usage errors, help, version, missing file, directory, canary absent (AC-3 to AC-7, AC-9 to AC-11) |
 
-For `config.syntax` and `config.schema` findings, tests read the JSON output and check `code`, `line`, `key` is null and `column` is at least 1. For the same file in the human format, stdout must equal `configuration invalid`, `findings: 1` and `<code> at line <L>, column <C>: <message>`, each followed by a newline, where `<L>` is the listed line and `<C>` is the column the JSON output gave. For every other case tests compare the whole of stdout and stderr byte for byte.
+For `config.syntax` and `config.schema` findings that carry a location, tests read the JSON output and check `code`, `line`, `key` is null and `column` is at least 1. For the same file in the human format, stdout must equal `configuration invalid`, `findings: 1` and `<code> at line <L>, column <C>: <message>`, each followed by a newline, where `<L>` is the listed line and `<C>` is the column the JSON output gave. For every other case tests compare the whole of stdout and stderr byte for byte.
 
 Cases without a fixture file, given to `validate` from memory in `crates/pool-config/tests/validate.rs`: `result_cache.enabled = true` in the dotted form and `result_cache = { enabled = true }` in the inline form (both `config.unsupported_capability`); `invalid-unknown-key.toml` and `invalid-wrong-type.toml` rewritten with CRLF line endings (same lines); each row of the "Which code a bad value gets" table under [Findings](#findings).
 
-Cases for the binary in `apps/pool/tests/check_config.rs` beyond the fixtures: one test per example in the usage error table; `--config /dev/zero` under `#[cfg(unix)]` (AC-12); stdout set to `/dev/full` under `#[cfg(target_os = "linux")]` (AC-11), which runs in the Linux build. `io.permission_denied` has no test.
+Cases for the binary in `apps/pool/tests/check_config.rs` beyond the fixtures: one test per example in the usage error table; `--config /dev/zero` under `#[cfg(unix)]` (AC-12); stdout set to `/dev/full` under `#[cfg(target_os = "linux")]` (AC-11), which runs in the Linux build; `io.permission_denied` under `#[cfg(unix)]` with a file of mode `000`, where the test skips itself when the process can still open the file (see [Findings](#findings)).
 
 The developer writes at least one test per criterion in these two files. The tester adds edge cases in the same two files and packages and adds no dependency.
 
@@ -678,7 +680,7 @@ Scope 001 has no pull request. Each session commits on its own branch `claude/<n
 
 The order is a tracer bullet (one thin real path first): a workspace that builds, then the library that decides, then the command that reports, then the evidence. Each step ends with a commit. Run `cargo fmt --all --check` and `cargo clippy --workspace --all-targets --locked -- -D warnings` before each commit from step 1 on.
 
-1. **Workspace skeleton.** Create `rust-toolchain.toml`, the root `Cargo.toml`, `crates/pool-config/Cargo.toml` with an empty `src/lib.rs`, and `apps/pool/Cargo.toml` with a `src/main.rs` that handles only `--version`. Add `/target/` to `.gitignore`. Run `cargo build -p pool` once to create `Cargo.lock`, check that it holds the sixteen named packages, and commit it. Set this spec's `**Status**` line to `In Progress` and change nothing else in this file; the sentence in `## Decision` about the status is reconciled by the lead when the scope closes. Creates packages `pool` and `pool-config`. Satisfies **AC-1**, **AC-12** (dependency set), **AC-13**.
+1. **Workspace skeleton.** Create `rust-toolchain.toml`, the root `Cargo.toml`, `crates/pool-config/Cargo.toml` with an empty `src/lib.rs`, and `apps/pool/Cargo.toml` with a `src/main.rs` that handles only `--version`. Add `/target/` to `.gitignore`. Run `cargo build -p pool` once to create `Cargo.lock`, check that it holds the sixteen named packages, and commit it. Set this spec's `**Status**` line to `In Progress` and change nothing else in this file; the sentence in `## Decision` about the status was left to the lead, and has since been reworded so that it holds in every status. Creates packages `pool` and `pool-config`. Satisfies **AC-1**, **AC-12** (dependency set), **AC-13**.
 2. **Validation in `pool-config`.** Implement the [public boundary](#public-boundary-of-pool-config), the [validation order](#validation-order) and the `config.*` [findings](#findings) in `crates/pool-config/src/`. Add every file listed under [Fixtures](#fixtures) to `crates/pool-config/tests/fixtures/`. Write `crates/pool-config/tests/validate.rs`. Tests are owned by `pool-config`. Satisfies **AC-8**, and the library half of **AC-4**, **AC-5**, **AC-6**, **AC-7** and **AC-9** (the findings; step 3 adds exit status and text).
 3. **The command in `apps/pool`.** Implement argument parsing, the bounded file read, the `io.*` findings, both output formats and the exit status mapping, as written under [The check-config command](#the-check-config-command) and [Exit status and output](#exit-status-and-output). Write `apps/pool/tests/check_config.rs`. Tests are owned by `pool`. Satisfies **AC-3**, **AC-10**, **AC-11**, **AC-12** (offline, bounded read), and completes **AC-4**, **AC-5**, **AC-6**, **AC-7** and **AC-9**.
 4. **Workstation evidence.** Run the workstation checks under [Linux build](#linux-build) and the `grep` and `cargo metadata` commands from **AC-1**, **AC-12** and **AC-13**. Record commands, results, the revision and the locked dependency versions in `docs/specs/0001-initial-architecture/verify.md`, as the [testing strategy](../../testing/strategy.md#acceptance-evidence) asks, and add that new file to the spec entry in `docs/index.md`. Linking it from scope 001 is the lead's edit. No new code. Satisfies **AC-1**, **AC-3** to **AC-13** as evidence.
@@ -704,6 +706,7 @@ From the first build:
 - Argument parsing is hand written. It is small now; if the daemon's command line grows, adopting a parser crate is a decision to record here.
 - The log convention is fixed before any log event exists, so it has not met real use. The first slice that logs may find a gap and must amend it here.
 - The Linux evidence is for `x86_64` only and runs under emulation on this workstation.
+- `check-config` reads a special file like any other file. That is what makes `/dev/zero` and `/dev/stdin` work. It also means that a path which never gives data or an end, such as a FIFO (a named pipe) with no writer, blocks the command with no time limit. This is a known limit. Scope 001 changes no code for it.
 
 **Neutral**:
 
@@ -712,7 +715,7 @@ From the first build:
 
 ## Follow-up
 
-1. The assembled foundation and [decision ledger](../../plan/decision-ledger.md) are ratified. Implementation remains queued until you explicitly request it.
+1. The assembled foundation and [decision ledger](../../plan/decision-ledger.md) are ratified. You asked for the build of scope 001 on 2026-11-14. Every later scope stays queued until you explicitly request it.
 2. Deliberate the frontend authentication implementation, bounded routing profiles, durable operation model, and fencing adapter in individual feature specs before those slices are built.
 3. Optional Rust, Tokio, PostgreSQL, and operations skill or MCP discovery was deferred by you. Nothing has been searched or installed for that purpose.
 4. Apache 2.0 is your chosen project license and the official text is installed. Review each file and transitive component before source reuse.
@@ -722,6 +725,7 @@ From the first build:
 8. When the workspace exists, the "Current state and commands" part of `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` should name the real commands. That belongs to the "Document it" step of scope 001.
 9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux runner without emulation.
 10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction).
+11. [Scope 002](../../scope/002-standards-and-tooling.md) should add automatic CI checks for the parts of **AC-12** and **AC-13** that are checked by hand today: the package set of `Cargo.lock` and the `grep` command (**AC-12**), and the four paths that must not exist plus the lint inheritance of both packages (**AC-13**). Until then nothing fails by itself when one of them regresses. This comes from the scope 001 review.
 
 ## Rationale
 
