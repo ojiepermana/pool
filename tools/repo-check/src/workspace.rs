@@ -231,42 +231,162 @@ fn members(tree: &dyn Tree, report: &mut Report) -> Vec<Member> {
 
 const DEPENDENCY_TABLES: [&str; 3] = ["dependencies", "dev-dependencies", "build-dependencies"];
 
-/// Returns the dependency keys of a manifest, with their line numbers.
-pub fn dependency_keys(manifest: &str) -> Vec<(usize, String)> {
-    let mut keys = Vec::new();
-    let mut table = String::new();
-    for (index, raw) in manifest.lines().enumerate() {
-        let line = raw.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
+/// One dependency declared in a manifest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Dependency {
+    /// The 1 based line where the dependency is first named.
+    pub line: usize,
+    /// The dependency key, which is the name the code uses.
+    pub key: String,
+    /// The package named by `package = "..."`, when the dependency is renamed.
+    pub package: Option<String>,
+}
+
+fn is_dependency_table(part: &str) -> bool {
+    DEPENDENCY_TABLES.contains(&part)
+}
+
+/// Reads `package = "<name>"` from the rest of a dependency line: `.package = "x"` after the key, or a `package` key inside an inline table.
+fn package_of(rest: &str) -> Option<String> {
+    if let Some(sub) = rest.strip_prefix('.') {
+        let (key, after) = text::leading_key(sub)?;
+        return (key == "package")
+            .then(|| after.strip_prefix('='))
+            .flatten()
+            .and_then(text::string_value);
+    }
+    let value = rest.strip_prefix('=')?.trim_start();
+    let mut inner = value.strip_prefix('{')?;
+    loop {
+        let (key, after) = text::leading_key(inner)?;
+        let after = after.strip_prefix('=')?.trim_start();
+        if key == "package" {
+            return text::string_value(after);
         }
-        if let Some(name) = text::table_header(line) {
-            table = name.clone();
-            for kind in DEPENDENCY_TABLES {
-                if let Some(key) = name.strip_prefix(kind).and_then(|r| r.strip_prefix('.'))
-                    && !key.is_empty()
-                    && !key.contains('.')
-                {
-                    keys.push((index + 1, key.to_string()));
-                }
-            }
-            continue;
-        }
-        let is_dependency_table = DEPENDENCY_TABLES
-            .iter()
-            .any(|kind| table == *kind || table.ends_with(&format!(".{kind}")));
-        if is_dependency_table {
-            let end = line.find(['.', ' ', '=']).unwrap_or(line.len());
-            keys.push((index + 1, line[..end].to_string()));
+        let comma = next_comma(after)?;
+        inner = after[comma + 1..].trim_start();
+    }
+}
+
+/// Returns the byte index of the next comma that is outside strings, brackets and braces.
+fn next_comma(text: &str) -> Option<usize> {
+    let mut quote: Option<char> = None;
+    let mut depth = 0usize;
+    for (index, c) in text.char_indices() {
+        match quote {
+            Some(q) if c == q => quote = None,
+            Some(_) => {}
+            None => match c {
+                '"' | '\'' => quote = Some(c),
+                '[' | '{' => depth += 1,
+                ']' | '}' if depth == 0 => return None,
+                ']' | '}' => depth -= 1,
+                ',' if depth == 0 => return Some(index),
+                _ => {}
+            },
         }
     }
-    keys
+    None
+}
+
+/// Returns the dependencies a manifest declares in every dependency table: `[dependencies]` and the dev and build forms, under any prefix such as `target.<cfg>` or `workspace`, and the tables for one dependency such as `[target.<cfg>.dependencies.<key>]`. Comments are cut, quoted keys are unquoted, and a `package` rename is read.
+pub fn dependencies_of(manifest: &str) -> Vec<Dependency> {
+    enum Table {
+        Other,
+        Many(usize),
+        One(usize),
+    }
+    let mut found: Vec<Dependency> = Vec::new();
+    let mut table = Table::Other;
+    for (index, raw) in manifest.lines().enumerate() {
+        let line = text::strip_comment(raw).trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Some(parts) = text::table_parts(line) {
+            let n = parts.len();
+            table = if is_dependency_table(&parts[n - 1]) {
+                Table::Many(found.len())
+            } else if n >= 2 && is_dependency_table(&parts[n - 2]) {
+                found.push(Dependency {
+                    line: index + 1,
+                    key: parts[n - 1].clone(),
+                    package: None,
+                });
+                Table::One(found.len() - 1)
+            } else {
+                Table::Other
+            };
+            continue;
+        }
+        let Some((key, rest)) = text::leading_key(line) else {
+            continue;
+        };
+        if !(rest.starts_with('.') || rest.starts_with('=')) {
+            continue;
+        }
+        match table {
+            Table::Other => {}
+            Table::One(at) => {
+                if key == "package"
+                    && let Some(value) = rest.strip_prefix('=').and_then(text::string_value)
+                {
+                    found[at].package = Some(value);
+                }
+            }
+            Table::Many(start) => {
+                let package = package_of(rest);
+                if let Some(entry) = found[start..].iter_mut().find(|d| d.key == key) {
+                    if package.is_some() {
+                        entry.package = package;
+                    }
+                } else {
+                    found.push(Dependency {
+                        line: index + 1,
+                        key,
+                        package,
+                    });
+                }
+            }
+        }
+    }
+    found
+}
+
+/// Returns the renames of the root `[workspace.dependencies]` table: key to package, for the keys that have `package = "..."`. A member that inherits such a key with `workspace = true` gets that package.
+fn workspace_renames(root_manifest: &str) -> BTreeMap<String, String> {
+    let mut renames = BTreeMap::new();
+    let mut in_workspace = false;
+    let mut table_lines = String::new();
+    for raw in root_manifest.lines() {
+        let line = text::strip_comment(raw).trim();
+        if let Some(parts) = text::table_parts(line) {
+            in_workspace = parts.first().map(String::as_str) == Some("workspace")
+                && parts.get(1).map(String::as_str) == Some("dependencies");
+        }
+        if in_workspace {
+            table_lines.push_str(raw);
+            table_lines.push('\n');
+        }
+    }
+    for dependency in dependencies_of(&table_lines) {
+        if let Some(package) = dependency.package {
+            renames.insert(dependency.key, package);
+        }
+    }
+    renames
 }
 
 fn dependencies(tree: &dyn Tree, members: &[Member], report: &mut Report) {
     let Some(allowed) = baseline(tree, "internal-dependencies.txt", report) else {
         return;
     };
+    let renames = tree
+        .read("Cargo.toml")
+        .ok()
+        .flatten()
+        .map(|root| workspace_renames(&root))
+        .unwrap_or_default();
     let allowed: BTreeSet<String> = allowed.into_iter().collect();
     let names: BTreeSet<&str> = members.iter().filter_map(|m| m.name.as_deref()).collect();
     let mut found = BTreeSet::new();
@@ -274,16 +394,22 @@ fn dependencies(tree: &dyn Tree, members: &[Member], report: &mut Report) {
         let Some(from) = member.name.as_deref() else {
             continue;
         };
-        for (line, key) in dependency_keys(&member.text) {
-            if !names.contains(key.as_str()) {
+        for dependency in dependencies_of(&member.text) {
+            let to = match &dependency.package {
+                Some(package) => package.as_str(),
+                None => renames
+                    .get(&dependency.key)
+                    .map_or(dependency.key.as_str(), String::as_str),
+            };
+            if !names.contains(to) {
                 continue;
             }
-            let pair = format!("{from} -> {key}");
+            let pair = format!("{from} -> {to}");
             if !allowed.contains(&pair) {
                 report.add_at(
                     "W5",
                     &member.manifest,
-                    line,
+                    dependency.line,
                     format!("dependency {pair} is not allowed by internal-dependencies.txt"),
                 );
             }
@@ -633,6 +759,118 @@ mod tests {
         let mut tree = good();
         tree.replace("apps/pool/Cargo.toml", "pool-config.workspace = true\n", "");
         assert_problem(&tree, "W5", &["pool -> pool-config", "missing"]);
+    }
+
+    #[test]
+    fn w5_header_with_a_comment() {
+        let mut tree = good();
+        tree.replace(
+            "crates/pool-config/Cargo.toml",
+            "[dependencies]\n",
+            "[dependencies] # runtime\npool = { path = \"../../apps/pool\" }\n",
+        );
+        assert_problem(
+            &tree,
+            "W5",
+            &["crates/pool-config/Cargo.toml:5", "pool-config -> pool"],
+        );
+    }
+
+    #[test]
+    fn w5_quoted_key_and_target_table_for_one_dependency() {
+        let mut tree = good();
+        tree.replace(
+            "crates/pool-config/Cargo.toml",
+            "[dependencies]\n",
+            "[dependencies]\n\"pool\" = { path = \"../../apps/pool\" }\n",
+        );
+        assert_problem(&tree, "W5", &["pool-config -> pool"]);
+        let mut tree = good();
+        let base = tree.get("crates/pool-config/Cargo.toml");
+        tree.set(
+            "crates/pool-config/Cargo.toml",
+            &format!(
+                "{base}\n[target.'cfg(unix)'.dependencies.pool]\npath = \"../../apps/pool\"\n"
+            ),
+        );
+        assert_problem(&tree, "W5", &["pool-config -> pool"]);
+    }
+
+    #[test]
+    fn w5_renamed_dependency() {
+        let mut tree = good();
+        tree.replace(
+            "crates/pool-config/Cargo.toml",
+            "[dependencies]\n",
+            "[dependencies]\ndaemon = { path = \"../../apps/pool\", package = \"pool\" }\n",
+        );
+        assert_problem(&tree, "W5", &["pool-config -> pool", "not allowed"]);
+        let mut tree = good();
+        tree.replace(
+            "crates/pool-config/Cargo.toml",
+            "[dependencies]\n",
+            "[dependencies]\ndaemon.path = \"../../apps/pool\"\ndaemon.package = 'pool'\n",
+        );
+        assert_problem(
+            &tree,
+            "W5",
+            &["crates/pool-config/Cargo.toml:5", "pool-config -> pool"],
+        );
+        let mut tree = good();
+        let base = tree.get("crates/pool-config/Cargo.toml");
+        tree.set(
+            "crates/pool-config/Cargo.toml",
+            &format!("{base}\n[dev-dependencies.daemon]\npackage = \"pool\"\npath = \"../../apps/pool\"\n"),
+        );
+        assert_problem(&tree, "W5", &["pool-config -> pool"]);
+    }
+
+    #[test]
+    fn w5_rename_inherited_from_the_workspace() {
+        let mut tree = good();
+        tree.replace(
+            "Cargo.toml",
+            "pool-config = { path = \"crates/pool-config\" }",
+            "config = { package = \"pool-config\", path = \"crates/pool-config\" }",
+        );
+        tree.replace(
+            "apps/pool/Cargo.toml",
+            "pool-config.workspace = true",
+            "config.workspace = true",
+        );
+        assert_ok(&tree);
+    }
+
+    #[test]
+    fn w5_rename_to_a_package_that_is_not_a_member() {
+        let mut tree = good();
+        tree.replace(
+            "crates/pool-config/Cargo.toml",
+            "[dependencies]\n",
+            "[dependencies]\npool = { package = \"pool-helpers\", version = \"1\" }\n",
+        );
+        assert_ok(&tree);
+    }
+
+    #[test]
+    fn w4_comments_are_not_values() {
+        let mut tree = good();
+        tree.replace(
+            "apps/pool/Cargo.toml",
+            "[lints]\nworkspace = true\n",
+            "[lints] # inherit\nworkspace = true # inherit\n",
+        );
+        tree.replace(
+            "Cargo.toml",
+            "unsafe_code = \"forbid\"",
+            "unsafe_code = \"forbid\" # reason",
+        );
+        tree.replace(
+            "Cargo.toml",
+            "members = [\"apps/pool\", \"crates/pool-config\"]",
+            "members = [\"apps/pool\", \"crates/pool-config\"] # \"crates/later\"",
+        );
+        assert_ok(&tree);
     }
 
     #[test]
