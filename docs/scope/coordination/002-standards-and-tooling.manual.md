@@ -8,8 +8,8 @@ Keputusan yang diambil atas namamu ada di `002-standards-and-tooling.log.md` bag
 
 | ID | Langkah | AC | Kotak yang dicentang dengan langkah ini `NOT_RUN` | Bisa dijalankan sesudah | Hasil |
 | --- | --- | --- | --- | --- | --- |
-| `F2-1` | Izinkan lead menulis ke GitHub untuk scope ini (push branch uji, buka PR uji, pasang branch protection), atau lakukan sendiri langkah PR yang nanti dirinci di sini | spec 0002, AC ditetapkan architect | belum ada | kapan saja; rincian langkah PR ditambahkan sesudah spec 0002 diterima | `NOT_RUN` |
-| `F2-2` | Nyalakan Docker Desktop (sama dengan `F1-1` di `001-stack-and-workspace.manual.md`) supaya pemeriksaan yang butuh container bisa dijalankan sesi | spec 0002, AC ditetapkan architect; `0001 AC-2` | belum ada | kapan saja | `NOT_RUN` |
+| `F2-1` | Izin menulis ke GitHub untuk scope ini (push `main`, push branch uji, buka PR uji, pasang branch protection) | spec 0002, AC ditetapkan architect | belum ada | diberikan | `PASS` 2026-11-14: user menjawab "Ya, izin GitHub"; langkah remote dijalankan lead sesudah spec 0002 diterima dan pemeriksaan ada di `main` |
+| `F2-2` | Nyalakan Docker Desktop (sama dengan `F1-1` di `001-stack-and-workspace.manual.md`) supaya pemeriksaan yang butuh container bisa dijalankan sesi | spec 0002, AC ditetapkan architect; `0001 AC-2` | belum ada | kapan saja | `PASS` 2026-11-14: Docker Desktop dinyalakan user untuk `F1-1`; `docker info` exit 0 dicek lead scope 002 |
 
 ## Nilai dari user
 
@@ -17,11 +17,16 @@ Nilai yang hanya kamu tahu. AC di kolom ketiga `BLOCKED` sampai nilainya ada.
 
 | ID | Nilai yang dibutuhkan | AC yang menunggu | File yang menunggu |
 | --- | --- | --- | --- |
-| `F2-N1` | Roster reviewer: nama orang (atau "model baru") untuk tiap peran review di [standards](../../engineering-standards.md#security-and-reviews) dan [risk register](../../plan/risk-register.md): security, protocol, database/infrastructure, maintainer, release maintainer, project lead | spec 0002, AC roster (nomor ditetapkan architect) | ditetapkan spec 0002 |
+| `F2-N1` | Roster reviewer: nama pemegang 12 peran (Security engineer, Protocol engineer, Database architect, HA engineer, Infrastructure operator, Systems engineer, SRE, Control engineer, Performance engineer, Maintainer, Release maintainer, Project lead), atau konfirmasi tetap `Not assigned` | `0002 AC-18` (lulus dengan `Not assigned`; gerbang HA dan infrastruktur tetap terbuka sampai ada nama) | `docs/engineering-standards.md` bagian "Reviewer roster" |
+| `F2-N2` | Konfirmasi daftar lisensi awal sebagai pemilik repo: `Apache-2.0`, `MIT`, `Unicode-3.0`, plus pengecualian `NCSA` untuk `libfuzzer-sys` (keputusan delegasi `berat`) | `0002 AC-4` (tidak `BLOCKED`; berjalan dengan daftar itu) | `deny.toml` |
+| `F2-N3` | Apakah dan kapan ada akun GitHub maintainer kedua (approval wajib naik dari 0 ke 1) | tidak ada AC yang menunggu | `.github/rulesets/main.json` |
+| `F2-N4` | Kanal laporan keamanan privat dan tim maintainer (private vulnerability reporting di repo saat ini mati) | tidak ada AC spec 0002 (Follow-up 5) | `SECURITY.md`, `CONTRIBUTING.md` |
 
 ## Fitur 2: Standards and tooling (spec 0002)
 
-### `F2-1` · Izin menulis ke GitHub, atau jalankan langkah PR sendiri
+### `F2-1` · Izin menulis ke GitHub
+
+Dijawab 2026-11-14: "Ya, izin GitHub". Lead menjalankan langkah remote scope ini; sub sesi tetap tidak menulis ke GitHub. Izin ini hanya untuk scope 002 dan hanya untuk empat hal ini: push `main`, push branch uji, membuka PR uji, dan memasang branch protection.
 
 Dari pemeriksaan lead (2026-11-14). Kotak "Verify the required checks on a pull request and link the result" butuh PR nyata: pemeriksaan harus terbukti gagal pada perubahan yang sengaja salah dan lulus pada perubahan yang benar, di runner CI, bukan di Mac ini.
 

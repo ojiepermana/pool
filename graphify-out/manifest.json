@@ -90,10 +90,10 @@
     "semantic_hash": "302469f735651f3744288de61006e500"
   },
   "docs/engineering-standards.md": {
-    "mtime": 1794643175.2720897,
-    "seen": 1794643854.812625,
+    "mtime": 1794658233.5350118,
+    "seen": 1794658537.1568341,
     "ast_hash": "67328cf9bcc20369bf1e4aebd44fcb30",
-    "semantic_hash": "b8c6f0fd9de1c9888e0499e99a3cab81"
+    "semantic_hash": "2e3012f8053fee75ab358cf4d336c5f4"
   },
   "docs/feature-matrix.md": {
     "mtime": 1794624031.2750814,
@@ -108,10 +108,10 @@
     "semantic_hash": "5bfdd5c5843108d9f1be1314aa0e412a"
   },
   "docs/index.md": {
-    "mtime": 1794655899.7484782,
-    "seen": 1794656203.326166,
+    "mtime": 1794658233.5358112,
+    "seen": 1794658537.1568599,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "fee9b64dc6abcb0b7321b779191ed0b5"
+    "semantic_hash": "fee155f34bef33511099dc34510ca90e"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -252,10 +252,10 @@
     "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
   },
   "docs/research/technology-evaluation.md": {
-    "mtime": 1794643175.2728362,
-    "seen": 1794643854.812629,
+    "mtime": 1794658233.53625,
+    "seen": 1794658537.156862,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "4f5deb579e157fa38a4f090a1a54effd"
+    "semantic_hash": "01affd77d774244f7f774178cbe15c89"
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794657721.7350848,
@@ -264,10 +264,10 @@
     "semantic_hash": "43598dcca2090e662aaabad06d818661"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794655940.7070508,
-    "seen": 1794656203.326168,
+    "mtime": 1794658259.4227872,
+    "seen": 1794658537.156863,
     "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
-    "semantic_hash": "052038794167a55a94a03a94abad9447"
+    "semantic_hash": "1319d78d010c96867d9aa0bf9b314be4"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -360,10 +360,10 @@
     "semantic_hash": "d894e0d3a8045f88571853f736396b49"
   },
   "docs/scope/index.md": {
-    "mtime": 1794656288.331558,
-    "seen": 1794656671.854806,
+    "mtime": 1794658259.4234176,
+    "seen": 1794658537.156868,
     "ast_hash": "5aef3b02f87fb3e8058fdcd509457a4a",
-    "semantic_hash": "ac6cc3b92b64b3a4086ba4b48b503696"
+    "semantic_hash": "8261123e0bfeb80c2b7a81475ead2857"
   },
   "docs/security/security-requirements.md": {
     "mtime": 1794624116.17761,
@@ -402,16 +402,16 @@
     "semantic_hash": "aabfbc1739cffb6804b89ce122fd06da"
   },
   "docs/testing/strategy.md": {
-    "mtime": 1794648647.8579128,
-    "seen": 1794649040.506911,
+    "mtime": 1794658233.5377827,
+    "seen": 1794658537.1568708,
     "ast_hash": "b7f4032681d4771d5f83d82c84f026a9",
-    "semantic_hash": "290b4db2c697a5b429cb9ab35d749ee7"
+    "semantic_hash": "d5f3897ee23bca0b6eab4a09f62417b9"
   },
   "docs/glossary.md": {
-    "mtime": 1794643175.272426,
-    "seen": 1794643854.8126268,
+    "mtime": 1794658233.5353715,
+    "seen": 1794658537.156836,
     "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
-    "semantic_hash": "da9a678891b2713dc52779bf248c79df"
+    "semantic_hash": "118f9e7e6136bdec9c469bac1352c839"
   },
   "docs/scope/coordination/001-stack-and-workspace.brief-umum.md": {
     "mtime": 1794631706.8664336,
@@ -498,22 +498,22 @@
     "semantic_hash": "283e2c809f3243b8e09be677668aad04"
   },
   "docs/scope/coordination/002-standards-and-tooling.brief-umum.md": {
-    "mtime": 1794655362.0733342,
-    "seen": 1794655781.245831,
+    "mtime": 1794658259.4247355,
+    "seen": 1794658537.156864,
     "ast_hash": "",
-    "semantic_hash": "31e53c95ee25f053a147836be27456b1"
+    "semantic_hash": "2748521703f0f2aaa1f3fef318de6fa0"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794655940.720526,
-    "seen": 1794656203.326169,
+    "mtime": 1794658259.4238334,
+    "seen": 1794658537.1568651,
     "ast_hash": "",
-    "semantic_hash": "7d6fb41ea53e3e748f29d8fe6ceb3e90"
+    "semantic_hash": "8006184915ff468d49aa3f5b95fcb416"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
-    "mtime": 1794655356.847045,
-    "seen": 1794655781.2458382,
+    "mtime": 1794658048.2894921,
+    "seen": 1794658537.156867,
     "ast_hash": "",
-    "semantic_hash": "91e60dc627b58a126c377a8e23a67ff6"
+    "semantic_hash": "ca455460b5e14624ef94bfba6773987a"
   },
   "apps/pool/AGENTS.md": {
     "mtime": 1794655899.747823,
@@ -538,5 +538,23 @@
     "seen": 1794656203.326165,
     "ast_hash": "",
     "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
+  },
+  "docs/adr/0002-standards-and-tooling.md": {
+    "mtime": 1794658233.5343876,
+    "seen": 1794658537.1568298,
+    "ast_hash": "",
+    "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
+  },
+  "docs/specs/0002-standards-and-tooling/index.md": {
+    "mtime": 1794658233.537102,
+    "seen": 1794658537.1568692,
+    "ast_hash": "",
+    "semantic_hash": "e70fa583b7ab7316c32b441a583cce34"
+  },
+  "docs/specs/0002-standards-and-tooling/rationale.md": {
+    "mtime": 1794658233.5374477,
+    "seen": 1794658537.15687,
+    "ast_hash": "",
+    "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
   }
 }
