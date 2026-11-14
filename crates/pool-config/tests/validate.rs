@@ -472,6 +472,68 @@ fn ac7_a_reserved_capability_that_is_not_a_table_is_a_schema_finding() {
 }
 
 #[test]
+fn ac7_a_reserved_capability_written_as_an_array_is_a_schema_finding() {
+    for name in ["result_cache", "automatic_promotion"] {
+        for value in [
+            "[false]",
+            "[true]",
+            "[false, \"CANARY-9f2c7b1e\", 3]",
+            "[true, false]",
+            "[\n  false,\n  { anything = \"goes\", here = [1, 2, 3] },\n]",
+        ] {
+            let text = format!("config_version = 1\n{name} = {value}\n");
+            let found = findings(text.as_bytes());
+            assert_eq!(found.len(), 1, "{text:?}");
+            assert_eq!(found[0].0, FindingCode::Schema, "{text:?}");
+            assert!(
+                matches!(found[0].1, Location::Position { line: 2, .. }),
+                "{text:?}: {:?}",
+                found[0].1
+            );
+            let rendered = format!(
+                "{:?}\n{}",
+                rejected(text.as_bytes()),
+                rejected(text.as_bytes())
+            );
+            assert!(!rendered.contains(CANARY), "{text:?}: {rendered}");
+        }
+    }
+}
+
+#[test]
+fn ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location() {
+    let deep_key = format!("{} = 1\n", ["a"; 81].join("."));
+    let deep_header = format!("[{}]\n", ["a"; 81].join("."));
+    for text in [deep_key, deep_header] {
+        assert_eq!(
+            findings(text.as_bytes()),
+            [(FindingCode::Syntax, Location::None)],
+            "{text:?}"
+        );
+    }
+    // At the limit the parser still accepts the key, so the schema judges it.
+    let at_limit = format!("{} = 1\n", ["a"; 80].join("."));
+    assert_eq!(
+        findings(at_limit.as_bytes()),
+        [(
+            FindingCode::Schema,
+            Location::Position { line: 1, column: 1 }
+        )]
+    );
+}
+
+#[test]
+fn ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding() {
+    let arrays = format!("x = {}{}\n", "[".repeat(100_000), "]".repeat(100_000));
+    let tables = format!("x = {}\n", "{a=".repeat(100_000));
+    for text in [arrays, tables] {
+        let found = findings(text.as_bytes());
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, FindingCode::Syntax);
+    }
+}
+
+#[test]
 fn ac7_an_unknown_key_inside_a_reserved_table_is_a_schema_finding_at_its_line() {
     for text in [
         "config_version = 1\n[automatic_promotion]\nenabled = false\ntimeout_ms = 5\n",
@@ -655,20 +717,19 @@ fn ac7_a_file_without_a_final_newline_is_judged_the_same() {
 
 #[test]
 fn ac7_column_counts_characters_not_bytes_before_the_error() {
-    // The unknown key starts after a multibyte quoted key on the same line,
-    // so a byte count would give a larger column than a character count.
-    let text = "config_version = 1\n\"é\" = 1\n";
-    let found = findings(text.as_bytes());
-    assert_eq!(found.len(), 1);
-    assert_eq!(found[0].0, FindingCode::Schema);
-    match found[0].1 {
-        Location::Position { line, column } => {
-            assert_eq!(line, 2);
-            // The line is 8 bytes but only 7 characters long.
-            assert!((1..=7).contains(&column), "{:?}", found[0].1);
-        }
-        other => panic!("expected a position, got {other:?}"),
-    }
+    // Two two byte characters sit before the error on the same line. The
+    // column is 1 plus the 9 characters before `junk`; a byte count gives 12.
+    let text = "config_version = 1\nx = \"éé\" junk\n";
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(
+            FindingCode::Syntax,
+            Location::Position {
+                line: 2,
+                column: 10
+            }
+        )]
+    );
 }
 
 #[test]
@@ -827,7 +888,9 @@ fn ac8_every_rejection_holds_at_least_one_finding() {
 #[test]
 fn ac8_validation_is_repeatable_for_the_same_bytes() {
     let bytes = fixture("invalid-multiple.toml");
-    assert_eq!(findings(&bytes), findings(&bytes));
+    let first = findings(&bytes);
+    assert!(first.len() > 1, "{first:?}");
+    assert_eq!(first, findings(&bytes));
     let valid = fixture("valid-capabilities-disabled.toml");
     assert_disabled(&accepted(&valid));
     assert_disabled(&accepted(&valid));
@@ -896,7 +959,10 @@ fn ac9_sec11_a_canary_in_other_places_does_not_reach_the_rejection_text() {
 fn ac4_validated_config_debug_holds_only_states() {
     let config = accepted(&fixture("valid-capabilities-disabled.toml"));
     let debug = format!("{config:?}");
-    assert!(debug.contains("Disabled"), "{debug}");
+    assert_eq!(
+        debug,
+        "ValidatedConfig { config_version: 1, result_cache: Disabled, automatic_promotion: Disabled }"
+    );
     assert_eq!(config.automatic_promotion().as_str(), "disabled");
     assert_eq!(config.result_cache().as_str(), "disabled");
 }

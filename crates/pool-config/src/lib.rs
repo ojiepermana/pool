@@ -7,7 +7,7 @@
 
 use std::fmt;
 
-use serde::Deserialize;
+use serde::de::{self, Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 
 /// The largest configuration file accepted, in bytes. A file of exactly this
 /// size is still accepted.
@@ -23,7 +23,19 @@ const KEY_AUTOMATIC_PROMOTION_ENABLED: &str = "automatic_promotion.enabled";
 /// A configuration that passed every validation step.
 ///
 /// It has no public constructor; [`validate`] returns one only when the file
-/// produced no finding.
+/// produced no finding. Code outside this crate cannot build one:
+///
+/// ```compile_fail
+/// let config = pool_config::ValidatedConfig {
+///     config_version: 1,
+///     result_cache: pool_config::CapabilityState::Disabled,
+///     automatic_promotion: pool_config::CapabilityState::Disabled,
+/// };
+/// ```
+///
+/// ```compile_fail
+/// let config: pool_config::ValidatedConfig = Default::default();
+/// ```
 #[derive(Debug)]
 pub struct ValidatedConfig {
     config_version: u32,
@@ -165,6 +177,9 @@ impl FindingCode {
     }
 
     /// The constant message for the code.
+    ///
+    /// The numbers in the texts repeat [`MAX_CONFIG_BYTES`] and
+    /// [`SUPPORTED_CONFIG_VERSION`]; change both together.
     pub fn message(self) -> &'static str {
         match self {
             FindingCode::TooLarge => "the file is larger than 1048576 bytes",
@@ -196,18 +211,116 @@ pub enum Location {
     },
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+// The structures read from the file accept a table only. A derived
+// `Deserialize` also accepts a sequence that gives the fields by position, so
+// `result_cache = [false]` would pass; these hand written visitors implement
+// `visit_map` and nothing else, and every other shape is a type error with a
+// span. Unknown keys are rejected, as with `deny_unknown_fields`. A key given
+// twice never reaches them: the syntax step already refuses it.
+
+const RAW_CONFIG_FIELDS: &[&str] = &["config_version", "result_cache", "automatic_promotion"];
+const RAW_CAPABILITY_FIELDS: &[&str] = &["enabled"];
+
 struct RawConfig {
     config_version: Option<u32>,
     result_cache: Option<RawCapability>,
     automatic_promotion: Option<RawCapability>,
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+impl<'de> Deserialize<'de> for RawConfig {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct RawConfigVisitor;
+
+        impl<'de> Visitor<'de> for RawConfigVisitor {
+            type Value = RawConfig;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("a table")
+            }
+
+            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<RawConfig, A::Error> {
+                let mut raw = RawConfig {
+                    config_version: None,
+                    result_cache: None,
+                    automatic_promotion: None,
+                };
+                while let Some(field) = map.next_key_seed(KnownField(RAW_CONFIG_FIELDS))? {
+                    match field {
+                        0 => raw.config_version = Some(map.next_value()?),
+                        1 => raw.result_cache = Some(map.next_value()?),
+                        _ => raw.automatic_promotion = Some(map.next_value()?),
+                    }
+                }
+                Ok(raw)
+            }
+        }
+
+        deserializer.deserialize_struct("RawConfig", RAW_CONFIG_FIELDS, RawConfigVisitor)
+    }
+}
+
 struct RawCapability {
     enabled: Option<bool>,
+}
+
+impl<'de> Deserialize<'de> for RawCapability {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct RawCapabilityVisitor;
+
+        impl<'de> Visitor<'de> for RawCapabilityVisitor {
+            type Value = RawCapability;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("a table")
+            }
+
+            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<RawCapability, A::Error> {
+                let mut raw = RawCapability { enabled: None };
+                while map
+                    .next_key_seed(KnownField(RAW_CAPABILITY_FIELDS))?
+                    .is_some()
+                {
+                    raw.enabled = Some(map.next_value()?);
+                }
+                Ok(raw)
+            }
+        }
+
+        deserializer.deserialize_struct(
+            "RawCapability",
+            RAW_CAPABILITY_FIELDS,
+            RawCapabilityVisitor,
+        )
+    }
+}
+
+/// Reads a table key and gives its index in the list of known keys. An
+/// unknown key is an error raised on the key itself, so the parser reports
+/// the key's position. The key text is used only for matching and is never
+/// stored.
+struct KnownField(&'static [&'static str]);
+
+impl<'de> DeserializeSeed<'de> for KnownField {
+    type Value = usize;
+
+    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<usize, D::Error> {
+        deserializer.deserialize_identifier(self)
+    }
+}
+
+impl Visitor<'_> for KnownField {
+    type Value = usize;
+
+    fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("a known key")
+    }
+
+    fn visit_str<E: de::Error>(self, key: &str) -> Result<usize, E> {
+        self.0
+            .iter()
+            .position(|known| *known == key)
+            .ok_or_else(|| E::unknown_field(key, self.0))
+    }
 }
 
 /// Validates the bytes of a configuration file.
@@ -238,6 +351,7 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
     };
 
     let mut findings = Vec::new();
+    let mut config_version = SUPPORTED_CONFIG_VERSION;
     match raw.config_version {
         None => findings.push(Finding {
             code: FindingCode::MissingKey,
@@ -247,7 +361,7 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
             code: FindingCode::UnsupportedVersion,
             location: Location::Key(KEY_CONFIG_VERSION),
         }),
-        Some(_) => {}
+        Some(version) => config_version = version,
     }
     let result_cache = capability_state(
         raw.result_cache.as_ref(),
@@ -264,12 +378,17 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         return Err(Rejection { findings });
     }
     Ok(ValidatedConfig {
-        config_version: SUPPORTED_CONFIG_VERSION,
+        config_version,
         result_cache,
         automatic_promotion,
     })
 }
 
+/// Records a finding when the capability asks to be enabled.
+///
+/// It returns `Disabled` even after recording that finding. That is safe only
+/// because [`validate`] returns the findings, and no [`ValidatedConfig`], as
+/// soon as any finding exists.
 fn capability_state(
     raw: Option<&RawCapability>,
     key: &'static str,

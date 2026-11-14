@@ -85,7 +85,8 @@ fn check_config(path: &Path, format: Format) -> io::Result<u8> {
 /// Reads at most one byte more than the limit, so an oversized file is never
 /// held in full and is still reported as too large.
 fn read_bounded(path: &Path) -> io::Result<Vec<u8>> {
-    let limit = u64::try_from(MAX_CONFIG_BYTES).map_or(u64::MAX, |max| max.saturating_add(1));
+    // The limit fits in a u64 on every target; the fallback keeps the bound.
+    let limit = u64::try_from(MAX_CONFIG_BYTES).map_or(1_048_577, |max| max.saturating_add(1));
     let mut bytes = Vec::new();
     File::open(path)?.take(limit).read_to_end(&mut bytes)?;
     Ok(bytes)
