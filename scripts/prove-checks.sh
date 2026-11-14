@@ -4,6 +4,10 @@
 # It works on a private clone of the committed HEAD and never changes the working tree it was started from.
 set -eu
 
+# An exported GIT_DIR, GIT_WORK_TREE or GIT_INDEX_FILE (Git sets them for hooks and rebase --exec) would win over
+# git -C and send the commits of the proof to the repository this script was started from.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+
 usage() {
   echo "usage: scripts/prove-checks.sh [--with-linux-build]" >&2
 }
@@ -20,7 +24,9 @@ for arg in "$@"; do
   esac
 done
 
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
+# The checks run in the copy change directory too, so an exported CDPATH must not reach them either.
+unset CDPATH
 ROOT=$(pwd)
 
 for tool in git cargo awk; do
@@ -284,7 +290,7 @@ restore
 linux_skipped=0
 if [ "$with_linux_build" -eq 1 ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
   apply_case_4
-  git -C "$COPY" -c user.name=prove -c user.email=prove@example.invalid commit -q -am 'prove case 20'
+  git -C "$COPY" -c user.name=prove -c user.email=prove@example.invalid -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -am 'prove case 20'
   rc=0
   check linux-build || rc=$?
   if [ "$rc" -eq 0 ]; then
