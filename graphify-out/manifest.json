@@ -450,9 +450,9 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/check_config.rs": {
-    "mtime": 1794647183.337411,
-    "seen": 1794647617.816052,
-    "ast_hash": "53ed5cf2f2c9e410030f66f30670f36d",
+    "mtime": 1794667290.722774,
+    "seen": 1794667389.567439,
+    "ast_hash": "8cb2cd3144fc42b2c314e8b6cb088590",
     "semantic_hash": ""
   },
   "crates/pool-config/Cargo.toml": {

@@ -3,7 +3,8 @@
 
 use std::ffi::OsStr;
 use std::path::PathBuf;
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
+use std::sync::{Mutex, PoisonError};
 
 const FIXTURES: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -38,6 +39,31 @@ Exit status:
   3  the command could not complete
 ";
 
+/// Held while a child of this test binary starts, and while
+/// `pool_into_closed_pipe` still has the read end of its pipe open.
+///
+/// A child that starts while that read end exists gets a copy of it: on
+/// every platform until its exec closes it, and on macOS for its whole life
+/// when the start lands between `pipe()` and close on exec being set (the
+/// standard library cannot set both at once there). The copy keeps the pipe
+/// readable, so the write that test means to fail succeeds and `pool` exits
+/// 0, 1 or 2 instead of 3. Tests run in parallel and almost all of them
+/// start a child, so every start in this file goes through `spawn`.
+static SPAWN: Mutex<()> = Mutex::new(());
+
+/// Starts `command` while holding `SPAWN`.
+fn spawn(command: &mut Command) -> Child {
+    let _no_closed_pipe_reader_open = SPAWN.lock().unwrap_or_else(PoisonError::into_inner);
+    command.spawn().expect("run pool")
+}
+
+/// Like `Command::output`, started through `spawn`.
+fn output(command: &mut Command) -> Output {
+    spawn(command.stdout(Stdio::piped()).stderr(Stdio::piped()))
+        .wait_with_output()
+        .expect("run pool")
+}
+
 struct Run {
     code: i32,
     stdout: String,
@@ -49,11 +75,11 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let output: Output = Command::new(env!("CARGO_BIN_EXE_pool"))
-        .args(args)
-        .stdin(Stdio::null())
-        .output()
-        .expect("run pool");
+    let output = output(
+        Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(args)
+            .stdin(Stdio::null()),
+    );
     Run {
         code: output.status.code().expect("exit status, not a signal"),
         stdout: String::from_utf8(output.stdout).expect("stdout is UTF-8"),
@@ -528,18 +554,21 @@ fn a_failed_write_exits_3_without_stderr() {
         .open("/dev/full")
         .expect("open /dev/full");
     for format in ["human", "json"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-            .args([
-                "check-config",
-                "--config",
-                &fixture("valid-minimal.toml"),
-                "--format",
-                format,
-            ])
-            .stdin(Stdio::null())
-            .stdout(full.try_clone().expect("clone /dev/full"))
-            .output()
-            .expect("run pool");
+        let output = spawn(
+            Command::new(env!("CARGO_BIN_EXE_pool"))
+                .args([
+                    "check-config",
+                    "--config",
+                    &fixture("valid-minimal.toml"),
+                    "--format",
+                    format,
+                ])
+                .stdin(Stdio::null())
+                .stdout(full.try_clone().expect("clone /dev/full"))
+                .stderr(Stdio::piped()),
+        )
+        .wait_with_output()
+        .expect("run pool");
         assert_eq!(output.status.code(), Some(3), "{format}");
         assert!(output.stderr.is_empty(), "{format}");
     }
@@ -868,12 +897,12 @@ fn ac3_a_path_that_starts_with_a_dash_is_taken_as_given() {
     let dir = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("check-config-dash-dir");
     std::fs::create_dir_all(&dir).expect("make dir");
     std::fs::write(dir.join("-valid.toml"), b"config_version = 1\n").expect("write");
-    let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-        .args(["check-config", "--config", "-valid.toml"])
-        .current_dir(&dir)
-        .stdin(Stdio::null())
-        .output()
-        .expect("run pool");
+    let output = output(
+        Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(["check-config", "--config", "-valid.toml"])
+            .current_dir(&dir)
+            .stdin(Stdio::null()),
+    );
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(String::from_utf8_lossy(&output.stdout), VALID_HUMAN);
     assert!(output.stderr.is_empty());
@@ -881,13 +910,13 @@ fn ac3_a_path_that_starts_with_a_dash_is_taken_as_given() {
 
 #[test]
 fn ac3_a_relative_path_is_read_from_the_working_directory() {
-    let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-        .args(["check-config", "--config", "valid-capabilities-empty.toml"])
-        .args(["--format", "json"])
-        .current_dir(FIXTURES)
-        .stdin(Stdio::null())
-        .output()
-        .expect("run pool");
+    let output = output(
+        Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(["check-config", "--config", "valid-capabilities-empty.toml"])
+            .args(["--format", "json"])
+            .current_dir(FIXTURES)
+            .stdin(Stdio::null()),
+    );
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(String::from_utf8_lossy(&output.stdout), VALID_JSON);
     assert!(output.stderr.is_empty());
@@ -896,16 +925,16 @@ fn ac3_a_relative_path_is_read_from_the_working_directory() {
 #[test]
 fn ac3_valid_output_does_not_depend_on_the_working_directory_or_environment() {
     let path = valid();
-    let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-        .args(["check-config", "--config", &path])
-        .current_dir(env!("CARGO_TARGET_TMPDIR"))
-        .env_clear()
-        .env("NO_COLOR", "")
-        .env("TERM", "xterm-256color")
-        .env("LANG", "de_DE.UTF-8")
-        .stdin(Stdio::null())
-        .output()
-        .expect("run pool");
+    let output = output(
+        Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(["check-config", "--config", &path])
+            .current_dir(env!("CARGO_TARGET_TMPDIR"))
+            .env_clear()
+            .env("NO_COLOR", "")
+            .env("TERM", "xterm-256color")
+            .env("LANG", "de_DE.UTF-8")
+            .stdin(Stdio::null()),
+    );
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(String::from_utf8_lossy(&output.stdout), VALID_HUMAN);
     assert!(output.stderr.is_empty());
@@ -1689,13 +1718,13 @@ fn ac11_a_path_that_is_not_utf8_is_used_as_given() {
     let path = dir.join(&name);
     match std::fs::write(&path, b"config_version = 1\n") {
         Ok(()) => {
-            let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-                .arg("check-config")
-                .arg("--config")
-                .arg(&path)
-                .stdin(Stdio::null())
-                .output()
-                .expect("run pool");
+            let output = output(
+                Command::new(env!("CARGO_BIN_EXE_pool"))
+                    .arg("check-config")
+                    .arg("--config")
+                    .arg(&path)
+                    .stdin(Stdio::null()),
+            );
             assert_eq!(output.status.code(), Some(0));
             assert_eq!(String::from_utf8_lossy(&output.stdout), VALID_HUMAN);
             assert!(output.stderr.is_empty());
@@ -1703,13 +1732,13 @@ fn ac11_a_path_that_is_not_utf8_is_used_as_given() {
         // Some file systems (APFS) refuse names that are not UTF-8; then
         // the path is still used as given and reported as missing.
         Err(_) => {
-            let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-                .arg("check-config")
-                .arg("--config")
-                .arg(&path)
-                .stdin(Stdio::null())
-                .output()
-                .expect("run pool");
+            let output = output(
+                Command::new(env!("CARGO_BIN_EXE_pool"))
+                    .arg("check-config")
+                    .arg("--config")
+                    .arg(&path)
+                    .stdin(Stdio::null()),
+            );
             assert_eq!(output.status.code(), Some(3));
             assert!(output.stdout.is_empty());
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1726,8 +1755,13 @@ fn ac11_a_path_that_is_not_utf8_is_used_as_given() {
 /// already closed, so every write fails.
 #[cfg(unix)]
 fn pool_into_closed_pipe(args: &[&str], close_stdout: bool) -> Output {
-    let (reader, writer) = std::io::pipe().expect("pipe");
-    drop(reader);
+    // No child may start while the read end exists (see `SPAWN`).
+    let writer = {
+        let _no_child_starts = SPAWN.lock().unwrap_or_else(PoisonError::into_inner);
+        let (reader, writer) = std::io::pipe().expect("pipe");
+        drop(reader);
+        writer
+    };
     let mut command = Command::new(env!("CARGO_BIN_EXE_pool"));
     command.args(args).stdin(Stdio::null());
     if close_stdout {
@@ -1735,7 +1769,7 @@ fn pool_into_closed_pipe(args: &[&str], close_stdout: bool) -> Output {
     } else {
         command.stdout(Stdio::piped()).stderr(writer);
     }
-    command.output().expect("run pool")
+    spawn(&mut command).wait_with_output().expect("run pool")
 }
 
 #[cfg(unix)]
@@ -1790,12 +1824,15 @@ fn ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr() {
         vec!["check-config", "--config", &invalid],
         vec!["check-config", "--config", &invalid, "--format", "json"],
     ] {
-        let output = Command::new(env!("CARGO_BIN_EXE_pool"))
-            .args(&args)
-            .stdin(Stdio::null())
-            .stdout(full.try_clone().expect("clone /dev/full"))
-            .output()
-            .expect("run pool");
+        let output = spawn(
+            Command::new(env!("CARGO_BIN_EXE_pool"))
+                .args(&args)
+                .stdin(Stdio::null())
+                .stdout(full.try_clone().expect("clone /dev/full"))
+                .stderr(Stdio::piped()),
+        )
+        .wait_with_output()
+        .expect("run pool");
         assert_eq!(output.status.code(), Some(3), "{args:?}");
         assert!(output.stderr.is_empty(), "{args:?}");
     }
