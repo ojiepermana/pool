@@ -2,11 +2,11 @@
 
 ## Context
 
-Scope 001 left a small real workspace: the `pool` binary, the `pool-config` library, 134 tests and one offline command. Its rules are checked by hand. A person runs three `cargo` commands, a `grep`, and reads two manifests. Nothing fails by itself when someone adds a dependency, a socket or a crate that the design forbids. The review of scope 001 said so, and spec 0001 left two follow ups for this scope.
+Scope 001 left a small real workspace: the `pool` binary, the `pool-config` library, their tests and one offline command. Its rules are checked by hand. A person runs three `cargo` commands, a `grep`, and reads two manifests. Nothing fails by itself when someone adds a dependency, a socket or a crate that the design forbids. The review of scope 001 said so, and spec 0001 left two follow ups for this scope.
 
 The project also has rules that exist only as sentences. The engineering standards ask for a protected `main`, pull requests, required CI and review for safety changes. The security requirements ask for an inventory of dependencies with licenses and advisories (`SEC-13`). The risk register names dependency drift (`R-16`), license conflicts (`R-17`) and a reviewer who is not available at a gate (`R-25`). Several documents still describe the repository as it was before the workspace existed.
 
-Four facts about the place this is built in shaped the answer. The repository is public on GitHub, owned by one personal account, with Actions switched on, no workflow, no pull request and no rule on `main`. The workstation is macOS on Apple silicon, so a Linux build there is emulated. No session may write to GitHub; a person does that. And the coordination flow that builds each scope has, until now, pushed `main` directly when a scope closes.
+Four facts about the place this is built in shaped the answer. The repository is public on GitHub, owned by one personal account, with Actions switched on, no workflow, no pull request and no rule on `main`. The workstation is macOS on Apple silicon, so a Linux build there is emulated. Build sessions may not write to GitHub. When this spec was drafted nobody but you could; while it was being finished you gave the lead permission to do so for this scope. And the coordination flow that builds each scope has, until now, pushed `main` directly when a scope closes.
 
 The cost of not deciding is plain. Every later slice adds sockets, native code, new crates and a database. Each of those needs a check that already exists and is already trusted, or it will be added in a hurry inside a slice whose attention belongs to protocol safety.
 
@@ -66,7 +66,7 @@ One script with the standard library only.
 
 **Cons**:
 
-- `0001 AC-1` says the workspace has exactly two members, and `0001 AC-12` says the lockfile holds two workspace packages. Both would stop being true while spec 0001 is still in progress and its Linux evidence is still open. This spec may not edit spec 0001.
+- `0001 AC-1` says the workspace has exactly two members, and `0001 AC-12` says the lockfile holds two workspace packages. Both would stop being true. Spec 0001 is accepted, and this spec may not edit it.
 
 ## Rationale
 
@@ -130,7 +130,7 @@ All of this was done on 2026-11-14, in a scratch directory outside the repositor
 - **Bad changes.** Lines A, B, C and D of the spec were applied one at a time. `cargo fmt --all --check` printed `Diff in`. Clippy printed `ptr_arg` for B and `print_stdout` for C. The test run printed `test result: FAILED` for D.
 - **Versions read from registries.** crates.io: `cargo-deny` 0.20.2 (MIT OR Apache-2.0), `cargo-fuzz` 0.13.2 (MIT OR Apache-2.0), `libfuzzer-sys` 0.4.13 ((MIT OR Apache-2.0) AND NCSA), `cargo-cyclonedx` 0.5.10 (Apache-2.0), `cargo-sbom` 0.10.0. GitHub API: `actions/checkout` `v7.0.1` at `3d3c42e5aac5ba805825da76410c181273ba90b1`, `actions/cache` `v6.1.0` at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`, both MIT. Docker Hub: `postgres:18.7-bookworm`, pushed 2026-11-12, digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, not pulled.
 - **Documentation read.** The GitHub REST reference for repository rulesets (rule types, the `pull_request` and `required_status_checks` parameters, `~DEFAULT_BRANCH`). The `cargo-cyclonedx` and `cargo-sbom` readme files (options and where output goes). `rustup toolchain install --help` on rustup 1.29.2 says it installs the active toolchain when no name is given.
-- **Docker.** `docker info` succeeded during this work, although the brief recorded the daemon as stopped.
+- **Docker.** `docker info` succeeded during this work. The lead ran the Linux build of spec 0001 in the container the same day (`0001 AC-2` passed), so checks that need a container run locally after a `docker info` test.
 - **Not verified.** Nothing was run on a GitHub runner. The workflow file, the ruleset file and the `rustup` version on the runner are specified, not observed. `cargo-cyclonedx` was not installed or run; its flags come from its readme. The `pool-repo-check` program, `scripts/check.sh` and `scripts/prove-checks.sh` do not exist yet.
 
 ## References

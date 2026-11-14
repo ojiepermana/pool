@@ -59,7 +59,7 @@ These criteria cover [scope 002](../../scope/002-standards-and-tooling.md). Cite
 | AC-18 | "record the reviewer roster". `R-25` |
 | AC-19, AC-20 | "Done when": documented conventions match the workspace. "Reconcile the planning rules with the actual scaffold" |
 
-AC-3, AC-12, the remote half of AC-13 and the CI half of AC-5 need a real pull request on GitHub. No session writes to GitHub, so they are collected in the last Build plan step as manual steps. Everything else is proven on the workstation.
+AC-3, AC-12, the remote half of AC-13 and the CI half of AC-5 need a real pull request on GitHub. No build session writes to GitHub. Those four are collected in the last Build plan step, which the lead runs with the permission you gave for this scope on 2026-11-14, using the exact commands under [Remote proof](#remote-proof). Everything else is proven on the workstation.
 
 ## Decision
 
@@ -678,7 +678,7 @@ The number of required approvals is 0, because GitHub does not let the author of
 **How a change reaches `main` from now on:**
 
 1. Work happens on a branch. In the coordination flow each session still commits on its own branch `claude/<name>-<hash>`, and the lead still merges those branches locally with `--no-ff` after the checks pass on the merged tree.
-2. The lead no longer pushes `main`. The merged result is pushed as a branch named `scope/<number>-<slug>`, for example with `git push origin main:scope/003-control-and-session-data-model`, and a pull request to `main` is opened from it. A pull request for a smaller change uses any branch name.
+2. The lead no longer pushes `main`. The merged result is pushed as a branch named `scope/<number>-<slug>`, for example with `git push origin main:scope/003-control-and-session-data-model`, and a pull request to `main` is opened from it with `gh pr create`. A pull request for a smaller change uses any branch name. Writing to GitHub needs your permission; the lead asks for it per scope, and without it you run these two commands yourself.
 3. The seven checks run. A failed check is reproduced with `scripts/check.sh <name>`, fixed on the branch and pushed again.
 4. The pull request is merged with a merge commit, and the local `main` is moved forward with `git pull --ff-only`.
 
@@ -780,7 +780,90 @@ Case 20 runs only when the script is started with `--with-linux-build` and the D
 
 Cases 6 and 7, and the first `deny` run, need the network. Everything else runs offline once the crates are downloaded.
 
-What a local proof cannot show is that GitHub runs the checks and refuses a merge. That is the remote proof, AC-12, in the last Build plan step.
+What a local proof cannot show is that GitHub runs the checks and refuses a merge. That is the [remote proof](#remote-proof), the last Build plan step.
+
+### Remote proof
+
+These steps are the only ones that write to GitHub. The lead runs them from the main checkout, in this order, after every branch of this scope is merged into the local `main` and `scripts/check.sh all` passes there. No build, check or test session runs them. `gh` must be signed in as the repository owner. Each step names the criterion it proves and what its output must show; the checker copies the addresses into `verify.md`.
+
+**Remote step 1: apply the branch rule** (**AC-13**). Before: `gh api "repos/$R/rulesets"` prints `[]`.
+
+```bash
+R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api -X POST "repos/$R/rulesets" --input .github/rulesets/main.json --jq '{id, name, enforcement}'
+gh api "repos/$R/rules/branches/main" --jq '[.[].type] | sort | join(",")'
+gh api "repos/$R/rules/branches/main" --jq '[.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context] | sort | join(",")'
+```
+
+Expected: the second command prints `"name":"main"` and `"enforcement":"active"`. The third prints `deletion,non_fast_forward,pull_request,required_status_checks`. The fourth prints `clippy,deny,docs,fmt,guards,linux-build,test`.
+
+**Remote step 2: push the scope branch and open the pull request** (**AC-3**).
+
+```bash
+git push origin main:scope/002-standards-and-tooling
+gh pr create --base main --head scope/002-standards-and-tooling \
+  --title "Scope 002: standards and tooling" \
+  --body "Spec 0002. Required checks, branch rule and tooling. Evidence: docs/specs/0002-standards-and-tooling/verify.md"
+gh pr checks scope/002-standards-and-tooling --watch
+gh pr view scope/002-standards-and-tooling --json url,headRefOid
+gh run list --branch scope/002-standards-and-tooling --workflow ci --limit 1 --json url,conclusion,headSha
+```
+
+Expected: `gh pr checks` ends with seven lines marked `pass`, one for each check name. `gh run list` shows `"conclusion":"success"`. If a check fails, this is a finding for a developer session, not something to fix on GitHub: read it with `gh run view <id> --log-failed`, reproduce it with `scripts/check.sh <name>`, fix it on a session branch, merge locally and push the scope branch again.
+
+**Remote step 3: read the Linux build lines** (**AC-5**).
+
+```bash
+RUN=$(gh run list --branch scope/002-standards-and-tooling --workflow ci --limit 1 --json databaseId -q '.[0].databaseId')
+gh run view "$RUN" --log | grep -E 'runner: |host: x86_64-unknown-linux-gnu|target/release/pool|linux build check passed'
+```
+
+Expected: the lines `runner: Linux x86_64`, `host: x86_64-unknown-linux-gnu`, the `sha256sum` line of `target/release/pool`, and `linux build check passed`.
+
+**Remote step 4: a direct push is refused** (**AC-13**). Run it only after step 2 passed. Then, if the rule were not active and the push went through, what landed would still be content that passed all seven checks, and this step would be recorded as failed.
+
+```bash
+git ls-remote origin refs/heads/main
+git push origin main:main
+git ls-remote origin refs/heads/main
+```
+
+Expected: the push is rejected with a message that contains `GH013` or `rule violations`, and both `git ls-remote` lines show the same hash.
+
+**Remote step 5: a wrong change is blocked** (**AC-12**). Run it before step 6.
+
+```bash
+git switch -c prove/fmt-fails main
+printf 'fn  prove_fmt( ){}\n' >> apps/pool/src/main.rs
+git commit -am "test: deliberate format error, do not merge"
+git push origin prove/fmt-fails
+gh pr create --base main --head prove/fmt-fails \
+  --title "Do not merge: proves the fmt check" \
+  --body "Deliberate format error for spec 0002 AC-12. This pull request is closed without a merge."
+gh pr checks prove/fmt-fails --watch
+gh pr view prove/fmt-fails --json url,mergeStateStatus,statusCheckRollup \
+  --jq '{url, mergeStateStatus, fmt: [.statusCheckRollup[] | select(.name=="fmt") | .conclusion]}'
+gh pr close prove/fmt-fails --delete-branch
+git switch main
+git branch -D prove/fmt-fails
+```
+
+Expected: `gh pr checks` shows `fmt` as `fail` (the command itself then exits with a status other than 0, which is the point). `gh pr view` prints `"fmt":["FAILURE"]` and `"mergeStateStatus":"BLOCKED"`. Afterward `git status --short` is empty and the local `main` is unchanged.
+
+**Remote step 6: merge** (**AC-3**).
+
+```bash
+gh pr merge scope/002-standards-and-tooling --merge
+git pull --ff-only origin main
+git status -sb | head -1
+gh run list --branch main --workflow ci --limit 1 --json event,conclusion,url
+```
+
+Expected: the pull request is `MERGED`, the local `main` equals `origin/main`, and the run for the push to `main` ends with `success`.
+
+**Remote step 7: the first daily run.** A day later, `gh run list --workflow ci --event schedule --limit 1 --json conclusion,createdAt,url` shows one run with `success`. This does not hold the scope open.
+
+To undo the rule: `gh api "repos/$R/rulesets" --jq '.[] | select(.name=="main") | .id'` gives its number, and `gh api -X DELETE "repos/$R/rulesets/<number>"` removes it. Nothing else on the remote was changed by these steps except the two branches and the two pull requests.
 
 ### Rules for later slices
 
@@ -928,7 +1011,7 @@ The replacement texts are in code blocks because their links are written for the
 
 ### Evidence
 
-The developer writes `docs/specs/0002-standards-and-tooling/verify.md` with one section per milestone, as the [testing strategy](../../testing/strategy.md#acceptance-evidence) asks, and adds it to the spec's entry in `docs/index.md`. A step that needs GitHub is recorded there as `BLOCKED` with `owner: user` and its full command until a person has run it.
+The developer writes `docs/specs/0002-standards-and-tooling/verify.md` with one section per milestone, as the [testing strategy](../../testing/strategy.md#acceptance-evidence) asks, and adds it to the spec's entry in `docs/index.md`. A step that needs GitHub is recorded there as `NOT_RUN` with `owner: lead` until the lead has run it, and then with the pull request address, the run address and the commit hash.
 
 ## Build plan
 
@@ -943,8 +1026,8 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 7. **Proof that the checks bite.** Write `scripts/prove-checks.sh` with the twenty cases ([Proving the checks](#proving-the-checks)) and run it. Files: `scripts/prove-checks.sh`. Satisfies **AC-11**.
 8. **Fuzz run and inventory run.** Run `scripts/check.sh fuzz` and `scripts/check.sh sbom` once each. `cargo-cyclonedx` 0.5.10 is installed for this with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. No committed file changes, except a fix to `scripts/check.sh` if the inventory flags had to change. Completes **AC-15**, satisfies **AC-16**.
 9. **Document corrections.** Apply items 1 to 3, 5 to 11 and 13 of [Document corrections](#document-corrections). Fill the observed versions into the technology evaluation section. Files: `CONTRIBUTING.md`, `README.md`, `docs/implementation-order.md`, `docs/index.md` (line 5), `docs/repository-structure.md`, `docs/testing/strategy.md` (line 3), `docs/plan/risk-register.md`, `docs/research/technology-evaluation.md`. Satisfies **AC-19**, completes **AC-14**, **AC-17**, **AC-18**.
-10. **Workstation evidence.** Run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` if `docker info` succeeds) and the fuzz and inventory commands on the final tree. Record commands, results, the revision and tool versions in `verify.md`, and add that file to `docs/index.md`. Record the four remote items as `BLOCKED`, `owner: user`, with the full commands of step 11. Files: `docs/specs/0002-standards-and-tooling/verify.md`, `docs/index.md` (one row). Evidence for **AC-1**, **AC-2**, **AC-4**, **AC-6** to **AC-11** and **AC-14** to **AC-20**.
-11. **Remote evidence (manual, done by a person).** With everything merged locally: apply the branch rule, push the branch, open the pull request, watch the seven checks, try a direct push, open and close the failing pull request, and merge. The exact commands and expected results are in the lead's manual steps file. Record the addresses in `verify.md` and link them from scope 002. Satisfies **AC-3**, **AC-12**, completes **AC-5** and **AC-13**.
+10. **Workstation evidence.** Run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` if `docker info` succeeds) and the fuzz and inventory commands on the final tree. Record commands, results, the revision and tool versions in `verify.md`, and add that file to `docs/index.md`. Record the four remote items as `NOT_RUN`, `owner: lead`. Files: `docs/specs/0002-standards-and-tooling/verify.md`, `docs/index.md` (one row). Evidence for **AC-1**, **AC-2**, **AC-4**, **AC-6** to **AC-11** and **AC-14** to **AC-20**.
+11. **Remote evidence (run by the lead, not by a build session).** With everything merged into the local `main` and `scripts/check.sh all` green there, run remote steps 1 to 6 under [Remote proof](#remote-proof) in order: apply the branch rule, push the branch and open the pull request, read the Linux build lines from the run, try a direct push, open and close the failing pull request, and merge. The checker records the addresses in `verify.md` and the lead links them from scope 002. Then apply item 12 of [Document corrections](#document-corrections) in the next pull request. Satisfies **AC-3**, **AC-12**, completes **AC-5** and **AC-13**.
 
 **Parallel sessions.** Steps 1, 2, 3, 4 and 9 touch files that do not overlap and can run at the same time; the developer of step 3 reads the commands from this spec and does not wait for steps 1 and 2. Steps 5 and 6 share one package and run one after the other in one session; they can start at once, because their tests use their own inputs, but their run on the real tree is green only after steps 1 to 4 are merged. Step 7 comes after steps 1 to 6. Step 8 needs steps 2 and 3. Step 10 comes after everything else, and step 11 after step 10 is merged.
 
@@ -982,12 +1065,11 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 1. Name the holder of each role in the [reviewer roster](../../engineering-standards.md#reviewer-roster), or confirm that it stays `Not assigned`. The rows that need a person block the gates named there.
 2. When a second maintainer has a GitHub account, raise the required approvals to 1 in `main.json` and on the remote.
 3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Marking them in spec 0001, and pointing its "Linux build" section at `scripts/linux-build.sh`, is the lead's edit.
-4. `0001 AC-2` asks for the Linux build command to pass. The CI job `linux-build` runs that same command on a native runner, so its first green run can serve as that evidence. Whether to record it there is the lead's decision.
-5. The Docker daemon was running on the workstation when this spec was written, so the emulated Linux build can also be run locally now.
-6. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
-7. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
-8. [Scope 011](../../scope/011-release-qualification-harness.md) turns the inventory into a release inventory with notices, and decides whether the inventory becomes a required check.
-9. After the first scheduled run, confirm with `gh run list --event schedule --limit 1` that the daily run happened.
+4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. The CI job `linux-build` runs the same command on a native runner on every pull request from now on. Nothing in spec 0001 needs to change for that.
+5. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
+6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
+7. [Scope 011](../../scope/011-release-qualification-harness.md) turns the inventory into a release inventory with notices, and decides whether the inventory becomes a required check.
+8. After the first scheduled run, confirm that the daily run happened (remote step 7).
 
 ## Rationale
 
