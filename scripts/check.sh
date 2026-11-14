@@ -161,7 +161,7 @@ check_fuzz() {
   fi
   seconds=${POOL_FUZZ_SECONDS:-60}
   mkdir -p crates/pool-config/fuzz/corpus/validate
-  run env CARGO_TARGET_DIR="$ROOT/target/fuzz" sh -c 'cd crates/pool-config && exec cargo "+$1" fuzz run validate fuzz/corpus/validate tests/fixtures -- "-max_total_time=$2" -max_len=4096' fuzz "$FUZZ_TOOLCHAIN" "$seconds" || return 1
+  run env CARGO_TARGET_DIR="$ROOT/target/fuzz" sh -c 'CDPATH= cd -- crates/pool-config && exec cargo "+$1" fuzz run validate fuzz/corpus/validate tests/fixtures -- "-max_total_time=$2" -max_len=4096' fuzz "$FUZZ_TOOLCHAIN" "$seconds" || return 1
   # cargo-fuzz creates the directory even when nothing crashed, so only a file in it is a finding.
   if [ -d crates/pool-config/fuzz/artifacts/validate ] && [ -n "$(find crates/pool-config/fuzz/artifacts/validate -type f | head -n 1)" ]; then
     echo "fuzz: a crash file exists under crates/pool-config/fuzz/artifacts/validate/; report it with its bytes" >&2

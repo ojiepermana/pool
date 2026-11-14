@@ -609,6 +609,17 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn links_inside_double_backtick_spans_are_not_links() {
+        assert!(find_links("see ``[label](docs/nope.md)`` here").is_empty());
+        assert!(find_links("``a ` [x](y.md) b``").is_empty());
+        let targets: Vec<String> = find_links("odd `` run [x](docs/nope.md)")
+            .into_iter()
+            .map(|l| l.target)
+            .collect();
+        assert_eq!(targets, vec!["docs/nope.md"]);
+    }
+
+    #[test]
     fn d1_missing_file() {
         let mut tree = good();
         append(&mut tree, "README.md", "[broken](docs/missing-file.md)");

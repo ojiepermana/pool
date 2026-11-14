@@ -166,24 +166,46 @@ pub fn fence_closes(line: &str, mark: char, len: usize) -> bool {
     rest.chars().count() >= len && rest.chars().all(|c| c == mark)
 }
 
-/// Removes text between backticks on one line. An unmatched backtick and the text after it are kept.
+/// Removes code spans on one line: a run of backticks opens a span and the next run of the same length closes it, and both runs go with the text between them. A run with no partner of the same length stays as plain text.
 pub fn strip_code_spans(line: &str) -> String {
-    let parts: Vec<&str> = line.split('`').collect();
+    let runs = backtick_runs(line);
     let mut out = String::new();
-    let closed = if parts.len() % 2 == 1 {
-        parts.len()
-    } else {
-        parts.len() - 1
-    };
-    for (index, part) in parts.iter().enumerate() {
-        if index >= closed {
-            out.push('`');
-            out.push_str(part);
-        } else if index % 2 == 0 {
-            out.push_str(part);
+    let mut copied = 0;
+    let mut next = 0;
+    while next < runs.len() {
+        let (start, len) = runs[next];
+        match runs[next + 1..].iter().position(|&(_, other)| other == len) {
+            Some(offset) => {
+                let close = next + 1 + offset;
+                let (close_start, close_len) = runs[close];
+                out.push_str(&line[copied..start]);
+                copied = close_start + close_len;
+                next = close + 1;
+            }
+            None => next += 1,
         }
     }
+    out.push_str(&line[copied..]);
     out
+}
+
+/// Returns the start and length in bytes of every run of backticks on a line.
+fn backtick_runs(line: &str) -> Vec<(usize, usize)> {
+    let bytes = line.as_bytes();
+    let mut runs = Vec::new();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'`' {
+            let start = index;
+            while index < bytes.len() && bytes[index] == b'`' {
+                index += 1;
+            }
+            runs.push((start, index - start));
+        } else {
+            index += 1;
+        }
+    }
+    runs
 }
 
 #[cfg(test)]
@@ -216,6 +238,22 @@ mod tests {
     #[test]
     fn code_spans_are_removed() {
         assert_eq!(strip_code_spans("a `b` c `d"), "a  c `d");
+        assert_eq!(strip_code_spans("x `a` y `b` z"), "x  y  z");
+        assert_eq!(strip_code_spans("plain"), "plain");
+    }
+
+    #[test]
+    fn double_backtick_spans_are_removed_whole() {
+        assert_eq!(strip_code_spans("a ``[l](docs/nope.md)`` b"), "a  b");
+        assert_eq!(strip_code_spans("``a ` b`` c"), " c");
+        assert_eq!(strip_code_spans("`a `` b` c"), " c");
+    }
+
+    #[test]
+    fn unpaired_runs_stay_plain_text() {
+        assert_eq!(strip_code_spans("a `` b ` c"), "a `` b ` c");
+        assert_eq!(strip_code_spans("x ``` [l](t.md)"), "x ``` [l](t.md)");
+        assert_eq!(strip_code_spans("`a` ``b"), " ``b");
     }
 
     #[test]
