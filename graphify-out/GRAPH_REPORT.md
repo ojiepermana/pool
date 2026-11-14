@@ -1,13 +1,13 @@
 # Graph Report - pool  (2026-11-14)
 
 ## Corpus Check
-- 8 files · ~89,676 words
+- 91 files · ~91,218 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1268 nodes · 3723 edges · 64 communities
-- Extraction: 81% EXTRACTED · 19% INFERRED · 0% AMBIGUOUS · INFERRED: 722 edges (avg confidence: 0.85)
-- Token cost: 98,519 input · 0 output
+- 1291 nodes · 3832 edges · 51 communities
+- Extraction: 81% EXTRACTED · 19% INFERRED · 0% AMBIGUOUS · INFERRED: 745 edges (avg confidence: 0.85)
+- Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
 - check-config Integration Tests
@@ -25,7 +25,7 @@
 - Architecture Spec and Repository Layout
 - Leases, Cancellation and Login Routing
 - Workspace Layout, Bounded Read and FIFO Limit
-- Spec 0001 Acceptance Criteria
+- Linux Target, VM Architecture and Follow-up 11
 - Scope 001 Coordination Log and Closing
 - IoFinding and Permission Denied Path
 - Glossary and Routing Profiles
@@ -35,75 +35,63 @@
 - Session Model, Pooling Modes and Data Path
 - Operation Journal Records and Generations
 - Feature Families and Planned Scopes
-- Reserved Capabilities and Secret Safety
+- Invariants, Secrets and Administration Rules
 - Rust Technology Evaluation
 - SQL Routing and Replica Profiles
 - Failover Records and Fencing Authority
-- Finding Codes and One Finding Rule
-- Delegated Spec Decisions and Linux Target
-- Exit Status and Output Convention
+- Report Writers, Human and JSON
+- Scope 002 Coordination Log and Sub Sessions
+- main.rs Entry, Bounded Read and Stdout
 - Administration, Cluster and Health PRDs
 - Protocol Contract and Driver Compatibility: Driver compatibility matrix
 - Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling
 - pool-config Validation Library
-- Hand Written Deserialize and Known Fields
-- Project Guidance, Changelog and Status Lifecycle
-- Manual Failover, Fencing and Write Barrier
-- Verify Record First Run and Toolchain
+- Agent Workflow and Graph Refresh
+- Linux Build Run, Manual Steps F1-1 and F1-2
+- Spec 0001 Status and ADR 0001
+- Workspace Conventions and dev-f2-audit
 - Scope 001 Review Record and Verdicts
 - Offline Bounds, Parser Depth and Known Limits
 - Load Balancing and Replica Selection
 - Administration, Cluster and Health PRDs: Administration PRD
-- Protocol Contract and Driver Compatibility: PostgreSQL protocol analysis
-- Manual Failover, Fencing and Write Barrier: Manual failover PRD
+- Safe Rust, Bounded Resources and Dependencies
 - Leases, Cancellation and Login Routing: Independent review resolutions (seven approved f
 - Virtual Cancellation Model
-- pool-config Validation Library: KnownField
-- Virtual Cancellation and Architecture Overview
-- Feature Families and Planned Scopes: V1.5 Milestone
-- Leases, Cancellation and Login Routing: Planning assumptions and decisions
-- Administration, Cluster and Health PRDs: Cluster management PRD
-- Load Balancing and Replica Selection: Load balancing PRD
 - Feature Families and Planned Scopes: High availability PRD
-- Documentation Index, Handoffs and Readiness
-- Query Cache PRD
-- Proposed Stack and Deferred Features
 - SQL Routing and Replica Profiles: Protocol engine
-- Rust Technology Evaluation: Log events and redaction (shared log convention)
 - Offline Bounds, Parser Depth and Known Limits: Rules made clearer in the review, each checked o
 - Column Counting Rule and Tests
-- Load Balancing and Replica Selection: Balancing features F-048 to F-053
-- Rust Technology Evaluation: Hybrid parser policy
 
 ## God Nodes (most connected - your core abstractions)
 1. `Spec 0001. POOL initial architecture` - 60 edges
 2. `Glossary` - 59 edges
-3. `Log koordinasi: 001-stack-and-workspace (coordination log)` - 55 edges
-4. `AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` - 46 edges
-5. `Testing strategy` - 45 edges
-6. `Feature inventory and parity matrix` - 45 edges
+3. `Log koordinasi: 001-stack-and-workspace (coordination log)` - 59 edges
+4. `AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` - 51 edges
+5. `Feature inventory and parity matrix` - 45 edges
+6. `Testing strategy` - 45 edges
 7. `Scope: POOL, order and status index` - 44 edges
-8. `1. Stack and workspace (in-progress)` - 39 edges
-9. `AC-12 Offline and bounded (no socket, thread or runtime; sixteen locked packages; bounded read)` - 39 edges
-10. `assert_run()` - 38 edges
+8. `1. Stack and workspace (done)` - 43 edges
+9. `AC-2 Linux build (container check ends with 'linux build check passed')` - 43 edges
+10. `AC-12 Offline and bounded (no socket, thread or runtime; sixteen locked packages; bounded read)` - 39 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Where a Change Belongs (documentation ownership table)` --semantically_similar_to--> `Documentation ownership model (scope, specs, PRDs, ADRs, research)`  [INFERRED] [semantically similar]
-  docs/index.md → AGENTS.md
+- `Highest initial risk priorities (identity/state, unsafe routing, cancel races, uncertain outcomes, fencing)` --semantically_similar_to--> `POOL Safety Invariants`  [INFERRED] [semantically similar]
+  docs/plan/risk-register.md → AGENTS.md
+- `Reading: JSON field order is checked on the raw line (agreed, also done byte for byte)` --references--> `ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order()`  [INFERRED]
+  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
 - `io.permission_denied test under cfg(unix): file of mode 000; returns as passed when the process can still open it (root in the container), else checks exit 3 and exact output in both formats` --references--> `ac11_a_file_that_cannot_be_opened_is_permission_denied()`  [INFERRED]
   docs/specs/0001-initial-architecture/index.md → apps/pool/tests/check_config.rs
 - `Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS` --references--> `ac11_a_path_that_is_not_utf8_is_used_as_given()`  [EXTRACTED]
   docs/reviews/2026-11-14-scope-001-stack-and-workspace.md → apps/pool/tests/check_config.rs
 - `--format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument` --references--> `ac11_arguments_that_are_not_utf8_anywhere_else_are_unexpected()`  [INFERRED]
   docs/specs/0001-initial-architecture/index.md → apps/pool/tests/check_config.rs
-- `Review note: --config=<bytes that are not UTF-8> is unexpected argument (as written in the spec, may surprise an operator)` --references--> `ac11_arguments_that_are_not_utf8_anywhere_else_are_unexpected()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
 
 ## Import Cycles
 - None detected.
 
 ## Hyperedges (group relationships)
 - **CHANGELOG Unreleased Added entries for the scope 001 workspace slice (workspace, check-config, config contract, finding codes, JSON, exit status, help and version, fixtures and tests, docs, conventions)** — changelog_unreleased_added, changelog_added_workspace, changelog_added_check_config, changelog_added_config_contract, changelog_added_finding_codes, changelog_added_json_report, changelog_added_exit_status, changelog_added_help_version, changelog_added_fixtures_tests, changelog_added_docs, changelog_added_shared_conventions [EXTRACTED 1.00]
+- **After closing: Docker on, Linux build run by chk-f1-verify-2 and the lead, feature 1 done and spec Accepted, scope 002 shares the checkout** — docs_scope_coordination_001_stack_and_workspace_log_decision_docker_on_linux_build_runs, docs_scope_coordination_001_stack_and_workspace_log_decision_feature_1_done_spec_accepted, docs_scope_coordination_001_stack_and_workspace_log_decision_scope_002_shares_checkout, docs_scope_coordination_001_stack_and_workspace_log_chk_f1_verify_2, docs_scope_coordination_001_stack_and_workspace_log_history_after_closing, docs_scope_coordination_001_stack_and_workspace_log_closing_after_closing, docs_scope_coordination_001_stack_and_workspace_log_closing_remaining_blockers [EXTRACTED 1.00]
 - **Scope 001 Document it and /sync (CHANGELOG.md, real commands in CLAUDE.md, CONTRIBUTING.md and README.md per Follow-up 8, AGENTS.md, strategy and scope index corrections)** — docs_scope_coordination_001_stack_and_workspace_log_decision_document_it_by_lead, docs_scope_coordination_001_stack_and_workspace_log_decision_sync_branch, changelog, docs_specs_0001_initial_architecture_index_follow_up_document_real_commands, claude_planned_commands, contributing_checks, readme_build_and_check, agents_workspace_two_packages_no_ci, docs_testing_strategy_proposed_cargo_checks, docs_scope_index_feature_1_state [EXTRACTED 1.00]
 - **Linux target confirmation for 0001 AC-2 (delegated x86_64 choice, blocker, user value F1-N1, F1-2 build)** — docs_scope_coordination_001_stack_and_workspace_log_delegated_linux_target, docs_scope_coordination_001_stack_and_workspace_log_blocker_vm_architecture_unconfirmed, docs_scope_coordination_001_stack_and_workspace_manual_f1_n1_vm_architecture, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build, docs_specs_0001_initial_architecture_index_ac_2, docs_specs_0001_initial_architecture_index_x86_64_linux_target [EXTRACTED 1.00]
 - **Scope 001 review findings (first pass Changes requested: Major array accepted, six Minors, Nits; closed in the fix round)** — docs_reviews_2026_11_14_scope_001_stack_and_workspace_verdict_first, docs_reviews_2026_11_14_scope_001_stack_and_workspace_major_array_accepted, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_1_config_version_constant, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_2_parser_depth_untested, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_3_permission_denied_untested, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_4_column_test_weak, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_5_no_automated_guard, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_6_verify_record_stale, docs_reviews_2026_11_14_scope_001_stack_and_workspace_nits, docs_reviews_2026_11_14_scope_001_stack_and_workspace_finding_status [EXTRACTED 1.00]
@@ -123,6 +111,7 @@
 - **Spec 0001 second run still BLOCKED on the Linux build (verdict, AC-2, AC-11 /dev/full, Linux only tests, F1-2)** — docs_specs_0001_initial_architecture_verify_second_run_verdict, docs_specs_0001_initial_architecture_verify_second_run_linux_build_blocked, docs_specs_0001_initial_architecture_index_ac_2, docs_specs_0001_initial_architecture_index_ac_11, docs_specs_0001_initial_architecture_verify_second_run_linux_only_tests, apps_pool_tests_check_config_a_failed_write_exits_3_without_stderr, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build, docs_scope_coordination_001_stack_and_workspace_log_blocker_linux_build_not_run, docs_scope_coordination_001_stack_and_workspace_log_decision_feature_1_not_done_before_linux_build [EXTRACTED 1.00]
 - **Spec 0001 full verify second run on the merged tree (revision, 134 tests, commands, clarified rule checks, AC coverage)** — docs_specs_0001_initial_architecture_verify_second_run, docs_specs_0001_initial_architecture_verify_second_run_revision, docs_specs_0001_initial_architecture_verify_second_run_test_counts, docs_specs_0001_initial_architecture_verify_second_run_commands, docs_specs_0001_initial_architecture_verify_second_run_clarified_rules, docs_specs_0001_initial_architecture_verify_second_run_ac_coverage, docs_specs_0001_initial_architecture_verify_second_run_ac_pass, docs_specs_0001_initial_architecture_verify_second_run_rule_array_reserved_table, docs_specs_0001_initial_architecture_verify_second_run_rule_long_canary_array, docs_specs_0001_initial_architecture_verify_second_run_rule_schema_step_ends_run [EXTRACTED 1.00]
 - **Spec 0001 workstation evidence (commands, tests, fixtures, locked set)** — docs_specs_0001_initial_architecture_verify_workstation_evidence, docs_specs_0001_initial_architecture_verify_workstation_commands, docs_specs_0001_initial_architecture_verify_test_results, docs_specs_0001_initial_architecture_verify_fixture_transcripts, docs_specs_0001_initial_architecture_verify_locked_dependencies, docs_specs_0001_initial_architecture_verify_toolchain_selection, docs_specs_0001_initial_architecture_verify_fixtures, docs_specs_0001_initial_architecture_verify_ac_pass_workstation [EXTRACTED 1.00]
+- **Linux build evidence closes feature 1: container build PASS proves AC-2 and the /dev/full clause of AC-11, manual F1-1 and F1-2 PASS, feature 1 done, spec 0001 Accepted** — docs_specs_0001_initial_architecture_verify_linux_evidence, docs_specs_0001_initial_architecture_verify_linux_evidence_verdict, docs_specs_0001_initial_architecture_index_ac_2, docs_specs_0001_initial_architecture_index_ac_11, docs_scope_coordination_001_stack_and_workspace_manual_f1_1_start_docker_desktop, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build, docs_scope_001_stack_and_workspace, docs_specs_0001_initial_architecture_index_status_in_progress [INFERRED 0.85]
 - **Graph refresh ownership during coordination (lead updates graphify-out on main, deviating from AGENTS.md step 6)** — docs_scope_coordination_001_stack_and_workspace_brief_umum_graph_update_ownership, docs_scope_coordination_001_stack_and_workspace_brief_umum_forbidden_paths, agents, docs_scope_coordination_001_stack_and_workspace_brief_umum_lead_session, docs_scope_coordination_001_stack_and_workspace_log_decision_graph_ownership [INFERRED 0.85]
 - **Linux build evidence blocked on the user starting the Docker daemon** — docs_scope_coordination_001_stack_and_workspace_brief_umum_manual_steps_policy, docs_scope_coordination_001_stack_and_workspace_brief_umum_linux_build_evidence, docs_scope_coordination_001_stack_and_workspace_brief_umum_local_toolchain, docs_scope_coordination_001_stack_and_workspace_manual_f1_1_start_docker_desktop, docs_scope_coordination_001_stack_and_workspace_log_blocker_docker_daemon_off, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build [INFERRED 0.85]
 - **Session pinned lease model** — docs_architecture_connection_pooling_session_pooling, docs_architecture_sql_routing_login_time_backend_selection, docs_architecture_data_plane_initial_admission, docs_architecture_data_plane_operation_admission, docs_architecture_sql_routing_no_primary_fallback, docs_architecture_data_plane_no_retry_after_dispatch, docs_specs_0001_initial_architecture_index_virtual_cancellation_credentials [INFERRED 0.85]
@@ -145,282 +134,230 @@
 - **Write Authority Verification (approved writer plus fresh matching observation)** — docs_glossary_approved_writer, docs_glossary_eligible_primary, docs_glossary_fresh, docs_glossary_observation, docs_glossary_topology_epoch, docs_feature_matrix_f_065, docs_plan_risk_register_r_19 [INFERRED 0.85]
 - **Automatic failover and result caching disabled by default** — agents_automatic_failover_and_result_caching_disabled, docs_feature_matrix_f_088_optional_memory_cache, docs_security_security_requirements_sec_10_disable_automatic_promotion_and_caching, docs_feature_matrix_initial_exclusions [INFERRED 0.95]
 
-## Communities (64 total, 0 thin omitted)
+## Communities (51 total, 0 thin omitted)
 
 ### Community 0 - "check-config Integration Tests"
 Cohesion: 0.07
-Nodes (87): a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read(), ac11_a_file_that_cannot_be_opened_is_permission_denied() (+79 more)
+Nodes (86): a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read(), ac11_a_file_that_cannot_be_opened_is_permission_denied() (+78 more)
 
 ### Community 1 - "pool-config Validation Tests"
 Cohesion: 0.06
-Nodes (57): ac4_sec10_automatic_promotion_empty_table_validates_as_disabled_in_every_spelling(), ac4_sec10_automatic_promotion_enabled_false_validates_in_every_spelling(), ac4_sec10_automatic_promotion_left_out_validates_as_disabled(), ac4_sec10_result_cache_empty_table_validates_as_disabled_in_every_spelling(), ac4_sec10_result_cache_enabled_false_validates_in_every_spelling(), ac4_sec10_result_cache_left_out_validates_as_disabled(), ac4_validated_config_debug_holds_only_states(), ac5_ac6_sec10_one_capability_off_does_not_hide_the_other_turned_on() (+49 more)
+Nodes (56): ac4_sec10_automatic_promotion_empty_table_validates_as_disabled_in_every_spelling(), ac4_sec10_automatic_promotion_enabled_false_validates_in_every_spelling(), ac4_sec10_automatic_promotion_left_out_validates_as_disabled(), ac4_sec10_result_cache_empty_table_validates_as_disabled_in_every_spelling(), ac4_sec10_result_cache_enabled_false_validates_in_every_spelling(), ac4_sec10_result_cache_left_out_validates_as_disabled(), ac4_validated_config_debug_holds_only_states(), ac5_ac6_sec10_one_capability_off_does_not_hide_the_other_turned_on() (+48 more)
 
 ### Community 2 - "Scope 002 Brief Rules"
-Cohesion: 0.05
-Nodes (55): Agent workflow (read scope, inspect reality, define slice, apply standards, validate, update graph), Context files (nested AGENTS.md for apps/pool and crates/pool-config), GA workflow depth (behavior verification, tests, fresh review, documentation), Knowledge graph refresh before commit (graphify-out kept current), Credentials, cancellation secrets and sensitive SQL excluded from default telemetry, Safe first party Rust and bounded resources, Tracer Bullet Build Approach, Workspace lint unsafe_code = forbid applied to every member (+47 more)
+Cohesion: 0.24
+Nodes (13): Context files (nested AGENTS.md for apps/pool and crates/pool-config), apps/pool agent guide, Leaking fake canary CANARY-9f2c7b1e into output is a security regression (SEC-11), pool check-config command (reads one file, calls pool_config::validate, prints a report, exits; no socket, thread or async runtime), Exit status 0/1/2/3 contract; exit 101 (panic) is always a defect; failed write becomes exit 3, Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only), Claude Code pointer to apps/pool/AGENTS.md, crates/pool-config agent guide (+5 more)
 
 ### Community 3 - "Pgpool Baseline, Competitors and Feasibility"
 Cohesion: 0.06
 Nodes (45): Configuration features F-115 to F-119, F-117 Pgpool Parameter Coverage (207 sample spellings), F-117 Pgpool parameter coverage (207 sample spellings mapped), Competitor analysis, Compare only equivalent pool modes at pinned releases, HAProxy (general TCP/HTTP proxy, GPL), Odyssey (C multithreaded pooler, BSD 3 Clause), PgBouncer (C event driven pooler, ISC) (+37 more)
 
 ### Community 4 - "Linux Build Evidence, AC-2 and VM Architecture"
-Cohesion: 0.14
-Nodes (41): a_failed_write_exits_3_without_stderr(), ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr(), Linux container build is the spec 0001 Linux build command; needs a running Docker daemon; a macOS build is not Linux evidence; latest result in verify.md, Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Open: the Linux build (0001 AC-2) and the two Linux only tests have not run, so feature 1 stays in progress until they pass, Linux build evidence (a macOS build is not proof of the Linux build), Local toolchain (Rust stable 1.99.1, 1.100.0 available via rustup, host aarch64-apple-darwin, Docker 29.9.2 with daemon off), Manual steps policy (Docker Desktop, GitHub settings, PR, push, system tools, real PostgreSQL or VM are user only; blocked steps recorded as BLOCKED owner user) (+33 more)
+Cohesion: 0.13
+Nodes (42): a_failed_write_exits_3_without_stderr(), ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr(), Added: spec 0001 build notes, AC-1 to AC-13, five step build plan, verification record and independent review; Linux container build (AC-2) passed for x86_64-unknown-linux-gnu under emulation, image digest and binary checksum in the verification record, Linux container build is the spec 0001 Linux build command; needs a running Docker daemon; a macOS build is not Linux evidence; latest result in verify.md, Feature 1 is done; its Linux build evidence is in the verification record; next queued feature is 2 (standards and tooling), then the first walking slice, Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Linux build (0001 AC-2) and the two Linux only tests passed at 18e9228; record under Linux evidence: container build in verify.md; evidence for x86_64 under emulation, Decision: feature 1 marked done and spec 0001 Accepted (all thirteen AC have a PASS record, Done when builds on Linux met for x86_64 under emulation); lead changed scope 001, scope index, spec Status, CLAUDE.md, CHANGELOG.md and the manual file; older verify.md boxes kept as history; Follow-up 7 (Start Docker Desktop) now stale, left for the next architect update (+34 more)
 
 ### Community 5 - "Protocol Contract and Driver Compatibility"
-Cohesion: 0.09
-Nodes (36): Separate Frontend and Backend Identity, Rust and Runtime Standards, F-069 Old primary fencing (external verified exclusion), F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), F-105 Administrative roles (viewer, operator, promoter, configuration), F-106 Audit and log redaction, F-107 Rate and resource limits (admission, frame and auth CPU budgets), F-108 Secure reload (validate entire generation before publication) (+28 more)
+Cohesion: 0.08
+Nodes (41): Invariant: promotion requires a reviewed operation and independently verified fencing, Dependency and Configuration Change Rules, Rust and Runtime Standards, Security and Review Requirements, F-069 Old primary fencing (external verified exclusion), F-070 Split brain prevention (mutation authority distinct from fencing), F-107 Rate and resource limits (admission, frame and auth CPU budgets), Configuration Generation (+33 more)
 
 ### Community 6 - "Slices, Milestones and Readiness Gates"
-Cohesion: 0.11
-Nodes (35): Apache 2.0 project license, Working with the Docs, Contributing to POOL, Project has its first workspace slice and is otherwise in planning; start from the docs index, scope and engineering standards, Engineering standards, Git and Release Standards, Starting development (implementation order), Handoff for Later Slices (+27 more)
+Cohesion: 0.08
+Nodes (45): Apache 2.0 project license, Documentation Ownership Roles (scope, specs, PRDs, ADRs), Documentation ownership model (scope, specs, PRDs, ADRs, research), Changelog (CHANGELOG.md; Keep a Changelog 1.1.0 format, Semantic Versioning 2.0.0), Changelog format: Keep a Changelog 1.1.0 and Semantic Versioning 2.0.0, Claude Code guidance (CLAUDE.md), Cargo checks run by hand today (cargo fmt --all --check, clippy --locked -D warnings, test --locked, single test, check-config on valid-minimal.toml); CI arrives with scope 002, Working with the Docs (+37 more)
 
 ### Community 7 - "Standards, Tooling and Release Qualification"
-Cohesion: 0.09
-Nodes (35): Invariant: promotion requires a reviewed operation and independently verified fencing, Feature 1 is built and stays in progress until its Linux build evidence exists; next queued feature is 2 (standards and tooling), then the first walking slice, Tests and Evidence Standard, F-067 Manual plan and promotion (operator plan plus verified fence), F-070 Split brain prevention (mutation authority distinct from fencing), F-075 Automatic Failover (disabled in V1), Failover features F-067 to F-075, V1 Release Gate (+27 more)
+Cohesion: 0.13
+Nodes (26): Tests and Evidence Standard, Slice, Verification Record, Walking Slice (glossary term), Milestones, V1 Release Gate, R-25 Reviewer or lab unavailable at a gate, criterion 0.8.2 (microbenchmarks) (+18 more)
 
 ### Community 8 - "pool CLI Entry and Argument Parsing"
-Cohesion: 0.12
-Nodes (28): Format, Invocation, parse(), parse_check_config(), Option, run(), take_value(), check_config() (+20 more)
+Cohesion: 0.23
+Nodes (13): Format, Invocation, parse(), parse_check_config(), Option, run(), take_value(), Test counts on the merged tree (milestone 5 Test it): 134 passed on macOS (pool unit 3, check_config 66, pool-config unit 3, validate 60, doc tests 2); 31 developer, 96 tester, 7 review fixes (+5 more)
 
 ### Community 9 - "Safety Invariants and Session Risks"
-Cohesion: 0.08
-Nodes (32): Administration requires authentication and authorization, Invariant: automatic failover and result caching stay disabled until approved and proven, Invariant: close uncertain pooled state, Invariant: fail closed on unknown role or unsafe routing, POOL Safety Invariants, Invariant: never replay uncertain dispatched work, Invariant: preserve transaction and session ownership, Invariant: keep writes on the verified primary (+24 more)
+Cohesion: 0.10
+Nodes (26): Session Model (pinned backend lease), Data and Protocol Safety Standards, No Replay After Dispatch Rule, F-011 Prepared statements (session ownership, no cross backend replay), F-024 Transaction Mode (refused, session pooling only), F-030 Validation and reset (close uncertain sessions), F-033 SQL AST classification (PostgreSQL 18 grammar adapter), F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica) (+18 more)
 
 ### Community 10 - "Scaffold Step and dev-f1-build Gate"
-Cohesion: 0.10
-Nodes (32): Added: spec 0001 build notes, AC-1 to AC-13, five step build plan, verification record and independent review; Linux container build (AC-2) recorded as blocked, not run yet, Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests, What is left after the second review: Minor 6 verify record on the merged tree; AC-12 and AC-13 guards wait for scope 002 (Follow-up 11), Box ticked: Verify it (/check verify stack and workspace), Checked in wave 1: F1 Verify it (chk-f1-verify commit 7167f8f, verify.md Full verify: 11 AC PASS, AC-2 and Linux AC-11 BLOCKED, owner user), Sub session chk-f1-verify continued (reverify on the merged tree after the review fixes, closes Minor 6; report blocked, commit cf928e7: revision b6ce165, 11 AC PASS, 134 tests, 398 probe checks; AC-2 and /dev/full clause BLOCKED), Decision: after the fix merge chk-f1-verify reverifies into verify.md, chk-f1-review confirms the fix diff; stale CLAUDE.md and AGENTS.md tidied by /sync at close; spec 0001 Follow-up 11 copied to scope 002 at close, Decision: developer AC readings passed to chk-f1-verify (--help=x and -h=x as help, JSON field order on the raw line, /dev/full test Linux only, milestone number 3) (+24 more)
+Cohesion: 0.17
+Nodes (19): Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests, Box ticked: Verify it (/check verify stack and workspace), Checked in wave 1: F1 Verify it (chk-f1-verify commit 7167f8f, verify.md Full verify: 11 AC PASS, AC-2 and Linux AC-11 BLOCKED, owner user), Sub session chk-f1-verify (checker verify: Verify it, closes Scaffold together; report blocked, 11 AC PASS, AC-2 and AC-11 /dev/full BLOCKED; merged together with tst-f1-test), Sub session chk-f1-verify continued (reverify on the merged tree after the review fixes, closes Minor 6; report blocked, commit cf928e7: revision b6ce165, 11 AC PASS, 134 tests, 398 probe checks; AC-2 and /dev/full clause BLOCKED), Decision: fix round merge 4ebcf93, review log b6ce165; re-review on 02bdcbe..4ebcf93 closes the Major (37 probe files), Minor 1 to 4, Minor 5 in part (Follow-up 11), Minor 6 by chk-f1-verify, 10 of 11 Nits; five optional new Nits routed, Row 10 evidence: from the second verification pass, checked on a debug pool at b6ce165 (macOS, Rust 1.100.0): zzz/aaa reports line 3, reversed reports line 2, unknown key in [result_cache] with wrong type in [automatic_promotion] reports the [automatic_promotion] line, two syntax errors on lines 2 and 3 report line 2, Full verify: /check verify stack and workspace (checker chk-f1-verify, 2026-11-14, rerun from its own checkout against the real pool binary) (+11 more)
 
 ### Community 11 - "Feature Inventory and Parity Matrix"
-Cohesion: 0.10
-Nodes (30): Feature inventory and parity matrix, Cache features F-088 to F-093, Inventory Coverage Limits, F-024 Transaction Mode (refused, session pooling only), F-056 Primary Standby Role Observation, F-065 Primary identification (durably approved writer with fresh evidence), F-088 Optional Memory Cache (disabled in V1), F-088 Optional memory cache (result caching disabled in V1) (+22 more)
+Cohesion: 0.09
+Nodes (33): Feature inventory and parity matrix, Cache features F-088 to F-093, Cluster Features (F-061 to F-066), Inventory Coverage Limits, F-056 Primary Standby Role Observation, F-065 Primary Identification, F-065 Primary identification (durably approved writer with fresh evidence), F-066 Topology reconciliation (durable writer/epoch/quarantine) (+25 more)
 
 ### Community 12 - "Architecture Spec and Repository Layout"
-Cohesion: 0.18
-Nodes (28): Claude Code guidance (CLAUDE.md), Data Plane vs Control Plane Separation, Planned Architecture, Cargo checks run by hand today (cargo fmt --all --check, clippy --locked -D warnings, test --locked, single test, check-config on valid-minimal.toml); CI arrives with scope 002, Checks to run before proposing a change (Rust 1.100.0 pinned; cargo fmt --all --check, clippy --locked -D warnings, test --locked), ADR 0001. Initial architecture, Topology Snapshot, pool check-config Command (+20 more)
+Cohesion: 0.42
+Nodes (13): Data Plane vs Control Plane Separation, Planned Architecture, pool check-config Command, Repository proposal, apps/pool daemon, apps/pool-cli admin CLI, Core and Control Independence, Merge or Defer Candidate Crates (no common crate) (+5 more)
 
 ### Community 13 - "Leases, Cancellation and Login Routing"
-Cohesion: 0.13
-Nodes (28): Shared Conventions Table, Cluster Features (F-061 to F-066), F-065 Primary Identification, F-066 Topology reconciliation (durable writer/epoch/quarantine), F-071 Uncertain promotion result (durable intent and reconciliation), Protocol Features (F-001 to F-022), Critical Path Handoffs, Core MVP (+20 more)
+Cohesion: 0.10
+Nodes (33): Tracer Bullet Build Approach, Added: three shared conventions in the engineering standards (configuration keys, exit status with command output, log event fields with redaction), Configuration keys convention (config_version, snake_case, unit suffixes, _file secrets, reserved tables), Log event fields and redaction convention (ts, level, event; redaction by type), Shared Conventions Table, F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), F-105 Administrative roles (viewer, operator, promoter, configuration), F-106 Audit and log redaction (+25 more)
 
 ### Community 14 - "Workspace Layout, Bounded Read and FIFO Limit"
-Cohesion: 0.13
-Nodes (27): ac12_dev_null_is_an_empty_file_that_misses_config_version(), Added: pool check-config --config <PATH> [--format human|json], offline check before start; opens no socket, starts no thread, reads at most 1 MiB plus one byte, Added: Cargo workspace with the pool daemon binary (apps/pool) and the pool-config library (crates/pool-config); Rust 1.100.0 pinned by rust-toolchain.toml; unsafe code forbidden in both, Current state: planning package plus the scope 001 workspace (apps/pool with the pool binary, crates/pool-config); only command is the offline pool check-config; no listener, proxy path or CI; Rust 1.100.0 pinned by rust-toolchain.toml, The eight items asked of the review (conformance, SEC-10 and SEC-11, no secret in output or Debug, read limit and offline, unsafe_code and package set, crate boundaries, test quality, rubric), First review run at 02bdcbe: tests 3 + 64 + 3 + 57, fmt, clippy, release build, metadata, grep, nm -u; second pass with twelve made files, Code in apps/pool/ and crates/pool-config/, AC-12 Offline and bounded (no socket, thread or runtime; sixteen locked packages; bounded read) (+19 more)
+Cohesion: 0.05
+Nodes (128): ac12_dev_null_is_an_empty_file_that_misses_config_version(), Added: pool check-config --config <PATH> [--format human|json], offline check before start; opens no socket, starts no thread, reads at most 1 MiB plus one byte, Added: first configuration contract (config_version = 1 plus reserved result_cache and automatic_promotion tables; absent or enabled = false is valid, asking for either is config.unsupported_capability, SEC-10), Added: exit status convention for POOL commands (0 success, 1 input rejected, 2 usage error, 3 could not finish), Added: fixed finding codes (config.syntax, config.schema, config.missing_key, config.unsupported_version, config.too_large, config.not_utf8) with line and column; output from constant text, key names and positions only, so no secret appears (SEC-11), Added: fifteen configuration fixtures and 134 automated tests covering every first build acceptance criterion on the workstation; 136 on Linux because two need /dev/full, Added: pool --help and pool --version, Added: JSON report (--format json), one line with a fixed field order, for scripts (+120 more)
 
-### Community 15 - "Spec 0001 Acceptance Criteria"
-Cohesion: 0.38
-Nodes (25): Review conformance by criterion table (AC-1 to AC-13: AC-2 not judged, AC-7 deviates for the array row, AC-11 /dev/full clause not judged), AC-1 Workspace and toolchain pin (two members, Rust 1.100.0, Cargo.lock committed), AC-10 JSON contract (one JSON object line on stdout, empty stderr), AC-13 Stop line and hygiene (no later crates, unsafe_code forbid, fmt, clippy, test pass), AC-3 Valid configuration (valid-* fixtures exit 0 with exact report), AC-4 Off is safe (reserved capability absent, empty or false validates as disabled), AC-5 Result cache is refused (config.unsupported_capability at result_cache.enabled), AC-6 Automatic promotion is refused (config.unsupported_capability at automatic_promotion.enabled) (+17 more)
+### Community 15 - "Linux Target, VM Architecture and Follow-up 11"
+Cohesion: 0.18
+Nodes (21): No CI yet (arrives with scope 002); Linux container build per spec 0001; later property, PostgreSQL integration and compatibility/fuzz/chaos tests; do not invent passing results, 2. Standards and tooling (planned), Open blocker: proxy and PostgreSQL VM architecture (x86_64 or ARM) unconfirmed for 0001 AC-2; x86_64 target inferred (F1-N1), Closing: all green branches merged; Document and /sync recorded; closing commit docs(scope): close 001-stack-and-workspace coordination; pushed 2026-11-14; five sub sessions archived and cleaned up; nothing retained; after closing chk-f1-verify-2 merged and feature 1 done; remaining blockers VM architecture (F1-N1), Follow-up 11 waits for /scope, Closing remaining blockers: VM architecture (F1-N1, x86_64 assumed, Linux evidence only for x86_64); Follow-up 11 of spec 0001 waits for /scope; nothing holds the feature 1 status, Decision: after the fix merge chk-f1-verify reverifies into verify.md, chk-f1-review confirms the fix diff; stale CLAUDE.md and AGENTS.md tidied by /sync at close; spec 0001 Follow-up 11 copied to scope 002 at close, Decision: spec 0001 Follow-up 11 (CI checks for AC-12 and AC-13) not yet copied into scope 002; adding sub tasks belongs to /scope and waits for user approval, Delegated decision (berat, 0001 AC-2): Linux target x86_64-unknown-linux-gnu over aarch64, inferred from Proxmox VE; awaiting user VM architecture (+13 more)
 
 ### Community 16 - "Scope 001 Coordination Log and Closing"
-Cohesion: 0.16
-Nodes (24): POOL agent guide (AGENTS.md), User asked for scope 001 on 2026-11-14 and nothing beyond it; further implementation begins only when explicitly requested, First review scope: 30 files in range a82cf67..02bdcbe on main (26 code, manifest and fixture files, Cargo.lock, 3 docs), Log koordinasi: 001-stack-and-workspace (coordination log), Sub session arc-f1-update reused (architect update: nine spec 0001 clarifications from the review in index.md and a new rationale.md table, commit 5f1e995, no AC added or changed; merged with dev-f1-build), Resolved former blocker: untracked .graphifyignore and graphify-out/cache/last_query_stamp held the closing push; done at d2fda37 (.graphifyignore committed, last_query_stamp gitignored), Closing: all green branches merged; Document and /sync recorded; closing commit docs(scope): close 001-stack-and-workspace coordination; pushed 2026-11-14; five sub sessions archived and cleaned up; nothing retained; remaining blockers Linux build AC-2 (F1-1, F1-2), VM architecture (F1-N1), Follow-up 11 waits for /scope, Closing cleanup: five sub sessions archived (arc-f1-update, dev-f1-build, chk-f1-verify, tst-f1-test, chk-f1-review); each worktree clean and branch an ancestor of origin/main before git worktree remove and git branch -d; git worktree prune; nothing retained, branch docs/cross-check-before-development untouched (+16 more)
+Cohesion: 0.13
+Nodes (28): POOL agent guide (AGENTS.md), POOL: PostgreSQL 18 proxy, session pooler and cluster operations project in Rust; the repository holds the planning package and the scope 001 workspace slice (apps/pool, crates/pool-config, offline pool check-config), not an implemented proxy, User asked for scope 001 on 2026-11-14 and nothing beyond it; further implementation begins only when explicitly requested, Evidence: verification record, independent review and changelog, Change path for scope 001: no PR, per sub session branch, lead merges to main with --no-ff after green gate, Graph update ownership: sub sessions never touch graphify-out, lead refreshes it in the merge commit, Scope 001 authorization (/coordinate run on 2026-11-14 is the explicit request to build scope 001 only), Log koordinasi: 001-stack-and-workspace (coordination log) (+20 more)
 
 ### Community 17 - "IoFinding and Permission Denied Path"
-Cohesion: 0.15
-Nodes (18): IoFinding, JsonCapabilities, JsonFinding, JsonReport, Outcome, Option, Result, Self (+10 more)
+Cohesion: 0.26
+Nodes (9): IoFinding, Self, Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, io.permission_denied test under cfg(unix): file of mode 000; returns as passed when the process can still open it (root in the container), else checks exit 3 and exact output in both formats, Tests and who owns them, Clarification 5: a self-skipping cfg(unix) mode 000 test for io.permission_denied; runner up keep it untested, io.permission_denied has no test, as the spec says, Rule check: a mode 000 file exits 3 io.permission_denied in both formats; new test ac11_a_file_that_cannot_be_opened_is_permission_denied passed (+1 more)
 
 ### Community 18 - "Glossary and Routing Profiles"
-Cohesion: 0.15
-Nodes (23): Session Model (pinned backend lease), Glossary, Admission, Backend Login, Credential Generation, Detach, Drain, Eligible Replica (+15 more)
+Cohesion: 0.14
+Nodes (27): Balancing features F-048 to F-053, F-053 Lag Filtering and Primary Fallback, F-053 Lag filtering and primary fallback (fallback disabled in V1), Glossary, Approved Writer, Backend Login, Credential Generation, Detach (+19 more)
 
 ### Community 19 - "Scope 001 Coordination Brief and Sub Sessions"
-Cohesion: 0.17
-Nodes (23): Box ticked: Scaffold from the decision (/develop stack and workspace), Box ticked: Test it (/test stack and workspace), Allowed downloads (crates adopted by build notes, pinned Rust toolchain, container images only with running Docker daemon), Session model per role (architect, debugger, checker on fable-5-2; developer, tester on opus-5-5), Spec 0001 build notes (adopted crates, build plan, ID'd criteria, fixture and Linux build commands), Standby first turn of a new session (STATUS: standby until lead sends 'mulai'), Spec 0001 verify.md (acceptance evidence record, UI / manual section), Work order (build notes, scaffold, verify and test in parallel, fresh session review, document by lead) (+15 more)
+Cohesion: 0.15
+Nodes (24): Spec 0001 lifecycle status mirrors scope feature 1: In Progress while the foundation is built and proven, Accepted when the feature is done, 1. Stack and workspace (done), Box ticked: Record the build notes the handoff requires in spec 0001 ([x], via merge bed9fad), Box ticked: Document it (/document stack and workspace), Box ticked: Scaffold from the decision (/develop stack and workspace), Box ticked: Test it (/test stack and workspace), Allowed downloads (crates adopted by build notes, pinned Rust toolchain, container images only with running Docker daemon), Spec 0001 build notes (adopted crates, build plan, ID'd criteria, fixture and Linux build commands) (+16 more)
 
 ### Community 20 - "Scope 001 Coordination Brief, Log and Authorization"
-Cohesion: 0.18
-Nodes (20): Aturan umum brief: 001-stack-and-workspace (general brief rules), Change path for scope 001: no PR, per sub session branch, lead merges to main with --no-ff after green gate, Commit convention (conventional commits per Build plan step, subject 'type(scope): spec 0001 step n', spec status Proposed to In Progress), coordinate skill (.claude/skills/coordinate: roles, decision modes, report template), Disk constraint (29 GiB free, max 2 full Rust builds, CARGO_PROFILE_DEV_DEBUG=0, CARGO_INCREMENTAL=0, delete target/ before done), Final report rule (one report per item via SendMessage, done only when committed, clean tree and merged main; STATUS line first), Always forbidden paths for sub sessions (docs/scope, docs/prd, AGENTS.md, CLAUDE.md, graphify-out, .claude, spec content outside ownership), Role files written for another project (Stackly references do not apply) (+12 more)
+Cohesion: 0.14
+Nodes (26): Aturan umum brief: 001-stack-and-workspace (general brief rules), Commit convention (conventional commits per Build plan step, subject 'type(scope): spec 0001 step n', spec status Proposed to In Progress), coordinate skill (.claude/skills/coordinate: roles, decision modes, report template), Decision mode auto (architect asks lead to accept spec; others interpret ambiguous criteria, needs-decision only when spec text must change), Disk constraint (29 GiB free, max 2 full Rust builds, CARGO_PROFILE_DEV_DEBUG=0, CARGO_INCREMENTAL=0, delete target/ before done), Final report rule (one report per item via SendMessage, done only when committed, clean tree and merged main; STATUS line first), Always forbidden paths for sub sessions (docs/scope, docs/prd, AGENTS.md, CLAUDE.md, graphify-out, .claude, spec content outside ownership), Role files written for another project (Stackly references do not apply) (+18 more)
 
 ### Community 21 - "Review Clarifications and check-config Usage Rules"
-Cohesion: 0.22
-Nodes (18): Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Review strengths: no file text reaches any output (toml error used for its span only), bounded read checked twice, locked writes with exit 3 on closed pipe, byte for byte tests on the real binary, Decision: non-blocking spec gap from tst-f1-test: --format=<bytes not UTF-8> gives unexpected argument but the spec lacks 'separate'; architect to add a sentence, joined with the review round; checker notes config_version() constant and --config=<bytes not UTF-8>, Decision: review Minors (config_version() constant, Location::None untested, io.permission_denied untested, loose column test, no automatic AC-8/AC-12/AC-13 guard, verify.md only at 5f44d88) routed to the developer fix, scope 002 Follow-up and reverify; cheap Nits fixed, Delegated decision (0001 AC-7, AC-11): nine spec clarifications from the review, spec follows the existing code and the reviewer and tester recommendation; runner up change the code (--format=<bytes> as wrong format value); status berlaku, AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full), The check-config command (arguments and usage errors) (+10 more)
+Cohesion: 0.33
+Nodes (12): Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Decision: non-blocking spec gap from tst-f1-test: --format=<bytes not UTF-8> gives unexpected argument but the spec lacks 'separate'; architect to add a sentence, joined with the review round; checker notes config_version() constant and --config=<bytes not UTF-8>, Decision: review Minors (config_version() constant, Location::None untested, io.permission_denied untested, loose column test, no automatic AC-8/AC-12/AC-13 guard, verify.md only at 5f44d88) routed to the developer fix, scope 002 Follow-up and reverify; cheap Nits fixed, --format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument, Value sourcing (where each output value comes from), Clarification 2: --format=<bytes> and --config=<bytes> are unexpected argument; runner up byte level split, For /check review: notes handed to the review (+4 more)
 
 ### Community 22 - "Session Model, Pooling Modes and Data Path"
 Cohesion: 0.15
-Nodes (19): Connection pooling, Backend cleanup and reset (rollback, DISCARD ALL, idle ReadyForQuery), Backend connection lifecycle state machine (Connecting, Idle, Leased, Cleaning, Draining, Closed), Pool key (pool identity), Session pooling (one frontend owns one backend lease), Statement pooling (not planned for V1), Transaction pooling (deferred), Durable approved writer authority (+11 more)
+Nodes (18): Connection pooling, Pool key (pool identity), Pool limits and operations, Session pooling (one frontend owns one backend lease), Statement pooling (not planned for V1), Transaction pooling (deferred), Durable approved writer authority, Initial admission boundary (+10 more)
 
 ### Community 23 - "Operation Journal Records and Generations"
-Cohesion: 0.18
-Nodes (18): Drain, attach and quarantine operations, Control plane, ApprovedTopology record, AuditEvent record, FenceReceipt record, Operation record, Local SQLite operation journal (single writer), Future multi proxy deployment (+10 more)
+Cohesion: 0.27
+Nodes (13): Control plane, ApprovedTopology record, AuditEvent record, FenceReceipt record, Observation record, Operation record, Local SQLite operation journal (single writer), Expected Generation (+5 more)
 
 ### Community 24 - "Feature Families and Planned Scopes"
-Cohesion: 0.16
-Nodes (18): Slice, Verification Record, Walking Slice (glossary term), Tracer Bullet build approach, Walking Slice Milestone, R-24 Walking slice exceeds its estimate, R-25 Reviewer or lab unavailable at a gate, Roadmap (+10 more)
+Cohesion: 0.23
+Nodes (14): Tracer Bullet build approach, Walking Slice Milestone, R-24 Walking slice exceeds its estimate, Roadmap, Delivery slices, Phase 0 Research and architecture, Phase 1 Foundation, Phase 2 Core proxy (+6 more)
 
-### Community 25 - "Reserved Capabilities and Secret Safety"
-Cohesion: 0.24
-Nodes (17): Added: first configuration contract (config_version = 1 plus reserved result_cache and automatic_promotion tables; absent or enabled = false is valid, asking for either is config.unsupported_capability, SEC-10), ac7_a_reserved_capability_written_as_an_array_is_a_schema_finding(), Automatic Promotion (reserved and off), Configuration Generation, Configuration Version (config_version key), Reserved Capability, Result Cache (reserved and off), Major: a reserved capability written as an array (result_cache = [false]) is accepted as valid, because derived RawCapability Deserialize accepts a positional sequence (lib.rs:207) (+9 more)
+### Community 25 - "Invariants, Secrets and Administration Rules"
+Cohesion: 0.18
+Nodes (12): Administration requires authentication and authorization, Invariant: automatic failover and result caching stay disabled until approved and proven, Invariant: fail closed on unknown role or unsafe routing, POOL Safety Invariants, Invariant: never replay uncertain dispatched work, Credentials, cancellation secrets and sensitive SQL excluded from default telemetry, Invariant: preserve transaction and session ownership, Invariant: keep writes on the verified primary (+4 more)
 
 ### Community 26 - "Rust Technology Evaluation"
-Cohesion: 0.21
-Nodes (17): Technology Stack (Tokio, rustls, pg_query, Axum, SQLite journal), Rust technology evaluation, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Dependency adoption gate, axum 0.8.9 (administration endpoints), clap 4.6.7 (CLI argument contract, not adopted in 001), Linux builder image rust:1.100.0-slim-bookworm by index digest, rusqlite 0.42.0 (local operation journal store) (+9 more)
+Cohesion: 0.08
+Nodes (39): Technology Stack (Tokio, rustls, pg_query, Axum, SQLite journal), Rust technology evaluation, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Dependency adoption gate, axum 0.8.9 (administration endpoints), clap 4.6.7 (CLI argument contract, not adopted in 001), Hybrid parser policy, Linux builder image rust:1.100.0-slim-bookworm by index digest (+31 more)
 
 ### Community 27 - "SQL Routing and Replica Profiles"
 Cohesion: 0.18
-Nodes (17): Cluster management, Authenticated SQL health probes, Configured backend registration, Backend health state machine (Unknown, Healthy, Suspect, Unavailable, Recovering), Replication freshness and byte lag, Weighted round robin replica selection, Observation record, Value sourcing table (+9 more)
+Nodes (17): Cluster management, Authenticated SQL health probes, Configured backend registration, Drain, attach and quarantine operations, Backend health state machine (Unknown, Healthy, Suspect, Unavailable, Recovering), Replication freshness and byte lag, Weighted round robin replica selection, Value sourcing table (+9 more)
 
 ### Community 28 - "Failover Records and Fencing Authority"
-Cohesion: 0.18
-Nodes (17): Deployment reference, Initial four VM lab, Independent fencing authority, Deployment ownership matrix, Failover and recovery, All-writer write barrier, Candidate and RPO policy, Fencing contract (allowlisted adapter) (+9 more)
-
-### Community 29 - "Finding Codes and One Finding Rule"
-Cohesion: 0.18
-Nodes (17): Five new nits in the fix range: deny_unknown_fields phrase at index.md:431, config_version start value at lib.rs:354, 1_048_577 literal at main.rs:89, compile_fail breadth at lib.rs:28, stale CLAUDE.md and AGENTS.md lines, Sub session arc-f1-update continued (architect update: deny_unknown_fields phrase in step 4, one syntax or schema finding chosen by the parser; done at 5670851 without AC change, lead gate passed, merged into the parent of the docs(changelog) commit), Decision: of two schema errors the one with the alphabetically first key is reported, not the first in the file; spec states the choice belongs to the parser (mode auto, follows the code); runner up sort by file position; sent to arc-f1-update, Consequence: only one syntax or schema error is reported per run, and with several it need not be the first one in the file, Steps 3 and 4 each report exactly one finding; with several syntax or schema errors which one is reported is the parser's choice, not file order (zzz = 1 on line 2, aaa = 1 on line 3 reports line 3); tests give one such error per input, Top level structure alone may use a derive with deny_unknown_fields, because a TOML document is always a table; a permission, not a requirement (hand written is just as good), Unknown keys rejected at every level, Validation order (length, UTF-8, syntax, schema, meaning) (+9 more)
-
-### Community 30 - "Delegated Spec Decisions and Linux Target"
 Cohesion: 0.19
-Nodes (17): Decision mode auto (architect asks lead to accept spec; others interpret ambiguous criteria, needs-decision only when spec text must change), Decision: build notes summary 'Accept this spec?' answered accept without changes (mode auto), checked by lead, Delegated decisions (biasa, 0001 AC-1, AC-12): 17 build notes choices (pinned rust slim bookworm image and git archive HEAD, std argument parsing, serde_json, no thiserror/anyhow/tracing, two pass validation, 1 MiB limit, ...), Keputusan delegasi (delegated spec decisions taken on the user's behalf; four berat rows plus one biasa summary), Delegated decision (berat, 0001 AC-9): check-config diagnostics contain only constant text, schema key path, line and column, never file content, secret-* canary fixtures (CANARY-9f2c7b1e), FindingCode (config.* codes), Findings (stable finding codes) (+9 more)
+Nodes (16): Deployment reference, Initial four VM lab, Independent fencing authority, Deployment ownership matrix, Failover and recovery, All-writer write barrier, Candidate and RPO policy, Fencing contract (allowlisted adapter) (+8 more)
 
-### Community 31 - "Exit Status and Output Convention"
-Cohesion: 0.17
-Nodes (16): Added: exit status convention for POOL commands (0 success, 1 input rejected, 2 usage error, 3 could not finish), Added: fifteen configuration fixtures and 134 automated tests covering every first build acceptance criterion on the workstation, Added: pool --help and pool --version, Added: JSON report (--format json), one line with a fixed field order, for scripts, Added: three shared conventions in the engineering standards (configuration keys, exit status with command output, log event fields with redaction), Unreleased, Added: the first workspace slice of scope 001 (ten entries), Configuration keys convention (config_version, snake_case, unit suffixes, _file secrets, reserved tables), Exit status and command output convention (0/1/2/3, stdout result, one line JSON) (+8 more)
+### Community 29 - "Report Writers, Human and JSON"
+Cohesion: 0.31
+Nodes (9): JsonCapabilities, JsonFinding, JsonReport, Outcome, Option, Result, write_human(), write_json() (+1 more)
+
+### Community 30 - "Scope 002 Coordination Log and Sub Sessions"
+Cohesion: 0.22
+Nodes (11): Reviewer roster (who holds each review role, where a fresh model may review), Tooling choices owed by feature 2 (CI service, dependency/license/advisory checker, SBOM generator, fuzz harness, PostgreSQL 18 supply), Verify the required checks on a pull request and link the result (open), Coordination log: 002-standards-and-tooling, arc-f2-spec (architect, writes spec 0002), chk-f2-verify (checker verify), dev-f2-build (developer, builds checks from spec 0002), Seven documentation mismatches from dev-f2-audit forwarded to arc-f2-spec as spec 0002 AC and Build plan input (+3 more)
+
+### Community 31 - "main.rs Entry, Bounded Read and Stdout"
+Cohesion: 0.38
+Nodes (9): check_config(), main(), read_bounded(), Result, Vec, write_stdout(), Changed since 5f44d88: lib.rs, cli.rs, main.rs, the two test files, spec index.md and rationale.md; manifests, Cargo.lock, toolchain, .gitignore and fixtures unchanged, ExitCode (+1 more)
 
 ### Community 32 - "Administration, Cluster and Health PRDs"
-Cohesion: 0.22
-Nodes (16): F-060 Network partitions (health changes eligibility only), F-101 TLS and mTLS verification, Health features F-054 to F-060, Health monitoring PRD, AC-1 Reachable wrong-role or wrong-cluster node cannot become eligible, AC-3 Expired observation refused at acquisition after publisher pause, Bounded authenticated probes with dedicated monitor role, Failure/recovery thresholds and flapping control (+8 more)
+Cohesion: 0.18
+Nodes (18): F-060 Network partitions (health changes eligibility only), F-101 TLS and mTLS verification, Health features F-054 to F-060, Health monitoring PRD, AC-1 Reachable wrong-role or wrong-cluster node cannot become eligible, AC-3 Expired observation refused at acquisition after publisher pause, Bounded authenticated probes with dedicated monitor role, Failure/recovery thresholds and flapping control (+10 more)
 
 ### Community 33 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix"
-Cohesion: 0.16
-Nodes (16): Support Profile, Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk streaming, Extended Query and pipelining behavior, Variable length cancellation keys (protocol 3.2, up to 256 bytes), Virtual per lease cancellation keys, Driver compatibility matrix, Python asyncpg (V1 gate) (+8 more)
+Cohesion: 0.07
+Nodes (32): Invariant: close uncertain pooled state, Separate Frontend and Backend Identity, Support Profile, R-11 Authentication or role confusion, Proposed stopping rules, PostgreSQL protocol analysis, Close uncertain sessions cleanup policy, Protocol compatibility contract (3.0 and 3.2) (+24 more)
 
 ### Community 34 - "Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling"
 Cohesion: 0.15
 Nodes (16): Brief general rules: 002-standards-and-tooling, Allowed downloads and installs (crates adopted by spec 0002, pinned toolchain, cargo-deny, cargo-fuzz), Decision mode auto, Disk budget rule (max 2 concurrent Rust builds, delete target before done), GitHub read-only rule for sessions, Sub sessions never update graphify-out; lead updates graph in merge commit, Manual steps policy (Docker, GitHub settings, push, PRs run only by user), Scope 002 boundary: align written rules with workspace and install required checks (+8 more)
 
 ### Community 35 - "pool-config Validation Library"
-Cohesion: 0.23
-Nodes (9): capability_state(), CapabilityState, position(), RawCapability, RawConfig, Option, to_u32(), ValidatedConfig (+1 more)
+Cohesion: 0.08
+Nodes (36): capability_state(), CapabilityState, error_location(), Finding, FindingCode, KnownField, Location, position() (+28 more)
 
-### Community 36 - "Hand Written Deserialize and Known Fields"
+### Community 36 - "Agent Workflow and Graph Refresh"
 Cohesion: 0.22
-Nodes (8): Finding, FindingCode, Location, Rejection, Vec, validate(), Display, Self
+Nodes (9): Agent workflow (read scope, inspect reality, define slice, apply standards, validate, update graph), GA workflow depth (behavior verification, tests, fresh review, documentation), Knowledge graph refresh before commit (graphify-out kept current), Agent Workflow, Cargo workspace holds only the pool and pool-config packages, and there is no CI yet (inspect it before relying on documentation), Engineering Workflow, chk-f2-review (checker review, fresh model), Agreement with scope 001 lead to alternate commits on shared main checkout (per-path git add, no concurrent graph updates) (+1 more)
 
-### Community 37 - "Project Guidance, Changelog and Status Lifecycle"
-Cohesion: 0.20
-Nodes (14): POOL: PostgreSQL 18 proxy, session pooler and cluster operations project in Rust; the repository holds the planning package and the scope 001 workspace slice (apps/pool, crates/pool-config, offline pool check-config), not an implemented proxy, Changelog (CHANGELOG.md; Keep a Changelog 1.1.0 format, Semantic Versioning 2.0.0), Changelog format: Keep a Changelog 1.1.0 and Semantic Versioning 2.0.0, Spec 0001 lifecycle status mirrors scope feature 1: In Progress while the foundation is built and proven, Accepted when the feature is done, 1. Stack and workspace (in-progress), Box ticked: Record the build notes the handoff requires in spec 0001 ([x], via merge bed9fad), Box ticked: Document it (/document stack and workspace), Evidence: verification record, independent review and changelog (+6 more)
+### Community 37 - "Linux Build Run, Manual Steps F1-1 and F1-2"
+Cohesion: 0.31
+Nodes (15): Linux build evidence (a macOS build is not proof of the Linux build), Local toolchain (Rust stable 1.99.1, 1.100.0 available via rustup, host aarch64-apple-darwin, Docker 29.9.2 with daemon off), Manual steps policy (Docker Desktop, GitHub settings, PR, push, system tools, real PostgreSQL or VM are user only; blocked steps recorded as BLOCKED owner user), Resolved former blocker: Linux build evidence blocked while the Docker daemon was off; user started Docker Desktop (F1-1 PASS), Resolved former blocker: 0001 AC-2 and the /dev/full clause of AC-11 not run; Linux build passed at 18e9228 with 136 tests (F1-2 PASS), no longer holds feature 1 done, Checked in wave 1: F1 Document it (lead, CHANGELOG.md range a2dca30..HEAD, real commands in CLAUDE.md, CONTRIBUTING.md, README.md; commit docs(changelog); manual F1-1, F1-2 NOT_RUN), Sub session chk-f1-verify-2 (checker verify after closing: Linux build evidence for AC-2 and the /dev/full clause of AC-11; report done, commit 972e160: revision 18e9228, exit 0, host x86_64-unknown-linux-gnu, 136 tests (3 + 68 + 3 + 60 + 2), two Linux only tests ok, 30 fixture blocks, no canary leaked; merged to main), Decision: user wrote Docker sudah nyala (F1-1); lead ran the spec 0001 Linux build block from main at 18e9228 (exit 0, 136 tests, linux build check passed, sha256 0481be18...f7bdb3); new session chk-f1-verify-2 ran the same block itself and recorded it in verify.md with the same checksum and test count (+7 more)
 
-### Community 38 - "Manual Failover, Fencing and Write Barrier"
-Cohesion: 0.29
-Nodes (14): Added: fixed finding codes (config.syntax, config.schema, config.missing_key, config.unsupported_version, config.too_large, config.not_utf8) with line and column; output from constant text, key names and positions only, so no secret appears (SEC-11), First Handoff: the Workspace, Security requirements, SEC-11 Logs/metrics/traces free of credentials, cancellation keys and raw SQL, SEC-12 Validate a whole configuration generation before publication; rotation drains retired identities, SEC-4 Secrets in protected files or provider references; redaction, T-12 Secret disclosure through diagnostics, First build decision (two packages, three dependencies, fixed finding vocabulary) (+6 more)
+### Community 38 - "Spec 0001 Status and ADR 0001"
+Cohesion: 0.43
+Nodes (8): ADR 0001. Initial architecture, Decision: Build plan step 1 sets spec Status to In Progress; the stale 'lifecycle status remains Proposed' wording is tidied at /sync, not by sub sessions, Spec 0001. POOL initial architecture, Follow-up 1: foundation and decision ledger ratified; the build of scope 001 was requested on 2026-11-14; every later scope stays queued until requested, Modular daemon with independent CLI decision, Shared process failure domain, Decision status sentence: ratification settles the content; the Status line follows scope feature 001 per the status lifecycle, Clarification 9: Decision status sentence and Follow-up 1 reworded to hold in every status; runner up leave to the lead at close
 
-### Community 39 - "Verify Record First Run and Toolchain"
-Cohesion: 0.24
-Nodes (11): D, Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, Probes of the hand written Deserialize (37 made files at 4ebcf93: key given twice, unknown keys, enabled not boolean, capability not a table, other spellings, config_version, canary, valid files), Suggested fix for the Major: hand written Deserialize whose visitor implements visit_map only, tests for = [false] and = [true] for both capabilities, one spec sentence that structures accept a table only, Second review run at 4ebcf93: fmt and clippy exit 0, tests 3 + 66 + 3 + 60 + 2 passed, 18 lock packages, AC-12 grep empty; Linux build not run, Second review, fix round at 4ebcf93 (range 02bdcbe..4ebcf93; code a705659, 5a99563, b18b288, 453ae73; spec 5f1e995; same reviewer session), Spec text against the code: the nine clarifications in index.md and the rationale table match the fixed binary; AC-1 to AC-13 unchanged, Decision: three architect additions beyond the brief accepted (top level may keep derive and later slices follow the table-only rule; no location only for dotted keys and table headers; Build plan step 1 clause reworded) (+3 more)
+### Community 39 - "Workspace Conventions and dev-f2-audit"
+Cohesion: 0.40
+Nodes (6): Workspace conventions (inherited workspace.package fields, workspace lints with unsafe_code forbid, single workspace.dependencies, committed Cargo.lock, no sockets/threads/runtime, cargo test harness only, commits name Build plan step), Dependency declared once under workspace.dependencies, taken only when the current path uses it; Cargo.lock committed (0001 AC-12), Arguments parsed by hand with the standard library (no parser crate), Capture conventions: /audit (checked), Lead gate for dev-f2-audit merge (clean worktree, 6-file diff, 0 deletions, links/anchors present, sampled claims match manifest), dev-f2-audit (developer, /audit conventions; done and merged)
 
 ### Community 40 - "Scope 001 Review Record and Verdicts"
-Cohesion: 0.23
-Nodes (14): Security and Review Requirements, Review: scope 001 stack and workspace (2026-11-14), reviewer claude-fable-5-2, author claude-opus-5-5, Review summary: two package workspace and offline pool check-config follow spec 0001; output from constants only, bounded read, enabled = true refused in every spelling, Review test coverage: what is covered well and the gaps (array starting with a boolean, permission denied arm, no span arm, column through validate, AC-8/12/13 guards, --format=<bytes>), Review method: two passes on the same reviewer model; the second pass checked each finding and found the Major by running the binary, Review verdict: Approve with nits after the fix round at 4ebcf93 (first pass at 02bdcbe was Changes requested), First review verdict at 02bdcbe: Changes requested (0 Blocker, 1 Major, 6 Minor, 11 Nit), Second review verdict: Approve with nits; no blocker or major open; Minor 6 (verification record) still open, handled by the verify session (+6 more)
+Cohesion: 0.18
+Nodes (19): Review: scope 001 stack and workspace (2026-11-14), reviewer claude-fable-5-2, author claude-opus-5-5, Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, First review scope: 30 files in range a82cf67..02bdcbe on main (26 code, manifest and fixture files, Cargo.lock, 3 docs), First review nits (11): --format=<bytes> equals form, --help=x after check-config, u64::MAX read fallback, FIFO blocks, duplicated value block, capability_state comment, repeated numbers in messages, three weak tests, stale status sentence, Second review run at 4ebcf93: fmt and clippy exit 0, tests 3 + 66 + 3 + 60 + 2 passed, 18 lock packages, AC-12 grep empty; Linux build not run, Second review, fix round at 4ebcf93 (range 02bdcbe..4ebcf93; code a705659, 5a99563, b18b288, 453ae73; spec 5f1e995; same reviewer session), Spec text against the code: the nine clarifications in index.md and the rationale table match the fixed binary; AC-1 to AC-13 unchanged, Review summary: two package workspace and offline pool check-config follow spec 0001; output from constants only, bounded read, enabled = true refused in every spelling (+11 more)
 
 ### Community 41 - "Offline Bounds, Parser Depth and Known Limits"
 Cohesion: 0.30
-Nodes (12): error_location(), ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding(), ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location(), Minor 2: the toml parser depth limit (80 levels) and the Location::None branch of error_location have no test; the unbounded feature is not pinned off, Nesting deeper than the toml parser allows (e.g. a dotted key with 81 parts) is config.syntax; for a dotted key or table header the finding has no location (line and column null), toml unbounded feature stays off: parser stops at a fixed nesting depth (80 levels in toml 1.2.1), so a 1 MiB file of brackets cannot exhaust the stack, Clarification 4: nesting past the toml limit is config.syntax without location for dotted keys and headers; unbounded stays off; runner up own depth check, Clarification 6: exact column checked for one unambiguous made input with a multi-byte character, others keep at least 1; runner up exact columns everywhere (+4 more)
+Nodes (12): ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding(), ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location(), Minor 2: the toml parser depth limit (80 levels) and the Location::None branch of error_location have no test; the unbounded feature is not pinned off, Nesting deeper than the toml parser allows (e.g. a dotted key with 81 parts) is config.syntax; for a dotted key or table header the finding has no location (line and column null), toml unbounded feature stays off: parser stops at a fixed nesting depth (80 levels in toml 1.2.1), so a 1 MiB file of brackets cannot exhaust the stack, Clarification 3: --help=x/-h=x after check-config print help, --version/-V there are unknown option, all four =x forms first are unknown command; runner up usage error for =x, Clarification 4: nesting past the toml limit is config.syntax without location for dotted keys and headers; unbounded stays off; runner up own depth check, Clarification 6: exact column checked for one unambiguous made input with a multi-byte character, others keep at least 1; runner up exact columns everywhere (+4 more)
 
 ### Community 42 - "Load Balancing and Replica Selection"
-Cohesion: 0.24
-Nodes (12): Policy Version, pg_query parser with PostgreSQL 18 grammar, Routing decision: primary default, explicit read only session profiles, SQL routing PRD, admit_on_pinned_backend(frame, session_state, classification, policy), Classification, classify(sql, parser_version), Primary profile sessions stay pinned (+4 more)
+Cohesion: 0.16
+Nodes (20): Policy Version, pg_query parser with PostgreSQL 18 grammar, SQL routing PRD, admit_on_pinned_backend(frame, session_state, classification, policy), Classification, classify(sql, parser_version), No primary fallback in V1, Primary profile sessions stay pinned (+12 more)
 
 ### Community 43 - "Administration, Cluster and Health PRDs: Administration PRD"
-Cohesion: 0.24
-Nodes (11): Axum REST administration API plus CLI, pool check-config, GET /v1/nodes node status route, Administration PRD, AdminPrincipal, APIError, Authenticated management transport (protected local or mTLS), Whole generation config validation and reload (+3 more)
+Cohesion: 0.10
+Nodes (29): Invariant: health failure does not authorize promotion, Authoritative barrier across every write path, Axum REST administration API plus CLI, No silent replay of uncertain work (lost COMMIT response), pool check-config, GET /v1/nodes node status route, Health failure alone produces no promotion, Cluster management PRD (+21 more)
 
-### Community 44 - "Protocol Contract and Driver Compatibility: PostgreSQL protocol analysis"
-Cohesion: 0.18
-Nodes (11): Proposed stopping rules, PostgreSQL protocol analysis, Close uncertain sessions cleanup policy, Independent backend credentials per mapped login identity, Proposed protocol limits (64 KiB startup, 16 MiB message), Replication and special clients, SCRAM channel binding per terminated TLS channel, Session state inventory (+3 more)
-
-### Community 45 - "Manual Failover, Fencing and Write Barrier: Manual failover PRD"
-Cohesion: 0.27
-Nodes (10): Invariant: health failure does not authorize promotion, Authoritative barrier across every write path, Health failure alone produces no promotion, Manual failover PRD, Durable intent before fencing and reconciliation of unknown outcomes, Failover plan and execute API (/v1/failover/plans), Failover operation phases (Planned to Completed or Failed/NeedsReview), Promoter role distinct from observer/operator (+2 more)
+### Community 44 - "Safe Rust, Bounded Resources and Dependencies"
+Cohesion: 0.50
+Nodes (4): Safe first party Rust and bounded resources, Workspace lint unsafe_code = forbid applied to every member, Bounded file read: at most MAX_CONFIG_BYTES plus one byte via Read::take, Dependencies serde and toml only; toml feature unbounded kept off so nesting limit protects the stack
 
 ### Community 46 - "Leases, Cancellation and Login Routing: Independent review resolutions (seven approved f"
-Cohesion: 0.27
-Nodes (10): Retry only before initial lease and ReadyForQuery exposure, Independent review resolutions (seven approved fixes), Operator map from verified principal and database to backend identity, Private backend keys and virtual frontend cancellation credentials, Cancellation forwarded only through the live lease owner, CancellationEntry, Lease, Session (+2 more)
+Cohesion: 0.07
+Nodes (37): Planning assumptions and decisions, Retry only before initial lease and ReadyForQuery exposure, Apache 2.0 license, Persisted approved writer, epoch and quarantine, Manual failover first; automatic failover and cache disabled, First deployment: one proxy VM, primary and two replicas on Proxmox, GA verification depth for data safety features, Independent review resolutions (seven approved fixes) (+29 more)
 
 ### Community 47 - "Virtual Cancellation Model"
-Cohesion: 0.33
-Nodes (9): Virtual Cancellation Model, Architecture overview, Proposed public interfaces (FrameDecoder, SessionState, Lease, RouteDecision, ProbeObservation, OperationPlan), F-018 CancelRequest and BackendKeyData, F-018 CancelRequest and BackendKeyData (virtual per lease keys), Lease Generation, Virtual Cancellation Credential, R-05 Incorrect reuse or late cancel (+1 more)
-
-### Community 48 - "pool-config Validation Library: KnownField"
-Cohesion: 0.28
-Nodes (6): KnownField, Result, DeserializeSeed, E, Formatter, Visitor
-
-### Community 49 - "Virtual Cancellation and Architecture Overview"
-Cohesion: 0.25
-Nodes (9): Pool limits and operations, Data plane, Frontend owner task, No automatic retry after dispatch, Provisional resource defaults and backpressure, Application path sequence, Failure behavior (no transparent failover, no implicit replay), Frontend (+1 more)
-
-### Community 50 - "Feature Families and Planned Scopes: V1.5 Milestone"
-Cohesion: 0.28
-Nodes (9): HA Features (F-081 to F-087), Recovery Features (F-076 to F-080), V1.5 Milestone, R-21 Proxmox host correlated failure, 12. Multiple proxy authority (deferred), 13. Checked online recovery (deferred), SEC-9 Allowlisted structured fencing/recovery adapters, T-09 Command injection through fencing/recovery hooks (+1 more)
-
-### Community 51 - "Leases, Cancellation and Login Routing: Planning assumptions and decisions"
-Cohesion: 0.22
-Nodes (9): Planning assumptions and decisions, Apache 2.0 license, First deployment: one proxy VM, primary and two replicas on Proxmox, GA verification depth for data safety features, One daemon with separate modules plus separate CLI, Prometheus metrics and tracing logs, rustls and tokio-rustls with one crypto provider, Terminated SCRAM over TLS with optional mTLS and separate backend credentials (+1 more)
-
-### Community 52 - "Administration, Cluster and Health PRDs: Cluster management PRD"
-Cohesion: 0.28
-Nodes (9): Persisted approved writer, epoch and quarantine, SQLite journal for operations, audit and approved writer/epoch/quarantine, Cluster management PRD, Approved writer, epoch and quarantine authority, Drain, detach and attach node operations, Two observed primaries close write admission, Generation checked journaled mutations, Separation of observed health/role from maintenance and desired membership (+1 more)
-
-### Community 53 - "Load Balancing and Replica Selection: Load balancing PRD"
-Cohesion: 0.36
-Nodes (9): No primary fallback in V1, Load balancing PRD, CandidateSet, choose(profile, snapshot, selector_state), Replica eligibility filter (role, identity, freshness, maintenance, lag), Primary fallback disabled in V1, ReplicaPolicy, SelectorState (+1 more)
+Cohesion: 0.15
+Nodes (21): Virtual Cancellation Model, Backend cleanup and reset (rollback, DISCARD ALL, idle ReadyForQuery), Backend connection lifecycle state machine (Connecting, Idle, Leased, Cleaning, Draining, Closed), Data plane, Frontend owner task, No automatic retry after dispatch, Architecture overview, Application path sequence (+13 more)
 
 ### Community 54 - "Feature Families and Planned Scopes: High availability PRD"
-Cohesion: 0.36
-Nodes (8): High availability PRD, ControllerEpoch, Endpoint failover via external load balancing or controlled VIP, Established consensus for one operation authority, External coordination adapter, Query routing on local immutable snapshots, ProxyMember, TopologyRecord
-
-### Community 55 - "Documentation Index, Handoffs and Readiness"
-Cohesion: 0.33
-Nodes (7): Documentation Ownership Roles (scope, specs, PRDs, ADRs), Documentation ownership model (scope, specs, PRDs, ADRs, research), Dependency and Configuration Change Rules, R-16 Dependency drift or abandoned crate, R-17 License conflict or missing notices, SEC-13 Inventory dependencies and native components with notices and advisories, T-13 Dependency or native parser compromise
-
-### Community 56 - "Query Cache PRD"
-Cohesion: 0.38
-Nodes (7): Manual failover first; automatic failover and cache disabled, V2 Milestone, Phase 6 Advanced features, Query cache PRD, Caching disabled until a separate contract is approved and proven, Candidate CacheKey, Cache invalidation and dependency contract
-
-### Community 57 - "Proposed Stack and Deferred Features"
-Cohesion: 0.29
-Nodes (7): rustls 0.23.46 (TLS), Single rustls crypto provider (aws-lc-rs feature family), Versioned local admin REST API (Axum), Proposed stack, rustls and tokio-rustls TLS, Tokio runtime with bounded tasks and channels, Typed Serde configuration from TOML
+Cohesion: 0.17
+Nodes (16): HA Features (F-081 to F-087), Recovery Features (F-076 to F-080), Fence Receipt, V1.5 Milestone, R-21 Proxmox host correlated failure, High availability PRD, ControllerEpoch, Endpoint failover via external load balancing or controlled VIP (+8 more)
 
 ### Community 58 - "SQL Routing and Replica Profiles: Protocol engine"
-Cohesion: 0.33
-Nodes (6): Protocol engine, Bounded frame validation, Authentication adapter (reviewed pgwire components), Protocol finite state machine, Transaction state tracking (ReadyForQuery status), Hand written wire state machine on bytes and tokio::net
-
-### Community 59 - "Rust Technology Evaluation: Log events and redaction (shared log convention)"
-Cohesion: 0.47
-Nodes (6): tracing 0.1.44 (structured events and spans), Follow-up: file permission check in scope 004 and tracing with the first log event, Log events and redaction (shared log convention), prometheus-client metrics and tracing logs, Decision: hand written Display and Error over thiserror and anyhow, Decision: no logging in this build, rule fixed for later
+Cohesion: 0.17
+Nodes (12): Future multi proxy deployment, Protocol engine, Bounded frame validation, Authentication adapter (reviewed pgwire components), Protocol finite state machine, Transaction state tracking (ReadyForQuery status), Versioned local admin REST API (Axum), External etcd for future coordination (+4 more)
 
 ### Community 60 - "Offline Bounds, Parser Depth and Known Limits: Rules made clearer in the review, each checked o"
-Cohesion: 0.33
-Nodes (6): Minor 5: AC-8 constructor guarantee, AC-12 package set and grep, AC-13 stop line have no automated guard (suggested compile_fail doc tests and scope 002 CI steps), Rules made clearer in the review, each checked on the binary (17 rows, all PASS), Rule check: a long array holding the canary 2000 times gives one config.schema and no canary in output, Debug or Display, Rule check: no ValidatedConfig can be built outside the crate (two compile_fail doc tests pass; E0451 and E0277 in the scratch crate), Rule check: the read bound fallback is 1_048_577, not u64::MAX; /dev/zero ends with config.too_large, Rule check: the schema step ends the run (config_version = 2 with result_cache = [true] gives one config.schema only)
+Cohesion: 0.29
+Nodes (8): ac11_a_first_argument_that_is_not_a_command_is_unknown(), First argument compared whole: --help=x, -h=x, --version=x and -V=x as the first argument are unknown command, Rules made clearer in the review, each checked on the binary (17 rows, all PASS), Rule check: --format=<bytes> and --config=<bytes> not UTF-8 exit 2 unexpected argument; --format <bytes> as separate value is wrong format value, Rule check: --help=x and -h=x after check-config print help; the first argument is compared whole; --version and -V are unknown option after check-config, Rule check: a long array holding the canary 2000 times gives one config.schema and no canary in output, Debug or Display, Rule check: the read bound fallback is 1_048_577, not u64::MAX; /dev/zero ends with config.too_large, Rule check: the schema step ends the run (config_version = 2 with result_cache = [true] gives one config.schema only)
 
 ### Community 61 - "Column Counting Rule and Tests"
 Cohesion: 0.70
 Nodes (5): position_counts_lines_and_scalars(), ac7_column_counts_characters_not_bytes_before_the_error(), Minor 4: the column test cannot fail for a byte count (multibyte key is the unknown key, column 1 either way), Exact column test for a made input with a multi-byte character before the error: x = "éé" junk on line 2 is config.syntax at column 10 (a byte count gives 12), Rule check: the column counts characters (x = "éé" junk is line 2, column 10; bytes would give 12)
 
-### Community 62 - "Load Balancing and Replica Selection: Balancing features F-048 to F-053"
-Cohesion: 0.67
-Nodes (4): Balancing features F-048 to F-053, F-053 Lag Filtering and Primary Fallback, F-053 Lag filtering and primary fallback (fallback disabled in V1), R-07 Replica lag mistaken for freshness
-
-### Community 63 - "Rust Technology Evaluation: Hybrid parser policy"
-Cohesion: 0.50
-Nodes (4): Transparent arbitrary read splitting (low confidence), Hybrid parser policy, pg_query 18.1.0 and libpg_query (PostgreSQL raw parser), sqlparser 0.64.0 (pure Rust parser alternative)
-
 ## Knowledge Gaps
-- **62 isolated node(s):** `F-067 Manual plan and promotion (operator plan plus verified fence)`, `F-060 Network partitions (health changes eligibility only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica)` (+57 more)
+- **64 isolated node(s):** `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `F-060 Network partitions (health changes eligibility only)`, `Decision mode auto`, `Session model per role (architect/checker fable-5-2, developer/tester opus-5-5)` (+59 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Spec 0001. POOL initial architecture` connect `Architecture Spec and Repository Layout` to `Scope 002 Brief Rules`, `Linux Build Evidence, AC-2 and VM Architecture`, `Slices, Milestones and Readiness Gates`, `Safety Invariants and Session Risks`, `Scaffold Step and dev-f1-build Gate`, `Leases, Cancellation and Login Routing`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0001 Acceptance Criteria`, `Scope 001 Coordination Log and Closing`, `Glossary and Routing Profiles`, `Scope 001 Coordination Brief and Sub Sessions`, `Session Model, Pooling Modes and Data Path`, `Operation Journal Records and Generations`, `Rust Technology Evaluation`, `Delegated Spec Decisions and Linux Target`, `Exit Status and Output Convention`, `Administration, Cluster and Health PRDs`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling`, `Project Guidance, Changelog and Status Lifecycle`, `Manual Failover, Fencing and Write Barrier`, `Scope 001 Review Record and Verdicts`, `Load Balancing and Replica Selection`, `Administration, Cluster and Health PRDs: Administration PRD`, `Manual Failover, Fencing and Write Barrier: Manual failover PRD`, `Virtual Cancellation Model`, `Leases, Cancellation and Login Routing: Planning assumptions and decisions`, `Administration, Cluster and Health PRDs: Cluster management PRD`, `Load Balancing and Replica Selection: Load balancing PRD`, `Feature Families and Planned Scopes: High availability PRD`, `Query Cache PRD`, `Proposed Stack and Deferred Features`, `Rust Technology Evaluation: Log events and redaction (shared log convention)`?**
+- **Why does `Spec 0001. POOL initial architecture` connect `Spec 0001 Status and ADR 0001` to `Scope 002 Brief Rules`, `Linux Build Evidence, AC-2 and VM Architecture`, `Slices, Milestones and Readiness Gates`, `Safety Invariants and Session Risks`, `Architecture Spec and Repository Layout`, `Leases, Cancellation and Login Routing`, `Workspace Layout, Bounded Read and FIFO Limit`, `Linux Target, VM Architecture and Follow-up 11`, `Scope 001 Coordination Log and Closing`, `Glossary and Routing Profiles`, `Scope 001 Coordination Brief and Sub Sessions`, `Session Model, Pooling Modes and Data Path`, `Operation Journal Records and Generations`, `Invariants, Secrets and Administration Rules`, `Rust Technology Evaluation`, `Scope 002 Coordination Log and Sub Sessions`, `Administration, Cluster and Health PRDs`, `Scope 002 Brief Rules: Brief general rules: 002-standards-and-tooling`, `Workspace Conventions and dev-f2-audit`, `Scope 001 Review Record and Verdicts`, `Load Balancing and Replica Selection`, `Administration, Cluster and Health PRDs: Administration PRD`, `Leases, Cancellation and Login Routing: Independent review resolutions (seven approved f`, `Virtual Cancellation Model`, `Feature Families and Planned Scopes: High availability PRD`, `SQL Routing and Replica Profiles: Protocol engine`?**
   _High betweenness centrality (0.231) - this node is a cross-community bridge._
-- **Why does `1. Stack and workspace (in-progress)` connect `Project Guidance, Changelog and Status Lifecycle` to `Scope 002 Brief Rules`, `Linux Build Evidence, AC-2 and VM Architecture`, `Slices, Milestones and Readiness Gates`, `Standards, Tooling and Release Qualification`, `Scope 001 Review Record and Verdicts`, `Manual Failover, Fencing and Write Barrier`, `Scaffold Step and dev-f1-build Gate`, `Architecture Spec and Repository Layout`, `Leases, Cancellation and Login Routing`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0001 Acceptance Criteria`, `Scope 001 Coordination Log and Closing`, `Scope 001 Coordination Brief and Sub Sessions`, `Scope 001 Coordination Brief, Log and Authorization`, `Reserved Capabilities and Secret Safety`, `Exit Status and Output Convention`?**
-  _High betweenness centrality (0.081) - this node is a cross-community bridge._
-- **Why does `First Handoff: the Workspace` connect `Manual Failover, Fencing and Write Barrier` to `Scope 002 Brief Rules`, `Linux Build Evidence, AC-2 and VM Architecture`, `Slices, Milestones and Readiness Gates`, `Standards, Tooling and Release Qualification`, `Feature Inventory and Parity Matrix`, `Architecture Spec and Repository Layout`, `Leases, Cancellation and Login Routing`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0001 Acceptance Criteria`, `Scope 001 Coordination Log and Closing`, `Scope 001 Coordination Brief, Log and Authorization`, `Review Clarifications and check-config Usage Rules`?**
+- **Why does `First Handoff: the Workspace` connect `Workspace Layout, Bounded Read and FIFO Limit` to `Linux Build Evidence, AC-2 and VM Architecture`, `Protocol Contract and Driver Compatibility`, `Slices, Milestones and Readiness Gates`, `Linux Build Run, Manual Steps F1-1 and F1-2`, `Feature Inventory and Parity Matrix`, `Architecture Spec and Repository Layout`, `Leases, Cancellation and Login Routing`, `Linux Target, VM Architecture and Follow-up 11`, `Scope 001 Coordination Log and Closing`, `Scope 001 Coordination Brief, Log and Authorization`?**
+  _High betweenness centrality (0.085) - this node is a cross-community bridge._
+- **Why does `1. Stack and workspace (done)` connect `Scope 001 Coordination Brief and Sub Sessions` to `Linux Build Evidence, AC-2 and VM Architecture`, `Agent Workflow and Graph Refresh`, `Slices, Milestones and Readiness Gates`, `Spec 0001 Status and ADR 0001`, `Scope 001 Review Record and Verdicts`, `Linux Build Run, Manual Steps F1-1 and F1-2`, `Scaffold Step and dev-f1-build Gate`, `Standards, Tooling and Release Qualification`, `Leases, Cancellation and Login Routing`, `Workspace Layout, Bounded Read and FIFO Limit`, `Linux Target, VM Architecture and Follow-up 11`, `Scope 001 Coordination Log and Closing`, `Scope 001 Coordination Brief, Log and Authorization`?**
   _High betweenness centrality (0.079) - this node is a cross-community bridge._
 - **Are the 6 inferred relationships involving `AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` (e.g. with `Added: exit status convention for POOL commands (0 success, 1 input rejected, 2 usage error, 3 could not finish)` and `Review strengths: no file text reaches any output (toml error used for its span only), bounded read checked twice, locked writes with exit 3 on closed pipe, byte for byte tests on the real binary`) actually correct?**
   _`AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` has 6 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 2 inferred relationships involving `Testing strategy` (e.g. with `Feature inventory and parity matrix` and `proptest 1.12.0 (state and framing properties)`) actually correct?**
-  _`Testing strategy` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `F-067 Manual plan and promotion (operator plan plus verified fence)`, `F-060 Network partitions (health changes eligibility only)`, `Observability features F-109 to F-114` to the rest of the system?**
-  _62 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Are the 2 inferred relationships involving `Feature inventory and parity matrix` (e.g. with `Initial Package Checks` and `Testing strategy`) actually correct?**
+  _`Feature inventory and parity matrix` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `F-060 Network partitions (health changes eligibility only)` to the rest of the system?**
+  _64 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**
-  _Cohesion score 0.06816479400749063 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06945863125638406 - nodes in this community are weakly interconnected._
