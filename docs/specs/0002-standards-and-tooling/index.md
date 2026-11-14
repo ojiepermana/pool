@@ -462,7 +462,7 @@ Lines inside a fenced code block are never read as links, headings or IDs. A fen
 | D5 | Every cited ID is defined |
 | D6 | With `--base`: every ID that the base revision defines is still defined |
 
-**Links (D1, D2).** A link is `[text](target)` or `![text](target)`, with an optional title in double quotes after the target, or a reference definition line `[label]: target`. Text between backticks on one line is removed before links are looked for. A target that starts with a scheme (a letter, then letters, digits, `+`, `.` or `-`, then a colon), such as `https:` or `mailto:`, is not checked; the checks never use the network. Angle brackets around a target are dropped and `%20` is read as a space. The target is split at the first `#` into path and fragment. An empty path means the same file. A path that starts with `/` is a problem (use a relative path). Otherwise the path is resolved from the directory of the file that holds the link and must exist, as a file or a directory, inside the root.
+**Links (D1, D2).** A link is `[text](target)` or `![text](target)`, with an optional title in double quotes after the target, or a reference definition line `[label]: target`. Text between backticks on one line is removed before links are looked for. A run of one or more backticks opens such a span, and the next run of the same length on that line closes it. So a span written with two backticks on each side is removed whole, with any single backtick inside it. A run that has no partner of the same length stays as plain text. A target that starts with a scheme (a letter, then letters, digits, `+`, `.` or `-`, then a colon), such as `https:` or `mailto:`, is not checked; the checks never use the network. Angle brackets around a target are dropped and `%20` is read as a space. The target is split at the first `#` into path and fragment. An empty path means the same file. A path that starts with `/` is a problem (use a relative path). Otherwise the path is resolved from the directory of the file that holds the link and must exist, as a file or a directory, inside the root.
 
 A fragment is checked only when the target is a `.md` file. The anchors of a file come from its headings, lines of one to six `#` characters and a space, outside code blocks. Take the heading text, replace each link `[text](target)` by its text, make it lowercase, drop every character that is not a letter, a digit, a space, a hyphen or an underscore (letters and digits of any script count), and turn each space into a hyphen. A second heading with the same result gets `-1` added, a third `-2`. For example, `## Where a change belongs` gives `where-a-change-belongs` and `## docs/prd` gives `docsprd`.
 
@@ -564,6 +564,8 @@ Write the manifest by hand. Do not use `cargo fuzz init`: on this workspace it w
 ```bash
 cargo +nightly-2026-10-17 fuzz run validate fuzz/corpus/validate tests/fixtures -- -max_total_time=60 -max_len=4096
 ```
+
+The script changes to that directory inside a child shell, and writes `CDPATH=` in front of that `cd` as it does in front of its first one. An exported `CDPATH` can then not send the fuzz run to another tree while the crash file test looks at this one.
 
 It creates `fuzz/corpus/validate` first if it is missing. The fixture directory is a second, read only seed corpus. `POOL_FUZZ_SECONDS` replaces the 60. Exit 0 with no file under `fuzz/artifacts/validate/` is a pass. A crash file is a finding to report with its bytes, not to delete.
 
@@ -751,13 +753,22 @@ One limit of "merge commit only": it binds the merge button and the merge API. I
 
 The number of required approvals is 0, because GitHub does not let the author of a pull request approve it and the project has one GitHub account today. The independent review that `SEC-14` asks for is done as a written review under `docs/reviews/`, linked from the pull request. When a second maintainer account exists, raise `required_approving_review_count` to 1 in this file and on the remote in one pull request.
 
+`required_review_thread_resolution` is `true`. An open review thread (a comment on a line of the change, with its replies) therefore holds the merge, also when all seven checks have passed. The first real case came on 2026-11-14. The account that owns the repository has the automatic Copilot code review switched on, and it reviews every pull request without being asked. It left two threads on the scope pull request, and the merge state stayed `BLOCKED` until both were marked as resolved. Three things are worth knowing:
+
+- A thread still holds the merge after the line it points at was fixed. GitHub then shows it as outdated, which is not the same as resolved.
+- The automatic reviewer marked one of its two threads as resolved by itself after the fix. The other one had to be marked by a person.
+- Marking a thread as resolved changes public content on GitHub. It needs the repository owner's permission, like every other write there.
+
+Both findings were real defects, and both were fixed before the merge. Whether the setting stays is Follow-up 12.
+
 **How a change reaches `main` from now on:**
 
 1. Work happens on a branch. In the coordination flow each session still commits on its own branch `claude/<name>-<hash>`, and the lead still merges those branches locally with `--no-ff` after the checks pass on the merged tree.
 2. The lead no longer pushes `main`. The merged result is pushed as a branch named `scope/<number>-<slug>`, for example with `git push origin main:scope/003-control-and-session-data-model`, and a pull request to `main` is opened from it with `gh pr create`. A pull request for a smaller change uses any branch name. Writing to GitHub needs your permission; the lead asks for it per scope, and without it you run these two commands yourself.
 3. The seven checks run. A failed check is reproduced with `scripts/check.sh <name>`, fixed on the branch and pushed again.
-4. The pull request is merged with a merge commit, and the local `main` is moved forward with `git pull --ff-only`.
-5. Whatever a scope can record only after its pull request ran (run addresses, the status `done`, the closing log entry) goes into a second pull request from a branch named `scope/<number>-closing`, in the same way. Remote step 7 of the [remote proof](#remote-proof) is the first one. This takes the place of the push of `main` that used to close a scope.
+4. Review threads are settled. If the automatic reviewer or a person left a thread on the pull request, each finding is judged first: is it a real defect or not. A real one is fixed by a developer session on its own branch, merged locally and pushed to the pull request branch like the fix of a failed check, and the seven checks run again. Then each thread is marked as resolved, by the repository owner, or by the lead with the owner's permission. A finding that is judged not to be a defect is marked the same way; the lead says why when asking for that permission. The command that lists the threads is under remote step 3 of the [remote proof](#remote-proof).
+5. The pull request is merged with a merge commit, and the local `main` is moved forward with `git pull --ff-only`.
+6. Whatever a scope can record only after its pull request ran (run addresses, the status `done`, the closing log entry) goes into a second pull request from a branch named `scope/<number>-closing`, in the same way. Remote step 7 of the [remote proof](#remote-proof) is the first one. This takes the place of the push of `main` that used to close a scope.
 
 If the rule itself must change, or must be switched off in an emergency, the repository owner does that in the repository settings. The change is then made in `main.json` in the next pull request, and the reason is written in the changelog. The ruleset history on GitHub shows every such change.
 
@@ -901,7 +912,8 @@ How the blocks are written:
 - Each block stands on its own. It sets every variable it uses, so you can run it in a fresh shell (`sh`, `bash` or `zsh`).
 - A variable in front of a colon is written `${NAME}`, because zsh reads `$NAME:r` as something else.
 - A block that waits for a run can take longer than ten minutes. Run it in the background if your shell has a time limit.
-- The wait loop asks GitHub every five seconds, for at most three minutes, whether a run for the commit exists. It is there because `gh pr checks --watch` gives up with "no checks reported" when it is asked before GitHub has registered the run.
+- The wait loop asks GitHub every five seconds, for at most three minutes, whether a run for the commit exists. It is there because `gh pr checks --watch` gives up with "no checks reported" when it is asked before GitHub has registered the run. If the loop ends with no run, follow the note under remote step 1.
+- Remote steps 1, 5 and 7 push or commit from the main checkout. Before each of those blocks, `git status --short` must print nothing and `git rev-parse --abbrev-ref HEAD` must print `main`. The blocks do not test this themselves. A changed tracked file would go into the commit of step 5, because `git commit -am` takes every changed tracked file, and a `HEAD` that is not `main` means the tree you checked is not the one you push. Step 6 pulls into the current branch, so it needs `HEAD` on `main` too.
 
 **Remote step 1: push the scope branch and open the pull request** (**AC-3**).
 
@@ -925,6 +937,33 @@ gh run view "$RUN" --json url,conclusion,headSha --jq '"\(.url) \(.conclusion) \
 Expected: `gh run watch` ends with exit 0. `gh pr checks` prints seven lines marked `pass`, one for each check name. The last line holds the run address, the word `success` and the hash that `git rev-parse main` prints.
 
 If a check fails, this is a finding for a developer session, not something to fix on GitHub: read it with `gh run view <id> --log-failed`, reproduce it with `scripts/check.sh <name>`, fix it on a session branch and merge locally. Then run the block again without the `gh pr create` command. Do not go on to step 3 before this step shows seven passes.
+
+If the block ends with `no run was registered within three minutes`, the pull request exists but GitHub started no `ci` run for it. This happened on 2026-11-14. `gh pr create` ran about one second after the first push that brought `.github/workflows/ci.yml` to GitHub, and the `opened` event started only the automatic Copilot review, not `ci`. The likely cause is that the pull request was opened before GitHub had taken in the new workflow file. That is a guess, not a proven fact. The pull request of step 5, opened ten minutes later, got its run at once.
+
+Look first, with commands that only read:
+
+```bash
+R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh run list --commit "$(git rev-parse main)" --json databaseId,event,workflowName,status --jq '.[] | "\(.databaseId) \(.event) \(.workflowName) \(.status)"'
+gh api "repos/$R/contents/.github/workflows/ci.yml?ref=scope/002-standards-and-tooling" --jq .path
+gh pr view scope/002-standards-and-tooling --json state,mergeable,headRefOid --jq '"\(.state) \(.mergeable) \(.headRefOid)"'
+```
+
+What the three commands tell you:
+
+1. Each line is one run for the commit: its number, the event, the workflow name and the state. A line with the event `dynamic` is the automatic review and does not count. If a line with `pull_request ci` is there, the run was only late: run the step 1 block again without `gh pr create`.
+2. `.github/workflows/ci.yml`. If the file is not on the branch, the push did not bring it, and that is the thing to fix.
+3. `OPEN MERGEABLE` and the hash that `git rev-parse main` prints. `UNKNOWN` in the middle means GitHub has not worked it out yet; ask again after a few seconds. With `CONFLICTING`, GitHub starts no pull request run at all, and the branch must first be brought up to date with `main`.
+
+If no `ci` run exists, the file is there and the pull request is open and mergeable, close the pull request and open it again:
+
+```bash
+PR=$(gh pr view scope/002-standards-and-tooling --json number --jq .number)
+gh pr close "$PR"
+gh pr reopen "$PR"
+```
+
+The `reopened` event starts the workflow; on 2026-11-14 the run was registered two seconds later. Then run the step 1 block again without `gh pr create`. Closing and opening again is a write to GitHub of the same kind as step 1. It keeps the head commit, so the run is for exactly the revision that was checked on the workstation. An extra commit would also start a run, but for a revision that nobody checked.
 
 **Remote step 2: read the Linux build lines** (**AC-5**).
 
@@ -953,7 +992,19 @@ Expected, line by line:
 2. A number, then `main active`.
 3. `deletion,non_fast_forward,pull_request,required_status_checks`.
 4. `clippy,deny,docs,fmt,guards,linux-build,test`.
-5. `CLEAN`. The seven checks that passed before the rule existed count for it, because GitHub looks at the results on the head commit. `UNKNOWN` means GitHub has not worked it out yet; ask again after a few seconds. If it stays `BLOCKED`, run the checks once more with `gh run rerun <run id>` and wait for them. That is a write to GitHub of the same kind as step 1.
+5. `CLEAN`, when the pull request has no open review thread. The seven checks that passed before the rule existed count for it, because GitHub looks at the results on the head commit. `UNKNOWN` means GitHub has not worked it out yet; ask again after a few seconds. If it stays `BLOCKED`, look for open review threads first (see below). Only when no thread is open, run the checks once more with `gh run rerun <run id>` and wait for them. That is a write to GitHub of the same kind as step 1.
+
+On 2026-11-14 the fifth line was `BLOCKED`, with all seven checks at `SUCCESS`. The cause was not the checks. The rule also asks that every review thread is resolved, and the automatic Copilot review had left two open threads (see [Branch rule and change path](#branch-rule-and-change-path)). This lists the threads of the pull request. It is a query and changes nothing:
+
+```bash
+R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+PR=$(gh pr view scope/002-standards-and-tooling --json number --jq .number)
+gh api graphql -F owner="${R%/*}" -F name="${R#*/}" -F number="$PR" \
+  -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved isOutdated path comments(first:1){nodes{author{login}}}}}}}}' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | "\(if .isResolved then "resolved" else "open" end) outdated=\(.isOutdated) \(.path) \(.comments.nodes[0].author.login)"'
+```
+
+Each line is one thread: `open` or `resolved`, whether GitHub calls it outdated, the file, and who started it. A line that starts with `open` holds the merge, also when it says `outdated=true`. Settle the threads as step 4 of "How a change reaches `main`" says. A `BLOCKED` state for this reason does not hold up steps 4 and 5 of this proof, which do not read the merge state. Step 6 does: it starts only when the state is `CLEAN`.
 
 **Remote step 4: a direct push is refused** (**AC-13**). The block has its own gate: it pushes only if GitHub reports exactly the four rule types and the seven names of step 3.
 
@@ -1073,6 +1124,8 @@ git status -sb | head -1
 ```
 
 Expected: the first line shows the local `main` ahead of `origin/main` by the closing commits and not behind. `gh pr checks` prints seven lines marked `pass`. After the merge, `git status -sb` shows `## main...origin/main` with nothing ahead or behind.
+
+Two notes from steps 1 and 3 apply here too. If the block ends with `no run was registered within three minutes`, follow the note under remote step 1 with the branch name `scope/002-closing`. It is less likely here, because GitHub knows the workflow by now, but the cause in step 1 was never proven. And the automatic review may leave a thread on this pull request as well. `gh pr merge` then refuses. List the threads with the block under remote step 3 (with this branch name), settle them, and run the last three commands of the block again.
 
 The branch name follows the pattern `scope/<number>-closing`.
 
@@ -1268,10 +1321,12 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 - The Linux build runs on every pull request, on hardware of the architecture you deploy to, with the very command spec 0001 names. A guard keeps the script and the spec equal.
 - Every check has a recorded case that it refuses, so a green result means something.
 - The product still has sixteen third party packages. The tooling added none to it.
+- A review finding cannot be merged past unseen. On the first scope pull request the rule held the merge for two findings of the automatic Copilot review. Both were real defects (an exported `CDPATH` could move the fuzz run to another tree, and a link inside a code span with two backticks was read as a link), and both were fixed before the merge.
 
 **Negative / tradeoffs**:
 
 - The coordination flow can no longer push `main`. Every scope now closes through a pull request that a person opens or allows, and waits for seven checks. A scope whose evidence exists only after that pull request ran needs a second, closing pull request, and waits for the seven checks twice. This is the main cost of the decision.
+- An open review thread holds a merge the way a failed check does, and this was not weighed when the rule was written. While the automatic Copilot review is on for the owner's account, any pull request can end up waiting for a person: the threads must be marked as resolved by the repository owner, or by the lead with the owner's permission, also after the fix is in and all seven checks are green. A scope that closes with two pull requests can wait twice. Follow-up 12 holds the choice.
 - The branch rule requires no approval, because one account cannot approve its own pull request. Until a second maintainer account exists, the independent review is a written record that GitHub does not enforce.
 - The repository owner can still change or switch off the rule in the settings. The rule makes a bypass visible; it does not make it impossible.
 - "Merge commit only" holds for the merge button and the merge API. While 0 approvals are required, GitHub may accept a direct push of the head of an open, up to date, green pull request, and `main` then moves without a merge commit. The content has still passed all seven checks.
@@ -1305,14 +1360,19 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 1. Name the holder of each role in the [reviewer roster](../../engineering-standards.md#reviewer-roster), or confirm that it stays `Not assigned`. The rows that need a person block the gates named there.
 2. When a second maintainer has a GitHub account, raise the required approvals to 1 in `main.json` and on the remote.
 3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Applied in spec 0001 (2026-11-14): its Follow-up 9 and Follow-up 11 are marked as answered, its "Linux build" section points at `scripts/linux-build.sh` and rule W7, and its "Workspace layout and manifests" section notes that the root `Cargo.toml` gained a Clippy lint table.
-4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. From remote step 1 on, the CI job `linux-build` runs the same command on a native runner on every pull request. Nothing in spec 0001 needs to change for that.
+4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. From remote step 1 on, the CI job `linux-build` runs the same command on a native runner on every pull request. Nothing in spec 0001 needs to change for that. Done: remote steps 1 and 2 ran on 2026-11-14, and the run on the native runner printed `runner: Linux aarch64` and `linux build check passed`. The evidence is in [verify.md](verify.md).
 5. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
 6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
 7. [Scope 011](../../scope/011-release-qualification-harness.md) turns the inventory into a release inventory with notices, and decides whether the inventory becomes a required check.
 8. After the first scheduled run, confirm that the daily run happened (remote step 8).
-9. The text of the coordination skill (`.claude/skills/coordinate/SKILL.md`: its step 9, "Push `main`", and the limit "Lead hanya push `main` ke `origin`") no longer fits [Branch rule and change path](#branch-rule-and-change-path) once the branch rule is active. The repository owner updates it, because no session edits `.claude/`. Until then the lead follows this spec: remote step 7 of the [remote proof](#remote-proof), a closing pull request from `scope/<number>-closing`, stands in for step 9 of the skill, for this scope and for later ones.
+9. The text of the coordination skill (`.claude/skills/coordinate/SKILL.md`: its step 9, "Push `main`", and the limit "Lead hanya push `main` ke `origin`") no longer fits [Branch rule and change path](#branch-rule-and-change-path) once the branch rule is active. The repository owner updates it, because no session edits `.claude/`. Until then the lead follows this spec: remote step 7 of the [remote proof](#remote-proof), a closing pull request from `scope/<number>-closing`, stands in for step 9 of the skill, for this scope and for later ones. The rule is active since remote step 3 ran on 2026-11-14 (the evidence is in [verify.md](verify.md)), so this applies now. The skill text also has no word yet for step 4 of "How a change reaches `main`", the review threads.
 10. Before the slice that adds a third workspace crate, decide how rules W4 and W5 learn the packages and their dependencies. The review of 2026-11-14 (finding M3) named a fuller option that was not taken now: read the edges from the root `Cargo.lock`, which names the real package however the manifest spells it. The same decision covers a package that Cargo treats as a member without it being written in the `members` array (finding m14). Today's rule reads the manifests, with the four spellings of M3 added.
 11. The runner up for the CI definition guards is a rule in the style of W7 that compares `ci.yml` and `main.json` with their code blocks in this spec. It would also cover what the rules C1 to C5 still do not read (the `on:` block, the values under `with:`, and every field of `main.json` except the check names). Take it up if one of those gaps is ever met in practice.
+12. Decide whether `required_review_thread_resolution` stays `true` in `main.json` and on the remote. Remote step 3 showed what it costs (see [Branch rule and change path](#branch-rule-and-change-path)), and the choice has not been made. Until it is, the rule stays as it is. The options:
+    - **Keep it** (recommended, and what the lead recommends). Step 4 of "How a change reaches `main`" is the way through. Every finding is judged before a merge. The price is a wait for the repository owner on each pull request that gets a thread.
+    - **Set it to `false`**, in the file and on the remote in one pull request. A thread then informs and no longer holds, so a finding can be merged past before anyone judged it. This changes the rule payload and needs the repository owner.
+    - **Keep it and switch off the automatic Copilot review** in the owner's GitHub settings. Nothing holds a pull request then, but the reviewer that found two real defects in the first pull request it read is gone.
+13. Remote steps 1 to 6 of the [remote proof](#remote-proof) have run: steps 1 to 5 on 2026-11-14 and step 6, the merge, on 2026-11-15 (local time, seven hours ahead of UTC). The evidence is in [verify.md](verify.md). Step 7, the closing pull request, and step 8, the first daily run (Follow-up 8), are still to run. The notes that those runs added to this spec are listed in the [rationale](rationale.md#update-after-the-remote-steps-of-2026-11-14-and-2026-11-15).
 
 ## Rationale
 
