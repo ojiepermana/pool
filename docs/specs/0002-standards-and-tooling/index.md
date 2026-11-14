@@ -179,18 +179,28 @@ The script has two parts. The first part is fixed here:
 # Linux build check of spec 0001 (0001 AC-2). Needs a running Docker daemon.
 # The command below the marker line is copied from spec 0001, "Linux build". Do not edit it here.
 set -eu
-cd "$(dirname "$0")/.."
+CDPATH= cd -- "$(dirname -- "$0")/.."
 echo "runner: $(uname -sm)"
 if ! docker info >/dev/null 2>&1; then
   echo "linux-build: the Docker daemon is not running" >&2
   exit 3
 fi
-if [ -n "$(git status --porcelain)" ]; then
+if ! git rev-parse --verify -q HEAD >/dev/null; then
+  echo "linux-build: git cannot read HEAD here; this check builds only the committed tree" >&2
+  exit 3
+fi
+if ! changes=$(git status --porcelain); then
+  echo "linux-build: git status failed" >&2
+  exit 3
+fi
+if [ -n "$changes" ]; then
   echo "linux-build: commit or remove local changes first; this check builds only the committed tree" >&2
   exit 3
 fi
 # --- spec 0001, Linux build ---
 ```
+
+Three things in this part are there on purpose. `CDPATH=` in front of `cd` keeps an exported `CDPATH` from sending the script to another directory. `git rev-parse --verify -q HEAD` is a statement of its own, so a `git` that cannot work here (no repository, no commit, an ownership refusal) ends the check with exit 3 before the copied command pipes an empty archive into the container. The status of `git status` is tested apart from its output, so a failing `git status` is not read as a clean tree.
 
 The second part is everything after the marker line `# --- spec 0001, Linux build ---`. It is the content of the first code block under the heading "Linux build" in `docs/specs/0001-initial-architecture/index.md` (the block that starts with `git archive`), byte for byte, and nothing else. Copy it from spec 0001 as it stands on `main` when you build this step. Rule W7 compares the two on every pull request, so a later change to that command in spec 0001 must change this script in the same pull request.
 
@@ -210,6 +220,7 @@ all-features = true
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"
 unmaintained = "all"
+unsound = "all"
 ignore = []
 
 [licenses]
@@ -238,7 +249,7 @@ allow-git = []
 
 What it means, in plain words:
 
-- A known vulnerability, a withdrawn (yanked) version or a package reported as unmaintained fails the check, for direct and indirect dependencies alike.
+- A known vulnerability, a withdrawn (yanked) version, a package reported as unmaintained or a package reported as unsound (its safe interface can cause memory errors) fails the check, for direct and indirect dependencies alike. `unsound = "all"` is written out because the default of `cargo-deny` 0.20.2 looks at direct dependencies only.
 - Every package must offer at least one license from the list. The two workspace packages are checked too. A license in the list that no package needs also fails, so the list cannot grow quietly.
 - Two versions of one package in a lockfile fail. A dependency without a version requirement fails, except a path dependency inside this repository.
 - Packages come from crates.io only. A dependency taken from a Git address or another registry fails.
@@ -394,7 +405,7 @@ Details:
 
 - W1 reads a lockfile line by line: a `name = "<x>"` line that follows a `[[package]]` line is a package name. Names are compared as a sorted list, so a package that appears twice must be listed twice. The message names each missing and each extra package. If Cargo resolves a different set for the fuzz lockfile than the one above, stop and report it to the lead; do not edit the baseline to fit.
 - W3 compares plain text, not patterns. The eight lines are the alternatives of the `grep` in `0001 AC-12`. A match in a comment counts, as it does for that `grep`.
-- W4 and W5 read manifests line by line, without a TOML parser. Workspace members are the quoted strings in the `members` array of the root `Cargo.toml`; a `*` in a member string is a problem of rule W4, because the guard cannot follow it. A member's package name is the `name` in its `[package]` table. A dependency is a key in a table whose name is `dependencies`, `dev-dependencies` or `build-dependencies`, or ends with a dot and one of those names, or a table named `<one of those>.<key>`. The key is the text before the first dot, space or equals sign. Only keys that are member package names count for W5.
+- W4 and W5 read manifests line by line, without a TOML parser. A `#` comment that is not inside quotes is cut from a line before the line is read, so `[dependencies] # runtime` is still a table header and `workspace = true # inherit` is still that setting. Workspace members are the quoted strings in the `members` array of the root `Cargo.toml`; a `*` in a member string is a problem of rule W4, because the guard cannot follow it. A member's package name is the `name` in its `[package]` table. A dependency is a key in a table whose name is `dependencies`, `dev-dependencies` or `build-dependencies`, or ends with a dot and one of those names, or a table whose name ends with `<one of those>.<key>`, with or without a prefix in front (for example `[target.'cfg(unix)'.dependencies.pool]`). The key is the text before the first dot, space or equals sign, with quotes around it removed. When the line or the table of a dependency holds `package = "<name>"`, that name is the package it stands for, not the key. Only dependencies that stand for a member package count for W5.
 - W7 finds the heading line `### Linux build` in spec 0001, takes the lines between the first fence that follows it and that fence's closing line, and compares them with the lines of the script after the line `# --- spec 0001, Linux build ---`. Both sides are compared line by line, ignoring one trailing newline at the end of the file. A missing marker line or a missing block is a problem.
 - A baseline file changes only in the pull request that carries the spec or Build plan step that calls for the change, and the pull request names that spec. The first slice that opens a socket removes lines from `forbidden-source-patterns.txt`; the slice that creates `crates/pool-protocol` removes that line from `forbidden-paths.txt` and adds its pairs to `internal-dependencies.txt`.
 
@@ -406,9 +417,35 @@ These rules read `.github/workflows/ci.yml` and `.github/rulesets/main.json` lin
 |---|---|
 | C1 | In every file under `.github/workflows/`, each `uses:` value is `<owner>/<name>@<40 hexadecimal characters>` followed by a comment that starts with `# v` |
 | C2 | The job ids of `ci.yml` (lines of the form two spaces, an id, a colon, anywhere after the `jobs:` line) are exactly the `"context"` values of the `required_status_checks` rule in `main.json` |
-| C3 | Every `run:` value in `ci.yml` is either `rustup toolchain install` or `scripts/check.sh <name>`, and the last `run:` of each job is `scripts/check.sh <its job id>`. This is what keeps CI free of logic of its own |
-| C4 | Every `runs-on:` value is `ubuntu-24.04-arm` |
-| C5 | `ci.yml` has one `permissions:` line, at the start of a line, followed by `  contents: read`. No workflow file contains `pull_request_target` or `secrets.` |
+| C3 | After the `jobs:` line, `ci.yml` holds the fixed shape of this spec and nothing else. (a) Every line that is not empty is a job id line, or a line whose key is on the allowed list below. (b) Every `run:` value is exactly `rustup toolchain install` or `scripts/check.sh <name>`, where `<name>` is a job id of the file or `tools`. (c) A `run:` step is one line: the next line that is not empty starts a new step or a new job. (d) The last `run:` of each job is `scripts/check.sh <its job id>`. This is what keeps CI free of logic of its own |
+| C4 | Every job has exactly one `runs-on:` line, and its value is `ubuntu-24.04-arm` |
+| C5 | `.github/workflows/` holds `ci.yml` and no other file. `ci.yml` has exactly one line whose key is `permissions`. That line is `permissions:` with nothing after it, at the start of a line, and the block under it is the one line `  contents: read`: every line from there to the next line that starts in the first column is that line or is empty. No workflow file contains the text `pull_request_target` or `secrets` |
+
+The allowed keys of rule C3, taken from the workflow in this spec:
+
+```text
+runs-on
+timeout-minutes
+steps
+uses
+with
+persist-credentials
+fetch-depth
+path
+key
+run
+```
+
+Details:
+
+- The key of a line is found this way: drop the leading spaces, drop one leading `- ` if there is one, and take the text before the first colon. It is compared as written. So `"run"` in quotes, `{run` in braces and `run ` with a space before the colon are not the key `run`, and each is a problem of C3. A line with no colon has no key and is a problem. A line that holds only a comment is a problem too, because the fixed shape has none after `jobs:`.
+- A job id line is two spaces, an id made of letters, digits, hyphens and underscores, a colon, and nothing else. It is the same line that rule C2 reads.
+- Part (a) is what reports `continue-on-error:`, `if:`, `shell:`, `env:`, `container:`, `name:`, `strategy:`, `permissions:` and every other key that can change whether or how a step runs. None of them is on the list.
+- For part (b), the value is the text after `run:` with the spaces around it removed. It must equal one of the allowed texts in full, so `scripts/check.sh fmt || true` and `scripts/check.sh tools;<anything>` are problems.
+- For part (c), a new step is a line with the same indent as the `run:` line that begins with `- `. A new job is a job id line. Anything else after a `run:` line is a problem, also when an empty line stands between them. That covers a line that YAML would join to the command, and a key added to the step.
+- A later slice that needs another key, or a second workflow file, adds it to this rule in its own spec, in the same pull request.
+
+What these rules still do not read is listed under [Consequences](#consequences).
 
 #### Document checks
 
@@ -462,7 +499,8 @@ The wording of a message is yours, but a message must contain the rule ID and th
 | W5 | The pair as `<from> -> <to>`, for example `pool-config -> pool`, and whether it is not allowed or is missing |
 | W6 | The path of the unexpected `Cargo.lock` |
 | W7 | `scripts/linux-build.sh` and the first line number that differs |
-| C1 to C5 | The workflow or ruleset path and, for C2 and C3, the job id |
+| C1, C2, C4, C5 | The workflow or ruleset path and, for C2, the job id. For a second workflow file (C5), the path of that file |
+| C3 | The workflow path with the line number, and the job id. For a key that is not allowed, also the key as written, for example `continue-on-error` |
 | D1 | The file, the line number and the link target as written, for example `docs/missing-file.md` |
 | D2 | The file, the line number and the fragment as written, for example `no-such-heading` |
 | D3 | The feature file, and which of number, name or status disagrees |
@@ -709,6 +747,8 @@ Notes:
 
 What it does: `main` cannot be deleted or rewritten. A change reaches it only through a pull request. The pull request must be up to date with `main` and all seven checks must have passed on it. Only a merge commit is allowed, so the commits of each Build plan step stay visible. Nobody is on the bypass list, the repository owner included.
 
+One limit of "merge commit only": it binds the merge button and the merge API. It may not bind a direct `git push` of the head commit of a pull request that is open, up to date and green, as long as the number of required approvals is 0. GitHub can take such a push as that pull request being merged, and `main` then moves forward without a merge commit. The content would still be content that passed all seven checks. Nobody should push that way, and the [remote proof](#remote-proof) is written so that it never tries.
+
 The number of required approvals is 0, because GitHub does not let the author of a pull request approve it and the project has one GitHub account today. The independent review that `SEC-14` asks for is done as a written review under `docs/reviews/`, linked from the pull request. When a second maintainer account exists, raise `required_approving_review_count` to 1 in this file and on the remote in one pull request.
 
 **How a change reaches `main` from now on:**
@@ -717,6 +757,7 @@ The number of required approvals is 0, because GitHub does not let the author of
 2. The lead no longer pushes `main`. The merged result is pushed as a branch named `scope/<number>-<slug>`, for example with `git push origin main:scope/003-control-and-session-data-model`, and a pull request to `main` is opened from it with `gh pr create`. A pull request for a smaller change uses any branch name. Writing to GitHub needs your permission; the lead asks for it per scope, and without it you run these two commands yourself.
 3. The seven checks run. A failed check is reproduced with `scripts/check.sh <name>`, fixed on the branch and pushed again.
 4. The pull request is merged with a merge commit, and the local `main` is moved forward with `git pull --ff-only`.
+5. Whatever a scope can record only after its pull request ran (run addresses, the status `done`, the closing log entry) goes into a second pull request from a branch named `scope/<number>-closing`, in the same way. Remote step 7 of the [remote proof](#remote-proof) is the first one. This takes the place of the push of `main` that used to close a scope.
 
 If the rule itself must change, or must be switched off in an emergency, the repository owner does that in the repository settings. The change is then made in `main.json` in the next pull request, and the reason is written in the changelog. The ruleset history on GitHub shows every such change.
 
@@ -778,6 +819,13 @@ For each case the check must exit with a status other than 0 and its output must
 | 19 | `docs` | Delete the table row of `SEC-14` from `docs/security/security-requirements.md` | `D6` and `SEC-14` |
 | 20 | `linux-build` | Apply case 4 and commit it in the copy | `unexpected exit` or `test result: FAILED` |
 | 21 | `guards` | In `scripts/linux-build.sh`, replace the text `linux build check passed` with `linux build check skipped` | `W7` |
+| 22 | `deny` | Add a dependency that comes from a Git address (see below) | `source-not-allowed` |
+| 23 | `deny` | In the root `Cargo.toml`, replace the line that starts with `serde_json = ` with line N | `error[wildcard]` |
+| 24 | `guards` | In `.github/workflows/ci.yml`, replace the first line `    timeout-minutes: 15` with `    continue-on-error: true` | `C3` and `continue-on-error` |
+| 25 | `guards` | In `.github/workflows/ci.yml`, replace the first `ubuntu-24.04-arm` with `ubuntu-latest` | `C4` |
+| 26 | `guards` | In `.github/workflows/ci.yml`, replace the line `  contents: read` with `  contents: write` | `C5` |
+| 27 | `guards` | Create the empty file `docs/Cargo.lock` | `W6` and `docs/Cargo.lock` |
+| 28 | `docs` | Append line L to `docs/security/security-requirements.md` | `D4` and `SEC-14` |
 
 ```text
 A  fn  prove_fmt( ){}
@@ -791,6 +839,9 @@ H  pool = { path = "../../apps/pool" }
 I  [broken](docs/missing-file.md)
 J  [broken](docs/glossary.md#no-such-heading)
 K  `SEC-99`
+L  | SEC-14 | Fixture row used to prove the duplicate rule |
+M  pool-prove-source = { git = "file://<temporary directory>/prove-source" }
+N  serde_json = "*"
 ```
 
 Case 6, step by step: in the copy, add the line `db-path = "<temporary directory>/advisory-db"` under `[advisories]` in `deny.toml`. Run `scripts/check.sh deny` once; it downloads the real database into that directory and must pass. Then create the file `crates/itoa/RUSTSEC-0000-0001.md` inside the one directory that the download created there (its name starts with `advisory-db-`), with the content below, and run `scripts/check.sh deny` again. The made up advisory is never committed and never leaves the temporary directory.
@@ -813,59 +864,131 @@ patched = []
 This advisory is not real. It exists only so the check can be shown to fail.
 ````
 
+Case 22, step by step. It shows that the policy as committed refuses a package that does not come from crates.io.
+
+1. In the temporary directory, create the folder `prove-source` with an empty `src/lib.rs` and this `Cargo.toml`, run `git init` there and commit both files with the throwaway identity:
+
+   ```toml
+   [package]
+   name = "pool-prove-source"
+   version = "0.0.0"
+   edition = "2024"
+   license = "Apache-2.0"
+   ```
+
+2. In the copy, add line M under `[dependencies]` in `crates/pool-config/Cargo.toml`, with the real path of the temporary directory.
+3. In the copy, run `cargo metadata --format-version 1` once, without `--locked`, and drop its output. Cargo clones the folder and adds the package to `Cargo.lock`, so the lockfile is current and the check does not stop at the stale lockfile of case 7.
+4. Run `scripts/check.sh deny`. The sources check fails with `source-not-allowed`.
+
+Case 23 works because a `*` requirement still matches the locked version, so the lockfile stays current and only the bans check fails.
+
 Case 20 runs only when the script is started with `--with-linux-build` and the Docker daemon is running. Without it the script prints `SKIPPED 20 linux-build` and ends with `all checks reject their bad change (linux-build not proven)`. That wording keeps a skipped case visible.
 
-Cases 6 and 7, and the first `deny` run, need the network. Everything else runs offline once the crates are downloaded.
+Cases 6 and 7, and the first `deny` run, need the network. Everything else runs offline once the crates are downloaded. Cases 22 and 23 contact no host: case 22 clones from a folder on the same machine.
+
+Four parts of the dependency policy still have no case: two versions of one package, another registry, a withdrawn version and an unmaintained package. Each would need a lockfile entry written by hand or one more made up advisory, and was left out to keep the proof short. They are listed under [Consequences](#consequences).
 
 What a local proof cannot show is that GitHub runs the checks and refuses a merge. That is the [remote proof](#remote-proof), the last Build plan step.
 
 ### Remote proof
 
-These steps are the only ones that write to GitHub. The lead runs them from the main checkout, in this order, after every branch of this scope is merged into the local `main` and `scripts/check.sh all` passes there. No build, check or test session runs them. `gh` must be signed in as the repository owner. Each step names the criterion it proves and what its output must show; the checker copies the addresses into `verify.md`.
+These steps are the only ones that write to GitHub. The lead runs them from the main checkout, in this order, after every branch of this scope is merged into the local `main`, and after `scripts/check.sh all` and `scripts/prove-checks.sh` have both passed on exactly the revision that step 1 pushes. The checker records that revision and its test counts in `verify.md` first. No build, check or test session runs these steps. `gh` must be signed in as the repository owner. Each step names the criterion it proves and what its output must show; the checker copies the addresses into `verify.md`.
 
-**Remote step 1: apply the branch rule** (**AC-13**). Before: `gh api "repos/$R/rulesets"` prints `[]`.
+The order is part of the design. The workflow runs on a GitHub runner for the first time in step 1, while `main` has no rule yet. A surprise on the new runner is then fixed on the scope branch, with nothing locked. The rule is applied in step 3, only after seven green checks, and every step after it runs with the rule active.
 
-```bash
-R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-gh api -X POST "repos/$R/rulesets" --input .github/rulesets/main.json --jq '{id, name, enforcement}'
-gh api "repos/$R/rules/branches/main" --jq '[.[].type] | sort | join(",")'
-gh api "repos/$R/rules/branches/main" --jq '[.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context] | sort | join(",")'
-```
+How the blocks are written:
 
-Expected: the second command prints `"name":"main"` and `"enforcement":"active"`. The third prints `deletion,non_fast_forward,pull_request,required_status_checks`. The fourth prints `clippy,deny,docs,fmt,guards,linux-build,test`.
+- Each block stands on its own. It sets every variable it uses, so you can run it in a fresh shell (`sh`, `bash` or `zsh`).
+- A variable in front of a colon is written `${NAME}`, because zsh reads `$NAME:r` as something else.
+- A block that waits for a run can take longer than ten minutes. Run it in the background if your shell has a time limit.
+- The wait loop asks GitHub every five seconds, for at most three minutes, whether a run for the commit exists. It is there because `gh pr checks --watch` gives up with "no checks reported" when it is asked before GitHub has registered the run.
 
-**Remote step 2: push the scope branch and open the pull request** (**AC-3**).
+**Remote step 1: push the scope branch and open the pull request** (**AC-3**).
 
 ```bash
 git push origin main:scope/002-standards-and-tooling
 gh pr create --base main --head scope/002-standards-and-tooling \
   --title "Scope 002: standards and tooling" \
   --body "Spec 0002. Required checks, branch rule and tooling. Evidence: docs/specs/0002-standards-and-tooling/verify.md"
-gh pr checks scope/002-standards-and-tooling --watch
-gh pr view scope/002-standards-and-tooling --json url,headRefOid
-gh run list --branch scope/002-standards-and-tooling --workflow ci --limit 1 --json url,conclusion,headSha
+SHA=$(git rev-parse main)
+RUN=; n=0
+until [ -n "$RUN" ] || [ "$n" -ge 36 ]; do
+  sleep 5; n=$((n + 1))
+  RUN=$(gh run list --commit "$SHA" --event pull_request --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+done
+gh run watch "${RUN:?no run was registered within three minutes}" --exit-status
+gh pr checks scope/002-standards-and-tooling
+gh pr view scope/002-standards-and-tooling --json url,headRefOid --jq '"\(.url) \(.headRefOid)"'
+gh run view "$RUN" --json url,conclusion,headSha --jq '"\(.url) \(.conclusion) \(.headSha)"'
 ```
 
-Expected: `gh pr checks` ends with seven lines marked `pass`, one for each check name. `gh run list` shows `"conclusion":"success"`. If a check fails, this is a finding for a developer session, not something to fix on GitHub: read it with `gh run view <id> --log-failed`, reproduce it with `scripts/check.sh <name>`, fix it on a session branch, merge locally and push the scope branch again.
+Expected: `gh run watch` ends with exit 0. `gh pr checks` prints seven lines marked `pass`, one for each check name. The last line holds the run address, the word `success` and the hash that `git rev-parse main` prints.
 
-**Remote step 3: read the Linux build lines** (**AC-5**).
+If a check fails, this is a finding for a developer session, not something to fix on GitHub: read it with `gh run view <id> --log-failed`, reproduce it with `scripts/check.sh <name>`, fix it on a session branch and merge locally. Then run the block again without the `gh pr create` command. Do not go on to step 3 before this step shows seven passes.
+
+**Remote step 2: read the Linux build lines** (**AC-5**).
 
 ```bash
-RUN=$(gh run list --branch scope/002-standards-and-tooling --workflow ci --limit 1 --json databaseId -q '.[0].databaseId')
+RUN=$(gh run list --commit "$(git rev-parse main)" --event pull_request --limit 1 --json databaseId --jq '.[0].databaseId')
 gh run view "$RUN" --log | grep -E 'runner: |host: |target/release/pool|linux build check passed'
 ```
 
 Expected: the line `runner: Linux aarch64`, the `host:` line that `0001 AC-2` asks for, the `sha256sum` line of `target/release/pool`, and `linux build check passed`.
 
-**Remote step 4: a direct push is refused** (**AC-13**). Run it only after step 2 passed. Then, if the rule were not active and the push went through, what landed would still be content that passed all seven checks, and this step would be recorded as failed.
+**Remote step 3: apply the branch rule** (**AC-13**). Run it only after step 1 showed seven passes.
 
 ```bash
-git ls-remote origin refs/heads/main
-git push origin main:main
+R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api "repos/$R/rulesets" --jq 'length'
+[ "$(gh api "repos/$R/rulesets" --jq 'length')" = 0 ] &&
+  gh api -X POST "repos/$R/rulesets" --input .github/rulesets/main.json --jq '"\(.id) \(.name) \(.enforcement)"'
+gh api "repos/$R/rules/branches/main" --jq '[.[].type] | sort | join(",")'
+gh api "repos/$R/rules/branches/main" --jq '[.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context] | sort | join(",")'
+gh pr view scope/002-standards-and-tooling --json mergeStateStatus --jq .mergeStateStatus
+```
+
+Expected, line by line:
+
+1. `0`. No ruleset exists yet. With any other number the rule is not sent; stop and look at what is there.
+2. A number, then `main active`.
+3. `deletion,non_fast_forward,pull_request,required_status_checks`.
+4. `clippy,deny,docs,fmt,guards,linux-build,test`.
+5. `CLEAN`. The seven checks that passed before the rule existed count for it, because GitHub looks at the results on the head commit. `UNKNOWN` means GitHub has not worked it out yet; ask again after a few seconds. If it stays `BLOCKED`, run the checks once more with `gh run rerun <run id>` and wait for them. That is a write to GitHub of the same kind as step 1.
+
+**Remote step 4: a direct push is refused** (**AC-13**). The block has its own gate: it pushes only if GitHub reports exactly the four rule types and the seven names of step 3.
+
+```bash
+R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+TYPES=$(gh api "repos/$R/rules/branches/main" --jq '[.[].type] | sort | join(",")')
+NAMES=$(gh api "repos/$R/rules/branches/main" --jq '[.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context] | sort | join(",")')
+if [ "$TYPES" = "deletion,non_fast_forward,pull_request,required_status_checks" ] &&
+   [ "$NAMES" = "clippy,deny,docs,fmt,guards,linux-build,test" ]; then
+  git fetch origin main
+  PROBE=$(git commit-tree 'origin/main^{tree}' -p origin/main \
+    -m "probe: a direct push that the branch rule must refuse (spec 0002 AC-13)")
+  echo "probe ${PROBE} on top of $(git rev-parse origin/main)"
+  git ls-remote origin refs/heads/main
+  git push origin "${PROBE}:refs/heads/main" || echo "push refused, exit $?"
+  git ls-remote origin refs/heads/main
+else
+  echo "the rule on main is not the one remote step 3 applies; the probe was not run"
+fi
+```
+
+What is pushed is a new commit with no change in it, made on top of the remote `main`. It belongs to no pull request and no check ever ran on it, so an active rule has two reasons to refuse it. It is not the head of the scope pull request. That head is the one commit GitHub may accept on a direct push (see [Branch rule and change path](#branch-rule-and-change-path)), which is why the probe does not use it. The local `main` and the working tree are not touched; the probe commit stays in the local repository as an object that nothing points to.
+
+Expected: the push is rejected with a message that contains `GH013` or `rule violations`, the block prints `push refused`, and both `git ls-remote` lines show the same hash.
+
+If the second `git ls-remote` line shows the probe hash, the push went through and **AC-13** has failed. Record the output. What landed is one empty commit. To take it off again, with the hash from the `probe` line:
+
+```bash
+PROBE=<the hash from the probe line>
+BEFORE=$(git rev-parse "${PROBE}^")
+git push --force-with-lease="refs/heads/main:${PROBE}" origin "${BEFORE}:refs/heads/main"
 git ls-remote origin refs/heads/main
 ```
 
-Expected: the push is rejected with a message that contains `GH013` or `rule violations`, and both `git ls-remote` lines show the same hash.
+This is a forced push to `main`, so ask the repository owner before you run it. The lease makes it safe: GitHub moves `main` back only if `main` is still the probe commit. If GitHub refuses this push too, leave the empty commit where it is, bring it into the local `main` with `git fetch origin main` and `git merge --no-edit origin/main`, and run the step 1 block again without `gh pr create`, so that the scope branch is up to date. In both cases stop here and report to the repository owner before step 5, because the rule does not do what this spec says.
 
 **Remote step 5: a wrong change is blocked** (**AC-12**). Run it before step 6.
 
@@ -877,30 +1000,95 @@ git push origin prove/fmt-fails
 gh pr create --base main --head prove/fmt-fails \
   --title "Do not merge: proves the fmt check" \
   --body "Deliberate format error for spec 0002 AC-12. This pull request is closed without a merge."
-gh pr checks prove/fmt-fails --watch
+SHA=$(git rev-parse prove/fmt-fails)
+RUN=; n=0
+until [ -n "$RUN" ] || [ "$n" -ge 36 ]; do
+  sleep 5; n=$((n + 1))
+  RUN=$(gh run list --commit "$SHA" --event pull_request --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+done
+gh run watch "${RUN:?no run was registered within three minutes}" --exit-status || echo "run failed, exit $?"
+gh pr checks prove/fmt-fails || echo "checks failed, exit $?"
 gh pr view prove/fmt-fails --json url,mergeStateStatus,statusCheckRollup \
-  --jq '{url, mergeStateStatus, fmt: [.statusCheckRollup[] | select(.name=="fmt") | .conclusion]}'
-gh pr close prove/fmt-fails --delete-branch
+  --jq '"\(.url) \(.mergeStateStatus) fmt=\([.statusCheckRollup[] | select(.name=="fmt") | .conclusion] | join(","))"'
 git switch main
-git branch -D prove/fmt-fails
+gh pr close prove/fmt-fails --delete-branch
+git branch --list prove/fmt-fails
+git ls-remote origin refs/heads/prove/fmt-fails
+git status -sb | head -1
 ```
 
-Expected: `gh pr checks` shows `fmt` as `fail` (the command itself then exits with a status other than 0, which is the point). `gh pr view` prints `"fmt":["FAILURE"]` and `"mergeStateStatus":"BLOCKED"`. Afterward `git status --short` is empty and the local `main` is unchanged.
+Expected: the block prints `run failed` and `checks failed`, which is the point. `gh pr checks` shows `fmt` as `fail`. It shows `clippy` as `fail` too, because the added function is never used; that does no harm. `gh pr view` prints the address, then `BLOCKED fmt=FAILURE`. The two commands after `gh pr close` print nothing: the branch is gone locally and on the remote. If the first of them still prints the branch, remove it with `git branch -D prove/fmt-fails`. Afterward `git status --short` is empty and the local `main` is unchanged.
+
+The commit of this step is made without the graph update that `AGENTS.md` asks for before a commit. It is exempt because it is never merged.
 
 **Remote step 6: merge** (**AC-3**).
 
 ```bash
+gh pr view scope/002-standards-and-tooling --json mergeStateStatus --jq .mergeStateStatus
 gh pr merge scope/002-standards-and-tooling --merge
 git pull --ff-only origin main
 git status -sb | head -1
-gh run list --branch main --workflow ci --limit 1 --json event,conclusion,url
+SHA=$(git rev-parse origin/main)
+RUN=; n=0
+until [ -n "$RUN" ] || [ "$n" -ge 36 ]; do
+  sleep 5; n=$((n + 1))
+  RUN=$(gh run list --commit "$SHA" --event push --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+done
+gh run watch "${RUN:?no run was registered within three minutes}" --exit-status
+gh pr view scope/002-standards-and-tooling --json state,mergeCommit --jq '"\(.state) \(.mergeCommit.oid)"'
+gh run view "$RUN" --json event,conclusion,url,headSha --jq '"\(.event) \(.conclusion) \(.url) \(.headSha)"'
 ```
 
-Expected: the pull request is `MERGED`, the local `main` equals `origin/main`, and the run for the push to `main` ends with `success`.
+Expected: the first line is `CLEAN`. After the merge, `git status -sb` shows `## main...origin/main` with nothing ahead or behind. The run for the push to `main` is watched to its end before it is read. The last two lines are `MERGED` with the hash of the merge commit, and `push success` with the run address and the same hash.
 
-**Remote step 7: the first daily run.** A day later, `gh run list --workflow ci --event schedule --limit 1 --json conclusion,createdAt,url` shows one run with `success`. This does not hold the scope open.
+The branch `scope/002-standards-and-tooling` stays on the remote, because the repository does not delete a branch when its pull request is merged. Nothing depends on it. You may delete it on GitHub at any time.
 
-To undo the rule: `gh api "repos/$R/rulesets" --jq '.[] | select(.name=="main") | .id'` gives its number, and `gh api -X DELETE "repos/$R/rulesets/<number>"` removes it. Nothing else on the remote was changed by these steps except the two branches and the two pull requests.
+**Remote step 7: the closing pull request** (**AC-3**, **AC-19**). The addresses and hashes of steps 1 to 6 exist only now, and with the rule active they can reach `main` only through a second pull request. First the closing commits are brought onto the local `main`, which step 6 left equal to `origin/main`. Together they hold:
+
+- the pull request addresses, run addresses and commit hashes of steps 1 to 6 in `verify.md`, written by the checker, and the four remote items there no longer `NOT_RUN`
+- the status of scope 002 in its index row and in the first line of its feature file, with the links to that evidence, and the status line of this spec (`Accepted`)
+- item 12 of [Document corrections](#document-corrections)
+- the closing entry of the coordination log, and the sync step's edits to `AGENTS.md` if they are not on `main` yet
+- the graph update in `graphify-out/`
+
+Then:
+
+```bash
+git status -sb | head -1
+git push origin main:scope/002-closing
+gh pr create --base main --head scope/002-closing \
+  --title "Scope 002: closing evidence" \
+  --body "Remote evidence for spec 0002 (AC-3, AC-5, AC-12, AC-13), scope 002 status, and item 12 of Document corrections."
+SHA=$(git rev-parse main)
+RUN=; n=0
+until [ -n "$RUN" ] || [ "$n" -ge 36 ]; do
+  sleep 5; n=$((n + 1))
+  RUN=$(gh run list --commit "$SHA" --event pull_request --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+done
+gh run watch "${RUN:?no run was registered within three minutes}" --exit-status
+gh pr checks scope/002-closing
+gh pr merge scope/002-closing --merge
+git pull --ff-only origin main
+git status -sb | head -1
+```
+
+Expected: the first line shows the local `main` ahead of `origin/main` by the closing commits and not behind. `gh pr checks` prints seven lines marked `pass`. After the merge, `git status -sb` shows `## main...origin/main` with nothing ahead or behind.
+
+The branch name follows the pattern `scope/<number>-closing`.
+
+For this scope and for every later one, this step takes the place of step 9 of the coordination skill ("Push `main`"). The closing commits of a scope reach `main` through a pull request and never through a push to `main`. A later scope whose evidence does not depend on its own pull request can put its closing commits into the scope pull request itself and then needs no second one.
+
+**Remote step 8: the first daily run.** A day later, `gh run list --workflow ci --event schedule --limit 1 --json conclusion,createdAt,url` shows one run with `success`. This does not hold the scope open.
+
+To undo the rule:
+
+```bash
+R=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api "repos/$R/rulesets" --jq '.[] | select(.name=="main") | .id'
+gh api -X DELETE "repos/$R/rulesets/<number>"
+```
+
+The second command prints the number of the rule and the third removes it. Removing the rule does not take back anything else. These steps also leave on the remote: the merge commits of steps 6 and 7 on `main`, which stay; the branches `scope/002-standards-and-tooling` and `scope/002-closing`; and three pull requests, two merged and one closed. The branch `prove/fmt-fails` is gone after step 5.
 
 ### Rules for later slices
 
@@ -947,7 +1135,7 @@ Limits:
 
 ### Document corrections
 
-Each item is a sentence that is false for the workspace as it is, with the text that replaces it. Three were changed together with this spec: line 3 and line 9 of `docs/engineering-standards.md`, and the second paragraph of "CI progression" in `docs/testing/strategy.md`. The rest are Build plan steps 6 and 9.
+Each item is a sentence that is false for the workspace as it is, with the text that replaces it. Three were changed together with this spec: line 3 and line 9 of `docs/engineering-standards.md`, and the second paragraph of "CI progression" in `docs/testing/strategy.md`. Line 9 was changed once more after the review of 2026-11-14, to name the fuzz package as the one place outside the `unsafe_code` rule. The rest are Build plan steps 6 and 9.
 
 The replacement texts are in code blocks because their links are written for the file they go into, not for this one.
 
@@ -1023,7 +1211,7 @@ The replacement texts are in code blocks because their links are written for the
     new: Every pull request runs seven required checks. To reproduce a failed check named `X`, run `scripts/check.sh X`. A change reaches `main` only through a pull request whose checks passed. The checks and that path are described in [spec 0002](docs/specs/0002-standards-and-tooling/index.md).
     ```
 
-12. `CONTRIBUTING.md`, last paragraph. The list of what the project still needs names "remote repository review/branch protection settings". Leave it as it is in step 9. It is removed when Build plan step 11 has passed, by whoever records that evidence. The maintainer team and the private reporting channel stay in the list.
+12. `CONTRIBUTING.md`, last paragraph. The list of what the project still needs names "remote repository review/branch protection settings". Leave it as it is in step 9. It is removed in the closing pull request of remote step 7, once remote steps 1 to 6 have passed. The maintainer team and the private reporting channel stay in the list.
 
 13. `README.md`, "Build and check". Keep the four command block. Add after it:
 
@@ -1051,7 +1239,7 @@ The replacement texts are in code blocks because their links are written for the
 
 ### Evidence
 
-The developer writes `docs/specs/0002-standards-and-tooling/verify.md` with one section per milestone, as the [testing strategy](../../testing/strategy.md#acceptance-evidence) asks, and adds it to the spec's entry in `docs/index.md`. A step that needs GitHub is recorded there as `NOT_RUN` with `owner: lead` until the lead has run it, and then with the pull request address, the run address and the commit hash.
+The developer writes `docs/specs/0002-standards-and-tooling/verify.md` with one section per milestone, as the [testing strategy](../../testing/strategy.md#acceptance-evidence) asks, and adds it to the spec's entry in `docs/index.md`. A step that needs GitHub is recorded there as `NOT_RUN` with `owner: lead` until the lead has run it, and then with the pull request address, the run address and the commit hash. Those addresses reach `main` in the closing pull request of remote step 7.
 
 ## Build plan
 
@@ -1063,11 +1251,11 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 4. **CI definition, branch rule and pull request template.** Create the three files under `.github/` exactly as given in [CI definition](#ci-definition), [Branch rule and change path](#branch-rule-and-change-path) and [Pull request template](#pull-request-template). Files: `.github/workflows/ci.yml`, `.github/rulesets/main.json`, `.github/pull_request_template.md`. Satisfies **AC-2**, and the file halves of **AC-13** and **AC-14**.
 5. **Repository check program, workspace and CI rules.** Create the package `tools/repo-check/` with the commands `workspace` and `ci`, the six baseline files and tests for rules W1 to W7 and C1 to C5. Files: `tools/repo-check/`. Satisfies **AC-6**, **AC-7**.
 6. **Repository check program, document rules.** Add the command `docs` with rules D1 to D6 and their tests. Change the citation example in `docs/index.md` ([Document corrections](#document-corrections)). `scripts/check.sh all` passes from here on. Files: `tools/repo-check/src/`, `docs/index.md` (the example only). Satisfies **AC-8**, **AC-9**, **AC-10**.
-7. **Proof that the checks bite.** Write `scripts/prove-checks.sh` with the twenty one cases ([Proving the checks](#proving-the-checks)) and run it. Files: `scripts/prove-checks.sh`. Satisfies **AC-11**.
+7. **Proof that the checks bite.** Write `scripts/prove-checks.sh` with the twenty eight cases ([Proving the checks](#proving-the-checks)) and run it. Files: `scripts/prove-checks.sh`. Satisfies **AC-11**.
 8. **Fuzz run and inventory run.** Run `scripts/check.sh fuzz` and `scripts/check.sh sbom` once each. `cargo-cyclonedx` 0.5.10 is installed for this with `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. No committed file changes, except a fix to `scripts/check.sh` if the inventory flags had to change. Completes **AC-15**, satisfies **AC-16**.
 9. **Document corrections.** Apply items 1 to 3, 5 to 11 and 13 of [Document corrections](#document-corrections). The texts about CI and pull requests describe `main` as it is once the pull request of step 11 is merged; they reach `main` only with that pull request. Files: `CONTRIBUTING.md`, `README.md`, `docs/implementation-order.md`, `docs/index.md` (line 5), `docs/repository-structure.md`, `docs/testing/strategy.md` (line 3), `docs/plan/risk-register.md`, `docs/research/technology-evaluation.md` (item 9 only). Satisfies **AC-19**, completes **AC-14**, **AC-18**.
 10. **Workstation evidence.** Run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` if `docker info` succeeds) and the fuzz and inventory commands on the final tree. Record commands, results, the revision and tool versions in `verify.md`. Fill the locked versions you observed into the "Adopted in scope 002" section of the technology evaluation. Add two rows to `docs/index.md`: `verify.md` under this spec, and `.github/pull_request_template.md` under "Project root". Record the four remote items as `NOT_RUN`, `owner: lead`. Files: `docs/specs/0002-standards-and-tooling/verify.md`, `docs/research/technology-evaluation.md` (observed versions), `docs/index.md` (two rows). Completes **AC-17**. Evidence for **AC-1**, **AC-2**, **AC-4**, **AC-6** to **AC-11** and **AC-14** to **AC-20**.
-11. **Remote evidence (run by the lead, not by a build session).** With everything merged into the local `main` and `scripts/check.sh all` green there, run remote steps 1 to 6 under [Remote proof](#remote-proof) in order: apply the branch rule, push the branch and open the pull request, read the Linux build lines from the run, try a direct push, open and close the failing pull request, and merge. The checker records the addresses in `verify.md` and the lead links them from scope 002. Then apply item 12 of [Document corrections](#document-corrections) in the next pull request. Satisfies **AC-3**, **AC-12**, completes **AC-5** and **AC-13**.
+11. **Remote evidence (run by the lead, not by a build session).** With everything merged into the local `main`, and `scripts/check.sh all` and `scripts/prove-checks.sh` green on that revision, run remote steps 1 to 7 under [Remote proof](#remote-proof) in order: push the branch and open the pull request, read the Linux build lines from its run, apply the branch rule, try the direct push, open and close the failing pull request, merge, and then open and merge the closing pull request. The rule is applied only after the seven checks have passed once on a GitHub runner. The checker records the addresses in `verify.md`, the lead links them from scope 002, and both reach `main` in the closing pull request of remote step 7, together with item 12 of [Document corrections](#document-corrections). Satisfies **AC-3**, **AC-12**, completes **AC-5**, **AC-13** and **AC-19**.
 
 **Parallel sessions.** Steps 1, 2, 3, 4 and 9 touch files that do not overlap and can run at the same time (step 3 once the spec 0001 update it names is on `main`); the developer of step 3 reads the commands from this spec and does not wait for steps 1 and 2. Steps 5 and 6 share one package and run one after the other in one session; they can start at once, because their tests use their own inputs, but their run on the real tree is green only after steps 1 to 4 are merged. Step 7 comes after steps 1 to 6. Step 8 needs steps 2 and 3. Step 10 comes after everything else, and step 11 after step 10 is merged.
 
@@ -1083,9 +1271,10 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 
 **Negative / tradeoffs**:
 
-- The coordination flow can no longer push `main`. Every scope now closes through a pull request that a person opens or allows, and waits for seven checks. This is the main cost of the decision.
+- The coordination flow can no longer push `main`. Every scope now closes through a pull request that a person opens or allows, and waits for seven checks. A scope whose evidence exists only after that pull request ran needs a second, closing pull request, and waits for the seven checks twice. This is the main cost of the decision.
 - The branch rule requires no approval, because one account cannot approve its own pull request. Until a second maintainer account exists, the independent review is a written record that GitHub does not enforce.
 - The repository owner can still change or switch off the rule in the settings. The rule makes a bypass visible; it does not make it impossible.
+- "Merge commit only" holds for the merge button and the merge API. While 0 approvals are required, GitHub may accept a direct push of the head of an open, up to date, green pull request, and `main` then moves without a merge commit. The content has still passed all seven checks.
 - Three line based readers (lockfiles, manifests, the workflow and ruleset files) stand in for real parsers. They work because this spec fixes the shape of those files. An unusual but valid way to write a manifest can produce a false problem, which is then fixed in the tool, not worked around.
 - The anchor rule follows GitHub's heading anchors as observed on this project's documents. It does not know headings written with underlines, HTML anchors or emphasis written with underscores.
 - Rule D6 can tell that an ID is gone. It cannot tell that the text behind an ID changed its meaning, or that two IDs swapped their text. That stays a review matter.
@@ -1094,6 +1283,16 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 - The daily run can fail on a day when nobody changed anything, because a new advisory was published. That is its purpose, and it is also an interruption.
 - Nothing is built or tested for 64 bit Intel or AMD Linux. A contributor on such a machine can meet a failure that CI never saw.
 - `scripts/linux-build.sh` holds a second copy of the command in spec 0001. Rule W7 makes a difference fail, at the price of one more thing to update when spec 0001 changes.
+
+**Known limits of the guards**, found by the review of 2026-11-14 and left as they are on purpose. Each one is small or needs intent, and a pull request can change the guard itself anyway: the guards catch honest drift and help the reviewer, they do not stop a person who means to get around them.
+
+- The CI definition guards do not read the `on:` block of `ci.yml`, so removing the daily `schedule:` passes. They do not read the values under `with:`, so `persist-credentials: true` passes. In `main.json` they read only the check names, so a changed `enforcement` or a bypass actor in the file passes. The file is applied by hand in remote step 3, whose output shows what GitHub really holds. The runner up that would close these is Follow-up 11.
+- Rules W4 and W5 know only the members written in the `members` array. A package that Cargo treats as a member because of a path dependency is not checked for lint inheritance. Rule W1 still makes its name visible in the lockfile baseline (Follow-up 10).
+- Rule W3 is a tripwire, not a wall. It compares plain text, as the `grep` of `0001 AC-12` does, so a grouped import such as `use std::{io, thread};` passes, and a folder named `target` is skipped at any depth. Review is the guard for what it misses.
+- Rule W7 guards only the lines after the marker of `scripts/linux-build.sh`. The lines before it are fixed by this spec and by review.
+- A symbolic link under a walked folder is not followed and not reported, so a linked `.rs`, `.md` or `Cargo.lock` file is not checked.
+- The Markdown reader does not know every form GitHub accepts. Beyond the heading forms named above, it reports a target with a query part as missing, takes a relative target such as `README.md:12` for a scheme and skips it, and does not see a link that is split over two lines.
+- Four parts of the dependency policy have no proving case: two versions of one package, another registry, a withdrawn version and an unmaintained package. A later edit that weakens one of those keys in `deny.toml` would not be caught by `scripts/prove-checks.sh`, only by review of the pull request that touches `deny.toml`, which the pull request template asks to be listed.
 
 **Neutral**:
 
@@ -1106,12 +1305,14 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 1. Name the holder of each role in the [reviewer roster](../../engineering-standards.md#reviewer-roster), or confirm that it stays `Not assigned`. The rows that need a person block the gates named there.
 2. When a second maintainer has a GitHub account, raise the required approvals to 1 in `main.json` and on the remote.
 3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Applied in spec 0001 (2026-11-14): its Follow-up 9 and Follow-up 11 are marked as answered, its "Linux build" section points at `scripts/linux-build.sh` and rule W7, and its "Workspace layout and manifests" section notes that the root `Cargo.toml` gained a Clippy lint table.
-4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. The CI job `linux-build` runs the same command on a native runner on every pull request from now on. Nothing in spec 0001 needs to change for that.
+4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. From remote step 1 on, the CI job `linux-build` runs the same command on a native runner on every pull request. Nothing in spec 0001 needs to change for that.
 5. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
 6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
 7. [Scope 011](../../scope/011-release-qualification-harness.md) turns the inventory into a release inventory with notices, and decides whether the inventory becomes a required check.
-8. After the first scheduled run, confirm that the daily run happened (remote step 7).
-9. The text of the coordination skill (`.claude/skills/coordinate/SKILL.md`: its step 9, "Push `main`", and the limit "Lead hanya push `main` ke `origin`") no longer fits [Branch rule and change path](#branch-rule-and-change-path) once the branch rule is active. The repository owner updates it, because no session edits `.claude/`. Until then the lead follows this spec, not step 9 of the skill.
+8. After the first scheduled run, confirm that the daily run happened (remote step 8).
+9. The text of the coordination skill (`.claude/skills/coordinate/SKILL.md`: its step 9, "Push `main`", and the limit "Lead hanya push `main` ke `origin`") no longer fits [Branch rule and change path](#branch-rule-and-change-path) once the branch rule is active. The repository owner updates it, because no session edits `.claude/`. Until then the lead follows this spec: remote step 7 of the [remote proof](#remote-proof), a closing pull request from `scope/<number>-closing`, stands in for step 9 of the skill, for this scope and for later ones.
+10. Before the slice that adds a third workspace crate, decide how rules W4 and W5 learn the packages and their dependencies. The review of 2026-11-14 (finding M3) named a fuller option that was not taken now: read the edges from the root `Cargo.lock`, which names the real package however the manifest spells it. The same decision covers a package that Cargo treats as a member without it being written in the `members` array (finding m14). Today's rule reads the manifests, with the four spellings of M3 added.
+11. The runner up for the CI definition guards is a rule in the style of W7 that compares `ci.yml` and `main.json` with their code blocks in this spec. It would also cover what the rules C1 to C5 still do not read (the `on:` block, the values under `with:`, and every field of `main.json` except the check names). Take it up if one of those gaps is ever met in practice.
 
 ## Rationale
 
