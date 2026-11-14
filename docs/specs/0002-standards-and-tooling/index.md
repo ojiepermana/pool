@@ -1,7 +1,7 @@
 # 0002. Standards and tooling
 
 **Date**: 2026-11-14
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

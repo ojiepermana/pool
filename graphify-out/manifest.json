@@ -264,10 +264,10 @@
     "semantic_hash": "43598dcca2090e662aaabad06d818661"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794658259.4227872,
-    "seen": 1794658537.156863,
+    "mtime": 1794658798.4157197,
+    "seen": 1794658831.301244,
     "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
-    "semantic_hash": "1319d78d010c96867d9aa0bf9b314be4"
+    "semantic_hash": "b035bfa7778a1caa9ae749ca94cc2854"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -504,10 +504,10 @@
     "semantic_hash": "2748521703f0f2aaa1f3fef318de6fa0"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794658259.4238334,
-    "seen": 1794658537.1568651,
+    "mtime": 1794658798.4164994,
+    "seen": 1794658831.301247,
     "ast_hash": "",
-    "semantic_hash": "8006184915ff468d49aa3f5b95fcb416"
+    "semantic_hash": "ac6a99e65a003892028fa2f8c2eea215"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
     "mtime": 1794658048.2894921,
@@ -546,15 +546,39 @@
     "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
   },
   "docs/specs/0002-standards-and-tooling/index.md": {
-    "mtime": 1794658233.537102,
-    "seen": 1794658537.1568692,
+    "mtime": 1794658748.161685,
+    "seen": 1794658831.301249,
     "ast_hash": "",
-    "semantic_hash": "e70fa583b7ab7316c32b441a583cce34"
+    "semantic_hash": "882347dece1a7a6ce4b5c230dd65a69a"
   },
   "docs/specs/0002-standards-and-tooling/rationale.md": {
     "mtime": 1794658233.5374477,
     "seen": 1794658537.15687,
     "ast_hash": "",
     "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
+  },
+  "docs/specs/0002-standards-and-tooling/verify.md": {
+    "mtime": 1794658748.1660419,
+    "seen": 1794658830.749502,
+    "ast_hash": "",
+    "semantic_hash": "3c8ba064397a031ae82df7ab368699fb"
+  },
+  "Cargo.toml": {
+    "mtime": 1794658748.1588957,
+    "seen": 1794658830.801265,
+    "ast_hash": "b66e1977a09fa01e71bee553f1ff9cc8",
+    "semantic_hash": ""
+  },
+  "crates/pool-config/fuzz/Cargo.toml": {
+    "mtime": 1794658748.1595273,
+    "seen": 1794658830.801267,
+    "ast_hash": "7b2b42af9c0db2c6d0e7f4621334d41d",
+    "semantic_hash": ""
+  },
+  "crates/pool-config/fuzz/fuzz_targets/validate.rs": {
+    "mtime": 1794658748.160731,
+    "seen": 1794658830.8012679,
+    "ast_hash": "90d3571a3b4b197728cd5c63c72e3c52",
+    "semantic_hash": ""
   }
 }
