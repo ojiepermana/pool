@@ -50,7 +50,46 @@ The local default toolchain is `stable` 1.99.1. The 1.100.0 above was selected b
 
 ### UI / manual
 
-- [ ] **Linux build (AC-2)**: see the step 5 entry below.
+- [ ] **Linux build (AC-2)**: `BLOCKED`
+  - **reason**: `docker info` exited 1 on 2026-11-14 (the Docker daemon is not running), so the build was not run, as the spec asks. A build on macOS does not meet AC-2.
+  - **owner**: user
+  - **Prerequisites**: Docker Desktop started, so `docker info` exits 0. Every change committed (`git status --short` empty). Run from the repository root. The image is about 320 MB; the build runs under `linux/amd64` emulation and takes a few minutes.
+  - **Command** (exactly as under [Linux build](index.md#linux-build)):
+
+    ```bash
+    git archive --format=tar HEAD | docker run --rm -i --platform linux/amd64 \
+      -e RUSTUP_TOOLCHAIN=1.100.0 -e CARGO_INCREMENTAL=0 -e CARGO_PROFILE_DEV_DEBUG=0 \
+      rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37 \
+      sh -euc '
+    mkdir /work && tar -xf - -C /work && cd /work
+    grep -q "channel = \"1.100.0\"" rust-toolchain.toml
+    rustc -vV
+    rustc -vV | grep -qx "host: x86_64-unknown-linux-gnu"
+    cargo build --locked --release -p pool
+    cargo test --locked --workspace
+    sha256sum target/release/pool
+    ./target/release/pool --version
+    for f in crates/pool-config/tests/fixtures/*.toml; do
+      case "$f" in
+        */valid-*) want=0 ;;
+        *) want=1 ;;
+      esac
+      for m in human json; do
+        rc=0
+        ./target/release/pool check-config --config "$f" --format "$m" >/tmp/out 2>/tmp/err || rc=$?
+        echo "== $f $m exit=$rc"
+        if grep -q "CANARY-9f2c7b1e" /tmp/out /tmp/err; then echo "canary leaked"; exit 1; fi
+        cat /tmp/out /tmp/err
+        if [ "$rc" -ne "$want" ]; then echo "unexpected exit $rc, wanted $want"; exit 1; fi
+      done
+    done
+    echo "linux build check passed"
+    '
+    ```
+
+  - **Expected**: exit status 0; `rustc -vV` output contains `host: x86_64-unknown-linux-gnu`; the test run passes (including `a_failed_write_exits_3_without_stderr`, the `/dev/full` part of AC-11); one `== <fixture> <format> exit=<n>` block per fixture and format, with exit 0 for `valid-*` and 1 for the rest; no `canary leaked` line; last line `linux build check passed`.
+  - **Criteria**: `0001 AC-2`, plus the Linux only part of `0001 AC-11`.
+  - **Record afterwards**: the image digest (`sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`), the `sha256sum target/release/pool` line, `git rev-parse HEAD`, and the result.
 
 ### Commands
 
@@ -97,7 +136,7 @@ exit=1
 | Criterion | Evidence | Result |
 |---|---|---|
 | `0001 AC-1` | Release build, `cargo metadata` and `rustc -vV` above. `Cargo.lock` committed in step 1 | pass on the workstation |
-| `0001 AC-2` | Linux build, step 5 below | blocked (Docker daemon not running) |
+| `0001 AC-2` | Linux build under UI / manual (step 5) | blocked (Docker daemon not running), owner: user |
 | `0001 AC-3` | `check_config::valid_fixtures_report_valid_in_both_formats` | pass |
 | `0001 AC-4` (`SEC-10`) | `validate::valid_fixtures_are_accepted_with_capabilities_disabled`, `check_config::valid_fixtures_report_valid_in_both_formats` | pass |
 | `0001 AC-5` (`SEC-10`) | `validate::result_cache_enabled_is_refused`, `validate::enabled_true_is_refused_in_every_table_spelling`, `check_config::reserved_capabilities_enabled_are_refused` | pass |
