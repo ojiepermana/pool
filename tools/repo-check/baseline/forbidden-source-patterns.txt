@@ -1,0 +1,9 @@
+# Baseline of spec 0002 (docs/specs/0002-standards-and-tooling/index.md), rule W3: plain text that no .rs file under apps/ or crates/ may contain
+std::net
+TcpListener
+TcpStream
+UdpSocket
+UnixListener
+UnixStream
+tokio
+std::thread
