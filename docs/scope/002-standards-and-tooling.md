@@ -16,10 +16,10 @@ The maintainer uses the real manifest to select required CI checks, branch revie
   - [x] Proofs, inventory, documents and workstation evidence: steps 7 to 10 (`AC-11`, `AC-16` to `AC-19`), after the three milestones above
 - [x] Verify it: `/check verify standards and tooling`
 - [x] Test it: `/test standards and tooling`
-- [ ] Review it (fresh model): `/check review standards and tooling`
+- [x] Review it (fresh model): `/check review standards and tooling`
 - [ ] Document it: `/document standards and tooling`
 - [ ] Verify the required checks on a pull request and link the result.
 
 Spec [0002](../specs/0002-standards-and-tooling/index.md) · code in `deny.toml`, `crates/pool-config/fuzz/`, `scripts/`, `.github/`, `tools/repo-check/`.
 
-Evidence: [verification record](../specs/0002-standards-and-tooling/verify.md). Open: the four remote items (`0002 AC-3`, `0002 AC-12`, the CI half of `0002 AC-5` and the remote half of `0002 AC-13`) have not run. They are Build plan step 11 and the last box.
+Evidence: [verification record](../specs/0002-standards-and-tooling/verify.md) and [independent review](../reviews/2026-11-14-scope-002-standards-and-tooling.md). Open: the four remote items (`0002 AC-3`, `0002 AC-12`, the CI half of `0002 AC-5` and the remote half of `0002 AC-13`) have not run. They are Build plan step 11 and the last box.
