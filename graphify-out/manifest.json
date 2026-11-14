@@ -12,16 +12,16 @@
     "semantic_hash": "b389c51c2529240081f8e461b9bfb562"
   },
   "CONTRIBUTING.md": {
-    "mtime": 1794648647.8571482,
-    "seen": 1794649040.5069041,
+    "mtime": 1794659447.8350792,
+    "seen": 1794659470.0807848,
     "ast_hash": "c80c5397122eb63b50c013a6af9307a6",
-    "semantic_hash": "a67c35841711ea0c22157019cbd2896d"
+    "semantic_hash": "95c512a49bca2b418e016d3d142e0f7a"
   },
   "README.md": {
-    "mtime": 1794648647.8567023,
-    "seen": 1794649040.506905,
+    "mtime": 1794659447.8674207,
+    "seen": 1794659470.080792,
     "ast_hash": "4ec1a8513e49db5ed8f2e206460b96c1",
-    "semantic_hash": "d4cf659a592b8e0152998ed1d0ef05e5"
+    "semantic_hash": "6c518c650d3d409ba826e09cc420eb6f"
   },
   "SECURITY.md": {
     "mtime": 1794623188.8471694,
@@ -102,16 +102,16 @@
     "semantic_hash": "702d355262649d49a3046101f7772ba2"
   },
   "docs/implementation-order.md": {
-    "mtime": 1794624116.1764202,
-    "seen": 1794625238.069294,
+    "mtime": 1794659447.8908396,
+    "seen": 1794659470.080794,
     "ast_hash": "5bfdd5c5843108d9f1be1314aa0e412a",
-    "semantic_hash": "5bfdd5c5843108d9f1be1314aa0e412a"
+    "semantic_hash": "700e37e9da7239f6fdfc8e5e0f50646e"
   },
   "docs/index.md": {
-    "mtime": 1794658233.5358112,
-    "seen": 1794658537.1568599,
+    "mtime": 1794659447.9254224,
+    "seen": 1794659470.0807948,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "fee155f34bef33511099dc34510ca90e"
+    "semantic_hash": "d03d6caaabbfc0b3d8b33dba2acd4aa8"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -138,10 +138,10 @@
     "semantic_hash": "0fcb72f66791a377dc0936caf5a64cbf"
   },
   "docs/plan/risk-register.md": {
-    "mtime": 1794624116.1773562,
-    "seen": 1794624512.962774,
+    "mtime": 1794659447.9514096,
+    "seen": 1794659470.080796,
     "ast_hash": "79c7e5a275104bf174072944d0ea9730",
-    "semantic_hash": "79c7e5a275104bf174072944d0ea9730"
+    "semantic_hash": "ecff10c1f71d451b6f079fe416ab5aa6"
   },
   "docs/plan/roadmap.md": {
     "mtime": 1794623415.6865785,
@@ -216,10 +216,10 @@
     "semantic_hash": "f2eba38f6d0df9e32fdc396f3897c50e"
   },
   "docs/repository-structure.md": {
-    "mtime": 1794624116.1785395,
-    "seen": 1794625238.069323,
+    "mtime": 1794659447.9733515,
+    "seen": 1794659470.080796,
     "ast_hash": "e507143fbb3f313aaf4569bc0173e4f5",
-    "semantic_hash": "e507143fbb3f313aaf4569bc0173e4f5"
+    "semantic_hash": "3f6cf02b85a41076f2db5477aa2155ea"
   },
   "docs/research/competitor-analysis.md": {
     "mtime": 1794620030.0528038,
@@ -252,10 +252,10 @@
     "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
   },
   "docs/research/technology-evaluation.md": {
-    "mtime": 1794658233.53625,
-    "seen": 1794658537.156862,
+    "mtime": 1794659447.9976392,
+    "seen": 1794659470.080797,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "01affd77d774244f7f774178cbe15c89"
+    "semantic_hash": "5f2f4f09b434267c3a2cee845b545f23"
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794657721.7350848,
@@ -378,10 +378,10 @@
     "semantic_hash": "50d3096f5cd170587380dbaab9c8b21f"
   },
   "docs/specs/0001-initial-architecture/index.md": {
-    "mtime": 1794657747.7122753,
-    "seen": 1794658147.1805172,
+    "mtime": 1794659284.6874626,
+    "seen": 1794659285.235847,
     "ast_hash": "d273cb4d4139b2882af50db5d8277a24",
-    "semantic_hash": "6fc864541d9227c03cd2632218c20f3c"
+    "semantic_hash": "dca37393a8a433b7e5da314bea0398dd"
   },
   "docs/specs/0001-initial-architecture/rationale.md": {
     "mtime": 1794657747.7125878,
@@ -402,10 +402,10 @@
     "semantic_hash": "aabfbc1739cffb6804b89ce122fd06da"
   },
   "docs/testing/strategy.md": {
-    "mtime": 1794658233.5377827,
-    "seen": 1794658537.1568708,
+    "mtime": 1794659448.064522,
+    "seen": 1794659470.0808,
     "ast_hash": "b7f4032681d4771d5f83d82c84f026a9",
-    "semantic_hash": "d5f3897ee23bca0b6eab4a09f62417b9"
+    "semantic_hash": "89e9ee05c668a042c7a1182f2d467915"
   },
   "docs/glossary.md": {
     "mtime": 1794658233.5353715,
@@ -546,10 +546,10 @@
     "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
   },
   "docs/specs/0002-standards-and-tooling/index.md": {
-    "mtime": 1794658748.161685,
-    "seen": 1794658831.301249,
+    "mtime": 1794659284.687863,
+    "seen": 1794659285.235851,
     "ast_hash": "",
-    "semantic_hash": "882347dece1a7a6ce4b5c230dd65a69a"
+    "semantic_hash": "a0a13335ce99802aff8e174e7ef945a0"
   },
   "docs/specs/0002-standards-and-tooling/rationale.md": {
     "mtime": 1794658233.5374477,
@@ -558,10 +558,10 @@
     "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
   },
   "docs/specs/0002-standards-and-tooling/verify.md": {
-    "mtime": 1794658893.9575987,
-    "seen": 1794658948.470155,
+    "mtime": 1794659448.0295475,
+    "seen": 1794659470.080798,
     "ast_hash": "",
-    "semantic_hash": "05b6d35c0963d92082f705782cea20c7"
+    "semantic_hash": "b754a3dddf2a90b0270d27c29684afa8"
   },
   "Cargo.toml": {
     "mtime": 1794658748.1588957,
@@ -600,15 +600,105 @@
     "semantic_hash": ""
   },
   "scripts/check.sh": {
-    "mtime": 1794658885.7274313,
-    "seen": 1794658947.817028,
-    "ast_hash": "0626d65cc7f7a7ae1ae2b47b34890ac7",
+    "mtime": 1794659448.0662956,
+    "seen": 1794659469.711189,
+    "ast_hash": "64055d89b564ce58f8b96a920208876e",
     "semantic_hash": ""
   },
   "scripts/linux-build.sh": {
     "mtime": 1794658885.7275383,
     "seen": 1794658947.8170292,
     "ast_hash": "d1b877ff9411c060ad0d3b0100aafe86",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/baseline/forbidden-paths.txt": {
+    "mtime": 1794659322.4733255,
+    "seen": 1794659357.28255,
+    "ast_hash": "",
+    "semantic_hash": "2548c842f2ac967d75158762b58995a7"
+  },
+  "tools/repo-check/baseline/forbidden-source-patterns.txt": {
+    "mtime": 1794659322.4736922,
+    "seen": 1794659357.282558,
+    "ast_hash": "",
+    "semantic_hash": "e256299bef0cbd1631e9c1f6221526d5"
+  },
+  "tools/repo-check/baseline/fuzz-lock-packages.txt": {
+    "mtime": 1794659322.473882,
+    "seen": 1794659357.282559,
+    "ast_hash": "",
+    "semantic_hash": "3cf56504ada7218ef475d921efe76569"
+  },
+  "tools/repo-check/baseline/internal-dependencies.txt": {
+    "mtime": 1794659322.4739995,
+    "seen": 1794659357.28256,
+    "ast_hash": "",
+    "semantic_hash": "7fab6e8e85b96c91b38e525449904c28"
+  },
+  "tools/repo-check/baseline/lock-packages.txt": {
+    "mtime": 1794659322.4741168,
+    "seen": 1794659357.282561,
+    "ast_hash": "",
+    "semantic_hash": "9fded9e26722e0ab1fedc2bf69f4c3a7"
+  },
+  "tools/repo-check/baseline/tool-lock-packages.txt": {
+    "mtime": 1794659322.47423,
+    "seen": 1794659357.282562,
+    "ast_hash": "",
+    "semantic_hash": "c76196aab097a6f9651dc90fa33f8761"
+  },
+  "tools/repo-check/Cargo.toml": {
+    "mtime": 1794659322.473031,
+    "seen": 1794659357.2986062,
+    "ast_hash": "7b18f525f702f2fab9838febdff2d580",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/ci.rs": {
+    "mtime": 1794659322.474449,
+    "seen": 1794659357.298611,
+    "ast_hash": "2d1e08c2812a2e7e2c98834cb0265a66",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/docs.rs": {
+    "mtime": 1794659322.4746234,
+    "seen": 1794659357.298614,
+    "ast_hash": "6311b3f0609614a01d432f330b63a561",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/ids.rs": {
+    "mtime": 1794659322.47481,
+    "seen": 1794659357.2986162,
+    "ast_hash": "6308c47b6bd257a2cc8a903be5d2e0d8",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/main.rs": {
+    "mtime": 1794659322.4749715,
+    "seen": 1794659357.2986188,
+    "ast_hash": "2ee1c18c989a5e164ae3bd748bde31d5",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/report.rs": {
+    "mtime": 1794659322.4751,
+    "seen": 1794659357.298621,
+    "ast_hash": "b4b547cbbd4847379ad86f6a5b53d549",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/text.rs": {
+    "mtime": 1794659322.4752235,
+    "seen": 1794659357.298623,
+    "ast_hash": "f1a685c193337c6a4591450f7f824214",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/tree.rs": {
+    "mtime": 1794659322.4753513,
+    "seen": 1794659357.298625,
+    "ast_hash": "55da0bab36bb4b781f0cc8ce5c80bd64",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/workspace.rs": {
+    "mtime": 1794659322.4755278,
+    "seen": 1794659357.2986271,
+    "ast_hash": "e17c6142660372a15ec557d1cc76c607",
     "semantic_hash": ""
   }
 }

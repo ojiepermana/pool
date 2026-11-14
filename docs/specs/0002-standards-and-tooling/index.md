@@ -508,7 +508,10 @@ use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
     match pool_config::validate(data) {
-        Ok(config) => assert_eq!(config.config_version(), pool_config::SUPPORTED_CONFIG_VERSION),
+        Ok(config) => assert_eq!(
+            config.config_version(),
+            pool_config::SUPPORTED_CONFIG_VERSION
+        ),
         Err(rejection) => assert!(!rejection.findings().is_empty()),
     }
 });
@@ -1102,7 +1105,7 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 
 1. Name the holder of each role in the [reviewer roster](../../engineering-standards.md#reviewer-roster), or confirm that it stays `Not assigned`. The rows that need a person block the gates named there.
 2. When a second maintainer has a GitHub account, raise the required approvals to 1 in `main.json` and on the remote.
-3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Marking them in spec 0001, pointing its "Linux build" section at `scripts/linux-build.sh`, and noting there that the root `Cargo.toml` gained a Clippy lint table, are the lead's edits.
+3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Applied in spec 0001 (2026-11-14): its Follow-up 9 and Follow-up 11 are marked as answered, its "Linux build" section points at `scripts/linux-build.sh` and rule W7, and its "Workspace layout and manifests" section notes that the root `Cargo.toml` gained a Clippy lint table.
 4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. The CI job `linux-build` runs the same command on a native runner on every pull request from now on. Nothing in spec 0001 needs to change for that.
 5. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
 6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
