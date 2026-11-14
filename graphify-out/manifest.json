@@ -264,10 +264,10 @@
     "semantic_hash": "43598dcca2090e662aaabad06d818661"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794658798.4157197,
-    "seen": 1794658831.301244,
+    "mtime": 1794659610.2763722,
+    "seen": 1794659610.7345788,
     "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
-    "semantic_hash": "b035bfa7778a1caa9ae749ca94cc2854"
+    "semantic_hash": "f4df3572121a8a7891e910d616562306"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -504,10 +504,10 @@
     "semantic_hash": "2748521703f0f2aaa1f3fef318de6fa0"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794658798.4164994,
-    "seen": 1794658831.301247,
+    "mtime": 1794659610.2771869,
+    "seen": 1794659610.7345831,
     "ast_hash": "",
-    "semantic_hash": "ac6a99e65a003892028fa2f8c2eea215"
+    "semantic_hash": "0e1d479bc0aa6970efdf3ef9b3a6d584"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
     "mtime": 1794658048.2894921,
@@ -558,10 +558,10 @@
     "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
   },
   "docs/specs/0002-standards-and-tooling/verify.md": {
-    "mtime": 1794659448.0295475,
-    "seen": 1794659470.080798,
+    "mtime": 1794659609.4613724,
+    "seen": 1794659610.734756,
     "ast_hash": "",
-    "semantic_hash": "b754a3dddf2a90b0270d27c29684afa8"
+    "semantic_hash": "f2de19da7e83fe9411a044ea7d75da75"
   },
   "Cargo.toml": {
     "mtime": 1794658748.1588957,
