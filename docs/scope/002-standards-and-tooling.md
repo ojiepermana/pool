@@ -15,7 +15,7 @@ The maintainer uses the real manifest to select required CI checks, branch revie
   - [x] Repository guards and document checks: steps 5 and 6 (`AC-6` to `AC-10`), after the two milestones above
   - [x] Proofs, inventory, documents and workstation evidence: steps 7 to 10 (`AC-11`, `AC-16` to `AC-19`), after the three milestones above
 - [x] Verify it: `/check verify standards and tooling`
-- [ ] Test it: `/test standards and tooling`
+- [x] Test it: `/test standards and tooling`
 - [ ] Review it (fresh model): `/check review standards and tooling`
 - [ ] Document it: `/document standards and tooling`
 - [ ] Verify the required checks on a pull request and link the result.
