@@ -14,6 +14,8 @@ Use the [workspace handoff](../implementation-order.md#first-handoff-the-workspa
 - [x] Verify it: `/check verify stack and workspace`
 - [x] Test it: `/test stack and workspace`
 - [x] Review it (fresh model): `/check review stack and workspace`
-- [ ] Document it: `/document stack and workspace`
+- [x] Document it: `/document stack and workspace`
 
-Spec [0001](../specs/0001-initial-architecture/index.md).
+Spec [0001](../specs/0001-initial-architecture/index.md) · code in `apps/pool/`, `crates/pool-config/`.
+
+Evidence: [verification record](../specs/0001-initial-architecture/verify.md), [independent review](../reviews/2026-11-14-scope-001-stack-and-workspace.md) and [changelog](../../CHANGELOG.md). Open: the Linux build (`0001 AC-2`) and the two Linux only tests have not run, so this feature stays in progress until they pass.

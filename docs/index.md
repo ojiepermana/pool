@@ -24,6 +24,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 | Path | Document |
 |---|---|
 | [AGENTS.md](../AGENTS.md) | POOL agent guide |
+| [CHANGELOG.md](../CHANGELOG.md) | Changelog |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code guidance |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contributing to POOL |
 | [README.md](../README.md) | pool |
