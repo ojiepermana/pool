@@ -15,3 +15,5 @@ graphify-out/.graphify_semantic_new.json
 graphify-out/.graphify_uncached.txt
 graphify-out/.needs_update
 /target/
+# Rewritten by every graphify query, machine local
+graphify-out/cache/last_query_stamp
