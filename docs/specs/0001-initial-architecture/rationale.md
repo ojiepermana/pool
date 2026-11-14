@@ -40,7 +40,7 @@ The user requested verified sources, so references are included. The research ch
 | Native parser | [pg_query upstream](https://github.com/pganalyze/pg_query.rs) |
 | Future consensus | [etcd guarantees](https://etcd.io/docs/v3.6/learning/api_guarantees/) |
 | First build dependencies | crates.io registry, read through Cargo on 2026-11-14 (see [Evidence gathered](#evidence-gathered)) |
-| Linux builder image | Docker Hub tag listing for the official `rust` image, read on 2026-11-14, image not pulled |
+| Linux builder image | Docker Hub tag listing for the official `rust` image, and the image index read from the registry with `docker buildx imagetools inspect`, both on 2026-11-14 |
 | First build requirements | [Workspace handoff](../../implementation-order.md#first-handoff-the-workspace), [security requirements](../../security/security-requirements.md) `SEC-4`, `SEC-10`, `SEC-11`, `SEC-12`, `SEC-14` |
 
 The requested human research views live in `docs/research/`. They include the feature inventory, competitor evidence, and dependency evaluation. This location follows your explicit requested deliverable structure.
@@ -59,11 +59,11 @@ Three forces shaped the notes. First, `SEC-4` and `SEC-11` say a secret must nev
 
 ### Decisions and runner ups
 
-Each line is a decision taken on your behalf under the `auto` decision mode. None changes a ratified decision.
+Each line is a decision taken on your behalf under the `auto` decision mode, except the Linux target, which is now your own value (see [Linux target update](#linux-target-update-2026-11-14)). None changes a ratified decision.
 
 | Question | Taken | Runner up | Why |
 |---|---|---|---|
-| Linux target | `x86_64-unknown-linux-gnu` | `aarch64-unknown-linux-gnu`, which builds without emulation on this workstation | Proxmox VE runs on 64 bit Intel and AMD hosts, so your VMs are almost certainly `x86_64`. The GNU C library is chosen over musl because later slices link native code (`pg_query`, a TLS provider, SQLite) that is simpler to build against it. Changing it later is one flag and one triple |
+| Linux target | `aarch64-unknown-linux-gnu`, the only declared target | `x86_64-unknown-linux-gnu`, which was the target until 2026-11-14 | This is your value, not an inference: you said on 2026-11-14 that your VMs are ARM. The first notes took `x86_64` because Proxmox VE runs on 64 bit Intel and AMD hosts, and that guess was wrong for your VMs. `aarch64` also builds without emulation on this workstation. The GNU C library is chosen over musl because later slices link native code (`pg_query`, a TLS provider, SQLite) that is simpler to build against it. Changing the target later is one flag and one triple |
 | Linux builder | Official `rust:1.100.0-slim-bookworm` image by digest, native build inside it | Cross compiling from macOS | Cross compiling needs a linker or a helper tool that would have to be installed. The container needs only Docker. The slim image is chosen over the full one because the disk is nearly full and this build needs only `gcc` as a linker. Debian 12 gives an older C library than Debian 13, so the binary runs on more hosts |
 | Clean checkout | `git archive HEAD` piped into the container | Mounting the working tree | A mount would include untracked files and a host `target/` directory. The archive holds only what is committed, which is what "clean checkout" means |
 | Argument parsing | Standard library | `clap` 4.6.7 | The daemon has two flags. `clap` would add its own set of packages to a process that will later hold credentials. The usage exit status is 2, which is also what `clap` uses, so adopting it later breaks no script |
@@ -92,7 +92,7 @@ Two of these carry more weight than the rest because they become public contract
 - **Registry check.** `cargo search` on 2026-11-14 returned `serde` 1.0.229, `serde_json` 1.0.154, `toml` 1.2.1, `thiserror` 2.0.21 and `clap` 4.6.7, matching the [technology evaluation](../../research/technology-evaluation.md) where listed.
 - **Scratch build.** A throwaway project outside the repository, built with Rust 1.99.1, resolved the three direct dependencies to sixteen packages, all pure Rust, all under MIT or Apache 2.0 terms (`memchr` also offers the Unlicense; `unicode-ident` adds Unicode 3.0 terms for its data tables and is used only at build time). The highest minimum Rust version among them is 1.85. It was not built with 1.100.0; the developer's first build is that proof.
 - **Parser behavior.** The same scratch project ran the planned fixture texts through `toml` 1.2.1. It confirmed the line numbers in the fixture table, that `toml::de::Error` gives a span for syntax and schema errors, that its `Display` text printed the canary for an unknown top level key and for a syntax error, and that its `message()` printed the canary for a wrong typed value. That is why the notes forbid both.
-- **Image check.** The Docker Hub tag listing on 2026-11-14 shows `rust:1.100.0-slim-bookworm`, published 2026-11-12, with index digest `sha256:7c7d4eb4…51b7a37` and a `linux/amd64` variant. The image was not pulled, because the daemon was off.
+- **Image check.** The Docker Hub tag listing on 2026-11-14 shows `rust:1.100.0-slim-bookworm`, published 2026-11-12, with index digest `sha256:7c7d4eb4…51b7a37`. Read again with `docker buildx imagetools inspect` on 2026-11-14, that digest is an image index (`application/vnd.oci.image.index.v1+json`) whose variants include `linux/arm64/v8` (`sha256:a05e7b80…a44fda57`, about 283 MB compressed) and `linux/amd64` (`sha256:476f6598…582d0ff7`, about 323 MB compressed). So the same pin serves `--platform linux/arm64`, the declared platform. When these notes were first written the image had not been pulled, because the daemon was off.
 - **Not verified.** The Linux build command has not been run. The exact help and usage text, the output bytes and the exit status are specified, not observed.
 
 ### Independent cross check
@@ -135,3 +135,33 @@ The independent review of the built workspace (a fresh session that did not writ
 Row 10 came from the second verification pass and was taken the same way, with the same tag. It was checked on a debug build of `pool` at `b6ce165` (macOS, Rust 1.100.0): `zzz = 1` on line 2 with `aaa = 1` on line 3 reports line 3; the same two keys in the other order report line 2; an unknown key in `[result_cache]` with a wrong type in `[automatic_promotion]` below it reports the `[automatic_promotion]` line; two syntax errors on lines 2 and 3 report line 2.
 
 Evidence for rows 1 to 7 is in the review record, `docs/reviews/2026-11-14-scope-001-stack-and-workspace.md`, which the reviewer's branch adds. The reviewer ran the binary for each case. While writing these rows, a debug build of `pool` at `07f7994` (macOS, Rust 1.100.0) was run again for rows 2, 3, 4 and 6: the two forms of a `--format` value that is not UTF-8, the eight spellings in row 3, a dotted key with 81 parts (`config.syntax`, `line` and `column` null) and with 80 parts (`config.schema` at line 1, column 1), and the line `x = "éé" junk` (`config.syntax` at line 2, column 10). Each gave the result written in the spec. Rows 1, 5 and 7 were not run again.
+
+### Linux target update (2026-11-14)
+
+Follow-up 6 of the spec asked you to confirm the architecture of your PostgreSQL and proxy VMs, because the first notes had only inferred it. On 2026-11-14 you answered in your own words: "VM saya ARM" (my VMs are ARM). The Linux target was a delegated decision with `x86_64-unknown-linux-gnu` taken and `aarch64-unknown-linux-gnu` as the runner up. Your answer picks the runner up, so the delegated decision is withdrawn and the target is now your value.
+
+What changed in the spec, and nothing else:
+
+- The declared Linux target is `aarch64-unknown-linux-gnu`, and the builder container runs as `linux/arm64`.
+- **AC-2** keeps its ID. The host line it expects is now `host: aarch64-unknown-linux-gnu`.
+- The [Linux build](index.md#linux-build) command changed in two places: `--platform linux/arm64` and the `grep -qx` host line. The image pin, the toolchain, the dependencies and the Build plan are the same.
+- Follow-up 6, 7 and 9, one Consequences line and the words around the command now say what is true for `arm64`.
+
+| Question | Taken | Runner up | Tag | Why |
+|---|---|---|---|---|
+| Which Linux target is declared | `aarch64-unknown-linux-gnu` | `x86_64-unknown-linux-gnu` | `berat` (heavy): it changes the text of **AC-2** in an `Accepted` spec. The lead accepted the change before it was written | You gave the value. A build for an architecture your VMs do not have proves nothing about where POOL will run |
+| Is `x86_64-unknown-linux-gnu` kept as a second declared target | No. There is one declared target | Declare both, and run the Linux build once for each | `biasa` (ordinary, cheap to reverse) | See below |
+
+Why one target and not two:
+
+- Nothing you named needs `x86_64`. You said your VMs are ARM, and no other host is in your scenario.
+- A declared target is a claim, and the project rule is to claim nothing that is not proven on every change. Two targets mean two runs of the Linux build for every slice. On this workstation the `x86_64` run is emulated. That is a few minutes today and much longer once later slices compile native code such as `pg_query`. In scope 002 it would mean a second CI runner.
+- **AC-2** names one host line. A second target would need a new criterion or a reworded one, for a platform nobody uses.
+- It is cheap to add later. The code is safe Rust with nothing tied to an architecture, so a second target is one `--platform` value, one triple and one more run. The runner up changes **AC-2**, the Linux build command, Follow-up 9 and one Consequences line.
+
+Evidence for this update:
+
+- **Image index.** `docker buildx imagetools inspect` on the pinned digest, run on 2026-11-14, lists a `linux/arm64/v8` variant (see [Evidence gathered](#evidence-gathered)). The pin did not need to change.
+- **Daemon.** `docker info` on 2026-11-14 reports server 29.9.2 with architecture `aarch64`, so a `linux/arm64` container runs on this workstation without emulation.
+- **History, not evidence.** The Linux build was run once for the earlier target: `x86_64-unknown-linux-gnu`, under emulation, at revision `18e9228`. That record stays under [Linux evidence: container build](verify.md#linux-evidence-container-build) in the verification record. From 2026-11-14 it is history. It is not evidence for the declared target.
+- **Run for the declared target.** The session that wrote this note did not run the changed command. A checker session ran it unchanged on 2026-11-14 at revision `41e8eda`, the commit that made this change. It ended with exit status 0, `host: aarch64-unknown-linux-gnu`, 136 tests passed and the last line `linux build check passed`. The record is under [Linux evidence: container build for aarch64](verify.md#linux-evidence-container-build-for-aarch64) in the verification record. That run is the evidence for **AC-2** on the declared target.

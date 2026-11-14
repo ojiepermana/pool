@@ -17,3 +17,10 @@ toml = { version = "1.2.1", default-features = false, features = ["parse", "serd
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+print_stderr = "deny"
+print_stdout = "deny"
+todo = "deny"
+unimplemented = "deny"
