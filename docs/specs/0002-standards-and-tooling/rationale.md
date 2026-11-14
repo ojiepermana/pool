@@ -216,3 +216,39 @@ What was checked on 2026-11-14 for this update, in a scratch folder outside the 
 - **The new proof cases.** Case 22 (a dependency from a Git repository in a temporary folder) made `scripts/check.sh deny` fail with `error[source-not-allowed]`, and the `cargo metadata` step worked with every HTTP request blocked. Case 23 (`serde_json = "*"`) failed with `error[wildcard]`. Cases 25 to 28 were run against the check program as it is on `main` and gave `C4`, `C5`, `W6` with `docs/Cargo.lock`, and `D4` with `SEC-14`. Case 24 passes on that program today, which is finding M4; it must fail once rule C3 is rebuilt.
 - **The reworded rules C3 to C5.** A throwaway script that follows the new sentences passed on the committed `ci.yml` and reported every input of findings M4, m16 and m17 that the rules now claim: `continue-on-error`, `if:`, a continuation line, `shell:` after an empty line, a command after `tools;`, a quoted key, `name:` on a job, a second permission after a comment, a job level `permissions:`, a job without `runs-on:`, and `secrets['X']`.
 - **The opening lines of `scripts/linux-build.sh`.** With a stub `docker`, under `sh`, `dash` and `bash --posix`: no repository and a repository with no commit gave exit 3 at the `git rev-parse` line, a broken index gave exit 3 at the `git status` line, a dirty tree gave exit 3, and a clean tree reached the marker, also with an exported `CDPATH` that pointed at a decoy folder and when called from another directory.
+
+## Update after the remote steps of 2026-11-14 and 2026-11-15
+
+The lead ran remote steps 1 to 6 of the spec against GitHub. Every step gave its proof, and the evidence is in [verify.md](verify.md). Four things happened that the spec text did not expect. This update writes them into the spec, so that the closing pull request of this scope and the pull requests of later scopes do not meet them unprepared.
+
+It is a set of notes from the run, not a new design. No criterion ID and no criterion text changed. No rule of the check program changed, and the content of `.github/rulesets/main.json` is as it was. No new decision was taken on your behalf. One choice is open and is Follow-up 12 of the spec. No cross check by another model was run, because nothing was designed.
+
+What ran, with the times GitHub reports (local time is seven hours ahead of UTC, so steps 1 to 5 fall on 2026-11-14 and the merge on 2026-11-15):
+
+| Step | Result |
+|---|---|
+| 1 | Pull request 1 opened at 14:44 UTC. No `ci` run for the `opened` event. Closed and opened again at 14:49 UTC; the run for `reopened` passed all seven checks |
+| 2 | The run log holds `runner: Linux aarch64` and `linux build check passed` |
+| 3 | Ruleset 27266107, `main active`, the four rule types and the seven names. The merge state was `BLOCKED`, not `CLEAN` |
+| 4 | The empty probe commit was refused with `GH013`, and `main` did not move |
+| 5 | Pull request 2 opened at 14:53 UTC, got its run at once, `BLOCKED fmt=FAILURE`, closed without a merge |
+| 6 | After two fixes and two resolved threads, pull request 1 was merged at 23:38 UTC; the run for the push to `main` passed |
+
+The four notes and where each one went:
+
+1. **No run for the first pull request.** `gh pr create` came about one second after the first push that carried the new workflow file, and only the automatic Copilot review started. The spec now has a note under remote step 1: three commands that only read, what each one tells you, and close and open again as the way out. Remote step 7 and the wait loop bullet point to it. The cause is a guess. The one fact behind it is that pull request 2, opened ten minutes later with the workflow already known to GitHub, got its run from the `opened` event. Closing and opening again was chosen over an extra commit because it keeps the head commit that was checked on the workstation.
+2. **`BLOCKED` in step 3.** The ruleset has `required_review_thread_resolution: true`, and the owner's account runs the automatic Copilot review on every pull request. It left two threads. Both stayed open and held the merge, also once they were outdated. GitHub reports that one was later resolved by Copilot and one by the owner's account. The spec now says this in "Branch rule and change path", has a new step 4 in "How a change reaches `main`", names the thread query under remote step 3, and lists the cost and the gain under Consequences. When the rule was written, this field was set without a look at who might open a thread; decision 5 only weighed the number of approvals.
+3. **Two real defects from that review.** `scripts/check.sh fuzz` changed directory in a child shell without clearing `CDPATH` (fixed in `8cfb720`). The code span reader of `pool-repo-check` split a line at every backtick, so a link inside a span with two backticks on each side was reported by rule D1 (fixed in `3bb3cd2`). The spec sentence "Text between backticks on one line is removed before links are looked for" stays, and three sentences after it now say how runs of backticks are paired. That is how the program works since the fix; rules D1 and D2 are not changed. The fuzz section got one sentence on `CDPATH`.
+4. **Clean tree before a block.** Remote steps 1, 5 and 7 push or commit from the main checkout, and nothing in the blocks tests that the tree is clean and that `HEAD` is `main`. The lead tested it by hand. "How the blocks are written" now asks for it.
+
+What is still not proven:
+
+- Why the `opened` event of pull request 1 started no `ci` run.
+- Whether checks that passed before the rule was created count for it. In step 3 the threads held the merge, and by the time they were resolved the head commit was a newer one whose checks ran with the rule active. The sentence in the spec is still reasoned, not observed.
+- Whether GitHub accepts a direct push of the head of a green pull request with 0 required approvals. Nobody tried, and nobody should.
+
+What was run for this update on 2026-11-15, all of it read only:
+
+- The three commands of the note under remote step 1 and the thread query under remote step 3, as written in the spec, under `sh` and `zsh`, against pull request 1. For the first head commit they print one `pull_request ci` run and one `dynamic` run of the automatic review, the workflow path, and two threads that are `resolved` and `outdated=true`.
+- The timeline of pull request 1 (closed and reopened five seconds apart, the run created two seconds after that), the creation time of the ruleset, and who resolved each thread.
+- `gh pr close` and `gh pr reopen` with a pull request number were not run by this session, because they write to GitHub. The lead ran a close and a reopen on pull request 1 on 2026-11-14.
