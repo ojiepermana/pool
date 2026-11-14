@@ -14,4 +14,4 @@ The Linux container build is the command under [Linux build](docs/specs/0001-ini
 
 POOL uses Apache 2.0. Contributions should be compatible with that license and preserve required attribution. Do not copy third party code without a per file license review and provenance record. A separate contributor agreement is not required by this initial plan; any future governance change needs maintainer discussion.
 
-Avoid posting secrets, user SQL or sensitive database data in issues. Security reporting guidance is in [SECURITY.md](SECURITY.md). The project still needs a named maintainer team, a real private reporting channel, and remote repository review/branch protection settings before production releases.
+Avoid posting secrets, user SQL or sensitive database data in issues. Security reporting guidance is in [SECURITY.md](SECURITY.md). The project still needs a named maintainer team and a real private reporting channel before production releases.
