@@ -2,7 +2,75 @@
 
 **Reviewed by**: claude-fable-5-2 (author on claude-opus-5-5)
 **Scope**: 30 files, the range `a82cf67..02bdcbe` on `main` (26 code, manifest and fixture files, plus `Cargo.lock` for its package set and 3 docs). `graphify-out/` was ignored.
-**Verdict**: Changes requested
+**Verdict**: Approve with nits, after the fix round at `4ebcf93` (see "Second review"). The first pass at `02bdcbe` ended with Changes requested.
+
+## Second review, fix round at `4ebcf93`
+
+**Scope**: the range `02bdcbe..4ebcf93` on `main`. Code and tests by `claude-opus-5-5` (`a705659`, `5a99563`, `b18b288`, `453ae73`). Spec text by `claude-fable-5-2` (`5f1e995`). Reviewed by `claude-fable-5-2`, the same session that wrote the findings below.
+**Verdict**: Approve with nits. No blocker and no major finding is open. One minor finding is still open (the verification record), and it is being handled by the verify session.
+
+The rest of this file is the first review as written. Read each finding below together with its status here.
+
+### Status of each finding
+
+| Finding | Status | What I checked |
+|---|---|---|
+| Major: a reserved capability written as an array is accepted | closed | `RawCapability` (`crates/pool-config/src/lib.rs:262`) and `RawConfig` now implement `Deserialize` by hand. Their visitors implement `visit_map` only, and keys go through `KnownField` (`lib.rs:301`). I ran the binary: `result_cache = [false]`, `[true]`, `[false, "CANARY-9f2c7b1e", 3]`, a multi line array, `[]` and `[[result_cache]]` each exit 1 with exactly one `config.schema` on line 2, in both formats, and the canary is in neither. Tests: `validate.rs:475` (five array shapes for both capabilities) and `check_config.rs:1805` |
+| Minor 1: `config_version()` returns a constant | closed | `lib.rs:364` stores the parsed number (`Some(version) => config_version = version`) |
+| Minor 2: parser depth and the "no location" branch | closed | `validate.rs:504` pins 81 levels (syntax, no location) and 80 levels (schema at line 1, column 1). `validate.rs:526` feeds 100000 nested arrays and inline tables. The spec now says the `unbounded` feature of `toml` stays off (`index.md:219`) and lists the row (`index.md:419`) |
+| Minor 3: `io.permission_denied` has no test | closed | `check_config.rs:1841`. It ran for real in my run (the suite ran as a user that is not root). In the Linux container it will skip itself, as the spec now says |
+| Minor 4: the column test cannot fail for a byte count | closed | `validate.rs:719` asserts line 2, column 10 for `x = "éé" junk` |
+| Minor 5: three criteria have no automated guard | closed in part | AC-8: two `compile_fail` documentation tests (`lib.rs:28`, `lib.rs:36`), and they run under `cargo test` (2 passed). AC-12 and AC-13: moved to Follow-up 11 of the spec for scope 002 (`index.md:728`). That is a fair place for them, but until scope 002 nothing fails by itself if they regress |
+| Minor 6: the verification record does not cover the merged tree | open | Not part of this range. `verify.md` still records `5f44d88` only. The verify session is working on it |
+| Nit: bytes that are not UTF-8 with an equals sign | closed | Spec sentence added at `index.md:265`. `--format=<bytes>` added to the test at `check_config.rs:1639`, with and without `--config` before it |
+| Nit: `--help=x` after `check-config` | closed | Spec now states it (`index.md:260`, `262`, `281`). The code did not change here. I read it against the new text: `--help=x` splits at the equals sign and prints the help, and `--version` after `check-config` falls to the "unknown option" arm (`apps/pool/src/cli.rs:102`). I did not run these two by hand |
+| Nit: read limit fallback | closed | `apps/pool/src/main.rs:89` falls back to `1_048_577` |
+| Nit: FIFO blocks | closed as a recorded limit | `index.md:709`, no code change |
+| Nit: duplicated value block | closed | `take_value` at `apps/pool/src/cli.rs:58`. I read both callers: repeat is still checked before the value |
+| Nit: `capability_state` comment, repeated numbers in messages | closed | Comments at `lib.rs:387` and `lib.rs:181` |
+| Nit: three weak tests | closed | `validate.rs:889` now also needs more than one finding, `validate.rs:959` compares the whole `Debug` text, `check_config.rs:1470` moves a cursor so a second finding with the same code is checked |
+| Nit: stale status sentence | closed in the spec | `index.md:52` and Follow-up 1 reworded. The stale lines in `CLAUDE.md` and `AGENTS.md` are still there and belong to the "Document it" step |
+
+### What I looked for in the hand written `Deserialize`
+
+All of these ran on a debug build of `pool` at `4ebcf93`, 37 made files, both formats.
+
+- **A key given twice.** The new visitors keep the last value and do not report a repeat. That is safe because the syntax step refuses a repeat first. I tried six spellings, each with `true` first and `false` second so that a "last one wins" bug would show as a valid file: two `[result_cache]` headers, a dotted key then a header, an inline table with the key twice, two dotted keys, `config_version` twice, and `enabled` then `"enabled"`. All six give one `config.syntax` and exit 1.
+- **An unknown key.** At the top level, inside a reserved table, as a new table and as a sub table of a reserved table: each gives one `config.schema` at the line of the key. The error is raised on the key, so the column points at the key (for example line 4, column 1).
+- **`enabled` that is not a boolean.** A string, an integer, an array, a table: one `config.schema` each.
+- **A reserved capability that is not a table.** A boolean, a string, a float, a date and time, an empty array, an array of tables: one `config.schema` each.
+- **Same key, other spelling.** `"enabled" = true` and `"automatic_promotion"."enabled" = true` are refused with `config.unsupported_capability`, which is right because they are the same keys. `Enabled = true` is an unknown key.
+- **`config_version`.** `0` is `config.unsupported_version`. Negative, 4294967296, `1.0`, a string and a table are `config.schema`. A file with all three meaning findings still reports three, in order.
+- **The canary.** Put in a top level key name, a quoted key, a key inside a reserved table, a table name, a sub table name, a string value and an array element. It is in no output. The new error path calls `unknown_field` with the key text, but that error is still only asked for its span (`lib.rs:408`). The sweep of all fifteen fixtures in both formats found nothing.
+- **Valid files.** Left out, `{}`, `{ enabled = false }`, a dotted `enabled = false` and an empty header all validate with `disabled`.
+
+### Spec text against the code
+
+I read the nine clarifications in `index.md` and the new table in `rationale.md`. Each one matches what the fixed binary does. The `## Requirements` section (AC-1 to AC-13) has no changed line in this range. The spec lets the top level structure keep its derive; the code writes both by hand, which the wording allows.
+
+### What I ran
+
+At `4ebcf93` (merged into this branch as `0353fdc`, no source difference), Rust 1.100.0, macOS on Apple silicon, `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`:
+
+- `cargo fmt --all --check`: exit 0. `cargo clippy --workspace --all-targets --locked -- -D warnings`: exit 0.
+- `cargo test --workspace --locked`: `pool` unit 3, `check_config` 66, `pool-config` unit 3, `validate` 60, documentation tests 2. All passed.
+- `Cargo.lock` still holds 18 package names. The AC-12 `grep` prints nothing.
+- The Linux build and the two Linux only tests were not run (Docker is off). AC-2 and the `/dev/full` clause of AC-11 stay not judged.
+
+### What is left
+
+Minor:
+
+- `docs/specs/0001-initial-architecture/verify.md`: no record of a run on the merged tree (minor 6, in progress elsewhere).
+- AC-12 and AC-13 guards wait for scope 002 (Follow-up 11).
+
+Nits, new in this range:
+
+- ⚪ `docs/specs/0001-initial-architecture/index.md:431`, step 4 still says the private structures "use `deny_unknown_fields`". No structure has that attribute now; the visitors reject unknown keys by hand. Say "reject unknown keys" so the text and the code agree.
+- ⚪ `crates/pool-config/src/lib.rs:354`, `config_version` starts as the supported constant and is then overwritten. The start value is never returned (every path that keeps it also has a finding), but an `Option` or a `match` that yields the value would make that plain.
+- ⚪ `apps/pool/src/main.rs:89`, the fallback `1_048_577` repeats `MAX_CONFIG_BYTES + 1` as a number. It cannot be reached, so this is taste.
+- ⚪ `crates/pool-config/src/lib.rs:28`, a `compile_fail` test passes for any compile error, also one caused by a renamed field. It guards the struct literal and `Default`, not `Deserialize`. Good enough for this slice.
+- ⚪ `CLAUDE.md` and `AGENTS.md` still say the repository is documentation only (carried over from the first review, for the "Document it" step).
 
 ## Summary
 
