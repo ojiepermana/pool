@@ -1,14 +1,13 @@
 # Repository proposal
 
-This is a proposed target layout. Only documentation and the chosen project license are created during planning. The initial architecture defines boundaries for two applications and four internal crates. Create the directories only as a slice uses them; the first build is the [workspace handoff](implementation-order.md#first-handoff-the-workspace).
+This is a proposed target layout. The paths that exist today are the scope 001 workspace (`apps/pool`, `crates/pool-config`) and the tooling of [spec 0002](specs/0002-standards-and-tooling/index.md). The initial architecture defines boundaries for two applications and four internal crates. Create the directories only as a slice uses them; the first build is the [workspace handoff](implementation-order.md#first-handoff-the-workspace).
 
 ```text
 pool/
   Cargo.toml
   Cargo.lock
   rust-toolchain.toml
-  rustfmt.toml
-  clippy.toml
+  deny.toml
   LICENSE
   NOTICE
   CHANGELOG.md
@@ -25,6 +24,9 @@ pool/
     pool-config/
     pool-core/
     pool-control/
+  scripts/
+  tools/
+    repo-check/
   tests/
     protocol/
     integration/
@@ -52,7 +54,9 @@ pool/
     security/
   .github/
     workflows/
+    rulesets/
     ISSUE_TEMPLATE/
+    pull_request_template.md
 ```
 
 ## Responsibilities and public interfaces
@@ -72,10 +76,10 @@ Core and control use independently owned types at their boundaries. The daemon m
 
 Authentication, connection, pooling, SQL adapter, router, balancer and backend are modules inside core initially. Health, topology, failover, recovery and admin are modules inside control as they become necessary. Metrics belongs beside instrumented behavior with a composed registry. Security is policy across those modules, not a universal utility crate. There is no general `common` crate.
 
-The controller executable, consensus crate, cache crate, dashboard and middleware replication crates are deferred. If a component later gains independent consumers, dependency weight, versioning, ownership or fuzzing/build isolation needs, extraction gets a documented decision. Acyclic internal dependencies are checked in CI from Cargo metadata once a workspace exists.
+The controller executable, consensus crate, cache crate, dashboard and middleware replication crates are deferred. If a component later gains independent consumers, dependency weight, versioning, ownership or fuzzing/build isolation needs, extraction gets a documented decision. The allowed dependencies between workspace packages are listed in a baseline file and checked on every pull request (rule W5 of [spec 0002](specs/0002-standards-and-tooling/index.md#workspace-guards)).
 
 Cargo builds tests, benchmarks and fuzz targets only inside a package. The `tests/` and `benchmarks/` entries are groupings, not packages. The slice that adds the first suite spanning crates names the workspace member that owns it in its spec.
 
 ## Documentation ownership
 
-Use the [documentation ownership table](index.md#where-a-change-belongs) when changing a requirement, decision, milestone or test. The operations directory in the proposed layout is for tested operator procedures as each feature becomes available. The reviews directory holds independent review findings. `NOTICE` carries the attributions that bundled native components require, and `CHANGELOG.md` starts with the first tagged release.
+Use the [documentation ownership table](index.md#where-a-change-belongs) when changing a requirement, decision, milestone or test. The operations directory in the proposed layout is for tested operator procedures as each feature becomes available. The reviews directory holds independent review findings. `NOTICE` carries the attributions that bundled native components require, and `CHANGELOG.md` records changes under `Unreleased` until the first tagged release.

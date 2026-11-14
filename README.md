@@ -41,3 +41,5 @@ cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/
 ```
 
 The last command prints `configuration valid` and exits 0. Exit status 1 means the file was rejected, 2 a usage error and 3 that the command could not finish. The Linux container build is described under [Linux build](docs/specs/0001-initial-architecture/index.md#linux-build) in spec 0001.
+
+`scripts/check.sh all` runs the checks that CI runs, except the Linux container build, which is `scripts/check.sh linux-build`.

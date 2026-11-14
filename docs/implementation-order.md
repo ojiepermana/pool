@@ -1,6 +1,6 @@
 # Starting development
 
-The next queued unit of work is [001. Stack and workspace](scope/001-stack-and-workspace.md). The design in [spec 0001](specs/0001-initial-architecture/index.md) is ratified; the workspace does not exist yet. Implementation starts only on explicit request. The [scope index](scope/index.md) owns the queue and each numbered feature links to the requirements it delivers. The [dependency plan](plan/dependencies.md) explains what each stage needs.
+The [scope index](scope/index.md) shows which unit of work is next. The first handoff below was carried out as [001. Stack and workspace](scope/001-stack-and-workspace.md): the workspace exists and [spec 0001](specs/0001-initial-architecture/index.md) holds its build notes. Later work starts only on explicit request. The [scope index](scope/index.md) owns the queue and each numbered feature links to the requirements it delivers. The [dependency plan](plan/dependencies.md) explains what each stage needs.
 
 ## First handoff: the workspace
 

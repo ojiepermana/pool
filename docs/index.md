@@ -2,7 +2,7 @@
 
 **Package date:** 2026-11-14. This index covers every generated Markdown document plus the project license. All application capabilities remain planned. A ratified foundation still does not mean it has been built.
 
-For the next development task, start with the [workspace handoff](implementation-order.md#first-handoff-the-workspace). Use the [readiness review](plan/planning-validation.md#development-readiness-review) to see what changed and which decisions still gate later work.
+For the next development task, start with the [scope index](scope/index.md) and the [handoff for later slices](implementation-order.md#handoff-for-later-slices). Use the [readiness review](plan/planning-validation.md#development-readiness-review) to see what changed and which decisions still gate later work.
 
 ## Where a change belongs
 
