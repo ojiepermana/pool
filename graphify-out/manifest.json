@@ -108,10 +108,10 @@
     "semantic_hash": "5bfdd5c5843108d9f1be1314aa0e412a"
   },
   "docs/index.md": {
-    "mtime": 1794644433.3053057,
-    "seen": 1794644742.62289,
+    "mtime": 1794648040.8774898,
+    "seen": 1794648440.7363148,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "2f1caf3d985b26bb89c0f9e14f4ffd4d"
+    "semantic_hash": "c873d7a624d2609dbd93633c9dd5432e"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -258,10 +258,10 @@
     "semantic_hash": "4f5deb579e157fa38a4f090a1a54effd"
   },
   "docs/scope/001-stack-and-workspace.md": {
-    "mtime": 1794645445.6355116,
-    "seen": 1794645817.4006028,
+    "mtime": 1794648064.5242565,
+    "seen": 1794648440.73632,
     "ast_hash": "32faafab017d5597a22862193cc99ae1",
-    "semantic_hash": "d8a4df96ae37fc36115e2dc1e5bfa118"
+    "semantic_hash": "3f1ab0b0aa0cc8d4765f96449662413b"
   },
   "docs/scope/002-standards-and-tooling.md": {
     "mtime": 1794624116.176001,
@@ -426,10 +426,10 @@
     "semantic_hash": "68a4fdc6a394be374b3004e4846b09b8"
   },
   "docs/scope/coordination/001-stack-and-workspace.log.md": {
-    "mtime": 1794647210.2768672,
-    "seen": 1794647617.883021,
+    "mtime": 1794648064.5248172,
+    "seen": 1794648440.736321,
     "ast_hash": "",
-    "semantic_hash": "578b69a0ff8820317a3372167afe8f3c"
+    "semantic_hash": "609b7382f0e3674841e9e7a82c6676fb"
   },
   "apps/pool/src/cli.rs": {
     "mtime": 1794647183.3364625,
@@ -474,15 +474,21 @@
     "semantic_hash": ""
   },
   "docs/specs/0001-initial-architecture/verify.md": {
-    "mtime": 1794645347.2246802,
-    "seen": 1794645817.4006011,
+    "mtime": 1794648040.808253,
+    "seen": 1794648440.7363222,
     "ast_hash": "",
-    "semantic_hash": "19d05512ef8f8add241d7b37a0eb5a7e"
+    "semantic_hash": "85b58bdbe14b79fce72bfcaf953abc3d"
   },
   "apps/pool/Cargo.toml": {
     "mtime": 1794644433.2458284,
     "seen": 1794644752.202924,
     "ast_hash": "0bd89ab8752b78769af92d79968af943",
     "semantic_hash": ""
+  },
+  "docs/reviews/2026-11-14-scope-001-stack-and-workspace.md": {
+    "mtime": 1794648040.882055,
+    "seen": 1794648440.7363179,
+    "ast_hash": "",
+    "semantic_hash": "7d11a21607be053b19e3537260482819"
   }
 }
