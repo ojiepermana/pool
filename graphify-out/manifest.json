@@ -558,10 +558,10 @@
     "semantic_hash": "8d506d1529b553f0bee7ccbc348e95bc"
   },
   "docs/specs/0002-standards-and-tooling/verify.md": {
-    "mtime": 1794659609.4613724,
-    "seen": 1794659610.734756,
+    "mtime": 1794659737.7454376,
+    "seen": 1794659747.6596081,
     "ast_hash": "",
-    "semantic_hash": "f2de19da7e83fe9411a044ea7d75da75"
+    "semantic_hash": "7b6d19ea9eee94af8e10eb125a70e7a1"
   },
   "Cargo.toml": {
     "mtime": 1794658748.1588957,
@@ -699,6 +699,12 @@
     "mtime": 1794659322.4755278,
     "seen": 1794659357.2986271,
     "ast_hash": "e17c6142660372a15ec557d1cc76c607",
+    "semantic_hash": ""
+  },
+  "scripts/prove-checks.sh": {
+    "mtime": 1794659737.7521625,
+    "seen": 1794659747.343798,
+    "ast_hash": "7386e66763fb9c794843e799f2500827",
     "semantic_hash": ""
   }
 }
