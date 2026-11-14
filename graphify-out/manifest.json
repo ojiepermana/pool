@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/src/tree.rs": {
-    "mtime": 1794659322.4753513,
-    "seen": 1794659357.298625,
-    "ast_hash": "55da0bab36bb4b781f0cc8ce5c80bd64",
+    "mtime": 1794661265.701918,
+    "seen": 1794661296.047659,
+    "ast_hash": "89de52f8400f294402c3babd52d2b7c4",
     "semantic_hash": ""
   },
   "tools/repo-check/src/workspace.rs": {
@@ -732,9 +732,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/tests/repo_check/docs.rs": {
-    "mtime": 1794661082.6654742,
-    "seen": 1794661092.571141,
-    "ast_hash": "a2cb8af8adf33edc87f1c01b186a4a44",
+    "mtime": 1794661265.7764585,
+    "seen": 1794661296.0476642,
+    "ast_hash": "529930db7fed059a6e350bf977f7ba21",
     "semantic_hash": ""
   },
   "tools/repo-check/tests/repo_check/main.rs": {

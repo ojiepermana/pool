@@ -125,10 +125,34 @@ pub struct GitTree {
 
 impl GitTree {
     /// Lists the files of `revision` in the repository at `root`, or returns why `git` failed.
+    ///
+    /// The root must be the top of its Git work tree, so that the paths at the revision and the paths under the root are the same. The revision is resolved to a commit hash first, so a revision that starts with a hyphen is never read as an option.
     pub fn open(root: &Path, revision: &str) -> Result<Self, String> {
+        let prefix = git(root, &["rev-parse", "--show-prefix"])?;
+        top_of_work_tree(root, prefix.trim_end())?;
+        let commit = git(
+            root,
+            &[
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                "--end-of-options",
+                &format!("{revision}^{{commit}}"),
+            ],
+        )
+        .map_err(|_| format!("git rev-parse: {revision} is not a commit"))?;
+        let commit = commit.trim().to_string();
         let listing = git(
             root,
-            &["ls-tree", "-r", "--name-only", "-z", revision, "--"],
+            &[
+                "ls-tree",
+                "-r",
+                "--full-tree",
+                "--name-only",
+                "-z",
+                &commit,
+                "--",
+            ],
         )?;
         let files = listing
             .split('\0')
@@ -137,9 +161,21 @@ impl GitTree {
             .collect();
         Ok(Self {
             root: root.to_path_buf(),
-            revision: revision.to_string(),
+            revision: commit,
             files,
         })
+    }
+}
+
+/// Accepts the root only when `git rev-parse --show-prefix` printed nothing, that is when the root is the top of its work tree.
+fn top_of_work_tree(root: &Path, prefix: &str) -> Result<(), String> {
+    if prefix.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "the root {} is the folder {prefix} of a Git work tree, not its top; --base needs the repository root",
+            root.display()
+        ))
     }
 }
 
@@ -203,6 +239,18 @@ fn walk_names<'a>(
         })
         .cloned()
         .collect()
+}
+
+#[cfg(test)]
+mod git_tests {
+    use super::*;
+
+    #[test]
+    fn root_must_be_the_top_of_the_work_tree() {
+        assert!(top_of_work_tree(Path::new("."), "").is_ok());
+        let err = top_of_work_tree(Path::new("inner"), "inner/").unwrap_err();
+        assert!(err.contains("inner/") && err.contains("--base"), "{err}");
+    }
 }
 
 /// A tree held in memory, for tests.
