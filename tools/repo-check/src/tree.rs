@@ -258,6 +258,7 @@ mod git_tests {
 #[derive(Clone, Default)]
 pub struct MemTree {
     files: std::collections::BTreeMap<String, String>,
+    unreadable: std::collections::BTreeSet<String>,
 }
 
 #[cfg(test)]
@@ -274,6 +275,11 @@ impl MemTree {
     /// Adds or replaces a file.
     pub fn set(&mut self, path: &str, content: &str) {
         self.files.insert(path.to_string(), content.to_string());
+    }
+
+    /// Makes reading an existing file fail, as an unreadable file or a failed `git show` would.
+    pub fn set_unreadable(&mut self, path: &str) {
+        self.unreadable.insert(path.to_string());
     }
 
     /// Removes a file.
@@ -297,6 +303,9 @@ impl MemTree {
 #[cfg(test)]
 impl Tree for MemTree {
     fn read(&self, path: &str) -> Result<Option<String>, String> {
+        if self.unreadable.contains(path) && self.files.contains_key(path) {
+            return Err(format!("{path}: unreadable in this test"));
+        }
         Ok(self.files.get(path).cloned())
     }
 

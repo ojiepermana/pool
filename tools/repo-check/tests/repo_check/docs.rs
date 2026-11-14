@@ -664,3 +664,16 @@ fn base_could_not_run_when_the_root_is_a_folder_inside_a_repository() {
         .check("docs", &["--base", "HEAD"])
         .assert_not_run("docs", "--base needs the repository root");
 }
+
+#[test]
+fn base_could_not_run_when_an_owner_file_at_the_base_cannot_be_read() {
+    // covers: 0002 AC-10, D6: a base whose owner file is not UTF-8 cannot be compared, so the run exits 3
+    // instead of treating the file as absent and passing (review M5).
+    let f = good_tree("docs_base_not_utf8");
+    let good = f.read(SECURITY);
+    f.write_bytes(SECURITY, b"| ID |\n|---|\n| SEC-1 | Caf\xe9 |\n");
+    let base = f.commit_all("base with a latin-1 owner file");
+    f.write(SECURITY, &good);
+    f.check("docs", &["--base", &base])
+        .assert_not_run("docs", "cannot read the base revision");
+}
