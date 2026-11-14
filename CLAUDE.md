@@ -8,19 +8,20 @@ AGENTS.md above is the canonical agent guide (workflow, invariants, documentatio
 
 ## Current state and commands
 
-The repository holds the planning package plus the scope 001 workspace: `apps/pool` (the `pool` binary) and `crates/pool-config`. The only command is the offline `pool check-config`. There is no listener, proxy path or CI yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
+The repository holds the planning package, the scope 001 workspace (`apps/pool`, the `pool` binary, and `crates/pool-config`) and the scope 002 checks. The only product command is the offline `pool check-config`. There is no listener or proxy path yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
 
-These checks exist today and are run by hand (CI arrives with scope 002):
+Each check is one command, and CI (`.github/workflows/ci.yml`) runs the same commands ([spec 0002](docs/specs/0002-standards-and-tooling/index.md#the-check-entry-point)):
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
-cargo test -p <crate> <test_name>   # single test
+scripts/check.sh all                 # fmt, clippy, test, deny, guards, docs
+scripts/check.sh <name>              # one of the above, or linux-build, fuzz, sbom, tools
+scripts/prove-checks.sh              # every check must reject its deliberately wrong change
+cargo test -p <crate> <test_name>    # single test
+cargo test --manifest-path tools/repo-check/Cargo.toml --locked --target-dir target/repo-check   # the repo-check tests
 cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml
 ```
 
-The Linux container build is the command under "Linux build" in [spec 0001](docs/specs/0001-initial-architecture/index.md#linux-build). It needs a running Docker daemon, and a build on macOS is not Linux evidence. Its latest result is in the [verification record](docs/specs/0001-initial-architecture/verify.md). When CI appears, replace this section with what it defines.
+`deny` needs `cargo-deny` 0.20.2 (`scripts/check.sh tools` installs it under `target/tools`). `linux-build` and `scripts/prove-checks.sh --with-linux-build` need a running Docker daemon, and a build on macOS is not Linux evidence. The evidence is in the verification records of [spec 0001](docs/specs/0001-initial-architecture/verify.md) and [spec 0002](docs/specs/0002-standards-and-tooling/verify.md).
 
 ## Planned architecture
 

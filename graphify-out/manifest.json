@@ -12,16 +12,16 @@
     "semantic_hash": "b389c51c2529240081f8e461b9bfb562"
   },
   "CONTRIBUTING.md": {
-    "mtime": 1794648647.8571482,
-    "seen": 1794649040.5069041,
+    "mtime": 1794659447.8350792,
+    "seen": 1794659470.0807848,
     "ast_hash": "c80c5397122eb63b50c013a6af9307a6",
-    "semantic_hash": "a67c35841711ea0c22157019cbd2896d"
+    "semantic_hash": "95c512a49bca2b418e016d3d142e0f7a"
   },
   "README.md": {
-    "mtime": 1794648647.8567023,
-    "seen": 1794649040.506905,
+    "mtime": 1794659447.8674207,
+    "seen": 1794659470.080792,
     "ast_hash": "4ec1a8513e49db5ed8f2e206460b96c1",
-    "semantic_hash": "d4cf659a592b8e0152998ed1d0ef05e5"
+    "semantic_hash": "6c518c650d3d409ba826e09cc420eb6f"
   },
   "SECURITY.md": {
     "mtime": 1794623188.8471694,
@@ -90,10 +90,10 @@
     "semantic_hash": "302469f735651f3744288de61006e500"
   },
   "docs/engineering-standards.md": {
-    "mtime": 1794643175.2720897,
-    "seen": 1794643854.812625,
+    "mtime": 1794664013.9580307,
+    "seen": 1794664015.665796,
     "ast_hash": "67328cf9bcc20369bf1e4aebd44fcb30",
-    "semantic_hash": "b8c6f0fd9de1c9888e0499e99a3cab81"
+    "semantic_hash": "f33266281ac7d14699467575f27f15e6"
   },
   "docs/feature-matrix.md": {
     "mtime": 1794624031.2750814,
@@ -102,16 +102,16 @@
     "semantic_hash": "702d355262649d49a3046101f7772ba2"
   },
   "docs/implementation-order.md": {
-    "mtime": 1794624116.1764202,
-    "seen": 1794625238.069294,
+    "mtime": 1794659447.8908396,
+    "seen": 1794659470.080794,
     "ast_hash": "5bfdd5c5843108d9f1be1314aa0e412a",
-    "semantic_hash": "5bfdd5c5843108d9f1be1314aa0e412a"
+    "semantic_hash": "700e37e9da7239f6fdfc8e5e0f50646e"
   },
   "docs/index.md": {
-    "mtime": 1794655899.7484782,
-    "seen": 1794656203.326166,
+    "mtime": 1794662878.1984997,
+    "seen": 1794662910.369161,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "fee9b64dc6abcb0b7321b779191ed0b5"
+    "semantic_hash": "fcf65680c3c19142e2bdceedf7e4fb14"
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -138,10 +138,10 @@
     "semantic_hash": "0fcb72f66791a377dc0936caf5a64cbf"
   },
   "docs/plan/risk-register.md": {
-    "mtime": 1794624116.1773562,
-    "seen": 1794624512.962774,
+    "mtime": 1794659447.9514096,
+    "seen": 1794659470.080796,
     "ast_hash": "79c7e5a275104bf174072944d0ea9730",
-    "semantic_hash": "79c7e5a275104bf174072944d0ea9730"
+    "semantic_hash": "ecff10c1f71d451b6f079fe416ab5aa6"
   },
   "docs/plan/roadmap.md": {
     "mtime": 1794623415.6865785,
@@ -216,10 +216,10 @@
     "semantic_hash": "f2eba38f6d0df9e32fdc396f3897c50e"
   },
   "docs/repository-structure.md": {
-    "mtime": 1794624116.1785395,
-    "seen": 1794625238.069323,
+    "mtime": 1794659447.9733515,
+    "seen": 1794659470.080796,
     "ast_hash": "e507143fbb3f313aaf4569bc0173e4f5",
-    "semantic_hash": "e507143fbb3f313aaf4569bc0173e4f5"
+    "semantic_hash": "3f6cf02b85a41076f2db5477aa2155ea"
   },
   "docs/research/competitor-analysis.md": {
     "mtime": 1794620030.0528038,
@@ -252,10 +252,10 @@
     "semantic_hash": "55d3776162c25e9c238c202b5f2d9330"
   },
   "docs/research/technology-evaluation.md": {
-    "mtime": 1794643175.2728362,
-    "seen": 1794643854.812629,
+    "mtime": 1794664013.9585109,
+    "seen": 1794664015.665799,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "4f5deb579e157fa38a4f090a1a54effd"
+    "semantic_hash": "91a082e8e17ef66d85f7267414a3d6b1"
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794657721.7350848,
@@ -264,10 +264,10 @@
     "semantic_hash": "43598dcca2090e662aaabad06d818661"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794655940.7070508,
-    "seen": 1794656203.326168,
+    "mtime": 1794665801.2175493,
+    "seen": 1794665801.822484,
     "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
-    "semantic_hash": "052038794167a55a94a03a94abad9447"
+    "semantic_hash": "927cda023aed4060afd0ac2adfc64d6a"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -360,10 +360,10 @@
     "semantic_hash": "d894e0d3a8045f88571853f736396b49"
   },
   "docs/scope/index.md": {
-    "mtime": 1794656288.331558,
-    "seen": 1794656671.854806,
+    "mtime": 1794658259.4234176,
+    "seen": 1794658537.156868,
     "ast_hash": "5aef3b02f87fb3e8058fdcd509457a4a",
-    "semantic_hash": "ac6cc3b92b64b3a4086ba4b48b503696"
+    "semantic_hash": "8261123e0bfeb80c2b7a81475ead2857"
   },
   "docs/security/security-requirements.md": {
     "mtime": 1794624116.17761,
@@ -378,10 +378,10 @@
     "semantic_hash": "50d3096f5cd170587380dbaab9c8b21f"
   },
   "docs/specs/0001-initial-architecture/index.md": {
-    "mtime": 1794657747.7122753,
-    "seen": 1794658147.1805172,
+    "mtime": 1794659284.6874626,
+    "seen": 1794659285.235847,
     "ast_hash": "d273cb4d4139b2882af50db5d8277a24",
-    "semantic_hash": "6fc864541d9227c03cd2632218c20f3c"
+    "semantic_hash": "dca37393a8a433b7e5da314bea0398dd"
   },
   "docs/specs/0001-initial-architecture/rationale.md": {
     "mtime": 1794657747.7125878,
@@ -402,16 +402,16 @@
     "semantic_hash": "aabfbc1739cffb6804b89ce122fd06da"
   },
   "docs/testing/strategy.md": {
-    "mtime": 1794648647.8579128,
-    "seen": 1794649040.506911,
+    "mtime": 1794659448.064522,
+    "seen": 1794659470.0808,
     "ast_hash": "b7f4032681d4771d5f83d82c84f026a9",
-    "semantic_hash": "290b4db2c697a5b429cb9ab35d749ee7"
+    "semantic_hash": "89e9ee05c668a042c7a1182f2d467915"
   },
   "docs/glossary.md": {
-    "mtime": 1794643175.272426,
-    "seen": 1794643854.8126268,
+    "mtime": 1794658233.5353715,
+    "seen": 1794658537.156836,
     "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
-    "semantic_hash": "da9a678891b2713dc52779bf248c79df"
+    "semantic_hash": "118f9e7e6136bdec9c469bac1352c839"
   },
   "docs/scope/coordination/001-stack-and-workspace.brief-umum.md": {
     "mtime": 1794631706.8664336,
@@ -450,9 +450,9 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/check_config.rs": {
-    "mtime": 1794647183.337411,
-    "seen": 1794647617.816052,
-    "ast_hash": "53ed5cf2f2c9e410030f66f30670f36d",
+    "mtime": 1794667290.722774,
+    "seen": 1794667389.567439,
+    "ast_hash": "8cb2cd3144fc42b2c314e8b6cb088590",
     "semantic_hash": ""
   },
   "crates/pool-config/Cargo.toml": {
@@ -498,22 +498,22 @@
     "semantic_hash": "283e2c809f3243b8e09be677668aad04"
   },
   "docs/scope/coordination/002-standards-and-tooling.brief-umum.md": {
-    "mtime": 1794655362.0733342,
-    "seen": 1794655781.245831,
+    "mtime": 1794658259.4247355,
+    "seen": 1794658537.156864,
     "ast_hash": "",
-    "semantic_hash": "31e53c95ee25f053a147836be27456b1"
+    "semantic_hash": "2748521703f0f2aaa1f3fef318de6fa0"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794655940.720526,
-    "seen": 1794656203.326169,
+    "mtime": 1794668320.802007,
+    "seen": 1794668321.172447,
     "ast_hash": "",
-    "semantic_hash": "7d6fb41ea53e3e748f29d8fe6ceb3e90"
+    "semantic_hash": "dcdcc3ef843562de47e4c258163e6303"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
-    "mtime": 1794655356.847045,
-    "seen": 1794655781.2458382,
+    "mtime": 1794658048.2894921,
+    "seen": 1794658537.156867,
     "ast_hash": "",
-    "semantic_hash": "91e60dc627b58a126c377a8e23a67ff6"
+    "semantic_hash": "ca455460b5e14624ef94bfba6773987a"
   },
   "apps/pool/AGENTS.md": {
     "mtime": 1794655899.747823,
@@ -538,5 +538,215 @@
     "seen": 1794656203.326165,
     "ast_hash": "",
     "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
+  },
+  "docs/adr/0002-standards-and-tooling.md": {
+    "mtime": 1794658233.5343876,
+    "seen": 1794658537.1568298,
+    "ast_hash": "",
+    "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
+  },
+  "docs/specs/0002-standards-and-tooling/index.md": {
+    "mtime": 1794664013.9591525,
+    "seen": 1794664015.665801,
+    "ast_hash": "",
+    "semantic_hash": "5d9bbf5bfd204bbd916f363627d23902"
+  },
+  "docs/specs/0002-standards-and-tooling/rationale.md": {
+    "mtime": 1794664013.9594727,
+    "seen": 1794664015.665802,
+    "ast_hash": "",
+    "semantic_hash": "2441c1d70238629ccbb37ca3ce71149f"
+  },
+  "docs/specs/0002-standards-and-tooling/verify.md": {
+    "mtime": 1794665122.2701452,
+    "seen": 1794665123.363189,
+    "ast_hash": "",
+    "semantic_hash": "65052fb0a5b12542968847ed578dc4f6"
+  },
+  "Cargo.toml": {
+    "mtime": 1794658748.1588957,
+    "seen": 1794658830.801265,
+    "ast_hash": "b66e1977a09fa01e71bee553f1ff9cc8",
+    "semantic_hash": ""
+  },
+  "crates/pool-config/fuzz/Cargo.toml": {
+    "mtime": 1794658748.1595273,
+    "seen": 1794658830.801267,
+    "ast_hash": "7b2b42af9c0db2c6d0e7f4621334d41d",
+    "semantic_hash": ""
+  },
+  "crates/pool-config/fuzz/fuzz_targets/validate.rs": {
+    "mtime": 1794658748.160731,
+    "seen": 1794658830.8012679,
+    "ast_hash": "90d3571a3b4b197728cd5c63c72e3c52",
+    "semantic_hash": ""
+  },
+  ".github/pull_request_template.md": {
+    "mtime": 1794658885.7263343,
+    "seen": 1794658947.8021219,
+    "ast_hash": "",
+    "semantic_hash": "d6c9ac3a2aa4908a57281c91cc743a65"
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1794658885.7269225,
+    "seen": 1794658947.8021278,
+    "ast_hash": "",
+    "semantic_hash": "2e60bbb36a0b76224b8fc06e5b7130b5"
+  },
+  ".github/rulesets/main.json": {
+    "mtime": 1794658885.7267187,
+    "seen": 1794658947.8170261,
+    "ast_hash": "d149d2743d1a373ae77b61e7f4df9334",
+    "semantic_hash": ""
+  },
+  "scripts/check.sh": {
+    "mtime": 1794668288.7527516,
+    "seen": 1794668306.844415,
+    "ast_hash": "7d38ecc1ca91d3ae36efa934a65dd9c2",
+    "semantic_hash": ""
+  },
+  "scripts/linux-build.sh": {
+    "mtime": 1794664358.728376,
+    "seen": 1794664390.115891,
+    "ast_hash": "8d86c9b71bd7aca20803e3850020ee55",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/baseline/forbidden-paths.txt": {
+    "mtime": 1794659322.4733255,
+    "seen": 1794659357.28255,
+    "ast_hash": "",
+    "semantic_hash": "2548c842f2ac967d75158762b58995a7"
+  },
+  "tools/repo-check/baseline/forbidden-source-patterns.txt": {
+    "mtime": 1794659322.4736922,
+    "seen": 1794659357.282558,
+    "ast_hash": "",
+    "semantic_hash": "e256299bef0cbd1631e9c1f6221526d5"
+  },
+  "tools/repo-check/baseline/fuzz-lock-packages.txt": {
+    "mtime": 1794659322.473882,
+    "seen": 1794659357.282559,
+    "ast_hash": "",
+    "semantic_hash": "3cf56504ada7218ef475d921efe76569"
+  },
+  "tools/repo-check/baseline/internal-dependencies.txt": {
+    "mtime": 1794659322.4739995,
+    "seen": 1794659357.28256,
+    "ast_hash": "",
+    "semantic_hash": "7fab6e8e85b96c91b38e525449904c28"
+  },
+  "tools/repo-check/baseline/lock-packages.txt": {
+    "mtime": 1794659322.4741168,
+    "seen": 1794659357.282561,
+    "ast_hash": "",
+    "semantic_hash": "9fded9e26722e0ab1fedc2bf69f4c3a7"
+  },
+  "tools/repo-check/baseline/tool-lock-packages.txt": {
+    "mtime": 1794659322.47423,
+    "seen": 1794659357.282562,
+    "ast_hash": "",
+    "semantic_hash": "c76196aab097a6f9651dc90fa33f8761"
+  },
+  "tools/repo-check/Cargo.toml": {
+    "mtime": 1794659322.473031,
+    "seen": 1794659357.2986062,
+    "ast_hash": "7b18f525f702f2fab9838febdff2d580",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/ci.rs": {
+    "mtime": 1794664358.674157,
+    "seen": 1794664390.115894,
+    "ast_hash": "0eaa65ad81aac0d7ba84dabfaccf5191",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/docs.rs": {
+    "mtime": 1794668288.4983132,
+    "seen": 1794668306.8444228,
+    "ast_hash": "79341850711b9bd8c8fe0bac810823ae",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/ids.rs": {
+    "mtime": 1794664358.6743915,
+    "seen": 1794664390.115894,
+    "ast_hash": "3ecf3103c80c9ccc8400cb78cbfe121f",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/main.rs": {
+    "mtime": 1794659322.4749715,
+    "seen": 1794659357.2986188,
+    "ast_hash": "2ee1c18c989a5e164ae3bd748bde31d5",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/report.rs": {
+    "mtime": 1794659322.4751,
+    "seen": 1794659357.298621,
+    "ast_hash": "b4b547cbbd4847379ad86f6a5b53d549",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/text.rs": {
+    "mtime": 1794668288.5325623,
+    "seen": 1794668306.844424,
+    "ast_hash": "c83f0690923ae00877c5179166f95441",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/tree.rs": {
+    "mtime": 1794664358.675184,
+    "seen": 1794664390.115896,
+    "ast_hash": "305899319d8c09fe8cd9998e9cf4698c",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/src/workspace.rs": {
+    "mtime": 1794664358.6754282,
+    "seen": 1794664390.1158972,
+    "ast_hash": "194f25163c2b997090d404026027a0fb",
+    "semantic_hash": ""
+  },
+  "scripts/prove-checks.sh": {
+    "mtime": 1794664358.6737387,
+    "seen": 1794664390.115893,
+    "ast_hash": "b361a13240c20f81f11b67581702641e",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/check_script.rs": {
+    "mtime": 1794661082.655076,
+    "seen": 1794661092.571133,
+    "ast_hash": "bce9860e878a8d1b68cb6a8ba0af4ef6",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/ci.rs": {
+    "mtime": 1794664358.6758966,
+    "seen": 1794664390.1158981,
+    "ast_hash": "846b022e84cf22b97f95b3341faf1a87",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/cli.rs": {
+    "mtime": 1794661082.6612637,
+    "seen": 1794661092.57114,
+    "ast_hash": "ae5e415d049f564b386f535acacd1aa0",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/common.rs": {
+    "mtime": 1794661082.6649306,
+    "seen": 1794661092.57114,
+    "ast_hash": "bb1eb1a3daa5e9ce640f78e1f200aade",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/docs.rs": {
+    "mtime": 1794668288.5672739,
+    "seen": 1794668306.844425,
+    "ast_hash": "b1d6fd47cec291ffd1e8b39193989129",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/main.rs": {
+    "mtime": 1794661082.6664484,
+    "seen": 1794661092.571142,
+    "ast_hash": "ca9b26c18e08f9b2019f1213a0adec79",
+    "semantic_hash": ""
+  },
+  "tools/repo-check/tests/repo_check/workspace.rs": {
+    "mtime": 1794664358.6764276,
+    "seen": 1794664390.1158988,
+    "ast_hash": "54b6463e9980ea03e05628b3f931a360",
+    "semantic_hash": ""
   }
 }

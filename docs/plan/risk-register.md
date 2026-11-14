@@ -1,6 +1,6 @@
 # Risk register
 
-Probability is an initial engineering judgment, not a measured frequency. Critical impact means data loss, cross identity exposure or split brain. Each owner is a role to staff, not a named person already assigned.
+Probability is an initial engineering judgment, not a measured frequency. Critical impact means data loss, cross identity exposure or split brain. Each owner is a role. The [reviewer roster](../engineering-standards.md#reviewer-roster) names who holds it, or shows that nobody does yet.
 
 | ID | Risk | Probability | Impact | Mitigation | Validation | Owner |
 |---|---|---|---|---|---|---|

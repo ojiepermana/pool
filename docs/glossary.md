@@ -90,3 +90,8 @@ The exact effect of each action on active sessions belongs to the [health](scope
 | Walking slice | Scope 004, the first real client path. | [Testing strategy](testing/strategy.md#first-walking-slice-acceptance) |
 | Core MVP, Routing preview, V1 | Release gates, not version numbers. | [Milestones](plan/milestones.md) |
 | Verification record | The per criterion evidence for one slice. | [Testing strategy](testing/strategy.md#acceptance-evidence) |
+| Required check | A named check that must pass on a pull request before it can be merged into `main`. The same name is the argument of `scripts/check.sh`, the CI job and the entry in the branch rule. | [Spec 0002](specs/0002-standards-and-tooling/index.md#required-checks) |
+| Baseline file | A text file that lists what a workspace guard allows today, such as the package names of a lockfile. A spec changes it on purpose, in the same pull request as the change it allows. | [Spec 0002](specs/0002-standards-and-tooling/index.md#workspace-guards) |
+| Branch rule | The GitHub ruleset for `main`, kept as a file in the repository. Avoid branch protection as a name for it; that is an older GitHub feature. | [Spec 0002](specs/0002-standards-and-tooling/index.md#branch-rule-and-change-path) |
+| Fresh model | A model session that did not write or design a change and starts without the author's conversation. It may do some reviews in place of a person. | [Spec 0002](specs/0002-standards-and-tooling/index.md#reviewer-roster-and-fresh-model-reviews) |
+| Reviewer roster | The table that names who holds each review role and risk owner role. | [Engineering standards](engineering-standards.md#reviewer-roster) |

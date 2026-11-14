@@ -13,7 +13,7 @@ You ratified the initial architecture on 2026-11-14 after independent review. Fe
 | # | Feature | Phase | Status |
 |---|---|---|---|
 | 1 | [Stack and workspace](001-stack-and-workspace.md) | Foundation | done |
-| 2 | [Standards and tooling](002-standards-and-tooling.md) | Foundation | planned |
+| 2 | [Standards and tooling](002-standards-and-tooling.md) | Foundation | in-progress |
 | 3 | [Control and session data model](003-control-and-session-data-model.md) | Foundation | planned |
 | 4 | [One real primary path](004-one-real-primary-path.md) | Slice 1 | planned |
 | 5 | [Clean session reuse](005-clean-session-reuse.md) | Slice 2 | planned |
@@ -38,7 +38,7 @@ This index manages build order, phase, project defaults, and the status overview
 
 ## Legend
 
-Feature 1 is done, reflecting your accepted design and its recorded evidence. Other features remain planned, including deferred features. A decision box is checked only after you accept its spec. Later feature specs add a coarse build milestone rollup and GA verification boxes; atomic tasks stay in the spec. A design or feasibility decision can unblock its dependent slice; it does not mark a capability implemented. Build and test evidence are required before completed implementation is claimed.
+Feature 1 is done, reflecting your accepted design and its recorded evidence. Feature 2 is in progress: its spec is accepted and its checks are being built. Other features remain planned, including deferred features. A decision box is checked only after you accept its spec. Later feature specs add a coarse build milestone rollup and GA verification boxes; atomic tasks stay in the spec. A design or feasibility decision can unblock its dependent slice; it does not mark a capability implemented. Build and test evidence are required before completed implementation is claimed.
 
 Needs a decision means behavior or safety is not yet fully settled. Deferred means outside the current release queue, not silently removed from the parity inventory. You can revisit scope after each shipped slice.
 

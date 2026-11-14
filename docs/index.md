@@ -2,7 +2,7 @@
 
 **Package date:** 2026-11-14. This index covers every generated Markdown document plus the project license. All application capabilities remain planned. A ratified foundation still does not mean it has been built.
 
-For the next development task, start with the [workspace handoff](implementation-order.md#first-handoff-the-workspace). Use the [readiness review](plan/planning-validation.md#development-readiness-review) to see what changed and which decisions still gate later work.
+For the next development task, start with the [scope index](scope/index.md) and the [handoff for later slices](implementation-order.md#handoff-for-later-slices). Use the [readiness review](plan/planning-validation.md#development-readiness-review) to see what changed and which decisions still gate later work.
 
 ## Where a change belongs
 
@@ -17,12 +17,13 @@ For the next development task, start with the [workspace handoff](implementation
 | Which rule do all slices share for keys, errors, metrics or output? | [Shared conventions](engineering-standards.md#shared-conventions) | The first slice that exposes a surface records the rule once. Later specs cite it. |
 | What global rule or upstream behavior applies? | [Engineering standards](engineering-standards.md), [security requirements](security/security-requirements.md) or dated research | The [feature inventory](feature-matrix.md) records parity dispositions. A research entry is neither a release commitment nor a test result. |
 
-When one change crosses these boundaries, change the owner first and follow its references to the affected scope, plan and tests. Unaffected documents need no matching paragraph. Cite by stable ID and never copy the text: `PRD-001 AC-1`, `PRD-001 FR-2` for a numbered functional requirement, `0001 SC-4` for a safety contract, `0004 AC-1` for a criterion that exists only in a feature spec, and `SEC-3`, `F-018`, `R-07` or `T-05` for security requirements, inventory rows, risks and threats. All ten PRDs are proposed contracts, subject to these shared standards and the governing spec.
+When one change crosses these boundaries, change the owner first and follow its references to the affected scope, plan and tests. Unaffected documents need no matching paragraph. Cite by stable ID and never copy the text: `PRD-001 AC-1`, `PRD-001 FR-2` for a numbered functional requirement, `0001 SC-4` for a safety contract, `0001 AC-1` for a criterion that exists only in a feature spec, and `SEC-3`, `F-018`, `R-07` or `T-05` for security requirements, inventory rows, risks and threats. All ten PRDs are proposed contracts, subject to these shared standards and the governing spec.
 
 ## Project root
 
 | Path | Document |
 |---|---|
+| [.github/pull_request_template.md](../.github/pull_request_template.md) | Pull request template |
 | [AGENTS.md](../AGENTS.md) | POOL agent guide |
 | [CHANGELOG.md](../CHANGELOG.md) | Changelog |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code guidance |
@@ -49,6 +50,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 | Path | Document |
 |---|---|
 | [docs/adr/0001-initial-architecture.md](adr/0001-initial-architecture.md) | ADR 0001. Initial architecture |
+| [docs/adr/0002-standards-and-tooling.md](adr/0002-standards-and-tooling.md) | ADR 0002. Standards and tooling |
 
 ## docs/architecture
 
@@ -117,6 +119,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 | Path | Document |
 |---|---|
 | [docs/reviews/2026-11-14-scope-001-stack-and-workspace.md](reviews/2026-11-14-scope-001-stack-and-workspace.md) | Review. Scope 001, stack and workspace (2026-11-14) |
+| [docs/reviews/2026-11-14-scope-002-standards-and-tooling.md](reviews/2026-11-14-scope-002-standards-and-tooling.md) | Review. Scope 002, standards and tooling (2026-11-14) |
 
 ## docs/scope
 
@@ -155,6 +158,14 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/specs/0001-initial-architecture/index.md](specs/0001-initial-architecture/index.md) | 0001. POOL initial architecture |
 | [docs/specs/0001-initial-architecture/rationale.md](specs/0001-initial-architecture/rationale.md) | Initial architecture rationale |
 | [docs/specs/0001-initial-architecture/verify.md](specs/0001-initial-architecture/verify.md) | 0001. Verification record |
+
+## docs/specs/0002-standards-and-tooling
+
+| Path | Document |
+|---|---|
+| [docs/specs/0002-standards-and-tooling/index.md](specs/0002-standards-and-tooling/index.md) | 0002. Standards and tooling |
+| [docs/specs/0002-standards-and-tooling/rationale.md](specs/0002-standards-and-tooling/rationale.md) | Standards and tooling rationale |
+| [docs/specs/0002-standards-and-tooling/verify.md](specs/0002-standards-and-tooling/verify.md) | 0002. Verification record |
 
 ## docs/testing
 
