@@ -12,27 +12,27 @@ You ratified the initial architecture on 2026-11-14 after independent review. Fe
 
 | # | Feature | Phase | Status |
 |---|---|---|---|
-| 1 | [Stack and workspace](stack-and-workspace.md) | Foundation | in-progress |
-| 2 | [Standards and tooling](standards-and-tooling.md) | Foundation | planned |
-| 3 | [Control and session data model](control-and-session-data-model.md) | Foundation | planned |
-| 4 | [One real primary path](one-real-primary-path.md) | Slice 1 | planned |
-| 5 | [Clean session reuse](clean-session-reuse.md) | Slice 2 | planned |
-| 6 | [Protocol breadth and cancellation](protocol-breadth-and-cancellation.md) | Slice 3 | planned |
-| 7 | [Restricted replica sessions](restricted-replica-sessions.md) | Slice 4 | planned |
-| 8 | [Health diagnostics and drain](health-diagnostics-and-drain.md) | Slice 5 | planned |
-| 9 | [Safe topology administration](safe-topology-administration.md) | Slice 6 | planned |
-| 10 | [Fenced manual promotion](fenced-manual-promotion.md) | Slice 7 | planned |
-| 11 | [Release qualification harness](release-qualification-harness.md) | V1 gate | planned |
-| 12 | [Multiple proxy authority](multiple-proxy-authority.md) | Deferred | planned |
-| 13 | [Checked online recovery](checked-online-recovery.md) | Deferred | planned |
-| 14 | [Advanced pooling and routing](advanced-pooling-and-routing.md) | Deferred | planned |
-| 15 | [Optional result cache](optional-result-cache.md) | Deferred | planned |
-| 16 | [Additional replication modes](additional-replication-modes.md) | Deferred | planned |
-| 17 | [Administrative dashboard](administrative-dashboard.md) | Deferred | planned |
+| 1 | [Stack and workspace](001-stack-and-workspace.md) | Foundation | in-progress |
+| 2 | [Standards and tooling](002-standards-and-tooling.md) | Foundation | planned |
+| 3 | [Control and session data model](003-control-and-session-data-model.md) | Foundation | planned |
+| 4 | [One real primary path](004-one-real-primary-path.md) | Slice 1 | planned |
+| 5 | [Clean session reuse](005-clean-session-reuse.md) | Slice 2 | planned |
+| 6 | [Protocol breadth and cancellation](006-protocol-breadth-and-cancellation.md) | Slice 3 | planned |
+| 7 | [Restricted replica sessions](007-restricted-replica-sessions.md) | Slice 4 | planned |
+| 8 | [Health diagnostics and drain](008-health-diagnostics-and-drain.md) | Slice 5 | planned |
+| 9 | [Safe topology administration](009-safe-topology-administration.md) | Slice 6 | planned |
+| 10 | [Fenced manual promotion](010-fenced-manual-promotion.md) | Slice 7 | planned |
+| 11 | [Release qualification harness](011-release-qualification-harness.md) | V1 gate | planned |
+| 12 | [Multiple proxy authority](012-multiple-proxy-authority.md) | Deferred | planned |
+| 13 | [Checked online recovery](013-checked-online-recovery.md) | Deferred | planned |
+| 14 | [Advanced pooling and routing](014-advanced-pooling-and-routing.md) | Deferred | planned |
+| 15 | [Optional result cache](015-optional-result-cache.md) | Deferred | planned |
+| 16 | [Additional replication modes](016-additional-replication-modes.md) | Deferred | planned |
+| 17 | [Administrative dashboard](017-administrative-dashboard.md) | Deferred | planned |
 
 ## File ownership
 
-This index manages build order, phase, project defaults, and the status overview. Each linked feature file owns its intent, Done when criteria, checklist, and spec/evidence pointers. When a feature changes status, update both its index row and its heading. Keep its existing number when renaming or moving the file, and update the link here.
+This index manages build order, phase, project defaults, and the status overview. Feature filenames use a three digit prefix matching their feature number, such as `001-stack-and-workspace.md` through `017-administrative-dashboard.md`. The central index remains `index.md`. Each linked feature file owns its intent, Done when criteria, checklist, and spec/evidence pointers. When a feature changes status, update both its index row and its heading. Keep its existing number when renaming or moving the file, and update the link here.
 
 ## Legend
 

@@ -22,6 +22,7 @@ Read the architecture decision for the chosen foundation, the scope for work ord
 | Path | Document |
 |---|---|
 | [AGENTS.md](../AGENTS.md) | POOL agent guide |
+| [CLAUDE.md](../CLAUDE.md) | Claude Code guidance |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contributing to POOL |
 | [README.md](../README.md) | pool |
 | [SECURITY.md](../SECURITY.md) | Security policy |
@@ -98,23 +99,23 @@ Read the architecture decision for the chosen foundation, the scope for work ord
 | Path | Document |
 |---|---|
 | [docs/scope/index.md](scope/index.md) | Scope: POOL, order and status index |
-| [docs/scope/stack-and-workspace.md](scope/stack-and-workspace.md) | 1. Stack and workspace |
-| [docs/scope/standards-and-tooling.md](scope/standards-and-tooling.md) | 2. Standards and tooling |
-| [docs/scope/control-and-session-data-model.md](scope/control-and-session-data-model.md) | 3. Control and session data model |
-| [docs/scope/one-real-primary-path.md](scope/one-real-primary-path.md) | 4. One real primary path |
-| [docs/scope/clean-session-reuse.md](scope/clean-session-reuse.md) | 5. Clean session reuse |
-| [docs/scope/protocol-breadth-and-cancellation.md](scope/protocol-breadth-and-cancellation.md) | 6. Protocol breadth and cancellation |
-| [docs/scope/restricted-replica-sessions.md](scope/restricted-replica-sessions.md) | 7. Restricted replica sessions |
-| [docs/scope/health-diagnostics-and-drain.md](scope/health-diagnostics-and-drain.md) | 8. Health diagnostics and drain |
-| [docs/scope/safe-topology-administration.md](scope/safe-topology-administration.md) | 9. Safe topology administration |
-| [docs/scope/fenced-manual-promotion.md](scope/fenced-manual-promotion.md) | 10. Fenced manual promotion |
-| [docs/scope/release-qualification-harness.md](scope/release-qualification-harness.md) | 11. Release qualification harness |
-| [docs/scope/multiple-proxy-authority.md](scope/multiple-proxy-authority.md) | 12. Multiple proxy authority |
-| [docs/scope/checked-online-recovery.md](scope/checked-online-recovery.md) | 13. Checked online recovery |
-| [docs/scope/advanced-pooling-and-routing.md](scope/advanced-pooling-and-routing.md) | 14. Advanced pooling and routing |
-| [docs/scope/optional-result-cache.md](scope/optional-result-cache.md) | 15. Optional result cache |
-| [docs/scope/additional-replication-modes.md](scope/additional-replication-modes.md) | 16. Additional replication modes |
-| [docs/scope/administrative-dashboard.md](scope/administrative-dashboard.md) | 17. Administrative dashboard |
+| [docs/scope/001-stack-and-workspace.md](scope/001-stack-and-workspace.md) | 1. Stack and workspace |
+| [docs/scope/002-standards-and-tooling.md](scope/002-standards-and-tooling.md) | 2. Standards and tooling |
+| [docs/scope/003-control-and-session-data-model.md](scope/003-control-and-session-data-model.md) | 3. Control and session data model |
+| [docs/scope/004-one-real-primary-path.md](scope/004-one-real-primary-path.md) | 4. One real primary path |
+| [docs/scope/005-clean-session-reuse.md](scope/005-clean-session-reuse.md) | 5. Clean session reuse |
+| [docs/scope/006-protocol-breadth-and-cancellation.md](scope/006-protocol-breadth-and-cancellation.md) | 6. Protocol breadth and cancellation |
+| [docs/scope/007-restricted-replica-sessions.md](scope/007-restricted-replica-sessions.md) | 7. Restricted replica sessions |
+| [docs/scope/008-health-diagnostics-and-drain.md](scope/008-health-diagnostics-and-drain.md) | 8. Health diagnostics and drain |
+| [docs/scope/009-safe-topology-administration.md](scope/009-safe-topology-administration.md) | 9. Safe topology administration |
+| [docs/scope/010-fenced-manual-promotion.md](scope/010-fenced-manual-promotion.md) | 10. Fenced manual promotion |
+| [docs/scope/011-release-qualification-harness.md](scope/011-release-qualification-harness.md) | 11. Release qualification harness |
+| [docs/scope/012-multiple-proxy-authority.md](scope/012-multiple-proxy-authority.md) | 12. Multiple proxy authority |
+| [docs/scope/013-checked-online-recovery.md](scope/013-checked-online-recovery.md) | 13. Checked online recovery |
+| [docs/scope/014-advanced-pooling-and-routing.md](scope/014-advanced-pooling-and-routing.md) | 14. Advanced pooling and routing |
+| [docs/scope/015-optional-result-cache.md](scope/015-optional-result-cache.md) | 15. Optional result cache |
+| [docs/scope/016-additional-replication-modes.md](scope/016-additional-replication-modes.md) | 16. Additional replication modes |
+| [docs/scope/017-administrative-dashboard.md](scope/017-administrative-dashboard.md) | 17. Administrative dashboard |
 
 ## docs/security
 
@@ -142,4 +143,4 @@ Read the architecture decision for the chosen foundation, the scope for work ord
 
 [LICENSE](../LICENSE) contains the official Apache License 2.0 text selected by you. Its appendix contains the standard example notice fields; those are part of the canonical license, not unfinished project documentation.
 
-This index lists 66 other Markdown documents and itself, plus LICENSE. No source files, build scaffolding or deployment assets are represented as implemented.
+This index lists 67 other Markdown documents and itself, plus LICENSE. No source files, build scaffolding or deployment assets are represented as implemented.

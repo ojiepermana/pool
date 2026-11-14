@@ -10,7 +10,7 @@
 | PRD structure | All 10 PRDs contain the 14 requested content sections |
 | Proposed acceptance criteria | 41 criteria across the PRDs, with feature specific tests |
 | Local Markdown links | All file targets resolve in the workspace |
-| Scope organization | 17 feature files managed by docs/scope/index.md; original order, phase, status, intent, criteria and checklists preserved |
+| Scope organization | 17 feature files with prefixes 001 through 017, managed by docs/scope/index.md; original order, phase, status, intent, criteria and checklists preserved |
 | Feature inventory | 165 uniquely identified rows with the required columns |
 | Sample configuration inventory | 207 distinct option spellings |
 | Runtime declaration inventory | 195 typed records, 186 distinct names, all 181 normalized sample names accounted for plus 5 source-only names |
