@@ -108,6 +108,16 @@ replace_line_starting() {
   rewrite "$1" awk -v a="$2" -v b="$3" '!done && index($0, a) == 1 { $0 = b; done = 1 } { print }'
 }
 
+# Appends a row after the last row of the feature table of the scope index, the table under its first
+# "| # | Feature |" header.
+append_feature_row() {
+  rewrite "$1" awk -v l="$2" '
+    state == 1 && index($0, "|") != 1 { print l; state = 2 }
+    { print }
+    state == 0 && index($0, "| # | Feature |") == 1 { state = 1 }
+    END { if (state == 1) print l }'
+}
+
 # Replaces the first commit hash after actions/checkout@ with v7.
 unpin_checkout() {
   rewrite "$1" awk '
@@ -285,8 +295,11 @@ append "$C/README.md" '[broken](docs/glossary.md#no-such-heading)'
 expect 16 docs 'D2' 'no-such-heading'
 restore
 
-rewrite "$C/docs/scope/004-one-real-primary-path.md" awk 'NR == 1 { sub(/planned/, "done") } { print }'
-expect 17 docs 'D3'
+# Case 17: a feature of the proof's own, so that the case does not depend on the status of a real feature
+# (spec 0004, "Proof script and lockfile check"). Its row says planned and its file says done.
+append_feature_row "$C/docs/scope/index.md" '| 99 | [Proof case](099-proof-case.md) | Proof | planned |'
+printf '%s\n' '# 99. Proof case · done' >"$C/docs/scope/099-proof-case.md"
+expect 17 docs 'D3' '099-proof-case.md'
 restore
 
 append "$C/README.md" '`SEC-99`'
@@ -370,6 +383,54 @@ restore
 
 append "$C/docs/security/security-requirements.md" '| SEC-14 | Fixture row used to prove the duplicate rule |'
 expect 28 docs 'D4' 'SEC-14'
+restore
+
+# Case 29: a local package that is no member, followed by a table with a source line, which ends the entry
+# (spec 0004, "Proof script and lockfile check"). The baseline copy names it, so only W4 objects.
+cat >>"$C/Cargo.lock" <<'LOCK_ENTRY'
+
+[[package]]
+name = "pool-prove-ghost"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "pool-prove-unused"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+LOCK_ENTRY
+append "$C/tools/repo-check/baseline/lock-packages.txt" 'pool-prove-ghost'
+expect 29 guards 'W4' 'pool-prove-ghost'
+restore
+
+# Cases 30 to 35: one per group of the source guard of spec 0004 (0004 AC-2, "Source guard").
+# 30: a socket or the runtime outside pool-core and apps/pool.
+append "$C/crates/pool-control/src/lib.rs" '// TcpStream'
+expect 30 guards 'W3' 'crates/pool-control/src/lib.rs' 'TcpStream'
+restore
+
+# 31: a thread or a socket kind that no path allows, also where sockets are allowed.
+append "$C/apps/pool/src/main.rs" '// UnixStream'
+expect 31 guards 'W3' 'apps/pool/src/main.rs' 'UnixStream'
+restore
+
+# 32: a clock, a file call or an environment read in pool-control (0003 AC-11, Follow-up 4 point t6).
+append "$C/crates/pool-control/src/lib.rs" '// Instant::now'
+expect 32 guards 'W3' 'crates/pool-control/src/lib.rs' 'Instant::now'
+restore
+
+# 33: rusqlite in pool-control outside journal.rs.
+append "$C/crates/pool-control/src/lib.rs" '// rusqlite'
+expect 33 guards 'W3' 'crates/pool-control/src/lib.rs' 'rusqlite'
+restore
+
+# 34: a journal value named outside pool-control (point m2, 0003 AC-19).
+append "$C/apps/pool/src/main.rs" '// StoreProbe'
+expect 34 guards 'W3' 'apps/pool/src/main.rs' 'StoreProbe'
+restore
+
+# 35: writer admission called outside pool-control (point m3, the guard half of 0003 AC-18).
+append "$C/crates/pool-config/src/lib.rs" '// writer_admission'
+expect 35 guards 'W3' 'crates/pool-config/src/lib.rs' 'writer_admission'
 restore
 
 if [ -n "$failed" ]; then
