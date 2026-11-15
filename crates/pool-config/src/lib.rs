@@ -561,14 +561,90 @@ pub(crate) fn line_column(text: &str, offset: usize) -> (u32, u32) {
         .iter()
         .rposition(|&byte| byte == b'\n')
         .map_or(0, |index| index + 1);
-    let scalars = prefix[line_start..]
-        .iter()
-        .filter(|&&byte| byte & 0xC0 != 0x80)
-        .count();
+    let scalars = count_scalar_starts(&prefix[line_start..]);
     (
         to_u32(line_feeds.saturating_add(1)),
         to_u32(scalars.saturating_add(1)),
     )
+}
+
+/// Bytes between two stored scalar counts in a [`LineIndex`].
+const SCALAR_STRIDE: usize = 256;
+
+/// Answers [`line_column`] for many offsets of one text without rescanning it.
+///
+/// It is built once in time linear in the text. Each lookup is a binary search
+/// over the line starts plus a scan of fewer than [`SCALAR_STRIDE`] bytes, and
+/// gives the same line and column as [`line_column`] for every offset.
+pub(crate) struct LineIndex<'a> {
+    bytes: &'a [u8],
+    /// The byte offset where each line starts; the first is always 0.
+    line_starts: Vec<usize>,
+    /// The scalar values before each multiple of [`SCALAR_STRIDE`].
+    scalars_at_stride: Vec<usize>,
+}
+
+impl<'a> LineIndex<'a> {
+    /// Builds the index of `text`.
+    pub(crate) fn new(text: &'a str) -> Self {
+        let bytes = text.as_bytes();
+        let mut line_starts = vec![0];
+        line_starts.extend(
+            bytes
+                .iter()
+                .enumerate()
+                .filter(|&(_, &byte)| byte == b'\n')
+                .map(|(index, _)| index + 1),
+        );
+        let mut scalars_at_stride = Vec::with_capacity(bytes.len() / SCALAR_STRIDE + 1);
+        let mut scalars = 0;
+        for chunk in bytes.chunks(SCALAR_STRIDE) {
+            scalars_at_stride.push(scalars);
+            scalars += count_scalar_starts(chunk);
+        }
+        scalars_at_stride.push(scalars);
+        Self {
+            bytes,
+            line_starts,
+            scalars_at_stride,
+        }
+    }
+
+    /// The 1 based line and column of a byte offset, equal to
+    /// [`line_column`] of the same text and offset.
+    pub(crate) fn line_column(&self, offset: usize) -> (u32, u32) {
+        let offset = offset.min(self.bytes.len());
+        // The line feeds before `offset` are the line starts after 0 that are
+        // at or before it.
+        let line_index = self
+            .line_starts
+            .partition_point(|&start| start <= offset)
+            .saturating_sub(1);
+        let line_start = self.line_starts.get(line_index).copied().unwrap_or(0);
+        let scalars = self
+            .scalars_before(offset)
+            .saturating_sub(self.scalars_before(line_start));
+        (
+            to_u32(line_index.saturating_add(1)),
+            to_u32(scalars.saturating_add(1)),
+        )
+    }
+
+    /// The scalar values in `bytes[..offset]`, for an offset within the text.
+    fn scalars_before(&self, offset: usize) -> usize {
+        let stride = offset / SCALAR_STRIDE;
+        let stored = self.scalars_at_stride.get(stride).copied().unwrap_or(0);
+        let tail = self
+            .bytes
+            .get(stride * SCALAR_STRIDE..offset)
+            .unwrap_or_default();
+        stored + count_scalar_starts(tail)
+    }
+}
+
+/// The bytes that start a Unicode scalar value, so not continuation bytes.
+fn count_scalar_starts(bytes: &[u8]) -> usize {
+    bytes.iter().filter(|&&byte| byte & 0xC0 != 0x80).count()
 }
 
 fn to_u32(value: usize) -> u32 {

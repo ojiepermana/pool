@@ -13,8 +13,8 @@ use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use toml::Spanned;
 
 use crate::{
-    AuthorityId, ClusterId, Finding, FindingCode, IdentityId, KnownField, Location, NodeId,
-    SystemIdentifier, line_column,
+    AuthorityId, ClusterId, Finding, FindingCode, IdentityId, KnownField, LineIndex, Location,
+    NodeId, SystemIdentifier,
 };
 
 const KEY_STATE_DIRECTORY: &str = "control.state_directory";
@@ -379,7 +379,7 @@ struct At<T> {
 
 /// Collects findings and turns spans into positions.
 struct Checker<'a> {
-    text: &'a str,
+    positions: LineIndex<'a>,
     findings: &'a mut Vec<Finding>,
 }
 
@@ -392,7 +392,7 @@ impl Checker<'_> {
     }
 
     fn start<T>(&self, spanned: &Spanned<T>) -> (u32, u32) {
-        line_column(self.text, spanned.span().start)
+        self.positions.line_column(spanned.span().start)
     }
 
     /// Checks a required string key of an entry that starts at `entry`.
@@ -486,7 +486,10 @@ struct IdentityEntry {
 /// records. The records are complete only when no finding was added; the
 /// caller must not use them otherwise.
 pub(crate) fn check(text: &str, raw: RawTopology, findings: &mut Vec<Finding>) -> Topology {
-    let mut checker = Checker { text, findings };
+    let mut checker = Checker {
+        positions: LineIndex::new(text),
+        findings,
+    };
 
     let control = raw
         .control
