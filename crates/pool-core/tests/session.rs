@@ -112,6 +112,7 @@ fn answer(sql: &str) -> Answer {
         "copy" => Answer::Copy,
         "a big row" => Answer::Rows(vec!["x".repeat(200_000)], TransactionStatus::Idle),
         "a broken message" => Answer::Broken,
+        "a flood" => Answer::Flood,
         _ => Answer::Hang,
     }
 }
@@ -122,6 +123,7 @@ enum Answer {
     Cut,
     Copy,
     Broken,
+    Flood,
     Hang,
 }
 
@@ -324,6 +326,24 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
             }
             Answer::Broken => {
                 let _ = tls.write_all(&encode_message(b'K', &[0; 8])).await;
+            }
+            Answer::Flood => {
+                // 8 MB of rows of 8000 bytes: far more than any buffer between here and a client that stops reading.
+                let mut row = 1u16.to_be_bytes().to_vec();
+                row.extend_from_slice(&8000u32.to_be_bytes());
+                row.extend_from_slice(&[b'f'; 8000]);
+                let row = encode_message(b'D', &row);
+                let _ = tls.write_all(&encode_message(b'T', &[0, 1])).await;
+                for _ in 0..1000 {
+                    if tls.write_all(&row).await.is_err() {
+                        state.log.lock().expect("lock").closed += 1;
+                        return;
+                    }
+                }
+                let _ = tls.write_all(&encode_message(b'C', b"SELECT 1000\0")).await;
+                let _ = tls
+                    .write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
+                    .await;
             }
             Answer::Hang => {}
         }
@@ -1161,4 +1181,50 @@ async fn shutdown_closes_connections_before_their_session_started() {
     let _ = tokio::time::timeout(Duration::from_secs(5), raw.read_to_end(&mut rest)).await;
     assert!(rest.is_empty());
     assert_eq!(h.server.connections(), 0);
+}
+
+// ---- a client that stops reading in the middle of a large answer ----
+
+/// Logs in, asks for 8 MB of rows and never reads again, so the relay waits on a write toward the client.
+async fn a_stuck_client(h: &Harness) -> TlsStream<DuplexStream> {
+    let (mut tls, _) = login(h).await.ready();
+    tls.write_all(&encode_query("a flood"))
+        .await
+        .expect("write");
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    tls
+}
+
+#[tokio::test]
+async fn the_shutdown_deadline_ends_a_session_whose_client_stopped_reading() {
+    let h = Harness::new("shutdown_timeout_ms = 300");
+    let _stuck = a_stuck_client(&h).await;
+    assert_eq!(h.server.sessions(), 1);
+    let started = std::time::Instant::now();
+    tokio::time::timeout(Duration::from_secs(5), h.server.shutdown())
+        .await
+        .expect("shutdown returns although the client does not read");
+    assert!(started.elapsed() >= Duration::from_millis(280));
+    assert_eq!(h.server.sessions(), 0);
+    assert_eq!(h.server.connections(), 0);
+    settle().await;
+    assert_eq!(h.log(|l| l.closed), 1, "the backend is closed");
+}
+
+#[tokio::test]
+async fn a_positive_conflict_ends_a_session_whose_client_stopped_reading() {
+    let h = Harness::new("");
+    let _stuck = a_stuck_client(&h).await;
+    assert_eq!(h.server.sessions(), 1);
+    h.close(true);
+    let ended = async {
+        while h.server.sessions() > 0 {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    };
+    tokio::time::timeout(Duration::from_secs(3), ended)
+        .await
+        .expect("the session ends although the client does not read");
+    settle().await;
+    assert_eq!(h.log(|l| l.closed), 1, "the backend is closed");
 }
