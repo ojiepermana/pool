@@ -1820,6 +1820,43 @@ On 2026-11-16 until 04:40 WIB, by the tester session: the part of finding t8 of 
 
 The first two mutation runs of the waiter test ran into the limit of 600 s of my mutation runner, because the copy rebuilt everything on a busy machine. Run again with a limit of 1500 s, each took about 19 to 24 minutes and was caught. The old `run.sh` in that copy left two `sleep 1800` processes of my runs behind, which I ended.
 
+### Round eight
+
+On 2026-11-16 until 04:51 WIB, by the tester session: [Follow-up 16](index.md#follow-up) of this spec (decision 111), the list of what the second review found without an owner. On `main` at `a7bf27b` and later, commits `95d87b4` and `032aada` of the branch, `main` merged at `309905a`. macOS 27.0.1, arm64, with other sessions using Docker. Test files and test modules only; 0 lines of production code. Decision 112: the second sentence of `0004 AC-28` gets no test, and none was written.
+
+| Item of Follow-up 16 | Test | Wrong change, in a copy | Result |
+|---|---|---|---|
+| The status `I` after the answer of step 8 (S4) | `ac29_a_node_that_is_not_idle_after_the_identity_answer_is_refused_with_08006` (`session.rs`): the right row, then `ReadyForQuery` with `T` and with `E` | the status not asked in `verify_identity` | caught |
+| The question of step 8 under the deadline | `ac29_a_node_that_never_answers_the_identity_question_is_refused_at_the_deadline` (`session.rs`): a node that never answers gives `08006` after 0.5 s and within 5 s | the `timeout_at` around the question removed | caught |
+| The greeting raced against a cut | `a_conflict_ends_a_login_whose_client_does_not_read_its_greeting` (`session.rs`): a client on a pipe of 64 bytes reads up to the SASL final message and then nothing; a positive conflict still ends the connection and closes its backend | the greeting written with no race | caught |
+| The route carries the approved timeline | `ac29_the_route_carries_the_approved_timeline_of_the_writer` (`control.rs`, `mod tests`): a journal and samples on timeline 3, the route names 3 | the timeline of the route always 1 | caught |
+| The last try for a latch through `run` (S9, c9) | `c9_the_loop_stopped_through_run_tries_the_latch_once_more` (`control.rs`): the loop runs through `run` with every write refused (another holder moved the revision on), is stopped, and writes one more `journal.write_failed` and a second `authority.conflict_latched` with `recorded` false | the call of `last_try` in `run` removed | caught |
+| The listener socket has keepalive on (S14) | `ac30_the_listener_socket_has_keepalive_on_and_hands_it_to_the_sockets_it_accepts` (`daemon.rs`, `mod tests`): the option read with `TcpSocket::keepalive` on the listener of `bind`, after a safe conversion through `OwnedFd`, and on a socket it accepted (both systems pass the option on; checked first on macOS with a Python probe) | `set_keepalive` removed from `bind` | caught |
+| `Debug` of `Server` and `ServerParts` (t2) | `the_server_and_its_parts_print_exactly_their_start_sequence_and_phase` (`session.rs`): `Server { start_sequence: 3, phase: Running, .. }` and `ServerParts { start_sequence: 3, .. }`, and no name, password or host of the harness in either form | a field `config` added to each | caught, both |
+| `Debug` of `Lease` (t2) | `a_lease_prints_its_generation_and_key_and_never_its_login_database_or_backend_key` (`backend/tests.rs`): the exact text, with the login and database of the key redacted | a field `identity` added | caught |
+| n15: a `Terminate` alone where the backend must be closed | `session.rs`: the six assertions of `closed + terminated` now ask for `closed`, waiting where the close comes a moment later | the lease never dropped (the backend gets `Terminate` and stays open), against `unsupported_and_broken_frontend_messages_end_the_session` | before: not caught; after: caught |
+| n15: start sequence 10 to 19 read as 1 | `it_the_walking_fixture_gives_the_same_answers_through_pool` (`integration.rs`) reads `start_sequence` of `daemon.started` as a JSON number | `daemon.started` shows the start sequence plus 9 | before: not caught; after: caught (fixture, `POOL_IT_FILTER`) |
+| The tasks left after the last limit of shutdown are dropped (`session.rs`, the abort after `END_TIMEOUT`) | not written | the abort removed | not caught |
+| A task that ends makes the daemon end at once (S7) | not written | `shutdown` in place of `shutdown_now` | not caught |
+| A probe task that ends is noticed (S8) | not written | the branch of `join_next` removed | not caught |
+
+**The three that stay open, with what a test needs** (for the architect, for the first step of scope 005):
+
+- **The abort after `END_TIMEOUT`.** No path that a test can drive keeps a connection task alive past it: `admit` is dropped when shutdown starts, and in `run_session` the greeting, every read and write of the relay and the error of a cut are raced against the cut, and the close of the client is bounded by `CLOSE_TIMEOUT`. The comment of `END_TIMEOUT` says the same ("only a defect reaches this limit"). A test needs a seam: for example the drop of the left tasks as a function of its own over the set of connection tasks, which a unit test can hand a task that never ends, or a `Connector` whose stream the cut cannot reach.
+- **S7 and S8.** The watch on the tasks is written inline in `serve` of `apps/pool/src/daemon.rs`. A probe task ends only when it is stopped or the control loop is gone, the control loop only when it is stopped or every probe is gone, and the log task only when it panics, so no test can make a task end on its own (the checker found the same and used a fault in a private copy). A test needs the watch as a function of its own, for example one that takes the join handles of the control loop, the probes, the listener and the log and returns which ended, so that a unit test can hand it a task that returns; with it, `daemon.failed`, `shutdown_now` and exit 3 can be held.
+- **The rest of Follow-up 16, the behaviors without spec text,** waits for the reviewer's list, as that item says.
+
+| Command | Observed | Result |
+|---|---|---|
+| `scripts/check.sh all > <file> 2>&1; echo $?` on `309905a` and again on `032aada` | exit status 0 both times | pass |
+| `scripts/check.sh integration > <file> 2>&1; echo $?` on `309905a` | exit status 0, 30 of 30 | pass |
+| `scripts/check.sh linux-build` on `309905a` and on `032aada` | exit status 0 both times | pass |
+| `scripts/check.sh all` and `scripts/check.sh integration` on `560c954` (`main` merged with the code of decisions 109 and 116) | exit status 0 both, 30 of 30 | pass |
+| `scripts/check.sh linux-build` on `560c954` | exit status 3: the check refuses a tree with local changes, and I had begun the next tests while it ran. Not a failure of the build | not counted |
+| `scripts/check.sh all` and `scripts/check.sh linux-build` on `36dda46` | exit status 0 both | pass |
+
+**Decisions 115 and 116** (added to the list by the lead). `ac17_an_empty_database_takes_the_user_name_and_reaches_its_identity_entry` (`session.rs`): a configuration whose identity entry asks for a database named like the principal, and a startup packet with `database` sent empty: the login is mapped and the node sees the backend login and database of that entry. With the arm `b"database" if value.is_empty()` of `parse_startup` removed: caught. `ac16_an_empty_user_gets_28p01_after_the_full_exchange`: an empty `user` gets SASL, continue and then `28P01`, as a wrong password does, and no backend is opened. The configurations of every new test meet decision 109.
+
 ## Full verification
 
 The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.

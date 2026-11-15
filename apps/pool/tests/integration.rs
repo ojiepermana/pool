@@ -797,7 +797,9 @@ fn it_the_walking_fixture_gives_the_same_answers_through_pool() {
     let (case, port, id) = ready_case("walking");
     let daemon = Daemon::start(&case);
     let started = daemon.wait_for(&["\"event\":\"daemon.started\""], 20);
-    assert!(started.contains("\"start_sequence\":1"), "{started}");
+    // Round eight (review nit n15): the number itself, so that 10 to 19 do not pass for 1.
+    let value: serde_json::Value = serde_json::from_str(&started).expect("one JSON object");
+    assert_eq!(value["start_sequence"], 1, "{started}");
     assert!(
         started.contains(&format!("\"authority_id\":\"{id}\"")),
         "{started}"

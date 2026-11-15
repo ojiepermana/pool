@@ -65,7 +65,13 @@ fn config(limits: &str) -> ValidatedConfig {
 
 /// The test configuration with more lines at the end of the `[[principal]]` table.
 fn config_with(limits: &str, principal: &str) -> ValidatedConfig {
-    let text = format!(
+    pool_config::validate(config_text(limits, principal).as_bytes())
+        .expect("a valid test configuration")
+}
+
+/// The text of [`config_with`] (round eight: a test changes one line of it).
+fn config_text(limits: &str, principal: &str) -> String {
+    format!(
         r#"config_version = 1
 
 [control]
@@ -110,8 +116,7 @@ name = "{PRINCIPAL}"
 verifier_file = "/etc/pool/orders_app.scram"
 {principal}
 "#
-    );
-    pool_config::validate(text.as_bytes()).expect("a valid test configuration")
+    )
 }
 
 // ---- the scripted node ----
@@ -192,6 +197,8 @@ struct NodeState {
     tls: Mutex<Option<NodeTls>>,
     /// How the node answers the question of step 8.
     identity: Mutex<Identity>,
+    /// The status of the `ReadyForQuery` after that answer (round eight, S4).
+    identity_status: Mutex<TransactionStatus>,
 }
 
 /// The answer of the scripted node to the question of step 8.
@@ -201,6 +208,8 @@ enum Identity {
     Rows(Vec<Vec<Option<String>>>),
     /// An `ErrorResponse`, then `ReadyForQuery`.
     Error,
+    /// No answer at all (round eight: step 8 must run under the deadline).
+    Silent,
 }
 
 impl Identity {
@@ -428,10 +437,10 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
                         ))
                         .await;
                 }
+                Identity::Silent => continue,
             }
-            let _ = tls
-                .write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
-                .await;
+            let status = *state.identity_status.lock().expect("lock");
+            let _ = tls.write_all(&auth::encode_ready_for_query(status)).await;
             let _ = tls.flush().await;
             continue;
         }
@@ -536,6 +545,8 @@ struct Harness {
     cluster: ClusterId,
     node_id: NodeId,
     origin: Instant,
+    /// `Debug` of the `ServerParts` the server was built from (round eight, t2).
+    parts_debug: String,
 }
 
 impl Harness {
@@ -566,6 +577,7 @@ impl Harness {
             routes,
             tls: Mutex::new(None),
             identity: Mutex::new(Identity::writer()),
+            identity_status: Mutex::new(TransactionStatus::Idle),
         });
         let chain = CertificateChain::parse(&fixture("node.pem")).expect("chain");
         let key = PrivateKey::parse(&fixture("node.key")).expect("key");
@@ -601,7 +613,9 @@ impl Harness {
             start_sequence: 3,
             config,
         };
+        let parts_debug = format!("{parts:?} {parts:#?}");
         let harness = Self {
+            parts_debug,
             server: match identity_query {
                 Some(query) => Server::with_identity_query(parts, query),
                 None => Server::new(parts),
@@ -933,8 +947,9 @@ async fn unsupported_and_broken_frontend_messages_end_the_session() {
         assert!(closed(&mut tls).await);
         settle().await;
         assert_eq!(h.log(|l| l.queries.len()), 0, "nothing reached the node");
+        // Round eight (review nit n15): closed, not only told `Terminate`.
         assert!(
-            h.log(|l| l.closed + l.terminated) > 0,
+            eventually(|| h.log(|l| l.closed) == 1).await,
             "the backend is closed"
         );
     }
@@ -1202,8 +1217,9 @@ async fn a_client_that_leaves_inside_a_transaction_closes_its_backend_and_return
     drop(tls);
     settle().await;
     assert_eq!(h.server.sessions(), 0);
+    // Round eight (review nit n15): closed, not only told `Terminate`.
     assert!(
-        h.log(|l| l.closed + l.terminated) >= 1,
+        eventually(|| h.log(|l| l.closed) == 1).await,
         "the backend is closed, so PostgreSQL rolls back"
     );
     // The permit came back: with one session allowed the next login succeeds.
@@ -1495,7 +1511,7 @@ async fn refused_at_the_second_look(h: &Harness, second: RouteView) {
     assert!(!tags.contains(&b'Z'), "no ReadyForQuery");
     assert_eq!(h.opened(), 1, "the backend was opened once");
     assert!(
-        eventually(|| h.log(|l| l.closed + l.terminated) == 1).await,
+        eventually(|| h.log(|l| l.closed) == 1).await,
         "the backend is closed again"
     );
     assert_eq!(h.log(|l| l.queries.len()), 0, "no SQL reached the node");
@@ -2163,7 +2179,7 @@ async fn refused_at_step_8(h: &Harness, identity: Identity) {
         "no Query of the client reached the node"
     );
     assert!(
-        eventually(|| h.log(|l| l.closed + l.terminated) == 1).await,
+        eventually(|| h.log(|l| l.closed) == 1).await,
         "the backend is closed"
     );
     assert_eq!(h.server.sessions(), 0);
@@ -2307,7 +2323,7 @@ async fn ac30_an_idle_session_on_a_lost_node_gets_08006() {
         );
         assert!(eventually(|| h.server.sessions() == 0).await);
         assert!(
-            eventually(|| h.log(|l| l.closed + l.terminated) == 1).await,
+            eventually(|| h.log(|l| l.closed) == 1).await,
             "the backend is closed"
         );
     };
@@ -2380,7 +2396,7 @@ async fn shutdown_now_ends_every_session_at_once_and_returns_within_its_limit() 
         assert_eq!(h.server.sessions(), 0);
         assert_eq!(h.server.connections(), 0);
         assert!(
-            eventually(|| h.log(|l| l.closed + l.terminated) == 3).await,
+            eventually(|| h.log(|l| l.closed) == 3).await,
             "every backend is closed"
         );
         let (_c, s) = tokio::io::duplex(64);
@@ -2632,4 +2648,195 @@ async fn ac20_no_byte_of_an_oversized_query_reaches_the_node() {
         terminate,
         "only the Terminate of POOL after the refusal"
     );
+}
+
+// ---- added by the tests of scope 004, round eight (Follow-up 16 of spec 0004) ----
+
+#[tokio::test]
+async fn ac29_a_node_that_is_not_idle_after_the_identity_answer_is_refused_with_08006() {
+    // covers: 0004 AC-29 (S4 of the checker run of step 15): the right row,
+    // then a ReadyForQuery with the status `T` or `E`, ends the attempt.
+    for status in [TransactionStatus::InTransaction, TransactionStatus::Failed] {
+        let h = Harness::new("");
+        *h.node.identity_status.lock().expect("lock") = status;
+        let (tags, code) = login(&h).await.refused();
+        assert_eq!(code, "08006", "{status:?}");
+        assert!(!tags.contains(&b'Z'), "{status:?}");
+        assert_eq!(h.log(|l| l.identity_questions), 1, "{status:?}");
+        assert!(
+            eventually(|| h.log(|l| l.closed) == 1).await,
+            "{status:?}: the backend is closed"
+        );
+    }
+}
+
+#[tokio::test]
+async fn ac29_a_node_that_never_answers_the_identity_question_is_refused_at_the_deadline() {
+    // covers: 0004 AC-29, AC-20 (finding r3 of the second review): the
+    // question of step 8 runs under the acquire deadline; a node that never
+    // answers gives `08006` after it, not never.
+    let h = Harness::new("backend_acquire_timeout_ms = 500");
+    *h.node.identity.lock().expect("lock") = Identity::Silent;
+    let started = std::time::Instant::now();
+    let login = tokio::time::timeout(Duration::from_secs(10), login(&h))
+        .await
+        .expect("the login ends within 10 s");
+    let (_, code) = login.refused();
+    assert_eq!(code, "08006");
+    assert!(
+        started.elapsed() >= Duration::from_millis(450)
+            && started.elapsed() < Duration::from_secs(5),
+        "{:?}",
+        started.elapsed()
+    );
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 1).await,
+        "the backend is closed"
+    );
+}
+
+#[tokio::test]
+async fn a_conflict_ends_a_login_whose_client_does_not_read_its_greeting() {
+    // covers: 0004 AC-14, AC-25 (finding r3 of the second review): the write
+    // of the greeting is raced against the cut. The client reads up to the
+    // SASL final message on a pipe of 64 bytes and then nothing, so the
+    // greeting cannot be written; a positive conflict still ends the
+    // connection and closes its backend.
+    let h = Harness::new("");
+    let (client, server) = tokio::io::duplex(64);
+    h.server.accept_stream(server).expect("a handshake permit");
+    let mut tls = upgrade(client).await;
+    tls.write_all(&encode_startup(&PRINCIPAL_PARAMS))
+        .await
+        .expect("startup");
+    // On a pipe of 64 bytes the TLS stream sends only what is flushed.
+    tls.flush().await.expect("flush");
+    let mut exchange = None;
+    let mut expected = None;
+    loop {
+        let m = read_msg(&mut tls, 1 << 20).await.expect("a message");
+        match auth::parse_authentication(&m.body) {
+            Ok(Authentication::Sasl(_)) => {
+                let (client, first) = ClientExchange::start().expect("random");
+                tls.write_all(&auth::encode_sasl_initial_response(
+                    auth::SCRAM_SHA_256,
+                    first.as_bytes(),
+                ))
+                .await
+                .expect("write");
+                tls.flush().await.expect("flush");
+                exchange = Some(client);
+            }
+            Ok(Authentication::SaslContinue(data)) => {
+                let client = exchange.take().expect("SASL first");
+                let server_first = client.server_first(&data).expect("server first");
+                let keys = derive_keys(
+                    &password(PRINCIPAL_PASSWORD),
+                    &server_first.salt,
+                    std::num::NonZeroU32::new(server_first.iterations).expect("count"),
+                );
+                let (fin, check) = client.client_final(&server_first, &keys);
+                tls.write_all(&auth::encode_sasl_response(fin.as_bytes()))
+                    .await
+                    .expect("write");
+                tls.flush().await.expect("flush");
+                expected = Some(check);
+            }
+            Ok(Authentication::SaslFinal(data)) => {
+                expected
+                    .take()
+                    .expect("a proof")
+                    .check(&data)
+                    .expect("signature");
+                break;
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+    // From here the client reads nothing; the node is asked and answers.
+    assert!(eventually(|| h.log(|l| l.identity_questions) == 1).await);
+    settle().await;
+    assert_eq!(h.server.sessions(), 0, "the greeting was not written");
+    h.close(true);
+    assert!(
+        eventually(|| h.server.connections() == 0).await,
+        "the connection ended although its client does not read"
+    );
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 1).await,
+        "the backend is closed"
+    );
+    drop(tls);
+}
+
+#[tokio::test]
+async fn the_server_and_its_parts_print_exactly_their_start_sequence_and_phase() {
+    // Round eight (t2 of the review, the rest of it): exact `Debug` texts.
+    let h = Harness::new("");
+    assert_eq!(
+        format!("{:?}", h.server),
+        "Server { start_sequence: 3, phase: Running, .. }"
+    );
+    assert_eq!(
+        h.parts_debug.split_once(' ').map(|(first, _)| first),
+        Some("ServerParts")
+    );
+    assert!(
+        h.parts_debug
+            .starts_with("ServerParts { start_sequence: 3, .. } "),
+        "{}",
+        h.parts_debug
+    );
+    for hidden in [
+        PRINCIPAL,
+        PRINCIPAL_PASSWORD,
+        BACKEND_LOGIN,
+        BACKEND_PASSWORD,
+        "node.test",
+    ] {
+        assert!(
+            !h.parts_debug.contains(hidden),
+            "{hidden}: {}",
+            h.parts_debug
+        );
+        assert!(!format!("{:#?}", h.server).contains(hidden), "{hidden}");
+    }
+}
+
+#[tokio::test]
+async fn ac17_an_empty_database_takes_the_user_name_and_reaches_its_identity_entry() {
+    // covers: 0004 AC-17, decision 116: a `database` sent empty counts as not
+    // sent and takes the value of `user`; the identity entry for a database
+    // named like the principal then maps the login.
+    let text = config_text("", "").replacen(
+        "database = \"orders\"",
+        &format!("database = \"{PRINCIPAL}\""),
+        1,
+    );
+    let config = pool_config::validate(text.as_bytes()).expect("a valid test configuration");
+    let h = Harness::with_config(config);
+    let (mut tls, _) = login_with(upgrade(h.raw()).await, PRINCIPAL, PRINCIPAL_PASSWORD, "")
+        .await
+        .ready();
+    assert_eq!(
+        query(&mut tls, "select 1").await.last().map(|m| m.tag),
+        Some(b'Z')
+    );
+    assert_eq!(
+        h.log(|l| l.startups.clone()),
+        [(BACKEND_LOGIN.to_string(), BACKEND_DATABASE.to_string())]
+    );
+}
+
+#[tokio::test]
+async fn ac16_an_empty_user_gets_28p01_after_the_full_exchange() {
+    // covers: 0004 AC-16, decision 115: an empty `user` is a name that is no
+    // principal: the same messages as a wrong password, then `28P01`.
+    let h = Harness::new("");
+    let (tags, code) = login_with(upgrade(h.raw()).await, "", PRINCIPAL_PASSWORD, "orders")
+        .await
+        .refused();
+    assert_eq!(code, "28P01");
+    assert_eq!(tags, b"RRE", "SASL, continue, then the error");
+    assert_eq!(h.opened(), 0);
 }

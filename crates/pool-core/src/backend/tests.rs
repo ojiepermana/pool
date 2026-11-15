@@ -1083,3 +1083,50 @@ fn data_row_refuses_every_body_that_lies_about_its_columns() {
     // And a count of 0 with nothing after it is an empty row, not an error.
     assert_eq!(data_row(&[0, 0]), Ok(Vec::new()));
 }
+
+#[tokio::test]
+async fn a_lease_prints_its_generation_and_key_and_never_its_login_database_or_backend_key() {
+    // Added by the tests of scope 004, round eight (t2 of the review, the rest
+    // of it): the exact `Debug` text of a `Lease`.
+    use crate::records::{Lease, LeaseGeneration, PoolKey, StartupProfile};
+    use crate::tls::TlsPolicy;
+    let run = run(
+        Script::primary(),
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    let backend = run.result.expect("open");
+    let permit = Arc::new(tokio::sync::Semaphore::new(1))
+        .try_acquire_owned()
+        .expect("permit");
+    let key = PoolKey {
+        cluster: pool_config::ClusterId::parse("main").expect("id"),
+        node: pool_config::NodeId::parse("pg1").expect("id"),
+        database: "CANARY-9f2c7b1e-database".to_owned(),
+        login: "CANARY-9f2c7b1e-login".to_owned(),
+        credential_generation: pool_config::CredentialGeneration::FIRST,
+        topology_epoch: pool_config::TopologyEpoch::from_stored(4).expect("epoch"),
+        tls_policy: TlsPolicy::VerifyFull,
+        startup_profile: StartupProfile::DedicatedV1,
+    };
+    let lease = Lease::new(
+        backend,
+        permit,
+        LeaseGeneration::FIRST,
+        key,
+        pool_config::IdentityId::parse("orders-app").expect("id"),
+    );
+    assert_eq!(
+        format!("{lease:?}"),
+        "Lease { generation: LeaseGeneration(1), key: PoolKey { cluster: ClusterId(\"main\"), \
+         node: NodeId(\"pg1\"), database: \"[REDACTED]\", login: \"[REDACTED]\", \
+         credential_generation: CredentialGeneration(1), topology_epoch: TopologyEpoch(4), \
+         tls_policy: VerifyFull, startup_profile: DedicatedV1 }, .. }"
+    );
+    let pretty = format!("{lease:#?}");
+    for hidden in ["CANARY", "4242", "secret-login", "appdb"] {
+        assert!(!pretty.contains(hidden), "{hidden}: {pretty}");
+    }
+}

@@ -972,4 +972,112 @@ mod tests {
         assert!(view.is_lost(&main_cluster()));
         assert!(!route_view(&snapshot).is_lost(&main_cluster()));
     }
+
+    // ---- added by the tests of scope 004, round eight (Follow-up 16) ----
+
+    fn reached_on(node: &str, at: MonotonicTime, in_recovery: bool, timeline: u32) -> Observation {
+        Observation::new(
+            NodeId::parse(node).expect("node id"),
+            at,
+            ObservationOutcome::Reached(NodeFacts {
+                system_identifier: SystemIdentifier::parse(SYSTEM_ID).expect("system identifier"),
+                timeline: TimelineId::from_observed(timeline).expect("timeline"),
+                in_recovery,
+            }),
+        )
+    }
+
+    #[test]
+    fn ac29_the_route_carries_the_approved_timeline_of_the_writer() {
+        // covers: 0004 AC-29 (finding r3 of the second review): with a writer
+        // on timeline 3 the route names timeline 3, so step 8 compares it.
+        let folder = std::env::temp_dir().join(format!(
+            "pool-control-loop-{}-timeline-3",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&folder);
+        std::fs::create_dir_all(&folder).expect("folder");
+        let path = folder.join("journal.sqlite3");
+        std::fs::write(&path, b"").expect("empty journal");
+        let at = MonotonicTime::from_origin(Duration::from_secs(100));
+        let mut board = ObservationBoard::new();
+        board.record(reached_on("pg1", at, false, 3));
+        board.record(reached_on("pg2", at, true, 3));
+        let plan = Journal::read(&path)
+            .bootstrap_plan(&config(false), &board, at)
+            .expect("bootstrap is allowed");
+        Journal::create(
+            &path,
+            &plan,
+            AuthorityId::parse(X).expect("id"),
+            1_763_200_000_000,
+        )
+        .expect("create");
+        let mut controller = Controller::new(ready(&path));
+        let now = MonotonicTime::from_origin(Duration::from_secs(10));
+        controller.record(reached_on("pg1", now, false, 3));
+        controller.record(reached_on("pg2", now, true, 3));
+        let snapshot = controller.round(&config(true), now);
+        match route_view(&snapshot).state(&main_cluster()) {
+            RouteState::Open(route) => assert_eq!(route.timeline, 3),
+            other => panic!("open expected: {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn c9_the_loop_stopped_through_run_tries_the_latch_once_more() {
+        // covers: c9 of the review, decision 96 (finding r3 of the second
+        // review): the last try runs when the loop stops through `run`, not
+        // only when a test calls it. Every write fails here, because another
+        // holder moved the revision on; the last try writes its line.
+        let (events, _guard) = capture();
+        let path = journal_file("last-try-through-run");
+        let (control, _receiver) = control_loop(&path);
+        let AuthorityState::Ready(authority) = ready(&path) else {
+            unreachable!("checked in ready");
+        };
+        let (mut other, _) = Journal::open_ready(&path, &authority).expect("a second holder");
+        other
+            .set_conflict_latch(&main_cluster(), 1_763_200_000_003)
+            .expect("the other holder writes");
+        let now = control.now();
+        let (samples, received) = mpsc::channel(4);
+        let (stop, stopped) = watch::channel(false);
+        samples
+            .send((reached("pg1", now, false), None))
+            .await
+            .expect("send");
+        samples
+            .send((reached("pg2", now, false), None))
+            .await
+            .expect("send");
+        let failed = |events: &Events| named(events, "journal.write_failed").len();
+        let driver = async {
+            for _ in 0..200 {
+                if failed(&events) >= 1 {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            assert!(failed(&events) >= 1, "a round tried the latch");
+            let before = failed(&events);
+            stop.send(true).expect("stop");
+            before
+        };
+        let (journal, before) = tokio::join!(control.run(received, stopped), driver);
+        drop(journal);
+        assert_eq!(
+            failed(&events),
+            before + 1,
+            "the last try wrote once more and failed"
+        );
+        assert_eq!(
+            named(&events, "authority.conflict_latched"),
+            [
+                pairs(&[("cluster_id", "main"), ("recorded", "false")]),
+                pairs(&[("cluster_id", "main"), ("recorded", "false")]),
+            ],
+            "the round's line, then the line of the last try"
+        );
+    }
 }
