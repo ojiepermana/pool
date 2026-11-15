@@ -754,5 +754,23 @@
     "seen": 1794700674.021607,
     "ast_hash": "",
     "semantic_hash": "e3ef591e856b1e470abad501ac4b3262"
+  },
+  "docs/scope/coordination/003-control-and-session-data-model.brief-umum.md": {
+    "mtime": 1794717395.0349505,
+    "seen": 1794718304.594806,
+    "ast_hash": "",
+    "semantic_hash": "d5b29419250844a8dbb80d04470c8055"
+  },
+  "docs/scope/coordination/003-control-and-session-data-model.log.md": {
+    "mtime": 1794717543.808988,
+    "seen": 1794718304.59481,
+    "ast_hash": "",
+    "semantic_hash": "49b28fdff5767f6c5808ff983591c380"
+  },
+  "docs/scope/coordination/003-control-and-session-data-model.manual.md": {
+    "mtime": 1794717405.4581199,
+    "seen": 1794718304.594812,
+    "ast_hash": "",
+    "semantic_hash": "63fd4ebc232ece9086973fc1a37e97c6"
   }
 }
