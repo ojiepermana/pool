@@ -7696,7 +7696,7 @@
       "file_type": "code",
       "norm_label": "a_file_that_cannot_be_read_or_is_invalid_is_reported_with_the_command_name()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L200"
+      "source_location": "L213"
     },
     {
       "id": "apps_pool_tests_commands_ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal",
@@ -7707,7 +7707,7 @@
       "file_type": "code",
       "norm_label": "ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L510"
+      "source_location": "L523"
     },
     {
       "id": "apps_pool_tests_commands_ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds",
@@ -7718,7 +7718,7 @@
       "file_type": "code",
       "norm_label": "ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L599"
+      "source_location": "L612"
     },
     {
       "id": "apps_pool_tests_commands_ac13_run_reports_the_configuration_the_view_and_the_state_directory_first",
@@ -7729,7 +7729,7 @@
       "file_type": "code",
       "norm_label": "ac13_run_reports_the_configuration_the_view_and_the_state_directory_first()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L632"
+      "source_location": "L645"
     },
     {
       "id": "apps_pool_tests_commands_ac9_a_journal_file_of_the_wrong_type_or_mode_is_state_permissions",
@@ -7740,7 +7740,7 @@
       "file_type": "code",
       "norm_label": "ac9_a_journal_file_of_the_wrong_type_or_mode_is_state_permissions()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L326"
+      "source_location": "L339"
     },
     {
       "id": "apps_pool_tests_commands_ac9_a_second_command_while_the_lock_is_held_is_state_locked_and_changes_nothing",
@@ -7751,7 +7751,7 @@
       "file_type": "code",
       "norm_label": "ac9_a_second_command_while_the_lock_is_held_is_state_locked_and_changes_nothing()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L377"
+      "source_location": "L390"
     },
     {
       "id": "apps_pool_tests_commands_ac9_a_secret_or_ca_file_that_cannot_be_used_ends_bootstrap_with_its_key",
@@ -7762,7 +7762,7 @@
       "file_type": "code",
       "norm_label": "ac9_a_secret_or_ca_file_that_cannot_be_used_ends_bootstrap_with_its_key()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L463"
+      "source_location": "L476"
     },
     {
       "id": "apps_pool_tests_commands_ac9_a_state_directory_of_the_wrong_type_or_mode_is_state_permissions",
@@ -7773,7 +7773,7 @@
       "file_type": "code",
       "norm_label": "ac9_a_state_directory_of_the_wrong_type_or_mode_is_state_permissions()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L290"
+      "source_location": "L303"
     },
     {
       "id": "apps_pool_tests_commands_ac9_a_state_directory_that_does_not_exist_is_state_not_found",
@@ -7784,7 +7784,7 @@
       "file_type": "code",
       "norm_label": "ac9_a_state_directory_that_does_not_exist_is_state_not_found()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L273"
+      "source_location": "L286"
     },
     {
       "id": "apps_pool_tests_commands_assert_error",
@@ -7795,7 +7795,7 @@
       "file_type": "code",
       "norm_label": "assert_error()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L157"
+      "source_location": "L170"
     },
     {
       "id": "apps_pool_tests_commands_assert_no_path",
@@ -7806,7 +7806,7 @@
       "file_type": "code",
       "norm_label": "assert_no_path()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L145"
+      "source_location": "L158"
     },
     {
       "id": "apps_pool_tests_commands_assert_not_serving",
@@ -7817,7 +7817,7 @@
       "file_type": "code",
       "norm_label": "assert_not_serving()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L583"
+      "source_location": "L596"
     },
     {
       "id": "apps_pool_tests_commands_closed_port",
@@ -7828,7 +7828,7 @@
       "file_type": "code",
       "norm_label": "closed_port()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L74"
+      "source_location": "L87"
     },
     {
       "id": "apps_pool_tests_commands_command",
@@ -7839,7 +7839,7 @@
       "file_type": "code",
       "norm_label": "command()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L45"
+      "source_location": "L58"
     },
     {
       "id": "apps_pool_tests_commands_each_command_reports_what_its_view_misses",
@@ -7850,7 +7850,7 @@
       "file_type": "code",
       "norm_label": "each_command_reports_what_its_view_misses()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L236"
+      "source_location": "L249"
     },
     {
       "id": "apps_pool_tests_commands_folder",
@@ -7861,7 +7861,7 @@
       "file_type": "code",
       "norm_label": "folder()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L56"
+      "source_location": "L69"
     },
     {
       "id": "apps_pool_tests_commands_layout",
@@ -7872,7 +7872,7 @@
       "file_type": "code",
       "norm_label": "layout",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L81"
+      "source_location": "L94"
     },
     {
       "id": "apps_pool_tests_commands_layout_entries",
@@ -7883,7 +7883,7 @@
       "file_type": "code",
       "norm_label": ".entries()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L127"
+      "source_location": "L140"
     },
     {
       "id": "apps_pool_tests_commands_layout_journal",
@@ -7894,7 +7894,7 @@
       "file_type": "code",
       "norm_label": ".journal()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L122"
+      "source_location": "L135"
     },
     {
       "id": "apps_pool_tests_commands_layout_new",
@@ -7905,7 +7905,7 @@
       "file_type": "code",
       "norm_label": ".new()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L89"
+      "source_location": "L102"
     },
     {
       "id": "apps_pool_tests_commands_layout_write_config",
@@ -7916,7 +7916,7 @@
       "file_type": "code",
       "norm_label": ".write_config()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L107"
+      "source_location": "L120"
     },
     {
       "id": "apps_pool_tests_commands_layout_write_serving_config",
@@ -7927,7 +7927,7 @@
       "file_type": "code",
       "norm_label": ".write_serving_config()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L560"
+      "source_location": "L573"
     },
     {
       "id": "apps_pool_tests_commands_pool",
@@ -7938,7 +7938,7 @@
       "file_type": "code",
       "norm_label": "pool()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L32"
+      "source_location": "L39"
     },
     {
       "id": "apps_pool_tests_commands_rs_option",
@@ -8004,7 +8004,7 @@
       "file_type": "code",
       "norm_label": "run",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L26"
+      "source_location": "L27"
     },
     {
       "id": "apps_pool_tests_commands_run_daemon",
@@ -8015,7 +8015,7 @@
       "file_type": "code",
       "norm_label": "run_daemon()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L574"
+      "source_location": "L587"
     },
     {
       "id": "apps_pool_tests_commands_show_authority_reports_each_state_it_can_reach_without_a_journal",
@@ -8026,7 +8026,7 @@
       "file_type": "code",
       "norm_label": "show_authority_reports_each_state_it_can_reach_without_a_journal()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L407"
+      "source_location": "L420"
     },
     {
       "id": "apps_pool_tests_commands_usage_errors_of_the_new_commands_exit_2",
@@ -8037,7 +8037,7 @@
       "file_type": "code",
       "norm_label": "usage_errors_of_the_new_commands_exit_2()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L177"
+      "source_location": "L190"
     },
     {
       "id": "apps_pool_tests_commands_write_mode",
@@ -8048,7 +8048,7 @@
       "file_type": "code",
       "norm_label": "write_mode()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L68"
+      "source_location": "L81"
     },
     {
       "id": "apps_pool_tests_integration_daemon_drop",
@@ -76108,7 +76108,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L201",
+      "source_location": "L214",
       "weight": 1.0
     },
     {
@@ -76120,7 +76120,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L204",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -76132,7 +76132,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L513",
+      "source_location": "L526",
       "weight": 1.0
     },
     {
@@ -76144,7 +76144,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L516",
+      "source_location": "L529",
       "weight": 1.0
     },
     {
@@ -76156,7 +76156,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L524",
+      "source_location": "L537",
       "weight": 1.0
     },
     {
@@ -76168,7 +76168,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L538",
+      "source_location": "L551",
       "weight": 1.0
     },
     {
@@ -76180,7 +76180,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L542",
+      "source_location": "L555",
       "weight": 1.0
     },
     {
@@ -76192,7 +76192,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L602",
+      "source_location": "L615",
       "weight": 1.0
     },
     {
@@ -76204,7 +76204,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L603",
+      "source_location": "L616",
       "weight": 1.0
     },
     {
@@ -76216,7 +76216,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L604",
+      "source_location": "L617",
       "weight": 1.0
     },
     {
@@ -76228,7 +76228,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L605",
+      "source_location": "L618",
       "weight": 1.0
     },
     {
@@ -76240,7 +76240,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L609",
+      "source_location": "L622",
       "weight": 1.0
     },
     {
@@ -76252,7 +76252,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L609",
+      "source_location": "L622",
       "weight": 1.0
     },
     {
@@ -76264,7 +76264,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L634",
+      "source_location": "L647",
       "weight": 1.0
     },
     {
@@ -76276,7 +76276,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L635",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -76288,7 +76288,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L643",
+      "source_location": "L656",
       "weight": 1.0
     },
     {
@@ -76300,7 +76300,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L643",
+      "source_location": "L656",
       "weight": 1.0
     },
     {
@@ -76312,7 +76312,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L655",
+      "source_location": "L668",
       "weight": 1.0
     },
     {
@@ -76324,7 +76324,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L671",
+      "source_location": "L684",
       "weight": 1.0
     },
     {
@@ -76336,7 +76336,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L335",
+      "source_location": "L348",
       "weight": 1.0
     },
     {
@@ -76348,7 +76348,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L336",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -76360,7 +76360,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L338",
+      "source_location": "L351",
       "weight": 1.0
     },
     {
@@ -76372,7 +76372,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L372",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -76384,7 +76384,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L379",
+      "source_location": "L392",
       "weight": 1.0
     },
     {
@@ -76396,7 +76396,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L381",
+      "source_location": "L394",
       "weight": 1.0
     },
     {
@@ -76408,7 +76408,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L382",
+      "source_location": "L395",
       "weight": 1.0
     },
     {
@@ -76420,7 +76420,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L389",
+      "source_location": "L402",
       "weight": 1.0
     },
     {
@@ -76432,7 +76432,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L391",
+      "source_location": "L404",
       "weight": 1.0
     },
     {
@@ -76444,7 +76444,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L402",
+      "source_location": "L415",
       "weight": 1.0
     },
     {
@@ -76456,7 +76456,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L465",
+      "source_location": "L478",
       "weight": 1.0
     },
     {
@@ -76468,7 +76468,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L468",
+      "source_location": "L481",
       "weight": 1.0
     },
     {
@@ -76480,7 +76480,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L485",
+      "source_location": "L498",
       "weight": 1.0
     },
     {
@@ -76492,7 +76492,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L488",
+      "source_location": "L501",
       "weight": 1.0
     },
     {
@@ -76504,7 +76504,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L488",
+      "source_location": "L501",
       "weight": 1.0
     },
     {
@@ -76516,7 +76516,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L293",
+      "source_location": "L306",
       "weight": 1.0
     },
     {
@@ -76528,7 +76528,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L296",
+      "source_location": "L309",
       "weight": 1.0
     },
     {
@@ -76540,7 +76540,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L304",
+      "source_location": "L317",
       "weight": 1.0
     },
     {
@@ -76552,7 +76552,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L275",
+      "source_location": "L288",
       "weight": 1.0
     },
     {
@@ -76564,7 +76564,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L278",
+      "source_location": "L291",
       "weight": 1.0
     },
     {
@@ -76576,7 +76576,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L158",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -76588,7 +76588,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L159",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -76600,7 +76600,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L163",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -76612,7 +76612,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L585",
+      "source_location": "L598",
       "weight": 1.0
     },
     {
@@ -76624,7 +76624,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L593",
+      "source_location": "L606",
       "weight": 1.0
     },
     {
@@ -76636,7 +76636,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L46",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -76648,7 +76648,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L238",
+      "source_location": "L251",
       "weight": 1.0
     },
     {
@@ -76660,31 +76660,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L244",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands_layout_new",
-      "target": "apps_pool_tests_commands_closed_port",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L103",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands_layout_new",
-      "target": "apps_pool_tests_commands_layout_write_config",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L103",
+      "source_location": "L257",
       "weight": 1.0
     },
     {
@@ -76696,7 +76672,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L90",
+      "source_location": "L103",
       "weight": 1.0
     },
     {
@@ -76708,7 +76684,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L95",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_layout_new",
+      "target": "apps_pool_tests_commands_closed_port",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_layout_new",
+      "target": "apps_pool_tests_commands_layout_write_config",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -76720,7 +76720,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L569",
+      "source_location": "L582",
       "weight": 1.0
     },
     {
@@ -76732,7 +76732,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L569",
+      "source_location": "L582",
       "weight": 1.0
     },
     {
@@ -76744,7 +76744,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L33",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -76756,7 +76756,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L575",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -76768,7 +76768,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L409",
+      "source_location": "L422",
       "weight": 1.0
     },
     {
@@ -76780,7 +76780,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L410",
+      "source_location": "L423",
       "weight": 1.0
     },
     {
@@ -76792,7 +76792,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L428",
+      "source_location": "L441",
       "weight": 1.0
     },
     {
@@ -76804,7 +76804,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L428",
+      "source_location": "L441",
       "weight": 1.0
     },
     {
@@ -76816,7 +76816,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L434",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -76828,7 +76828,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L434",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -76840,7 +76840,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L459",
+      "source_location": "L472",
       "weight": 1.0
     },
     {
@@ -76852,7 +76852,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L187",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -102940,7 +102940,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L85",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -102952,7 +102952,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -107140,7 +107140,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L127",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -114752,6 +114752,18 @@
       "weight": 1.0
     },
     {
+      "source": "apps_pool_tests_commands",
+      "target": "sync",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
       "source": "apps_pool_tests_integration",
       "target": "tcplistener",
       "relation": "imports_from",
@@ -118108,7 +118120,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L157",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
@@ -118120,7 +118132,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L157",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
@@ -118132,7 +118144,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L145",
+      "source_location": "L158",
       "weight": 1.0
     },
     {
@@ -118144,7 +118156,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L145",
+      "source_location": "L158",
       "weight": 1.0
     },
     {
@@ -118156,7 +118168,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L583",
+      "source_location": "L596",
       "weight": 1.0
     },
     {
@@ -118168,7 +118180,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L45",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -118180,7 +118192,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L107",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -118192,7 +118204,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L560",
+      "source_location": "L573",
       "weight": 1.0
     },
     {
@@ -118204,7 +118216,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L574",
+      "source_location": "L587",
       "weight": 1.0
     },
     {
@@ -118216,7 +118228,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L68",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -125140,7 +125152,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L45",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -125152,7 +125164,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L56",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -125164,7 +125176,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L127",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -125176,7 +125188,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L122",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -125188,7 +125200,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L32",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -125200,7 +125212,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L574",
+      "source_location": "L587",
       "weight": 1.0
     },
     {
@@ -135707,7 +135719,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L145",
+      "source_location": "L158",
       "weight": 1.0
     },
     {
@@ -135718,7 +135730,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L157",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
@@ -135729,7 +135741,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L177",
+      "source_location": "L190",
       "weight": 1.0
     },
     {
@@ -135740,7 +135752,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L200",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
@@ -135751,7 +135763,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L236",
+      "source_location": "L249",
       "weight": 1.0
     },
     {
@@ -135762,7 +135774,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -135773,7 +135785,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L273",
+      "source_location": "L286",
       "weight": 1.0
     },
     {
@@ -135784,18 +135796,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L290",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_pool",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L32",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -135806,7 +135807,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L326",
+      "source_location": "L339",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands",
+      "target": "apps_pool_tests_commands_pool",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -135817,7 +135829,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L377",
+      "source_location": "L390",
       "weight": 1.0
     },
     {
@@ -135828,18 +135840,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L407",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_command",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L45",
+      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -135850,7 +135851,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L463",
+      "source_location": "L476",
       "weight": 1.0
     },
     {
@@ -135861,18 +135862,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L510",
+      "source_location": "L523",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_folder",
+      "target": "apps_pool_tests_commands_command",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L56",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -135883,7 +135884,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L574",
+      "source_location": "L587",
       "weight": 1.0
     },
     {
@@ -135894,7 +135895,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L583",
+      "source_location": "L596",
       "weight": 1.0
     },
     {
@@ -135905,7 +135906,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L599",
+      "source_location": "L612",
       "weight": 1.0
     },
     {
@@ -135916,7 +135917,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L632",
+      "source_location": "L645",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands",
+      "target": "apps_pool_tests_commands_folder",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -135927,7 +135939,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L68",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -135938,7 +135950,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L74",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -135949,7 +135961,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L81",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -151563,13 +151575,24 @@
     },
     {
       "source": "apps_pool_tests_commands_layout",
+      "target": "apps_pool_tests_commands_layout_new",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_layout",
       "target": "apps_pool_tests_commands_layout_write_config",
       "relation": "method",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L107",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -151580,7 +151603,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L122",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -151591,7 +151614,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L127",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -151602,18 +151625,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L560",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands_layout",
-      "target": "apps_pool_tests_commands_layout_new",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L89",
+      "source_location": "L573",
       "weight": 1.0
     },
     {
@@ -158990,7 +159002,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L539",
+      "source_location": "L552",
       "weight": 1.0
     },
     {
@@ -159002,7 +159014,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L668",
+      "source_location": "L681",
       "weight": 1.0
     },
     {
@@ -159014,7 +159026,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L401",
+      "source_location": "L414",
       "weight": 1.0
     },
     {
@@ -264719,5 +264731,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "3b589979e80f3a05eff544ce0666fb54a9ae957c"
+  "built_at_commit": "6b982f9e48fad67c1a27b61ed3f1732f73b4ebd4"
 }
