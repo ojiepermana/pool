@@ -2563,7 +2563,7 @@ fn spec_0004_ac5_valid_serving_fixtures_give_exactly_the_valid_report() {
         "valid-serving.toml",
         "valid-serving-limits.toml",
         "valid-serving-probe-only.toml",
-        "secret-serving-values.toml",
+        "valid-serving-secret-values.toml",
     ] {
         let path = fixture(name);
         assert_run(&check(&path, "human"), 0, VALID_HUMAN, "");
@@ -2658,7 +2658,7 @@ fn spec_0004_ac6_the_canary_never_reaches_the_output() {
     // covers: 0004 AC-6, SEC-11. Valid files with the canary in every new
     // string value, and names refused for a listed character.
     for name in [
-        "secret-serving-values.toml",
+        "valid-serving-secret-values.toml",
         "invalid-name-c1.toml",
         "invalid-name-direction.toml",
     ] {
