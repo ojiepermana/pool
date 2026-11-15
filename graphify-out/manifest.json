@@ -696,9 +696,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/src/workspace.rs": {
-    "mtime": 1794664358.6754282,
-    "seen": 1794664390.1158972,
-    "ast_hash": "194f25163c2b997090d404026027a0fb",
+    "mtime": 1794720694.6134055,
+    "seen": 1794721117.89612,
+    "ast_hash": "816264b84c07ed088b52c9a7edd9b067",
     "semantic_hash": ""
   },
   "scripts/prove-checks.sh": {
@@ -744,9 +744,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/tests/repo_check/workspace.rs": {
-    "mtime": 1794664358.6764276,
-    "seen": 1794664390.1158988,
-    "ast_hash": "54b6463e9980ea03e05628b3f931a360",
+    "mtime": 1794720694.6137877,
+    "seen": 1794721117.896124,
+    "ast_hash": "ed79904d53249b597824c4d442574fc3",
     "semantic_hash": ""
   },
   "docs/reviews/2026-11-14-scope-002-standards-and-tooling.md": {
@@ -790,5 +790,11 @@
     "seen": 1794720579.563298,
     "ast_hash": "",
     "semantic_hash": "cb0446142f2dd795ff4c17917d835688"
+  },
+  "crates/pool-control/src/lib.rs": {
+    "mtime": 1794720694.608782,
+    "seen": 1794721117.8961248,
+    "ast_hash": "785e6e4345b91d9401fe2c5fd6ada078",
+    "semantic_hash": ""
   }
 }

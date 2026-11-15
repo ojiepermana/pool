@@ -5034,7 +5034,7 @@
       "file_type": "code",
       "norm_label": "w1_counts_a_package_that_appears_twice()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L106"
+      "source_location": "L109"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w1_names_a_baseline_package_missing_from_the_fuzz_lockfile",
@@ -5045,7 +5045,7 @@
       "file_type": "code",
       "norm_label": "w1_names_a_baseline_package_missing_from_the_fuzz_lockfile()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L90"
+      "source_location": "L93"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w1_names_a_package_that_the_lockfile_has_and_the_baseline_does_not",
@@ -5067,7 +5067,7 @@
       "file_type": "code",
       "norm_label": "w1_rejects_a_second_package_in_the_tool_lockfile()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L118"
+      "source_location": "L121"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w2_names_a_forbidden_directory_that_exists",
@@ -5078,7 +5078,7 @@
       "file_type": "code",
       "norm_label": "w2_names_a_forbidden_directory_that_exists()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L133"
+      "source_location": "L136"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w3_counts_a_match_in_a_comment_and_skips_target_and_files_that_are_not_rust",
@@ -5089,7 +5089,7 @@
       "file_type": "code",
       "norm_label": "w3_counts_a_match_in_a_comment_and_skips_target_and_files_that_are_not_rust()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L155"
+      "source_location": "L158"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w3_names_the_file_line_and_text_of_a_forbidden_pattern",
@@ -5100,7 +5100,7 @@
       "file_type": "code",
       "norm_label": "w3_names_the_file_line_and_text_of_a_forbidden_pattern()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L142"
+      "source_location": "L145"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w4_names_a_member_manifest_without_lint_inheritance",
@@ -5111,7 +5111,7 @@
       "file_type": "code",
       "norm_label": "w4_names_a_member_manifest_without_lint_inheritance()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L172"
+      "source_location": "L175"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w4_names_the_root_manifest_when_unsafe_code_is_not_forbidden",
@@ -5122,7 +5122,7 @@
       "file_type": "code",
       "norm_label": "w4_names_the_root_manifest_when_unsafe_code_is_not_forbidden()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L181"
+      "source_location": "L184"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w4_reads_a_lints_line_with_a_trailing_comment",
@@ -5133,7 +5133,7 @@
       "file_type": "code",
       "norm_label": "w4_reads_a_lints_line_with_a_trailing_comment()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L203"
+      "source_location": "L206"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w4_rejects_a_wildcard_member",
@@ -5144,7 +5144,7 @@
       "file_type": "code",
       "norm_label": "w4_rejects_a_wildcard_member()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L194"
+      "source_location": "L197"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w5_follows_a_member_dependency_under_another_key",
@@ -5155,7 +5155,7 @@
       "file_type": "code",
       "norm_label": "w5_follows_a_member_dependency_under_another_key()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L278"
+      "source_location": "L281"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w5_names_a_dependency_pair_that_is_not_allowed",
@@ -5166,7 +5166,7 @@
       "file_type": "code",
       "norm_label": "w5_names_a_dependency_pair_that_is_not_allowed()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L223"
+      "source_location": "L226"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w5_names_a_listed_pair_that_no_manifest_declares",
@@ -5177,7 +5177,7 @@
       "file_type": "code",
       "norm_label": "w5_names_a_listed_pair_that_no_manifest_declares()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L245"
+      "source_location": "L248"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w5_reads_dependency_tables_in_every_spelling",
@@ -5188,7 +5188,7 @@
       "file_type": "code",
       "norm_label": "w5_reads_dependency_tables_in_every_spelling()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L265"
+      "source_location": "L268"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w5_sees_a_dependency_under_a_header_with_a_comment",
@@ -5199,7 +5199,7 @@
       "file_type": "code",
       "norm_label": "w5_sees_a_dependency_under_a_header_with_a_comment()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L310"
+      "source_location": "L313"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w5_sees_a_quoted_key_and_a_target_table_for_one_dependency",
@@ -5210,7 +5210,7 @@
       "file_type": "code",
       "norm_label": "w5_sees_a_quoted_key_and_a_target_table_for_one_dependency()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L326"
+      "source_location": "L329"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w6_names_a_lockfile_that_is_not_one_of_the_three",
@@ -5221,7 +5221,7 @@
       "file_type": "code",
       "norm_label": "w6_names_a_lockfile_that_is_not_one_of_the_three()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L344"
+      "source_location": "L347"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w6_skips_target_and_dot_directories",
@@ -5232,7 +5232,7 @@
       "file_type": "code",
       "norm_label": "w6_skips_target_and_dot_directories()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L359"
+      "source_location": "L362"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w7_ignores_one_missing_trailing_newline",
@@ -5243,7 +5243,7 @@
       "file_type": "code",
       "norm_label": "w7_ignores_one_missing_trailing_newline()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L416"
+      "source_location": "L419"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w7_names_the_first_script_line_that_differs_from_the_spec_block",
@@ -5254,7 +5254,7 @@
       "file_type": "code",
       "norm_label": "w7_names_the_first_script_line_that_differs_from_the_spec_block()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L369"
+      "source_location": "L372"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w7_reports_a_missing_marker_line",
@@ -5265,7 +5265,7 @@
       "file_type": "code",
       "norm_label": "w7_reports_a_missing_marker_line()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L395"
+      "source_location": "L398"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w7_reports_a_spec_without_the_linux_build_block",
@@ -5276,7 +5276,7 @@
       "file_type": "code",
       "norm_label": "w7_reports_a_spec_without_the_linux_build_block()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L407"
+      "source_location": "L410"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_w7_reports_an_extra_line_after_the_copy",
@@ -5287,7 +5287,7 @@
       "file_type": "code",
       "norm_label": "w7_reports_an_extra_line_after_the_copy()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L382"
+      "source_location": "L385"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_workspace_could_not_run_on_a_source_file_that_is_not_utf8",
@@ -5298,7 +5298,7 @@
       "file_type": "code",
       "norm_label": "workspace_could_not_run_on_a_source_file_that_is_not_utf8()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L434"
+      "source_location": "L437"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_workspace_could_not_run_without_a_baseline_file",
@@ -5309,7 +5309,7 @@
       "file_type": "code",
       "norm_label": "workspace_could_not_run_without_a_baseline_file()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L425"
+      "source_location": "L428"
     },
     {
       "id": "tools_repo_check_tests_repo_check_workspace_workspace_passes_on_a_small_correct_tree",
@@ -5331,7 +5331,7 @@
       "file_type": "code",
       "norm_label": "workspace_reports_every_problem_before_the_count()",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L445"
+      "source_location": "L448"
     },
     {
       "id": "memtree",
@@ -5511,6 +5511,17 @@
       "norm_label": "vec",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "crates_pool_control_src_lib",
+      "label": "pool-control/src/lib.rs",
+      "_origin": "ast",
+      "community": 116,
+      "community_name": "pool-control Authority Model Crate",
+      "file_type": "code",
+      "norm_label": "pool-control/src/lib.rs",
+      "source_file": "crates/pool-control/src/lib.rs",
+      "source_location": "L1"
     },
     {
       "id": "tools_repo_check_src_docs",
@@ -10868,7 +10879,7 @@
       "file_type": "code",
       "norm_label": "assert_ok()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L570"
+      "source_location": "L633"
     },
     {
       "id": "tools_repo_check_src_workspace_assert_problem",
@@ -10879,7 +10890,7 @@
       "file_type": "code",
       "norm_label": "assert_problem()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L579"
+      "source_location": "L642"
     },
     {
       "id": "tools_repo_check_src_workspace_baseline",
@@ -10890,7 +10901,7 @@
       "file_type": "code",
       "norm_label": "baseline()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44"
+      "source_location": "L45"
     },
     {
       "id": "tools_repo_check_src_workspace_check",
@@ -10912,7 +10923,7 @@
       "file_type": "code",
       "norm_label": "dependencies()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L380"
+      "source_location": "L433"
     },
     {
       "id": "tools_repo_check_src_workspace_dependencies_of",
@@ -10923,7 +10934,7 @@
       "file_type": "code",
       "norm_label": "dependencies_of()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L293"
+      "source_location": "L346"
     },
     {
       "id": "tools_repo_check_src_workspace_dependency",
@@ -10934,7 +10945,7 @@
       "file_type": "code",
       "norm_label": "dependency",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L236"
+      "source_location": "L289"
     },
     {
       "id": "tools_repo_check_src_workspace_forbidden_paths",
@@ -10945,7 +10956,7 @@
       "file_type": "code",
       "norm_label": "forbidden_paths()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L103"
+      "source_location": "L104"
     },
     {
       "id": "tools_repo_check_src_workspace_forbidden_text",
@@ -10956,7 +10967,7 @@
       "file_type": "code",
       "norm_label": "forbidden_text()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L115"
+      "source_location": "L116"
     },
     {
       "id": "tools_repo_check_src_workspace_good",
@@ -10967,7 +10978,7 @@
       "file_type": "code",
       "norm_label": "good()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L524"
+      "source_location": "L587"
     },
     {
       "id": "tools_repo_check_src_workspace_good_tree_passes",
@@ -10978,7 +10989,7 @@
       "file_type": "code",
       "norm_label": "good_tree_passes()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L589"
+      "source_location": "L652"
     },
     {
       "id": "tools_repo_check_src_workspace_is_dependency_table",
@@ -10989,7 +11000,7 @@
       "file_type": "code",
       "norm_label": "is_dependency_table()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L245"
+      "source_location": "L298"
     },
     {
       "id": "tools_repo_check_src_workspace_linux_build_block",
@@ -11000,7 +11011,7 @@
       "file_type": "code",
       "norm_label": "linux_build_block()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L439"
+      "source_location": "L492"
     },
     {
       "id": "tools_repo_check_src_workspace_linux_build_copy",
@@ -11011,7 +11022,29 @@
       "file_type": "code",
       "norm_label": "linux_build_copy()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L471"
+      "source_location": "L524"
+    },
+    {
+      "id": "tools_repo_check_src_workspace_local_lock_packages",
+      "label": "local_lock_packages()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "workspace.rs: src/workspace.rs: src/workspace.rs",
+      "file_type": "code",
+      "norm_label": "local_lock_packages()",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L263"
+    },
+    {
+      "id": "tools_repo_check_src_workspace_local_packages",
+      "label": "local_packages()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "workspace.rs: src/workspace.rs: src/workspace.rs",
+      "file_type": "code",
+      "norm_label": "local_packages()",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L236"
     },
     {
       "id": "tools_repo_check_src_workspace_lock",
@@ -11022,7 +11055,7 @@
       "file_type": "code",
       "norm_label": "lock()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L517"
+      "source_location": "L573"
     },
     {
       "id": "tools_repo_check_src_workspace_lock_packages",
@@ -11033,7 +11066,7 @@
       "file_type": "code",
       "norm_label": "lock_packages()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L51"
+      "source_location": "L52"
     },
     {
       "id": "tools_repo_check_src_workspace_lockfiles",
@@ -11044,7 +11077,7 @@
       "file_type": "code",
       "norm_label": "lockfiles()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L66"
+      "source_location": "L67"
     },
     {
       "id": "tools_repo_check_src_workspace_member",
@@ -11055,7 +11088,7 @@
       "file_type": "code",
       "norm_label": "member",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L139"
+      "source_location": "L140"
     },
     {
       "id": "tools_repo_check_src_workspace_member_dirs",
@@ -11066,7 +11099,7 @@
       "file_type": "code",
       "norm_label": "member_dirs()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L149"
+      "source_location": "L150"
     },
     {
       "id": "tools_repo_check_src_workspace_members",
@@ -11077,7 +11110,7 @@
       "file_type": "code",
       "norm_label": "members()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L177"
+      "source_location": "L178"
     },
     {
       "id": "tools_repo_check_src_workspace_next_comma",
@@ -11088,7 +11121,7 @@
       "file_type": "code",
       "norm_label": "next_comma()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L272"
+      "source_location": "L325"
     },
     {
       "id": "tools_repo_check_src_workspace_package_of",
@@ -11099,7 +11132,7 @@
       "file_type": "code",
       "norm_label": "package_of()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L250"
+      "source_location": "L303"
     },
     {
       "id": "tools_repo_check_src_workspace_rs_btreemap",
@@ -11154,7 +11187,7 @@
       "file_type": "code",
       "norm_label": "split_lines()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L462"
+      "source_location": "L515"
     },
     {
       "id": "tools_repo_check_src_workspace_stray_lockfiles",
@@ -11165,7 +11198,7 @@
       "file_type": "code",
       "norm_label": "stray_lockfiles()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L428"
+      "source_location": "L481"
     },
     {
       "id": "tools_repo_check_src_workspace_w1_counts_duplicates",
@@ -11176,7 +11209,7 @@
       "file_type": "code",
       "norm_label": "w1_counts_duplicates()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L619"
+      "source_location": "L682"
     },
     {
       "id": "tools_repo_check_src_workspace_w1_extra_package_in_lockfile",
@@ -11187,7 +11220,7 @@
       "file_type": "code",
       "norm_label": "w1_extra_package_in_lockfile()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L594"
+      "source_location": "L657"
     },
     {
       "id": "tools_repo_check_src_workspace_w1_missing_lockfile_is_a_fault",
@@ -11198,7 +11231,7 @@
       "file_type": "code",
       "norm_label": "w1_missing_lockfile_is_a_fault()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L638"
+      "source_location": "L701"
     },
     {
       "id": "tools_repo_check_src_workspace_w1_package_missing_from_lockfile",
@@ -11209,7 +11242,7 @@
       "file_type": "code",
       "norm_label": "w1_package_missing_from_lockfile()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L604"
+      "source_location": "L667"
     },
     {
       "id": "tools_repo_check_src_workspace_w2_forbidden_directory_exists",
@@ -11220,7 +11253,7 @@
       "file_type": "code",
       "norm_label": "w2_forbidden_directory_exists()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L651"
+      "source_location": "L714"
     },
     {
       "id": "tools_repo_check_src_workspace_w2_similar_name_is_not_forbidden",
@@ -11231,7 +11264,7 @@
       "file_type": "code",
       "norm_label": "w2_similar_name_is_not_forbidden()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L658"
+      "source_location": "L721"
     },
     {
       "id": "tools_repo_check_src_workspace_w3_forbidden_text_in_source",
@@ -11242,7 +11275,7 @@
       "file_type": "code",
       "norm_label": "w3_forbidden_text_in_source()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L665"
+      "source_location": "L728"
     },
     {
       "id": "tools_repo_check_src_workspace_w3_ignores_target_and_other_files",
@@ -11253,7 +11286,7 @@
       "file_type": "code",
       "norm_label": "w3_ignores_target_and_other_files()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L672"
+      "source_location": "L735"
     },
     {
       "id": "tools_repo_check_src_workspace_w4_comments_are_not_values",
@@ -11264,7 +11297,29 @@
       "file_type": "code",
       "norm_label": "w4_comments_are_not_values()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L856"
+      "source_location": "L952"
+    },
+    {
+      "id": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_a_member_passes",
+      "label": "w4_lockfile_package_without_source_that_is_a_member_passes()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "workspace.rs: src/workspace.rs: src/workspace.rs",
+      "file_type": "code",
+      "norm_label": "w4_lockfile_package_without_source_that_is_a_member_passes()",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L761"
+    },
+    {
+      "id": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_not_a_member_fails",
+      "label": "w4_lockfile_package_without_source_that_is_not_a_member_fails()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "workspace.rs: src/workspace.rs: src/workspace.rs",
+      "file_type": "code",
+      "norm_label": "w4_lockfile_package_without_source_that_is_not_a_member_fails()",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L776"
     },
     {
       "id": "tools_repo_check_src_workspace_w4_member_without_lint_inheritance",
@@ -11275,7 +11330,7 @@
       "file_type": "code",
       "norm_label": "w4_member_without_lint_inheritance()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L680"
+      "source_location": "L743"
     },
     {
       "id": "tools_repo_check_src_workspace_w4_reads_multiline_members",
@@ -11286,7 +11341,7 @@
       "file_type": "code",
       "norm_label": "w4_reads_multiline_members()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L705"
+      "source_location": "L801"
     },
     {
       "id": "tools_repo_check_src_workspace_w4_root_without_unsafe_forbid",
@@ -11297,7 +11352,7 @@
       "file_type": "code",
       "norm_label": "w4_root_without_unsafe_forbid()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L687"
+      "source_location": "L750"
     },
     {
       "id": "tools_repo_check_src_workspace_w4_wildcard_member",
@@ -11308,7 +11363,7 @@
       "file_type": "code",
       "norm_label": "w4_wildcard_member()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L698"
+      "source_location": "L794"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_dependency_in_dotted_table_forms",
@@ -11319,7 +11374,7 @@
       "file_type": "code",
       "norm_label": "w5_dependency_in_dotted_table_forms()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L741"
+      "source_location": "L837"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_dependency_not_allowed",
@@ -11330,7 +11385,7 @@
       "file_type": "code",
       "norm_label": "w5_dependency_not_allowed()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L722"
+      "source_location": "L818"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_header_with_a_comment",
@@ -11341,7 +11396,7 @@
       "file_type": "code",
       "norm_label": "w5_header_with_a_comment()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L765"
+      "source_location": "L861"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_listed_dependency_missing",
@@ -11352,7 +11407,7 @@
       "file_type": "code",
       "norm_label": "w5_listed_dependency_missing()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L758"
+      "source_location": "L854"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_quoted_key_and_target_table_for_one_dependency",
@@ -11363,7 +11418,7 @@
       "file_type": "code",
       "norm_label": "w5_quoted_key_and_target_table_for_one_dependency()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L780"
+      "source_location": "L876"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_rename_inherited_from_the_workspace",
@@ -11374,7 +11429,7 @@
       "file_type": "code",
       "norm_label": "w5_rename_inherited_from_the_workspace()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L829"
+      "source_location": "L925"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_rename_to_a_package_that_is_not_a_member",
@@ -11385,7 +11440,7 @@
       "file_type": "code",
       "norm_label": "w5_rename_to_a_package_that_is_not_a_member()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L845"
+      "source_location": "L941"
     },
     {
       "id": "tools_repo_check_src_workspace_w5_renamed_dependency",
@@ -11396,7 +11451,7 @@
       "file_type": "code",
       "norm_label": "w5_renamed_dependency()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L800"
+      "source_location": "L896"
     },
     {
       "id": "tools_repo_check_src_workspace_w6_unexpected_lockfile",
@@ -11407,7 +11462,7 @@
       "file_type": "code",
       "norm_label": "w6_unexpected_lockfile()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L877"
+      "source_location": "L973"
     },
     {
       "id": "tools_repo_check_src_workspace_w7_accepts_script_without_final_newline",
@@ -11418,7 +11473,7 @@
       "file_type": "code",
       "norm_label": "w7_accepts_script_without_final_newline()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L913"
+      "source_location": "L1009"
     },
     {
       "id": "tools_repo_check_src_workspace_w7_copy_differs",
@@ -11429,7 +11484,7 @@
       "file_type": "code",
       "norm_label": "w7_copy_differs()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L884"
+      "source_location": "L980"
     },
     {
       "id": "tools_repo_check_src_workspace_w7_extra_line_in_copy",
@@ -11440,7 +11495,7 @@
       "file_type": "code",
       "norm_label": "w7_extra_line_in_copy()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L891"
+      "source_location": "L987"
     },
     {
       "id": "tools_repo_check_src_workspace_w7_missing_block",
@@ -11451,7 +11506,7 @@
       "file_type": "code",
       "norm_label": "w7_missing_block()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L906"
+      "source_location": "L1002"
     },
     {
       "id": "tools_repo_check_src_workspace_w7_missing_marker",
@@ -11462,7 +11517,7 @@
       "file_type": "code",
       "norm_label": "w7_missing_marker()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L899"
+      "source_location": "L995"
     },
     {
       "id": "tools_repo_check_src_workspace_workspace_renames",
@@ -11473,7 +11528,7 @@
       "file_type": "code",
       "norm_label": "workspace_renames()",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L357"
+      "source_location": "L410"
     },
     {
       "id": "tools_repo_check_tests_repo_check_common_outcome",
@@ -11782,12 +11837,12 @@
     },
     {
       "id": "crates_pool_config_src_lib",
-      "label": "lib.rs",
+      "label": "pool-config/src/lib.rs",
       "_origin": "ast",
       "community": 9,
       "community_name": "pool-config Validation Library",
       "file_type": "code",
-      "norm_label": "lib.rs",
+      "norm_label": "pool-config/src/lib.rs",
       "source_file": "crates/pool-config/src/lib.rs",
       "source_location": "L1"
     },
@@ -44877,7 +44932,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L571",
+      "source_location": "L634",
       "weight": 1.0
     },
     {
@@ -44889,7 +44944,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L580",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -44942,7 +44997,7 @@
     },
     {
       "source": "tools_repo_check_src_workspace_check",
-      "target": "tools_repo_check_src_workspace_dependencies",
+      "target": "tools_repo_check_src_workspace_local_lock_packages",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -44954,7 +45009,7 @@
     },
     {
       "source": "tools_repo_check_src_workspace_check",
-      "target": "tools_repo_check_src_workspace_stray_lockfiles",
+      "target": "tools_repo_check_src_workspace_dependencies",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -44966,7 +45021,7 @@
     },
     {
       "source": "tools_repo_check_src_workspace_check",
-      "target": "tools_repo_check_src_workspace_linux_build_copy",
+      "target": "tools_repo_check_src_workspace_stray_lockfiles",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -44974,6 +45029,18 @@
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
       "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_check",
+      "target": "tools_repo_check_src_workspace_linux_build_copy",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -44985,7 +45052,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L381",
+      "source_location": "L434",
       "weight": 1.0
     },
     {
@@ -44997,7 +45064,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L388",
+      "source_location": "L441",
       "weight": 1.0
     },
     {
@@ -45009,7 +45076,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L397",
+      "source_location": "L450",
       "weight": 1.0
     },
     {
@@ -45021,7 +45088,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L308",
+      "source_location": "L361",
       "weight": 1.0
     },
     {
@@ -45033,7 +45100,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L338",
+      "source_location": "L391",
       "weight": 1.0
     },
     {
@@ -45045,7 +45112,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L104",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -45057,7 +45124,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L116",
+      "source_location": "L117",
       "weight": 1.0
     },
     {
@@ -45069,7 +45136,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L561",
+      "source_location": "L624",
       "weight": 1.0
     },
     {
@@ -45081,7 +45148,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L590",
+      "source_location": "L653",
       "weight": 1.0
     },
     {
@@ -45093,7 +45160,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L590",
+      "source_location": "L653",
       "weight": 1.0
     },
     {
@@ -45105,7 +45172,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L477",
+      "source_location": "L530",
       "weight": 1.0
     },
     {
@@ -45117,7 +45184,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L485",
+      "source_location": "L538",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_lock_packages",
+      "target": "tools_repo_check_src_workspace_local_packages",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -45129,7 +45208,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L68",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -45141,7 +45220,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L75",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -45153,7 +45232,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L193",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -45165,7 +45244,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L266",
+      "source_location": "L319",
       "weight": 1.0
     },
     {
@@ -45177,7 +45256,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L620",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -45189,7 +45268,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L623",
+      "source_location": "L686",
       "weight": 1.0
     },
     {
@@ -45201,7 +45280,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L630",
+      "source_location": "L693",
       "weight": 1.0
     },
     {
@@ -45213,7 +45292,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L595",
+      "source_location": "L658",
       "weight": 1.0
     },
     {
@@ -45225,7 +45304,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L598",
+      "source_location": "L661",
       "weight": 1.0
     },
     {
@@ -45237,7 +45316,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L600",
+      "source_location": "L663",
       "weight": 1.0
     },
     {
@@ -45249,7 +45328,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L639",
+      "source_location": "L702",
       "weight": 1.0
     },
     {
@@ -45261,7 +45340,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L641",
+      "source_location": "L704",
       "weight": 1.0
     },
     {
@@ -45273,7 +45352,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L605",
+      "source_location": "L668",
       "weight": 1.0
     },
     {
@@ -45285,7 +45364,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L606",
+      "source_location": "L669",
       "weight": 1.0
     },
     {
@@ -45297,7 +45376,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L607",
+      "source_location": "L670",
       "weight": 1.0
     },
     {
@@ -45309,7 +45388,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L652",
+      "source_location": "L715",
       "weight": 1.0
     },
     {
@@ -45321,7 +45400,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L654",
+      "source_location": "L717",
       "weight": 1.0
     },
     {
@@ -45333,7 +45412,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L659",
+      "source_location": "L722",
       "weight": 1.0
     },
     {
@@ -45345,228 +45424,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L661",
+      "source_location": "L724",
       "weight": 1.0
     },
     {
       "source": "tools_repo_check_src_workspace_w3_forbidden_text_in_source",
       "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L666",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w3_forbidden_text_in_source",
-      "target": "tools_repo_check_src_workspace_assert_problem",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L668",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w3_ignores_target_and_other_files",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L673",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w3_ignores_target_and_other_files",
-      "target": "tools_repo_check_src_workspace_assert_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L676",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_comments_are_not_values",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L857",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_comments_are_not_values",
-      "target": "tools_repo_check_src_workspace_assert_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L873",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_member_without_lint_inheritance",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L681",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_member_without_lint_inheritance",
-      "target": "tools_repo_check_src_workspace_assert_problem",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L683",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_reads_multiline_members",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L706",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_reads_multiline_members",
-      "target": "tools_repo_check_src_workspace_assert_ok",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L712",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_reads_multiline_members",
-      "target": "tools_repo_check_src_workspace_assert_problem",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L718",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_root_without_unsafe_forbid",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L688",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_root_without_unsafe_forbid",
-      "target": "tools_repo_check_src_workspace_assert_problem",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L694",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_wildcard_member",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L699",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w4_wildcard_member",
-      "target": "tools_repo_check_src_workspace_assert_problem",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L701",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w5_dependency_in_dotted_table_forms",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L742",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w5_dependency_in_dotted_table_forms",
-      "target": "tools_repo_check_src_workspace_assert_problem",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L748",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w5_dependency_not_allowed",
-      "target": "tools_repo_check_src_workspace_good",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L723",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace_w5_dependency_not_allowed",
-      "target": "tools_repo_check_src_workspace_assert_problem",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -45577,7 +45440,19 @@
       "weight": 1.0
     },
     {
-      "source": "tools_repo_check_src_workspace_w5_header_with_a_comment",
+      "source": "tools_repo_check_src_workspace_w3_forbidden_text_in_source",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L731",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w3_ignores_target_and_other_files",
       "target": "tools_repo_check_src_workspace_good",
       "relation": "calls",
       "_origin": "ast",
@@ -45585,12 +45460,60 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L766",
+      "source_location": "L736",
       "weight": 1.0
     },
     {
-      "source": "tools_repo_check_src_workspace_w5_header_with_a_comment",
-      "target": "tools_repo_check_src_workspace_assert_problem",
+      "source": "tools_repo_check_src_workspace_w3_ignores_target_and_other_files",
+      "target": "tools_repo_check_src_workspace_assert_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L739",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_comments_are_not_values",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L953",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_comments_are_not_values",
+      "target": "tools_repo_check_src_workspace_assert_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L969",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_a_member_passes",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L763",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_a_member_passes",
+      "target": "tools_repo_check_src_workspace_assert_ok",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -45601,6 +45524,210 @@
       "weight": 1.0
     },
     {
+      "source": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_not_a_member_fails",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L778",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_not_a_member_fails",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L786",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_member_without_lint_inheritance",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L744",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_member_without_lint_inheritance",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L746",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_reads_multiline_members",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L802",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_reads_multiline_members",
+      "target": "tools_repo_check_src_workspace_assert_ok",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L808",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_reads_multiline_members",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L814",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_root_without_unsafe_forbid",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L751",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_root_without_unsafe_forbid",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L757",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_wildcard_member",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L795",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w4_wildcard_member",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L797",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w5_dependency_in_dotted_table_forms",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L838",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w5_dependency_in_dotted_table_forms",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L844",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w5_dependency_not_allowed",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L819",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w5_dependency_not_allowed",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L825",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w5_header_with_a_comment",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L862",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_w5_header_with_a_comment",
+      "target": "tools_repo_check_src_workspace_assert_problem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L868",
+      "weight": 1.0
+    },
+    {
       "source": "tools_repo_check_src_workspace_w5_listed_dependency_missing",
       "target": "tools_repo_check_src_workspace_good",
       "relation": "calls",
@@ -45609,7 +45736,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L759",
+      "source_location": "L855",
       "weight": 1.0
     },
     {
@@ -45621,7 +45748,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L761",
+      "source_location": "L857",
       "weight": 1.0
     },
     {
@@ -45633,7 +45760,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L781",
+      "source_location": "L877",
       "weight": 1.0
     },
     {
@@ -45645,7 +45772,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L787",
+      "source_location": "L883",
       "weight": 1.0
     },
     {
@@ -45657,7 +45784,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L830",
+      "source_location": "L926",
       "weight": 1.0
     },
     {
@@ -45669,7 +45796,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L841",
+      "source_location": "L937",
       "weight": 1.0
     },
     {
@@ -45681,7 +45808,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L846",
+      "source_location": "L942",
       "weight": 1.0
     },
     {
@@ -45693,7 +45820,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L852",
+      "source_location": "L948",
       "weight": 1.0
     },
     {
@@ -45705,7 +45832,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L801",
+      "source_location": "L897",
       "weight": 1.0
     },
     {
@@ -45717,7 +45844,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L807",
+      "source_location": "L903",
       "weight": 1.0
     },
     {
@@ -45729,7 +45856,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L878",
+      "source_location": "L974",
       "weight": 1.0
     },
     {
@@ -45741,7 +45868,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L880",
+      "source_location": "L976",
       "weight": 1.0
     },
     {
@@ -45753,7 +45880,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L914",
+      "source_location": "L1010",
       "weight": 1.0
     },
     {
@@ -45765,7 +45892,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L916",
+      "source_location": "L1012",
       "weight": 1.0
     },
     {
@@ -45777,7 +45904,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L885",
+      "source_location": "L981",
       "weight": 1.0
     },
     {
@@ -45789,7 +45916,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L887",
+      "source_location": "L983",
       "weight": 1.0
     },
     {
@@ -45801,7 +45928,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L892",
+      "source_location": "L988",
       "weight": 1.0
     },
     {
@@ -45813,7 +45940,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L895",
+      "source_location": "L991",
       "weight": 1.0
     },
     {
@@ -45825,7 +45952,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L907",
+      "source_location": "L1003",
       "weight": 1.0
     },
     {
@@ -45837,7 +45964,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L909",
+      "source_location": "L1005",
       "weight": 1.0
     },
     {
@@ -45849,7 +45976,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L900",
+      "source_location": "L996",
       "weight": 1.0
     },
     {
@@ -45861,7 +45988,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L902",
+      "source_location": "L998",
       "weight": 1.0
     },
     {
@@ -45873,7 +46000,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L372",
+      "source_location": "L425",
       "weight": 1.0
     },
     {
@@ -47181,7 +47308,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L108",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -47193,7 +47320,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L92",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -47217,7 +47344,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L120",
+      "source_location": "L123",
       "weight": 1.0
     },
     {
@@ -47229,7 +47356,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L135",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -47241,7 +47368,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L157",
+      "source_location": "L160",
       "weight": 1.0
     },
     {
@@ -47253,7 +47380,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L144",
+      "source_location": "L147",
       "weight": 1.0
     },
     {
@@ -47265,7 +47392,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L174",
+      "source_location": "L177",
       "weight": 1.0
     },
     {
@@ -47277,7 +47404,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L183",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -47289,7 +47416,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L205",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -47301,7 +47428,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L196",
+      "source_location": "L199",
       "weight": 1.0
     },
     {
@@ -47313,7 +47440,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L280",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -47325,7 +47452,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L225",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -47337,7 +47464,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L247",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -47349,7 +47476,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L267",
+      "source_location": "L270",
       "weight": 1.0
     },
     {
@@ -47361,7 +47488,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L312",
+      "source_location": "L315",
       "weight": 1.0
     },
     {
@@ -47373,7 +47500,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L328",
+      "source_location": "L331",
       "weight": 1.0
     },
     {
@@ -47385,7 +47512,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L346",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -47397,7 +47524,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L361",
+      "source_location": "L364",
       "weight": 1.0
     },
     {
@@ -47409,7 +47536,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L418",
+      "source_location": "L421",
       "weight": 1.0
     },
     {
@@ -47421,7 +47548,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L371",
+      "source_location": "L374",
       "weight": 1.0
     },
     {
@@ -47433,7 +47560,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L397",
+      "source_location": "L400",
       "weight": 1.0
     },
     {
@@ -47445,7 +47572,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L409",
+      "source_location": "L412",
       "weight": 1.0
     },
     {
@@ -47457,7 +47584,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L384",
+      "source_location": "L387",
       "weight": 1.0
     },
     {
@@ -47469,7 +47596,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L436",
+      "source_location": "L439",
       "weight": 1.0
     },
     {
@@ -47481,7 +47608,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L427",
+      "source_location": "L430",
       "weight": 1.0
     },
     {
@@ -47505,7 +47632,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L447",
+      "source_location": "L450",
       "weight": 1.0
     },
     {
@@ -47973,7 +48100,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L242",
+      "source_location": "L295",
       "weight": 1.0
     },
     {
@@ -47985,7 +48112,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L143",
+      "source_location": "L144",
       "weight": 1.0
     },
     {
@@ -47997,7 +48124,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L145",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -49221,7 +49348,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -49233,7 +49360,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -49245,7 +49372,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L293",
+      "source_location": "L346",
       "weight": 1.0
     },
     {
@@ -49257,7 +49384,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L242",
+      "source_location": "L295",
       "weight": 1.0
     },
     {
@@ -49269,7 +49396,19 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L439",
+      "source_location": "L492",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_packages",
+      "target": "tools_repo_check_src_workspace_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -49281,7 +49420,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L51",
+      "source_location": "L52",
       "weight": 1.0
     },
     {
@@ -49293,7 +49432,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L149",
+      "source_location": "L150",
       "weight": 1.0
     },
     {
@@ -49305,7 +49444,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0
     },
     {
@@ -49317,7 +49456,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L250",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -49329,7 +49468,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L357",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -49653,7 +49792,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L509",
+      "source_location": "L562",
       "weight": 1.0
     },
     {
@@ -50961,7 +51100,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L570",
+      "source_location": "L633",
       "weight": 1.0
     },
     {
@@ -50973,7 +51112,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L579",
+      "source_location": "L642",
       "weight": 1.0
     },
     {
@@ -50985,7 +51124,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -50997,7 +51136,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -51021,7 +51160,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L380",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -51033,7 +51172,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L380",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -51045,7 +51184,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L380",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -51057,7 +51196,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -51069,7 +51208,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -51081,7 +51220,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L115",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -51093,7 +51232,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L115",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -51105,7 +51244,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L471",
+      "source_location": "L524",
       "weight": 1.0
     },
     {
@@ -51117,7 +51256,43 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L471",
+      "source_location": "L524",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_lock_packages",
+      "target": "tools_repo_check_src_report_report",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_lock_packages",
+      "target": "tools_repo_check_src_tree_tree",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_lock_packages",
+      "target": "tools_repo_check_src_workspace_member",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -51129,7 +51304,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -51141,7 +51316,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -51153,7 +51328,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0
     },
     {
@@ -51165,7 +51340,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0
     },
     {
@@ -51177,7 +51352,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L428",
+      "source_location": "L481",
       "weight": 1.0
     },
     {
@@ -51189,7 +51364,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L428",
+      "source_location": "L481",
       "weight": 1.0
     },
     {
@@ -52641,7 +52816,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -52665,7 +52840,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L293",
+      "source_location": "L346",
       "weight": 1.0
     },
     {
@@ -52677,7 +52852,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L524",
+      "source_location": "L587",
       "weight": 1.0
     },
     {
@@ -52689,7 +52864,19 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L439",
+      "source_location": "L492",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_packages",
+      "target": "tools_repo_check_src_workspace_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -52701,7 +52888,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L517",
+      "source_location": "L573",
       "weight": 1.0
     },
     {
@@ -52713,7 +52900,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L51",
+      "source_location": "L52",
       "weight": 1.0
     },
     {
@@ -52725,7 +52912,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L149",
+      "source_location": "L150",
       "weight": 1.0
     },
     {
@@ -52737,7 +52924,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0
     },
     {
@@ -52749,7 +52936,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L272",
+      "source_location": "L325",
       "weight": 1.0
     },
     {
@@ -52761,7 +52948,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L250",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -52773,7 +52960,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L462",
+      "source_location": "L515",
       "weight": 1.0
     },
     {
@@ -52785,7 +52972,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L357",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -57361,13 +57548,35 @@
     },
     {
       "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w7_missing_block",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L1002",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w7_accepts_script_without_final_newline",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L1009",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
       "target": "tools_repo_check_src_workspace_forbidden_paths",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -57378,7 +57587,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L115",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -57389,7 +57598,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L139",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -57400,7 +57609,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L149",
+      "source_location": "L150",
       "weight": 1.0
     },
     {
@@ -57411,12 +57620,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0
     },
     {
       "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_dependency",
+      "target": "tools_repo_check_src_workspace_local_packages",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -57427,13 +57636,35 @@
     },
     {
       "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_local_lock_packages",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_dependency",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
       "target": "tools_repo_check_src_workspace_is_dependency_table",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L245",
+      "source_location": "L298",
       "weight": 1.0
     },
     {
@@ -57444,29 +57675,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L250",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_next_comma",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L272",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_dependencies_of",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L293",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -57482,13 +57691,35 @@
     },
     {
       "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_next_comma",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L325",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_dependencies_of",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L346",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
       "target": "tools_repo_check_src_workspace_workspace_renames",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L357",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -57499,29 +57730,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L380",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_stray_lockfiles",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L428",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_linux_build_block",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L439",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -57532,7 +57741,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L44",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_stray_lockfiles",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L481",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_linux_build_block",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L492",
       "weight": 1.0
     },
     {
@@ -57543,18 +57774,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L462",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_linux_build_copy",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L471",
+      "source_location": "L515",
       "weight": 1.0
     },
     {
@@ -57565,23 +57785,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L51",
+      "source_location": "L52",
       "weight": 1.0
     },
     {
       "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_lock",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L517",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_good",
+      "target": "tools_repo_check_src_workspace_linux_build_copy",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -57592,13 +57801,35 @@
     },
     {
       "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_lock",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L573",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_good",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L587",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
       "target": "tools_repo_check_src_workspace_assert_ok",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L570",
+      "source_location": "L633",
       "weight": 1.0
     },
     {
@@ -57609,7 +57840,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L579",
+      "source_location": "L642",
       "weight": 1.0
     },
     {
@@ -57620,7 +57851,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L589",
+      "source_location": "L652",
       "weight": 1.0
     },
     {
@@ -57631,7 +57862,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L594",
+      "source_location": "L657",
       "weight": 1.0
     },
     {
@@ -57642,51 +57873,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L604",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_w1_counts_duplicates",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L619",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_w1_missing_lockfile_is_a_fault",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L638",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_w2_forbidden_directory_exists",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L651",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_w2_similar_name_is_not_forbidden",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L658",
+      "source_location": "L667",
       "weight": 1.0
     },
     {
@@ -57697,7 +57884,51 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L66",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w1_counts_duplicates",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L682",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w1_missing_lockfile_is_a_fault",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L701",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w2_forbidden_directory_exists",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L714",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w2_similar_name_is_not_forbidden",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L721",
       "weight": 1.0
     },
     {
@@ -57708,7 +57939,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L665",
+      "source_location": "L728",
       "weight": 1.0
     },
     {
@@ -57719,7 +57950,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L672",
+      "source_location": "L735",
       "weight": 1.0
     },
     {
@@ -57730,7 +57961,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L680",
+      "source_location": "L743",
       "weight": 1.0
     },
     {
@@ -57741,7 +57972,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L687",
+      "source_location": "L750",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_a_member_passes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L761",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace",
+      "target": "tools_repo_check_src_workspace_w4_lockfile_package_without_source_that_is_not_a_member_fails",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L776",
       "weight": 1.0
     },
     {
@@ -57752,7 +58005,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L698",
+      "source_location": "L794",
       "weight": 1.0
     },
     {
@@ -57763,7 +58016,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L705",
+      "source_location": "L801",
       "weight": 1.0
     },
     {
@@ -57774,7 +58027,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L722",
+      "source_location": "L818",
       "weight": 1.0
     },
     {
@@ -57785,7 +58038,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L741",
+      "source_location": "L837",
       "weight": 1.0
     },
     {
@@ -57796,7 +58049,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L758",
+      "source_location": "L854",
       "weight": 1.0
     },
     {
@@ -57807,7 +58060,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L765",
+      "source_location": "L861",
       "weight": 1.0
     },
     {
@@ -57818,7 +58071,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L780",
+      "source_location": "L876",
       "weight": 1.0
     },
     {
@@ -57829,7 +58082,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L800",
+      "source_location": "L896",
       "weight": 1.0
     },
     {
@@ -57840,7 +58093,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L829",
+      "source_location": "L925",
       "weight": 1.0
     },
     {
@@ -57851,7 +58104,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L845",
+      "source_location": "L941",
       "weight": 1.0
     },
     {
@@ -57862,7 +58115,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L856",
+      "source_location": "L952",
       "weight": 1.0
     },
     {
@@ -57873,7 +58126,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L877",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -57884,7 +58137,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L884",
+      "source_location": "L980",
       "weight": 1.0
     },
     {
@@ -57895,7 +58148,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L891",
+      "source_location": "L987",
       "weight": 1.0
     },
     {
@@ -57906,29 +58159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L899",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_w7_missing_block",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L906",
-      "weight": 1.0
-    },
-    {
-      "source": "tools_repo_check_src_workspace",
-      "target": "tools_repo_check_src_workspace_w7_accepts_script_without_final_newline",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L913",
+      "source_location": "L995",
       "weight": 1.0
     },
     {
@@ -58940,7 +59171,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L106",
+      "source_location": "L109",
       "weight": 1.0
     },
     {
@@ -58951,7 +59182,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L118",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -58962,7 +59193,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L133",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -58973,7 +59204,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L142",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -58984,7 +59215,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L155",
+      "source_location": "L158",
       "weight": 1.0
     },
     {
@@ -58995,7 +59226,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L172",
+      "source_location": "L175",
       "weight": 1.0
     },
     {
@@ -59006,7 +59237,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L181",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -59017,7 +59248,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L194",
+      "source_location": "L197",
       "weight": 1.0
     },
     {
@@ -59028,7 +59259,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L203",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -59039,7 +59270,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L223",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -59050,7 +59281,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L245",
+      "source_location": "L248",
       "weight": 1.0
     },
     {
@@ -59061,7 +59292,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L265",
+      "source_location": "L268",
       "weight": 1.0
     },
     {
@@ -59072,7 +59303,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L278",
+      "source_location": "L281",
       "weight": 1.0
     },
     {
@@ -59083,7 +59314,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L310",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -59094,7 +59325,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L326",
+      "source_location": "L329",
       "weight": 1.0
     },
     {
@@ -59105,7 +59336,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L344",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -59116,7 +59347,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L359",
+      "source_location": "L362",
       "weight": 1.0
     },
     {
@@ -59127,7 +59358,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L369",
+      "source_location": "L372",
       "weight": 1.0
     },
     {
@@ -59138,7 +59369,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L382",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -59149,7 +59380,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L395",
+      "source_location": "L398",
       "weight": 1.0
     },
     {
@@ -59160,7 +59391,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L407",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -59171,7 +59402,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L416",
+      "source_location": "L419",
       "weight": 1.0
     },
     {
@@ -59182,7 +59413,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L425",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -59193,7 +59424,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L434",
+      "source_location": "L437",
       "weight": 1.0
     },
     {
@@ -59204,7 +59435,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L445",
+      "source_location": "L448",
       "weight": 1.0
     },
     {
@@ -59248,7 +59479,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L90",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -63572,7 +63803,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L46",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -63584,7 +63815,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L47",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -63596,7 +63827,19 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L422",
+      "source_location": "L475",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_repo_check_src_workspace_local_packages",
+      "target": "tools_repo_check_src_text_key_value",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "tools/repo-check/src/workspace.rs",
+      "source_location": "L247",
       "weight": 1.0
     },
     {
@@ -63608,7 +63851,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L58",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -63620,7 +63863,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L152",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -63632,7 +63875,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L158",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -63644,7 +63887,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L181",
+      "source_location": "L182",
       "weight": 1.0
     },
     {
@@ -63656,7 +63899,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L183",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -63668,7 +63911,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L202",
+      "source_location": "L203",
       "weight": 1.0
     },
     {
@@ -63680,7 +63923,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/src/workspace.rs",
-      "source_location": "L432",
+      "source_location": "L485",
       "weight": 1.0
     },
     {
@@ -63788,7 +64031,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L232",
+      "source_location": "L235",
       "weight": 1.0
     },
     {
@@ -63800,7 +64043,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L373",
+      "source_location": "L376",
       "weight": 1.0
     },
     {
@@ -63812,7 +64055,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "tools/repo-check/tests/repo_check/workspace.rs",
-      "source_location": "L386",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -122349,5 +122592,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "5c818203b1f449c21cfd3d2ac766ae488d1cae8d"
+  "built_at_commit": "5c3ff817e257930ea0a5fd7c460c6575932df2ac"
 }

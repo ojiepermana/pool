@@ -1,7 +1,7 @@
 # 0003. Control and session data model
 
 **Date**: 2026-11-15
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -928,7 +928,7 @@ Edits to files that this spec does not own. The Build plan names who makes each 
 | 4 | `docs/glossary.md` | The rows "Observation" and "Approved writer" say backend where they mean a configured server. Change that word to node | Build plan step 6 |
 | 5 | `docs/index.md` | Add the row for `verify.md` under this spec, and a section for `crates/pool-control` if it gets a context file | Build plan step 7 |
 | 6 | `AGENTS.md`, `CLAUDE.md`, `crates/pool-config/AGENTS.md`, a new `crates/pool-control/AGENTS.md`, `CONTRIBUTING.md`, `README.md`, `CHANGELOG.md` | Name the third crate, the new keys and the new commands to run | The "Document it" box of scope 003 |
-| 7 | Spec 0001 and spec 0002 | Notes that point here ([Follow-up](#follow-up) 1 and 2) | The lead |
+| 7 | Spec 0001 and spec 0002 | Notes that point here ([Follow-up](#follow-up) 1 and 2) | Applied on 2026-11-15, in the commit after this spec was accepted |
 
 ## Build plan
 
@@ -979,8 +979,8 @@ The order is a tracer bullet (one thin real path first): a workspace that still 
 
 ## Follow-up
 
-1. Spec 0001 needs three notes that point here, applied by the lead: under "Configuration rules" item 6, that `identity[].credential_file` is the first secret reference key and that scope 004 adds the reading and the permission check; under "Exit status and output", the fourth finding line; under "Smallest supported configuration", that this spec fixes the identifier and generation types.
-2. Spec 0002 needs three notes that point here, applied by the lead: its Follow-up 10 is answered by [Workspace and guards](#workspace-and-guards); the baseline block under "Workspace guards" shows the first build and the current lines are in the files; case 17 under "Proving the checks" now names the scope 004 file.
+1. Applied on 2026-11-15. Spec 0001 now carries these notes that point here, each dated and each leaving its own text and IDs as they were: under "Configuration rules" item 6, that `identity[].credential_file` is the first secret reference key and that scope 004 adds the reading and the permission check; under "Exit status and output", the fourth finding line; under "Smallest supported configuration", that this spec fixes the identifier and generation types; under its criteria, that `0001 AC-1`, `0001 AC-12` and `0001 AC-13` describe the first build and `0003 AC-13` is the current statement from Build plan step 1 on; under "Findings", the six new `config.*` codes and the new location. Its Follow-up 2 and Follow-up 10 are marked as answered in part.
+2. Applied on 2026-11-15. Spec 0002 now carries these notes that point here, each dated and each leaving its own text and IDs as they were: its Follow-up 10 is answered by [Workspace and guards](#workspace-and-guards); the baseline block under "Workspace guards" shows the first build and the current lines are in the files; case 17 under "Proving the checks" names the scope 004 file from Build plan step 1 on; and the details of rule W4 name the lockfile check that this spec adds.
 3. Scope 004 adopts SQLite. That is the first native code in the product: it needs the boundary review of the engineering standards, a decision by a person on any new license in the dependency tree, the `NOTICE` file that spec 0002 asks for, and a decision on how one writer runs without breaking the thread rule of W3.
 4. Scope 004 fixes the bootstrap command (name, flags, output) under the shared output conventions, the probe and its queries, the keys for probe period and observation expiry, the file permission checks, and how each authentication method names the verified principal that the identity map looks up. Three points it must not miss: the probe has to report the timeline a node writes or replays on now, not the timeline of its last checkpoint, or a node that was just promoted is missed; the state directory needs an exclusive lock, so that two daemons cannot share one; and there has to be a way to read the authority ID of an existing journal again, or a lost command output leaves the state at `Unconfirmed` for good.
 5. Scope 005 names the trigger that advances a credential generation before a reload route exists, as the dependency plan asks.

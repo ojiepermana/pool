@@ -47,6 +47,8 @@ These criteria cover the first build only, [scope 001](../../scope/001-stack-and
 
 `SEC-14` (independent review) is met by the scope box "Review it (fresh model)", not by a build criterion. The file permission part of `SEC-4` starts with the first secret reference key, in scope 004.
 
+Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/index.md#workspace-and-guards): **AC-1**, **AC-12** and **AC-13** describe the first build, and their evidence stands. Their texts do not change. From Build plan step 1 of spec 0003 on, the workspace has a third member, `crates/pool-control`, and `0003 AC-13` is the current statement of the workspace shape: three members, three workspace packages in `Cargo.lock`, and the same sixteen third party packages. The first secret reference key also arrives earlier than the last sentence above says; see the note under [Configuration rules](#configuration-rules).
+
 ## Decision
 
 **Chosen option**: A modular daemon with an independent CLI. The separate controller executable is deferred until multiple proxy instances need a single authority. You ratified this foundation on 2026-11-14 after the independent critique and approved fixes. Your ratification settles the content. The `**Status**` line above is a separate thing: it follows scope feature 001, as the [status lifecycle](../../scope/index.md#status-lifecycle) defines. (basis: your four VM scenario, small operational surface, vertical delivery)
@@ -238,6 +240,8 @@ This is the shared convention for configuration keys. Later slices add keys unde
 8. **Version**: the top level key `config_version` is required. This build supports exactly `1`. Adding an optional key keeps the version. Removing a key, renaming one or changing what a value means raises it.
 9. **Whole file**: a file is accepted or rejected as a whole. Nothing is used from a rejected file (`SEC-12`).
 
+Note of 2026-11-15 on rule 6, from [spec 0003](../0003-control-and-session-data-model/index.md#keys): the first secret reference key is `identity[].credential_file`. It enters the schema with Build plan step 3 of spec 0003, which checks its form only and never opens the file (`0003 AC-4`). Reading the file, and the permission check that `SEC-4` asks for, still arrive in scope 004. Rule 6 itself does not change.
+
 ### Smallest supported configuration
 
 | Key | Type | Required | Default | Validation | Secret | Reload |
@@ -249,6 +253,8 @@ This is the shared convention for configuration keys. Later slices add keys unde
 The smallest valid file is the single line `config_version = 1`. The tables `[result_cache]` and `[automatic_promotion]` may be absent, empty, or hold `enabled = false`. TOML lets you write a table in three ways (`[result_cache]` header, `result_cache.enabled = true`, `result_cache = { enabled = true }`); all three mean the same and are judged the same.
 
 This build assigns no configuration generation number. The identifier and generation types are fixed in [scope 003](../../scope/003-control-and-session-data-model.md). A `ValidatedConfig` is the thing a later slice will number.
+
+Note of 2026-11-15: [spec 0003](../0003-control-and-session-data-model/index.md#identifier-and-generation-types) fixes those types and their rules (`0003 AC-6`). Its [generations table](../0003-control-and-session-data-model/index.md#generations) says that the configuration generation starts at 1 at each start and that scope 004 creates its type and assigns the number. Spec 0003 also adds the optional tables `[control]`, `[[cluster]]`, `[[node]]` and `[[identity]]` from its Build plan step 3 on. The table above stays the smallest supported configuration, and `config_version` stays `1`.
 
 ### The check-config command
 
@@ -354,6 +360,8 @@ A finding line has one of three shapes, by what the finding carries:
 <code>: <message>
 ```
 
+Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/index.md#findings): from Build plan step 3 of spec 0003 on there is a fourth shape, for a finding inside a repeated table. It carries a key and a position: `<code> at <key>, line <line>, column <column>: <message>`. In the JSON format such a finding has `key`, `line` and `column` all set. No field is removed or renamed, so `output_version` stays `1`. The three shapes above keep their meaning.
+
 **Human format, could not complete** (stderr, exit 3). One line, `error: <code>: <message>`, for each of the three `io.*` codes. Nothing on stdout, and no `configuration invalid` or `findings:` line:
 
 ```text
@@ -409,6 +417,8 @@ A finding is one reason a file was rejected or could not be read. Codes are stab
 | `io.read_failed` | 3 | Any other failure to open or read, including a path that is a directory | none | `the configuration file cannot be read` |
 
 The `config.*` codes belong to `pool-config`. The `io.*` codes belong to the binary, which maps `std::io::ErrorKind::NotFound` and `PermissionDenied` to the first two and everything else to `io.read_failed`. An exit 3 result always has exactly one finding.
+
+Note of 2026-11-15: [spec 0003](../0003-control-and-session-data-model/index.md#findings) defines six more `config.*` codes, in use from its Build plan step 3 on: `config.invalid_value`, `config.duplicate_id`, `config.unknown_reference`, `config.duplicate_endpoint`, `config.duplicate_identity` and `config.unsupported_value`. It also uses `config.missing_key` inside repeated tables, and adds the variant `KeyAt` to `Location` and accessors to `ValidatedConfig` ([public boundary added to pool-config](../0003-control-and-session-data-model/index.md#public-boundary-added-to-pool-config)). No code of the table above is removed, renamed or given another meaning. This note is the record that the [Consequences](#consequences) ask for when a public contract of this spec gains something.
 
 Which code a bad value gets:
 
@@ -724,7 +734,7 @@ From the first build:
 ## Follow-up
 
 1. The assembled foundation and [decision ledger](../../plan/decision-ledger.md) are ratified. You asked for the build of scope 001 on 2026-11-14. Every later scope stays queued until you explicitly request it.
-2. Deliberate the frontend authentication implementation, bounded routing profiles, durable operation model, and fencing adapter in individual feature specs before those slices are built.
+2. Deliberate the frontend authentication implementation, bounded routing profiles, durable operation model, and fencing adapter in individual feature specs before those slices are built. Answered in part on 2026-11-15 by [spec 0003](../0003-control-and-session-data-model/index.md): the durable model (the journal, the approved topology, the start rules and the rules every operation record follows) by `0003 AC-7` to `0003 AC-10` and its sections [The journal](../0003-control-and-session-data-model/index.md#the-journal) and [Operation records](../0003-control-and-session-data-model/index.md#operation-records), and the identity map by `0003 AC-5`. Still to deliberate: the frontend authentication implementation (scope 004), bounded routing profiles (scope 007), the full operation record and its API (scope 009) and the fencing adapter (scope 010).
 3. Optional Rust, Tokio, PostgreSQL, and operations skill or MCP discovery was deferred by you. Nothing has been searched or installed for that purpose.
 4. Apache 2.0 is your chosen project license and the official text is installed. Review each file and transitive component before source reuse.
 5. The independent critique completed. Its decision gaps and your resolution are recorded in the decision ledger before final acceptance.
@@ -732,7 +742,7 @@ From the first build:
 7. Docker Desktop was started on 2026-11-14 (`docker info` exits 0, server 29.9.2, `aarch64`), so **AC-2** is no longer blocked on it. Each run of the Linux build still needs the daemon. If `docker info` fails again, starting Docker Desktop is yours to do.
 8. When the workspace exists, the "Current state and commands" part of `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` should name the real commands. That belongs to the "Document it" step of scope 001.
 9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux `arm64` runner, so that the build for the declared target runs without emulation. Which runner that is belongs to the scope 002 spec. Answered on 2026-11-14 by `0002 AC-5`: `scripts/linux-build.sh` holds a copy of the command, and the CI job `linux-build` runs it on a hosted `arm64` runner ([Linux build script](../0002-standards-and-tooling/index.md#linux-build-script)). The CI evidence for it is still owed. It comes with step 11 of the spec 0002 Build plan and is recorded in the verification record of spec 0002.
-10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction).
+10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction). Answered in part on 2026-11-15 by `0003 AC-4`: the first secret reference key, `identity[].credential_file`, arrives with spec 0003, which never opens the file. Reading it and the permission check stay with scope 004, as this item says. Spec 0003 writes no log event, so `tracing` is still to be adopted; it does fix which names a log field may carry ([what may appear in default telemetry](../0003-control-and-session-data-model/index.md#what-may-appear-in-default-telemetry)).
 11. [Scope 002](../../scope/002-standards-and-tooling.md) should add automatic CI checks for the parts of **AC-12** and **AC-13** that are checked by hand today: the package set of `Cargo.lock` and the `grep` command (**AC-12**), and the four paths that must not exist plus the lint inheritance of both packages (**AC-13**). Until then nothing fails by itself when one of them regresses. This comes from the scope 001 review. Answered on 2026-11-14 by `0002 AC-6`: rules W1 to W4 of `pool-repo-check workspace` ([Workspace guards](../0002-standards-and-tooling/index.md#workspace-guards)) check the package set of `Cargo.lock` (W1), the four paths (W2), the source patterns of the `grep` command (W3) and the lint inheritance (W4). The text of **AC-12** and **AC-13** does not change.
 
 ## Rationale
