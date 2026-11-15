@@ -6,6 +6,8 @@
 //! do with that packet, and only then reads a body, whose length the header
 //! has already checked. The two functions can also be called on their own.
 
+use std::collections::HashSet;
+
 use crate::sqlstate::PoolError;
 use crate::{be_u32, take_cstr};
 
@@ -221,6 +223,8 @@ impl StartupRequest {
 pub fn parse_startup(minor: u16, body: &[u8]) -> Result<StartupRequest, PoolError> {
     let violation = PoolError::ProtocolViolation;
     let mut pairs: Vec<(&[u8], &[u8])> = Vec::new();
+    // The names seen so far, so the check for a repeated name costs one lookup per name.
+    let mut seen: HashSet<&[u8]> = HashSet::new();
     let mut rest = body;
     loop {
         let (name, after) = take_cstr(rest).ok_or(violation)?;
@@ -231,7 +235,7 @@ pub fn parse_startup(minor: u16, body: &[u8]) -> Result<StartupRequest, PoolErro
             break;
         }
         let (value, after) = take_cstr(after).ok_or(violation)?;
-        if pairs.iter().any(|(seen, _)| *seen == name) {
+        if !seen.insert(name) {
             return Err(violation);
         }
         pairs.push((name, value));
