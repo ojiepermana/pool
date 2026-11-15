@@ -2032,3 +2032,12 @@ On macOS unless a row says otherwise; Docker running. `0004 AC-29` and `0004 AC-
 | `scripts/check.sh linux-build` | `94d2940` | 1 | **failed** in four tests of `apps/pool/tests/commands.rs` (two `ac9_` lock cases, `ac10_`, `ac11_`), each with `secret.permissions at node.tls_ca_file`. `git archive` writes the tree with `tar.umask` 002, so in the image `crates/pool-core/tests/fixtures/ca.pem` is mode 664, owned by root, and `commands.rs` names that committed file. The rule of decision 88 refuses the group write bit, as it must. The fix is on the test side, a copy of the CA with mode 0644 in the folder of the test, given to `dev-f4-m2`. Not run again yet |
 | `scripts/prove-checks.sh --with-linux-build` | | not run | waits for that fix on `main` |
 
+**After the fix of the CA test on `main`** (`6efe44c`, merged in `0f13d31`), on `bfc4a00`, which holds the four names of decision 99 (`770589a`) and the fuzz target `auth` of the tester in `check_fuzz` (`fuzz_target crates/pool-protocol auth 4096`):
+
+| Command | Tree | Exit | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | the tree of `bfc4a00` | 0 | fmt, clippy, test, deny, guards, docs |
+| `scripts/check.sh fuzz` | the tree of `bfc4a00` | 0 | five targets, 31 s each (`validate`, `startup`, `frontend_message`, `scram`, `auth`), no crash file |
+| `scripts/check.sh linux-build` | `bfc4a00` | 0 | the four tests of `commands.rs` pass in the image |
+| `scripts/prove-checks.sh --with-linux-build` | `bfc4a00` | 0 | 36 of 36 cases rejected their bad change, `linux-build` proven |
+
