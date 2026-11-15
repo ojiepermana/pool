@@ -1,0 +1,46 @@
+config_version = 1
+
+[control]
+state_directory = "/var/lib/pool"
+authority_id = "0123456789abcdef0123456789abcdef"
+
+[[cluster]]
+id = "main"
+system_identifier = "7412345678901234567"
+expected_writer = "pg1"
+
+[[node]]
+id = "pg1"
+cluster = "main"
+host = "10.0.0.11"
+port = 5432
+
+[[node]]
+id = "pg2"
+cluster = "main"
+host = "10.0.0.12"
+port = 5432
+
+[[node]]
+id = "pg3"
+cluster = "main"
+host = "pg3.db.internal"
+port = 5433
+
+[[identity]]
+id = "orders-app"
+principal = "orders_app"
+database = "orders"
+cluster = "main"
+backend_login = "orders_rw"
+credential_file = "/etc/pool/secrets/orders_rw"
+
+[[identity]]
+id = "report-app"
+principal = "report_app"
+database = "orders"
+cluster = "main"
+backend_database = "orders_reporting"
+backend_login = "report_ro"
+credential_file = "/etc/pool/secrets/report_ro"
+routing_profile = "primary"
