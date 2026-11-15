@@ -852,3 +852,113 @@ fn ac28_the_short_messages_have_the_literal_bytes_of_the_postgresql_documentatio
         vec![b'S', 0, 0, 0, 8, b'a', 0, b'b', 0]
     );
 }
+
+// ---- added by the tests of scope 004, round six (review finding t10, decision 94) ----
+
+// RFC 7677, section 3: the exchange of user "user" with the password "pencil",
+// as the RFC prints it, and the verifier of that password, derived with
+// PBKDF2-HMAC-SHA-256 outside this crate and checked against the proof and the
+// signature of the RFC. The bytes are written out, not decoded by this crate.
+const RFC_CLIENT_FIRST: &str = "n,,n=user,r=rOprNGfwEbeRWgbNEkqO";
+const RFC_SERVER_FIRST: &str =
+    "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096";
+const RFC_CLIENT_FINAL: &str = "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=";
+const RFC_SERVER_FINAL: &str = "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=";
+const RFC_VERIFIER: &str = "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=";
+const RFC_SALT: [u8; 16] = [
+    0x5b, 0x6d, 0x99, 0x68, 0x9d, 0x12, 0x35, 0x8e, 0xec, 0xa0, 0x4b, 0x14, 0x12, 0x36, 0xfa, 0x81,
+];
+const RFC_PROOF: [u8; 32] = [
+    0x74, 0x7c, 0xdb, 0x65, 0xaa, 0x56, 0x22, 0x4e, 0x23, 0x52, 0x13, 0x7e, 0x52, 0xd7, 0xbd, 0xca,
+    0xd6, 0xa0, 0xf7, 0x38, 0xdf, 0x30, 0x78, 0x2c, 0xaa, 0x69, 0xa2, 0xcf, 0xb0, 0x27, 0x75, 0x54,
+];
+const RFC_SERVER_SIGNATURE: [u8; 32] = [
+    0xea, 0xba, 0xe2, 0x4d, 0x10, 0x62, 0xdb, 0x75, 0xa9, 0x45, 0x1f, 0xf0, 0xb6, 0xea, 0x7e, 0x98,
+    0xc8, 0x54, 0x65, 0x49, 0xff, 0x74, 0x1e, 0x67, 0x2d, 0x32, 0x51, 0xb2, 0x39, 0x7d, 0xe4, 0x6e,
+];
+const RFC_STORED_KEY: [u8; 32] = [
+    0x58, 0x6e, 0x5d, 0xf2, 0x83, 0xe6, 0xdc, 0xeb, 0x5c, 0x3e, 0x79, 0x1d, 0x8b, 0x85, 0x28, 0xec,
+    0x19, 0x1e, 0x66, 0x40, 0x45, 0xce, 0x97, 0x17, 0x92, 0xe2, 0xe6, 0xb5, 0xbb, 0x13, 0xe2, 0xa6,
+];
+const RFC_SERVER_KEY: [u8; 32] = [
+    0xc1, 0xf3, 0xcb, 0xc1, 0xc1, 0x3a, 0x9d, 0x35, 0xa1, 0x4c, 0x09, 0x90, 0xee, 0xd9, 0x76, 0x29,
+    0xea, 0x22, 0x58, 0x63, 0xe5, 0x66, 0xa4, 0x31, 0x4a, 0xb9, 0x9f, 0x3f, 0x00, 0xe5, 0xd9, 0xd5,
+];
+
+#[test]
+fn ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes() {
+    // covers: 0004 AC-28, AC-16 (decision 94).
+    use pool_protocol::base64;
+    use pool_protocol::scram::{
+        Gs2Header, ServerFinal, auth_message, client_final_without_proof, encode_client_final,
+        encode_server_final, encode_server_first, parse_client_final, parse_client_first,
+        parse_server_final, parse_server_first,
+    };
+    let client_nonce = "rOprNGfwEbeRWgbNEkqO";
+    let nonce = "rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0";
+    let first = parse_client_first(RFC_CLIENT_FIRST.as_bytes()).expect("client-first");
+    assert_eq!(first.header, Gs2Header::NoBinding);
+    assert_eq!(first.bare, "n=user,r=rOprNGfwEbeRWgbNEkqO");
+    assert_eq!(first.nonce, client_nonce);
+
+    assert_eq!(
+        encode_server_first(nonce, &RFC_SALT, 4096),
+        RFC_SERVER_FIRST
+    );
+    let server =
+        parse_server_first(RFC_SERVER_FIRST.as_bytes(), client_nonce).expect("server-first");
+    assert_eq!(
+        (
+            server.nonce.as_str(),
+            server.salt.as_slice(),
+            server.iterations
+        ),
+        (nonce, &RFC_SALT[..], 4096)
+    );
+
+    let without_proof = client_final_without_proof(nonce);
+    assert_eq!(
+        without_proof,
+        "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    );
+    assert_eq!(
+        encode_client_final(&without_proof, &RFC_PROOF),
+        RFC_CLIENT_FINAL
+    );
+    let fin = parse_client_final(RFC_CLIENT_FINAL.as_bytes(), Gs2Header::NoBinding, nonce)
+        .expect("client-final");
+    assert_eq!(fin.proof, RFC_PROOF);
+    assert_eq!(fin.without_proof, without_proof);
+    assert_eq!(
+        auth_message(&first.bare, RFC_SERVER_FIRST, &without_proof),
+        format!("n=user,r=rOprNGfwEbeRWgbNEkqO,{RFC_SERVER_FIRST},{without_proof}")
+    );
+
+    assert_eq!(encode_server_final(&RFC_SERVER_SIGNATURE), RFC_SERVER_FINAL);
+    assert!(matches!(
+        parse_server_final(RFC_SERVER_FINAL.as_bytes()),
+        Ok(ServerFinal::Verifier(signature)) if signature == RFC_SERVER_SIGNATURE
+    ));
+
+    // The verifier in the form PostgreSQL stores: its count and salt are those
+    // of the exchange, and its two keys are the literal bytes above.
+    let rest = RFC_VERIFIER.strip_prefix("SCRAM-SHA-256$").expect("prefix");
+    let (count_salt, keys) = rest.split_once('$').expect("two parts");
+    let (count, salt) = count_salt.split_once(':').expect("count and salt");
+    let (stored, server_key) = keys.split_once(':').expect("two keys");
+    assert_eq!(count, "4096");
+    assert_eq!(
+        base64::decode(salt.as_bytes()).as_deref(),
+        Ok(&RFC_SALT[..])
+    );
+    assert_eq!(
+        base64::decode(stored.as_bytes()).as_deref(),
+        Ok(&RFC_STORED_KEY[..])
+    );
+    assert_eq!(
+        base64::decode(server_key.as_bytes()).as_deref(),
+        Ok(&RFC_SERVER_KEY[..])
+    );
+    assert_eq!(base64::encode(&RFC_STORED_KEY), stored);
+    assert_eq!(base64::encode(&RFC_SERVER_KEY), server_key);
+}

@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/tests/golden.rs": {
-    "mtime": 1794769061.998909,
-    "seen": 1794769186.545735,
-    "ast_hash": "a4f03eb85cf3ec6f6b56080679f7bf2d",
+    "mtime": 1794773192.7901535,
+    "seen": 1794773249.618594,
+    "ast_hash": "3fca72cf57d4d29b99cba680c123b31e",
     "semantic_hash": ""
   },
   "crates/pool-control/src/journal.rs": {

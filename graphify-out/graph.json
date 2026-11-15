@@ -17720,6 +17720,17 @@
       "source_location": "L675"
     },
     {
+      "id": "crates_pool_protocol_tests_golden_ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes",
+      "label": "ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes()",
+      "source_file": "crates/pool-protocol/tests/golden.rs",
+      "source_location": "L889"
+    },
+    {
       "id": "crates_pool_protocol_tests_golden_ac28_the_short_messages_have_the_literal_bytes_of_the_postgresql_documentation",
       "label": "ac28_the_short_messages_have_the_literal_bytes_of_the_postgresql_documentation()",
       "_origin": "ast",
@@ -127158,18 +127169,6 @@
     },
     {
       "source": "crates_pool_protocol_tests_golden",
-      "target": "crates_pool_protocol_src_auth",
-      "relation": "imports_from",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "crates/pool-protocol/tests/golden.rs",
-      "source_location": "L5",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_protocol_tests_golden",
       "target": "crates_pool_protocol_tests_golden_rs_message",
       "relation": "imports_from",
       "_origin": "ast",
@@ -160025,6 +160024,17 @@
       "weight": 1.0
     },
     {
+      "source": "crates_pool_protocol_tests_golden",
+      "target": "crates_pool_protocol_tests_golden_ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-protocol/tests/golden.rs",
+      "source_location": "L889",
+      "weight": 1.0
+    },
+    {
       "source": "crates_pool_protocol_tests_redaction",
       "target": "crates_pool_protocol_tests_redaction_startup_values_and_a_reader_in_the_middle_of_a_body_print_no_value",
       "relation": "contains",
@@ -176001,6 +176011,54 @@
       "context": "call",
       "source_file": "crates/pool-protocol/tests/golden.rs",
       "source_location": "L755",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_protocol_tests_golden_ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes",
+      "target": "crates_pool_protocol_src_scram_parse_client_first",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "crates/pool-protocol/tests/golden.rs",
+      "source_location": "L899",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_protocol_tests_golden_ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes",
+      "target": "crates_pool_protocol_src_scram_parse_server_first",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "crates/pool-protocol/tests/golden.rs",
+      "source_location": "L909",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_protocol_tests_golden_ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes",
+      "target": "crates_pool_protocol_src_scram_client_final_without_proof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "crates/pool-protocol/tests/golden.rs",
+      "source_location": "L919",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_protocol_tests_golden_ac28_the_scram_messages_of_rfc_7677_parse_and_encode_to_their_literal_bytes",
+      "target": "crates_pool_protocol_src_scram_parse_client_final",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "crates/pool-protocol/tests/golden.rs",
+      "source_location": "L928",
       "weight": 1.0
     },
     {
@@ -280409,5 +280467,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "0757082012b5448637bc02d19ec10117d22c7068"
+  "built_at_commit": "0ef7f6992b30aa757097c326b5e1a1f9fed7b6f9"
 }
