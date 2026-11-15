@@ -1627,6 +1627,65 @@ During the mutation runs one run with M7 was ended by the limit of the runner wh
 - **`Daemon::stop` of `integration.rs` waits without a limit.** M7 shows it: the existing shutdown test hangs instead of failing. The new tests use `stop_within(20)`. `Daemon::stop` is called 13 times and `stop_after_signal` twice in the existing tests; giving them a limit is a small change of the helper, left as a follow up for the lead to assign.
 - **The hold `restore_pending` needs the `sqlite3` tool on the host** of `scripts/check.sh integration`. It is on this workstation (`sqlite3` 3.54.0). Whether the hosted runner of the CI job `integration` has it was not checked, because that job does not exist yet (manual step M2). Without it the test fails with a message that names the tool.
 
+### Round three
+
+On 2026-11-16 from 00:20 to 01:35 WIB, by the tester session, on `main` at `b2aec30` and the commit `331d64e` of its branch, with `main` merged at `0503bba`. macOS 27.0.1, arm64, Docker 29.9.2 running. Three small items from the full verification of [the tests the tester added](#the-tests-the-tester-added) and [the two tests that were once unstable](#the-two-tests-that-were-once-unstable). Test files only: `apps/pool/tests/integration.rs`, `apps/pool/tests/commands.rs` and `apps/pool/tests/support/mod.rs`. The lock race test of `9765845` is unchanged.
+
+#### 1. Every log of the daemon is checked
+
+`Daemon::stop`, `Daemon::stop_after_signal` and `Daemon::stop_within` of `integration.rs` now end in one function, `finish`. After the daemon exited, it checks the whole log the way `it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresql` did for one run: every line is an event of the table under [Log events](index.md#log-events) with only its fields, each a string, a whole number or a boolean (`assert_log_fields`), and no line names the folder of the test, the fixture folder, `pz7`, `127.0.0.1`, `pg.pool.test`, `host.docker.internal`, three SQL words, the start of a verifier or a password of the fixture (`assert_log_text_is_clean`, the old `assert_log_is_clean` for a folder). Each of the 17 tests that run the daemon ends it through one of the three, so each of the 18 runs of the daemon in `scripts/check.sh integration` is checked, the runs that make the probe fail among them. A check in `Drop` was not used: it would have to know whether the test is already failing, and the only way to ask that, `std::thread::panicking`, is a text that rule W3 refuses in the tests too.
+
+| Wrong change | Tests | Before (`b2aec30`) | After |
+|---|---|---|---|
+| T6. `probe.failed` carries a field `host` with the address of the node (`host = "127.0.0.1"`) | `scripts/check.sh integration` | not caught | caught by `it_a_wrong_ca_or_name_toward_the_node_closes_admission`, `it_ac12_a_probe_that_lost_its_connection_...`, `it_ac14_a_writer_that_changes_its_identity_...`, `it_ac14_a_writer_that_falls_silent_...` |
+
+#### 2. No wait on the daemon without a limit
+
+- `Daemon::stop` and `Daemon::stop_after_signal` (13 and 2 calls in the tests from before round two) wait at most 45 seconds, which is more than the default `limits.shutdown_timeout_ms` of 30 seconds. A daemon that is still running then is killed, and the test fails with `the daemon did not exit within 45 s after SIGTERM from Daemon::stop; it was killed. Its log:` and the log (or `after the signal that the test sent` for the second). `stop_within(20)` of round two uses the same function.
+- That alone did not stop M7 from hanging: the shutdown test sends SIGTERM itself and then reads the error of each session with `support::next_error`, which waited for ever on a session that is never ended. `support::next_error` now waits at most 30 seconds and fails with `an error message or the end of the stream within 30 s`.
+
+| Wrong change | Tests | Before | After |
+|---|---|---|---|
+| M7. Shutdown does not end the sessions (`server.shutdown()` replaced by a future that never ends) | `it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007` alone, through `scripts/check.sh integration` | hung: ended by the limit of the mutation runner after 1500 s; its containers stayed until I ended the mutated daemon and the test, after which `scripts/integration/run.sh` removed them | caught: the test failed after 38 s |
+
+#### 3. `ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds`
+
+The reading of the checker, tested:
+
+- **Can another test be handed the port?** On macOS the kernel gives the ports of `bind` to port 0 in order, for the whole machine: after a port was released, it came back only after 16350 to 16352 more binds, in 200 of 200 trials (a Python probe, `bind` and `close` in a loop). Within a run of `commands`, which makes a few dozen such binds, the port of `ac13` cannot come back to another test of the same binary. In the pinned PostgreSQL image (Linux, Debian bookworm, with `perl`), a released port was handed to one of the next 20 binds, held at the same time, in 5 of 3000 rounds. So on Linux the race is real, and on macOS, where both failures were seen, it is not the likely cause.
+- **What it looks like.** With the old test, a listener that another test opens on that port right after `closed_port()` (made on purpose in a copy) makes the test fail at the check that the port is still free, although `pool run` did nothing wrong (R1 below).
+- **The change.** The test now opens its own listener on the port of the configuration and holds it through the four runs of `pool run`. A `pool run` that tried to bind would fail with `listener.failed` and exit 3, so the check is stronger, not weaker (B1 below). The run is waited for at most 30 seconds. Every assertion of a run prints the whole output and the time the run took: `exit <code>, after <duration>`, then stdout and stderr. The limit of 5 seconds on a run stays, and its message now shows the time.
+- **The other candidate**, the limit of 5 seconds on a busy machine, is not shown either. If it is the cause, the next failure prints the time.
+
+| Change | Tests | Before | After |
+|---|---|---|---|
+| R1. Another test is handed the port that `ac13` released (a listener opened by the test on that port, in a copy of the old test) | `cargo test -p pool --locked --test commands ac13_run_refuses_every_state` | the test fails, though the product is right | does not apply: the port is held by the test for the whole run |
+| B1. `pool run` binds the listener before it reads the journal (in `daemon.rs`, before step 3) | `cargo test -p pool --locked --test commands` | not caught | caught by `ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds` |
+
+#### Repeated runs of `commands`
+
+The whole test binary of `apps/pool/tests/commands.rs` at `331d64e`, run again and again; the output of every failed run was kept.
+
+| Where | Runs | Passed | Failed |
+|---|---|---|---|
+| macOS 27.0.1, arm64, with the Linux runs below going on in Docker beside it | 50 | 50 | 0 |
+| The pinned image `rust:1.100.0-slim-bookworm` of `scripts/linux-build.sh` (Linux, arm64), as root, built from `git archive` of `331d64e` | 50 | 50 | 0 |
+
+No run failed, so no output had to be kept. Each run holds 17 tests and takes about 10 seconds. `ac13` was not seen failing in these 100 runs or before them in this round; if it fails again, its message now holds the output and the time.
+
+#### Gates
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `0503bba` (`331d64e` with `main` at `4285f8b` merged), on 2026-11-16 from 01:26 to 01:29 WIB.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok` | pass |
+| `scripts/check.sh integration` | exit 0, nothing left behind | exit 0: 26 of 26 in 43 s, each of the 18 runs of the daemon checked by `finish`; no `pool-it-` container afterwards | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0: 22 test results `ok`, none failed, `linux build check passed` | pass |
+| `git diff --stat main...HEAD` | test files and this record only | `apps/pool/tests/commands.rs`, `apps/pool/tests/integration.rs`, `apps/pool/tests/support/mod.rs` and this record; 0 lines of production code | pass |
+
+**For the developer of `scripts/integration/` (finding g4 of the review).** The two runs of this round and of round two that hung, M7 both times, were ended from outside, and their containers stayed until the daemon and the test were killed, because `run.sh` removes them only when the test command returns. With the limits of this round a run of the tests can no longer hang on a daemon that does not stop, so that path is now reached only by a signal to the script itself.
+
 ## Full verification
 
 The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.
