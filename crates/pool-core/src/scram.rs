@@ -10,14 +10,13 @@
 
 use std::fmt;
 
-use aws_lc_rs::{constant_time, digest, hmac, pbkdf2};
+use aws_lc_rs::{constant_time, digest, hmac, pbkdf2, rand};
 use pool_protocol::base64;
 use pool_protocol::scram::{
     self as text, ClientFirst, Gs2Header, PROOF_LEN, ServerFinal, ServerFirst,
 };
 
 use crate::REDACTED;
-use crate::random::{RandomError, fill_random};
 use crate::secret::{Password, Verifier};
 
 /// The number of random bytes in a nonce, before base64.
@@ -62,9 +61,9 @@ fn sha256(data: &[u8]) -> [u8; 32] {
     out
 }
 
-/// Fills `out` with random bytes, through [`crate::random::fill_random`].
+/// Fills `out` with random bytes of the operating system.
 pub(crate) fn random(out: &mut [u8]) -> Result<(), ScramFault> {
-    fill_random(out).map_err(|_| ScramFault::Random)
+    rand::fill(out).map_err(|_| ScramFault::Random)
 }
 
 /// A new nonce: 18 random bytes in base64.
@@ -132,9 +131,9 @@ pub struct MockKey([u8; 32]);
 
 impl MockKey {
     /// A new key from 32 random bytes. A failure is `random.failed` for the command.
-    pub fn generate() -> Result<Self, RandomError> {
+    pub fn generate() -> Result<Self, ScramFault> {
         let mut key = [0; 32];
-        fill_random(&mut key)?;
+        random(&mut key)?;
         Ok(Self(key))
     }
 
