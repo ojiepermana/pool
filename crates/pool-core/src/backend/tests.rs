@@ -595,3 +595,34 @@ async fn connect_over_tcp() {
     assert_eq!(result.err(), Some(BackendError::Connect));
     assert!(!format!("{node:?}").contains("127.0.0.1"));
 }
+
+#[tokio::test]
+async fn a_probe_answer_over_4096_bytes_is_not_read_on() {
+    for (len, ok) in [(3500usize, true), (5000, false)] {
+        let mut script = Script::primary();
+        let value: &'static str = Box::leak("x".repeat(len).into_boxed_str());
+        script.rows = vec![vec![Some(value)]];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        let mut conn = run.result.expect("open");
+        let answer = conn.query_one_row("select 1").await;
+        if ok {
+            assert!(matches!(answer, Ok(Some(_))), "{len}");
+        } else {
+            assert_eq!(answer, Err(BackendError::Protocol), "{len}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt() {
+    for (len, ok) in [(16000usize, true), (16500, false)] {
+        let mut script = Script::primary();
+        let value: &'static str = Box::leak("v".repeat(len).into_boxed_str());
+        script.params = vec![("in_hot_standby", "off"), ("big", value)];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        assert_eq!(run.result.is_ok(), ok, "{len}");
+        if !ok {
+            assert_eq!(run.result.err(), Some(BackendError::Protocol));
+        }
+    }
+}

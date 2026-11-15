@@ -26,11 +26,14 @@ use tokio_rustls::client::TlsStream;
 use crate::REDACTED;
 use crate::scram::{ClientExchange, ScramKeys, derive_keys};
 use crate::secret::Password;
+use crate::session::TLS_SEND_BUFFER_BYTES;
 use crate::tls::NodeTls;
 use crate::wire::{WireError, read_message, write_all};
 
-/// The largest message body POOL reads from a node during its startup or the one row query.
-pub const BACKEND_MESSAGE_MAX_BYTES: u32 = 65536;
+/// The largest message body POOL reads from a node from authentication up to `ReadyForQuery`.
+pub const BACKEND_STARTUP_MESSAGE_MAX_BYTES: u32 = 16384;
+/// The most bytes of answer, message bodies together, that the one row query of the probe reads.
+pub const PROBE_ANSWER_MAX_BYTES: usize = 4096;
 /// The most parameter status messages kept from a node.
 pub const PARAMETER_STATUS_MAX_COUNT: usize = 64;
 /// The most bytes of parameter names and values kept from a node, together.
@@ -258,10 +261,10 @@ pub enum Purpose {
 
 /// An open backend after its first `ReadyForQuery` with status `I`.
 pub struct BackendConnection<S> {
-    stream: TlsStream<S>,
-    parameters: Vec<ParameterStatus>,
-    key: Option<BackendKeyData>,
-    status: TransactionStatus,
+    pub(crate) stream: TlsStream<S>,
+    pub(crate) parameters: Vec<ParameterStatus>,
+    pub(crate) key: Option<BackendKeyData>,
+    pub(crate) status: TransactionStatus,
 }
 
 impl<S> fmt::Debug for BackendConnection<S> {
@@ -298,6 +301,8 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
     ///
     /// `None` when the query returned no row or more than one. A column is
     /// `None` when it is NULL. An `ErrorResponse` is [`BackendError::Server`].
+    /// An answer of more than 4096 bytes of message bodies is
+    /// [`BackendError::Protocol`], and the connection must then be closed.
     /// For the probe only.
     pub async fn query_one_row(
         &mut self,
@@ -307,9 +312,13 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
         let mut row = None;
         let mut rows = 0usize;
         let mut error = None;
+        let mut answer = 0usize;
         loop {
-            let Message { tag, body } =
-                read_message(&mut self.stream, BACKEND_MESSAGE_MAX_BYTES).await?;
+            // The answer stops at 4096 bytes: a longer one is never read on.
+            let left = PROBE_ANSWER_MAX_BYTES.saturating_sub(answer);
+            let limit = u32::try_from(left).unwrap_or(0);
+            let Message { tag, body } = read_message(&mut self.stream, limit).await?;
+            answer += body.len();
             match tag {
                 b'T' | b'C' | b'N' | b'S' | b'I' => {}
                 b'D' => {
@@ -360,6 +369,41 @@ fn data_row(body: &[u8]) -> Result<Vec<Option<String>>, BackendError> {
         return Err(BackendError::Protocol);
     }
     Ok(columns)
+}
+
+/// How a session opens its backend. The daemon uses [`TcpConnector`]; the
+/// session tests use a connector over in memory streams.
+pub trait Connector: Send + Sync + 'static {
+    /// The stream under TLS.
+    type Stream: AsyncRead + AsyncWrite + Unpin + Send + 'static;
+
+    /// One attempt to open a backend to `node` as `login` before `deadline`.
+    fn open(
+        &self,
+        node: &Node,
+        login: &Login,
+        purpose: Purpose,
+        deadline: Instant,
+    ) -> impl std::future::Future<Output = Result<BackendConnection<Self::Stream>, BackendError>> + Send;
+}
+
+/// The connector of the daemon: TCP to the node, then [`establish`].
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TcpConnector;
+
+impl Connector for TcpConnector {
+    type Stream = TcpStream;
+
+    fn open(
+        &self,
+        node: &Node,
+        login: &Login,
+        purpose: Purpose,
+        deadline: Instant,
+    ) -> impl std::future::Future<Output = Result<BackendConnection<TcpStream>, BackendError>> + Send
+    {
+        connect(node, login, purpose, deadline)
+    }
 }
 
 /// Opens a backend to `node` as `login`, the whole attempt before `deadline`.
@@ -416,6 +460,11 @@ async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(
         .connect(tls.name.clone(), stream)
         .await
         .map_err(|_| BackendError::Tls)?;
+    // The memory budget: at most 64 KiB queued for sending on each TLS connection.
+    stream
+        .get_mut()
+        .1
+        .set_buffer_limit(Some(TLS_SEND_BUFFER_BYTES));
     // Step 4: StartupMessage for 3.0.
     let mut params: Vec<(&str, &[u8])> = vec![
         ("user", login.user.as_bytes()),
@@ -432,7 +481,8 @@ async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(
     let mut parameter_bytes = 0usize;
     let mut key = None;
     let status = loop {
-        let Message { tag, body } = read_message(&mut stream, BACKEND_MESSAGE_MAX_BYTES).await?;
+        let Message { tag, body } =
+            read_message(&mut stream, BACKEND_STARTUP_MESSAGE_MAX_BYTES).await?;
         match tag {
             b'S' => {
                 let parameter =
@@ -484,7 +534,7 @@ async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(
 async fn read_authentication<S: AsyncRead + Unpin>(
     stream: &mut S,
 ) -> Result<Authentication, BackendError> {
-    let Message { tag, body } = read_message(stream, BACKEND_MESSAGE_MAX_BYTES).await?;
+    let Message { tag, body } = read_message(stream, BACKEND_STARTUP_MESSAGE_MAX_BYTES).await?;
     match tag {
         b'R' => auth::parse_authentication(&body).map_err(|_| BackendError::Protocol),
         b'E' => Err(BackendError::Server {

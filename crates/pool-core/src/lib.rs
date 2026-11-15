@@ -4,8 +4,10 @@
 //! This crate holds the secret types and the reading of protected files
 //! ([`secret`]), the TLS setup as server and as client ([`tls`]), SCRAM on
 //! both sides ([`scram`]) and the backend connection with its one row query
-//! ([`backend`]), and the reading of what the configuration names ([`load`]). The session, its lease, pool key and limits, the relay and
-//! the listener loop come in Build plan step 9. It depends on `pool-config`
+//! ([`backend`]), and the reading of what the configuration names ([`load`]). The route view ([`route`]), the session records
+//! ([`records`]), the log events of the data plane ([`report`]) and the
+//! session with its limits, relay, backend loss, conflict ending and
+//! shutdown ([`session`]) are Build plan step 9. It depends on `pool-config`
 //! and `pool-protocol`, and never on `pool-control`: the daemon maps the
 //! control snapshot into the route view of this crate.
 //!
@@ -18,8 +20,12 @@
 pub mod backend;
 pub mod load;
 pub mod random;
+pub mod records;
+pub mod report;
+pub mod route;
 pub mod scram;
 pub mod secret;
+pub mod session;
 pub mod tls;
 
 mod wire;
