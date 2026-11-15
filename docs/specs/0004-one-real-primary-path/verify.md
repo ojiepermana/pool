@@ -251,3 +251,37 @@ The two changes to step 5 that followed the first checker run, on 2026-11-15 at 
 | `0001 AC-9` | holds for every `secret-*` fixture: each exits 1 and none leaks the canary |
 
 Note that is not a failure: with decision 49 the first note of the first checker run above (a period of 60000 that no expiry can cover) is settled. Every value in the range of the period can now be used with some timeout and expiry.
+
+## Milestone 3: Authority on disk and the first contact with PostgreSQL
+
+### Build plan step 6: authority on disk and the control loop
+
+On 2026-11-15, on macOS (workstation, not Linux and not CI). Commit `fc5a5fe` (step 6), merged with `main` at `8332451` in `dff749e`. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, the SQLite of `rusqlite 0.42.0` with the feature `bundled`. The step is hermetic: no container and no PostgreSQL. Every journal is a real file in a folder of the test's own under `CARGO_TARGET_TMPDIR`. Steps 7 and 8 belong to other sessions and get their own parts of this section.
+
+#### UI / manual
+
+None for step 6.
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-control --locked` on `dff749e` | exit 0 | exit 0: 5 unit, 3 in `tests/admission_model.rs`, 11 in `tests/controller.rs`, 15 in `tests/journal.rs`, 28 in `tests/walkthroughs.rs`, 6 and 6 doc tests (`compile_fail` included), 0 failed | pass |
+| `scripts/check.sh all` on `dff749e` | exit 0 | exit 0: `fmt`, `clippy`, `test`, `deny`, `guards`, `docs` all `ok` | pass |
+| `grep -rnE 'Instant::now\|SystemTime\|std::fs\|std::env' crates/pool-control/src` | no line | no line (exit 1) | pass |
+| `grep -rln rusqlite crates/pool-control/src` | `journal.rs` only | `crates/pool-control/src/journal.rs` | pass |
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0003 AC-17` | `AuthorityState::latch_conflict` and `latch_recorded` in `src/authority.rs`; `Controller::round` and `latch_recorded` in `src/snapshot.rs`; `ac17_walk_from_row_d_to_row_o_through_the_real_functions` in `tests/walkthroughs.rs` (once with a receipt of a real journal, once with the write refused as busy between the two calls; row o has no journal value built by hand), `ac17_latch_conflict_changes_nothing_unless_a_ready_state_is_asked_to`, and the `ac17_*` tests of `tests/controller.rs` (latch in memory before the write, the receipt, a failed write that stays listed and is tried again, a latch the journal already holds, a receipt for a cluster not latched, a state that is not `Ready`) | pass on the workstation |
+| `0003 AC-18` | `ObservationBoard` in `src/observation.rs`; `build_snapshot` in `src/snapshot.rs`, the one caller of `writer_admission`; `ac18_the_board_keeps_one_sample_per_node` and `ac18_a_now_earlier_than_the_latest_sample_gives_the_same_snapshot`; the text `writer_admission` outside `crates/pool-control` is refused by rule W3 (milestone 1) | pass on the workstation |
+| `0003 AC-19`, code half | `JournalRead` in `src/journal.rs`, with private fields and a `compile_fail` doc test; `ac19_journal_read_plans_bootstrap_with_the_board_and_the_configuration`; the guard half is milestone 1 | pass on the workstation |
+| `0004 AC-10`, library half | `Journal::read`, `create`, `open_ready`, `set_conflict_latch` in `src/journal.rs`; the 15 tests of `tests/journal.rs`: marks, WAL mode, exactly the four tables and the first rows; `Absent` for no file and an empty file; `Unreadable` for a wrong application ID, another schema version, a missing `store` row, a writer without member row, a value out of range, an ID of the wrong syntax or length, a missing table, damaged pages, a file of another kind and a folder; reading leaves the file bytes as they were; `open_ready` advances the start sequence once per start, refuses a journal that changed and stops at the top; busy with no wait; the latch written once, advancing the revision | pass on the workstation; the half through `pool bootstrap` and `pool run` is steps 8 and 10 |
+| `0004 AC-12`, library half | `PROBE_QUERY` and `observation_from_row` in `src/probe.rs` with three unit tests (a good row, sixteen other answers and no row give `Failed`); `ac12_build_snapshot_answers_every_cluster_with_the_expiry_of_the_configuration` and `ac12_a_failed_probe_row_takes_the_evidence_away_at_once` | pass on the workstation; the login, TLS and the query on PostgreSQL are steps 7 and 8 |
+| `0003 AC-7` to `AC-12`, `AC-14`, `AC-16` | `tests/walkthroughs.rs` (four walks, `ac9_*`, `ac11_*`, `ac16_*`) and `tests/admission_model.rs` (8192 cases) run unchanged; no rule of `classify_startup`, `plan_bootstrap` or `writer_admission` changed | pass on the workstation |
+
+**One reading.** When the snapshot generation cannot advance, `Controller::round` returns every cluster closed, as the spec says, but the spec names no reason for that case. The round builds its snapshot from the state `Unreadable`, so each cluster is closed with the existing `authority.unreadable` and no new reason name is added. The generation stays at 9223372036854775807. At one round per millisecond, it takes about 292 million years to get there. The unit test `a_round_whose_generation_cannot_advance_closes_every_cluster` locks it.
