@@ -60,6 +60,16 @@ impl BootstrapRefusal {
 /// }
 /// ```
 ///
+/// The same paths through the public functions compile, so the snippet
+/// above can fail only because the field is private (the code after the
+/// comma is not checked by the stable compiler):
+///
+/// ```
+/// fn read(plan: &pool_control::BootstrapPlan) -> Vec<pool_control::ApprovedTopology> {
+///     plan.clusters().to_vec()
+/// }
+/// ```
+///
 /// Restart rule: it lives in memory for one run of the bootstrap command and
 /// is gone after it. What survives is the journal the command writes from it.
 #[derive(Debug, Clone, PartialEq, Eq)]
