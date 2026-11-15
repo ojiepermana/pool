@@ -625,12 +625,12 @@ mod tests {
         let newer = parse_startup(2, &body(&[("user", "alice")])).expect("valid");
         assert_eq!(
             newer.negotiation(),
-            Some(b"v\0\0\0\x0c\0\0\0\0\0\0\0\0".to_vec())
+            Some(b"v\0\0\0\x0c\0\x03\0\0\0\0\0\0".to_vec())
         );
         let option = parse_startup(0, &body(&[("user", "alice"), ("_pq_.a", "1")])).expect("valid");
         assert_eq!(
             option.negotiation(),
-            Some(b"v\0\0\0\x13\0\0\0\0\0\0\0\x01_pq_.a\0".to_vec())
+            Some(b"v\0\0\0\x13\0\x03\0\0\0\0\0\x01_pq_.a\0".to_vec())
         );
     }
 

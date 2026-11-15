@@ -181,15 +181,21 @@ pub fn encode_sasl_response(data: &[u8]) -> Vec<u8> {
     encode_message(b'p', data)
 }
 
-/// `NegotiateProtocolVersion`: the newest minor version POOL speaks and the options it does not support.
+/// `NegotiateProtocolVersion`: the protocol POOL speaks and the options it does not support.
+///
+/// The first number is a whole protocol code, the major version in the high
+/// 16 bits and `minor` in the low 16 bits, as in a startup packet: for 3.0
+/// it is 196608, the bytes `00 03 00 00`. `psql` refuses a bare minor
+/// number as a downgrade to a version before 3.0.
 ///
 /// # Panics
 ///
 /// When more than `u32::MAX` names are given.
 pub fn encode_negotiate_protocol_version(minor: u16, unsupported: &[Vec<u8>]) -> Vec<u8> {
     let count = u32::try_from(unsupported.len()).expect("fewer than 4 G names");
+    let code = (u32::from(crate::startup::PROTOCOL_MAJOR) << 16) | u32::from(minor);
     let mut body = Vec::new();
-    body.extend_from_slice(&u32::from(minor).to_be_bytes());
+    body.extend_from_slice(&code.to_be_bytes());
     body.extend_from_slice(&count.to_be_bytes());
     for name in unsupported {
         body.extend_from_slice(name);
@@ -201,8 +207,8 @@ pub fn encode_negotiate_protocol_version(minor: u16, unsupported: &[Vec<u8>]) ->
 /// The body of a `NegotiateProtocolVersion`, for scripted clients in tests.
 #[derive(Clone, PartialEq, Eq)]
 pub struct NegotiateProtocolVersion {
-    /// The newest minor version the server speaks.
-    pub minor: u32,
+    /// The minor version of the protocol code, whose major version must be 3.
+    pub minor: u16,
     /// The options it does not support.
     pub unsupported: Vec<Vec<u8>>,
 }
@@ -217,11 +223,16 @@ impl std::fmt::Debug for NegotiateProtocolVersion {
     }
 }
 
-/// Parses the body of a `NegotiateProtocolVersion`. The count is checked against the names, never reserved from.
+/// Parses the body of a `NegotiateProtocolVersion`: a whole protocol code with the major version 3, then the
+/// names. The count is checked against the names, never reserved from.
 pub fn parse_negotiate_protocol_version(
     body: &[u8],
 ) -> Result<NegotiateProtocolVersion, Malformed> {
-    let minor = be_u32(body).ok_or(Malformed)?;
+    let code = be_u32(body).ok_or(Malformed)?;
+    if code >> 16 != u32::from(crate::startup::PROTOCOL_MAJOR) {
+        return Err(Malformed);
+    }
+    let minor = (code & 0xffff) as u16;
     let count = be_u32(body.get(4..).ok_or(Malformed)?).ok_or(Malformed)?;
     let mut rest = &body[8..];
     let mut unsupported = Vec::new();
@@ -484,12 +495,18 @@ mod tests {
                 unsupported: names
             })
         );
+        // A bare minor number, as an older build wrote it, is not a protocol code.
         assert_eq!(
-            parse_negotiate_protocol_version(b"\0\0\0\0\xff\xff\xff\xff"),
+            parse_negotiate_protocol_version(b"\0\0\0\0\0\0\0\0"),
+            Err(Malformed)
+        );
+        assert_eq!(&msg[5..9], &[0, 3, 0, 0]);
+        assert_eq!(
+            parse_negotiate_protocol_version(b"\0\x03\0\0\xff\xff\xff\xff"),
             Err(Malformed)
         );
         assert_eq!(
-            parse_negotiate_protocol_version(b"\0\0\0\0\0\0\0\x01a"),
+            parse_negotiate_protocol_version(b"\0\x03\0\0\0\0\0\x01a"),
             Err(Malformed)
         );
     }
