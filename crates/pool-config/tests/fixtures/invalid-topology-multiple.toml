@@ -1,0 +1,23 @@
+config_version = 1
+
+[control]
+state_directory = "/var/lib/pool"
+authority_id = "not-an-authority-id"
+
+[[cluster]]
+id = "main"
+system_identifier = "0"
+expected_writer = "pg1"
+
+[[node]]
+id = "pg1"
+cluster = "main"
+host = "10.0.0.11"
+port = 0
+
+[[identity]]
+id = "orders-app"
+principal = "orders_app"
+database = "orders"
+cluster = "other"
+backend_login = "orders_rw"

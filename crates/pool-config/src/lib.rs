@@ -7,6 +7,19 @@
 
 use std::fmt;
 
+mod generation;
+mod identifier;
+mod topology;
+
+pub use generation::{AuthorityRevision, StartSequence, TopologyEpoch};
+pub use identifier::{AuthorityId, ClusterId, IdentityId, NodeId, SystemIdentifier};
+pub use topology::{
+    ClusterConfig, ControlConfig, IdentityRoute, NodeConfig, RoutingProfile, SecretReference,
+};
+
+use toml::Spanned;
+use topology::{IdentityIndex, RawCluster, RawControl, RawIdentity, RawNode, RawTopology};
+
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 
 /// The largest configuration file accepted, in bytes. A file of exactly this
@@ -41,6 +54,11 @@ pub struct ValidatedConfig {
     config_version: u32,
     result_cache: CapabilityState,
     automatic_promotion: CapabilityState,
+    control: Option<ControlConfig>,
+    clusters: Vec<ClusterConfig>,
+    nodes: Vec<NodeConfig>,
+    identities: Vec<IdentityRoute>,
+    identity_index: IdentityIndex,
 }
 
 impl ValidatedConfig {
@@ -57,6 +75,37 @@ impl ValidatedConfig {
     /// The state of the reserved `automatic_promotion` capability.
     pub fn automatic_promotion(&self) -> CapabilityState {
         self.automatic_promotion
+    }
+
+    /// The `[control]` table, or `None` when the file has none.
+    pub fn control(&self) -> Option<&ControlConfig> {
+        self.control.as_ref()
+    }
+
+    /// The `[[cluster]]` entries, in file order.
+    pub fn clusters(&self) -> &[ClusterConfig] {
+        &self.clusters
+    }
+
+    /// The `[[node]]` entries, in file order.
+    pub fn nodes(&self) -> &[NodeConfig] {
+        &self.nodes
+    }
+
+    /// The `[[identity]]` entries, in file order.
+    pub fn identities(&self) -> &[IdentityRoute] {
+        &self.identities
+    }
+
+    /// The route for an exact pair of verified principal and requested
+    /// database, or `None` for every other pair.
+    ///
+    /// Both names are compared byte for byte: nothing is folded to lowercase
+    /// or trimmed. There is no wildcard and no default entry. The lookup does
+    /// not walk every entry.
+    pub fn resolve_identity(&self, principal: &str, database: &str) -> Option<&IdentityRoute> {
+        let index = self.identity_index.get(principal, database)?;
+        self.identities.get(index)
     }
 }
 
@@ -139,6 +188,12 @@ impl fmt::Display for Finding {
             Location::Position { line, column } => {
                 write!(f, "{code} at line {line}, column {column}: {message}")
             }
+            Location::KeyAt { key, line, column } => {
+                write!(
+                    f,
+                    "{code} at {key}, line {line}, column {column}: {message}"
+                )
+            }
         }
     }
 }
@@ -160,6 +215,19 @@ pub enum FindingCode {
     UnsupportedVersion,
     /// A reserved capability has `enabled = true`.
     UnsupportedCapability,
+    /// A value has the right type but not the allowed syntax or range.
+    InvalidValue,
+    /// An `id` repeats an earlier `id` of the same table.
+    DuplicateId,
+    /// A key names a cluster or node that the file does not define, or
+    /// `expected_writer` names a node of another cluster.
+    UnknownReference,
+    /// A node has the host and port of an earlier node.
+    DuplicateEndpoint,
+    /// An identity has the principal and database of an earlier identity.
+    DuplicateIdentity,
+    /// A value is known but not supported by this build.
+    UnsupportedValue,
 }
 
 impl FindingCode {
@@ -173,6 +241,12 @@ impl FindingCode {
             FindingCode::MissingKey => "config.missing_key",
             FindingCode::UnsupportedVersion => "config.unsupported_version",
             FindingCode::UnsupportedCapability => "config.unsupported_capability",
+            FindingCode::InvalidValue => "config.invalid_value",
+            FindingCode::DuplicateId => "config.duplicate_id",
+            FindingCode::UnknownReference => "config.unknown_reference",
+            FindingCode::DuplicateEndpoint => "config.duplicate_endpoint",
+            FindingCode::DuplicateIdentity => "config.duplicate_identity",
+            FindingCode::UnsupportedValue => "config.unsupported_value",
         }
     }
 
@@ -191,6 +265,14 @@ impl FindingCode {
             FindingCode::UnsupportedCapability => {
                 "this capability is not supported by this build; remove the key or set it to false"
             }
+            FindingCode::InvalidValue => "a value is not in the allowed form or range",
+            FindingCode::DuplicateId => "an id is used more than once",
+            FindingCode::UnknownReference => "a reference does not name a matching entry",
+            FindingCode::DuplicateEndpoint => "two nodes have the same host and port",
+            FindingCode::DuplicateIdentity => {
+                "two identity entries have the same principal and database"
+            }
+            FindingCode::UnsupportedValue => "this value is not supported by this build",
         }
     }
 }
@@ -209,6 +291,17 @@ pub enum Location {
         /// The column, counted in Unicode scalar values.
         column: u32,
     },
+    /// The finding applies to a key of one entry of a repeated table, such as
+    /// `node.id`, at a position in the text. The position is where the value
+    /// starts, or where the entry starts when the key is missing.
+    KeyAt {
+        /// The key path without an index, such as `node.id`.
+        key: &'static str,
+        /// The line, counted as for [`Location::Position`].
+        line: u32,
+        /// The column, counted as for [`Location::Position`].
+        column: u32,
+    },
 }
 
 // The structures read from the file accept a table only. A derived
@@ -218,13 +311,25 @@ pub enum Location {
 // span. Unknown keys are rejected, as with `deny_unknown_fields`. A key given
 // twice never reaches them: the syntax step already refuses it.
 
-const RAW_CONFIG_FIELDS: &[&str] = &["config_version", "result_cache", "automatic_promotion"];
+const RAW_CONFIG_FIELDS: &[&str] = &[
+    "config_version",
+    "result_cache",
+    "automatic_promotion",
+    "control",
+    "cluster",
+    "node",
+    "identity",
+];
 const RAW_CAPABILITY_FIELDS: &[&str] = &["enabled"];
 
 struct RawConfig {
     config_version: Option<u32>,
     result_cache: Option<RawCapability>,
     automatic_promotion: Option<RawCapability>,
+    control: Option<RawControl>,
+    cluster: Option<Vec<Spanned<RawCluster>>>,
+    node: Option<Vec<Spanned<RawNode>>>,
+    identity: Option<Vec<Spanned<RawIdentity>>>,
 }
 
 impl<'de> Deserialize<'de> for RawConfig {
@@ -243,12 +348,20 @@ impl<'de> Deserialize<'de> for RawConfig {
                     config_version: None,
                     result_cache: None,
                     automatic_promotion: None,
+                    control: None,
+                    cluster: None,
+                    node: None,
+                    identity: None,
                 };
                 while let Some(field) = map.next_key_seed(KnownField(RAW_CONFIG_FIELDS))? {
                     match field {
                         0 => raw.config_version = Some(map.next_value()?),
                         1 => raw.result_cache = Some(map.next_value()?),
-                        _ => raw.automatic_promotion = Some(map.next_value()?),
+                        2 => raw.automatic_promotion = Some(map.next_value()?),
+                        3 => raw.control = Some(map.next_value()?),
+                        4 => raw.cluster = Some(map.next_value()?),
+                        5 => raw.node = Some(map.next_value()?),
+                        _ => raw.identity = Some(map.next_value()?),
                     }
                 }
                 Ok(raw)
@@ -298,7 +411,7 @@ impl<'de> Deserialize<'de> for RawCapability {
 /// unknown key is an error raised on the key itself, so the parser reports
 /// the key's position. The key text is used only for matching and is never
 /// stored.
-struct KnownField(&'static [&'static str]);
+pub(crate) struct KnownField(pub(crate) &'static [&'static str]);
 
 impl<'de> DeserializeSeed<'de> for KnownField {
     type Value = usize;
@@ -373,6 +486,16 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         KEY_AUTOMATIC_PROMOTION_ENABLED,
         &mut findings,
     );
+    let topology = topology::check(
+        text,
+        RawTopology {
+            control: raw.control,
+            clusters: raw.cluster.unwrap_or_default(),
+            nodes: raw.node.unwrap_or_default(),
+            identities: raw.identity.unwrap_or_default(),
+        },
+        &mut findings,
+    );
 
     if !findings.is_empty() {
         return Err(Rejection { findings });
@@ -381,6 +504,11 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         config_version,
         result_cache,
         automatic_promotion,
+        control: topology.control,
+        clusters: topology.clusters,
+        nodes: topology.nodes,
+        identities: topology.identities,
+        identity_index: topology.identity_index,
     })
 }
 
@@ -416,6 +544,13 @@ fn error_location(text: &str, error: &toml::de::Error) -> Location {
 /// The line is 1 plus the line feeds before the offset. The column is 1 plus
 /// the Unicode scalar values between the start of that line and the offset.
 fn position(text: &str, offset: usize) -> Location {
+    let (line, column) = line_column(text, offset);
+    Location::Position { line, column }
+}
+
+/// The 1 based line and column of a byte offset, counted as [`position`]
+/// counts them.
+pub(crate) fn line_column(text: &str, offset: usize) -> (u32, u32) {
     let bytes = text.as_bytes();
     let prefix = &bytes[..offset.min(bytes.len())];
     let line_feeds = prefix.iter().filter(|&&byte| byte == b'\n').count();
@@ -427,10 +562,10 @@ fn position(text: &str, offset: usize) -> Location {
         .iter()
         .filter(|&&byte| byte & 0xC0 != 0x80)
         .count();
-    Location::Position {
-        line: to_u32(line_feeds.saturating_add(1)),
-        column: to_u32(scalars.saturating_add(1)),
-    }
+    (
+        to_u32(line_feeds.saturating_add(1)),
+        to_u32(scalars.saturating_add(1)),
+    )
 }
 
 fn to_u32(value: usize) -> u32 {
