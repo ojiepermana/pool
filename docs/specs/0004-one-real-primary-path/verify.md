@@ -1984,6 +1984,8 @@ After `git merge main` at `7a67c93`: `d41d25c`, **a copy of the test CA in the c
 - `2504324`, **the CA of the fixture tests, and a CA that others can write**. `integration.rs` also named the committed `other-ca.pem` in its two cases of a wrong CA. With mode 0664 those cases would be refused by the rule of decision 88 before any TLS, and would no longer test the TLS check, so they use a copy with mode 0644. `check_config.rs` reads no CA file, `support/` parses the CA from bytes, and `scripts/integration/run.sh` makes its certificates with mode 0644. The new test `c6_a_ca_file_that_the_group_or_others_can_write_ends_bootstrap_with_its_key` in `commands.rs` holds the rule through the binary: a CA file of mode 0664, 0646 or 0666 ends `bootstrap` with `secret.permissions` at `node.tls_ca_file` and writes no journal, and with mode 0644 the bootstrap goes on to the probe. A CA owned by another account needs root to set up, so that case stays with the tests of `pool-core`. On `2504324`: `scripts/check.sh linux-build` exit 0, `scripts/check.sh all` exit 0, `scripts/check.sh integration` exit 0 with 31 of 31.
 - `be80af4` and `ae8d25a`, **no host tool** (decision 101). The unit test `daemon::tests::each_state_that_is_not_ready_gives_its_own_finding` maps the six states that are not `Ready` to their six `authority.*` codes and checks that no two share one. With the arms for `missing` and `mismatch` swapped, it failed (`left: "authority.mismatch"`, `right: "authority.missing"`). With them restored, it passed. Then `it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds`, which set the hold with the host tool `sqlite3`, was removed. The library half stays in `crates/pool-control/tests/journal.rs`. The fixture tests were 29 before stage 2, 31 with its two new tests, and are 30 now. On `ae8d25a`: `scripts/check.sh all` exit 0, `scripts/check.sh integration` exit 0 with 30 of 30 and no container left.
 - `f11f4f3`, **the race in the second primary test** (the failure recorded above, one run in three). The writer now falls silent, and its monitor connection is ended and counted while pg2 is still refused. pg2 answers only after that, so its own monitor login can no longer be counted. What the test proves is unchanged: a second primary beside a silent writer, `57P01` for the session, the latch with `recorded` true, and closed after a restart. `2f960cd` adds `POOL_IT_FILTER` to `scripts/integration/run.sh`, a filter of test names. With it, `POOL_IT_FILTER=it_ac14_a_second_primary_beside_a_silent_writer scripts/check.sh integration` was run 10 times in a row: 10 of 10 exit 0, each with 1 passed and 29 filtered out. Then on `2f960cd`: `scripts/check.sh all` exit 0, and the full `scripts/check.sh integration` exit 0 with 30 of 30 and no container left.
+- `8fffb40`, **the filter says so** (decision 104). With `POOL_IT_FILTER` set, `scripts/integration/run.sh` writes `integration: POOL_IT_FILTER is set, only matching tests run` on stderr before the tests. `POOL_IT_FILTER=it_bootstrap_json_prints_the_new_id scripts/check.sh integration`: the line on stderr, exit 0, 1 passed and 29 filtered out. Without the variable: no such line on stdout or stderr, exit 0, 30 of 30, no container left.
+- `ce61930`, **the watchdog ends with the script** (found by `chk-f4-verify` on `099a597`). `kill` of the watchdog subshell left its `sleep 1800` running for up to 30 minutes, holding the stdout and stderr of the caller open, and `cleanup` did not stop the watchdog after a signal. The watchdog now runs in a process group of its own with stdin and stdout closed, and the script ends that group at the normal end and in `cleanup`. Checked on each path, with stdout and stderr through a pipe, counting the processes left whose working directory is this worktree: a normal end (`POOL_IT_FILTER`, 1 test) closed the pipe when the script ended, with nothing left; SIGTERM to the script while the tests ran gave exit 1, with nothing left; a temporary limit of 25 seconds ended the tests after 28 seconds with the line `the tests did not end within 25 seconds`, with nothing left. The `sleep 1800` already on the machine came from runs of the older script, in the folder of another session, and were left alone.
 
 ### Crates, tooling and build (developer A)
 
@@ -2067,3 +2069,174 @@ On macOS unless a row says otherwise; Docker running. `0004 AC-29` and `0004 AC-
 | `scripts/check.sh linux-build` | `bfc4a00` | 0 | the four tests of `commands.rs` pass in the image |
 | `scripts/prove-checks.sh --with-linux-build` | `bfc4a00` | 0 | 36 of 36 cases rejected their bad change, `linux-build` proven |
 
+
+### Checker run of step 15
+
+Build plan step 15 (the fixes after the independent review), on 2026-11-16 from 03:18 to 04:05 WIB, by the checker session. The tree was `main` at `099a597` (the code of `23a6008`). While the run went on, `main` gained `c66cac7`, which changes `scripts/integration/run.sh` and documents only; the parts that file can reach were run again on it, and each row says which tree it is for. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2, PostgreSQL 18.7 of the pinned image, and the pinned build image for Linux (kernel 7.0.14 of Docker Desktop). None of it is CI. Everything is judged against the text of the spec as it is now, with decisions 84 to 105, and not against a report. Every command below was run in this session.
+
+The probes are the checker's own, outside the repository, as in the runs above: the daemon probe (its own client and relay in Python, now with sections for step 15), the command probe and the fixture probe. A fixed wrong change is a change made in a private copy and never in the repository.
+
+**Verdicts.** `PASS` means run and as the spec says. `NOT_RUN` means it could not be run, with the reason.
+
+| Item | Verdict | Where the evidence is |
+|---|---|---|
+| `0004 AC-29`, on the fixture | `PASS` | "The server a session reaches" below |
+| `0004 AC-29`, hermetic half | `PASS` by the tests of `pool-core` and four of five wrong changes caught; one sentence has no test (the status `I` after the answer) | "Wrong changes" below |
+| `0004 AC-30`, node loss on the fixture | `PASS` | "A node that vanished" below |
+| `0004 AC-30`, keepalive on Linux | `PASS` for the fact; `ss -tno` itself `NOT_RUN`: neither pinned image has `ss`, and nothing was installed. The keepalive timer of each socket was read from `/proc/net/tcp` in the container, which shows the same pending timer that `ss -o` prints | "Keepalive" below |
+| `0004 AC-30`, hermetic half | `PASS` by the tests and six of seven wrong changes caught; the keepalive of the listener socket has no test | "Wrong changes" below |
+| c1, the status byte of `ReadyForQuery` | `PASS` by the two tests `c1_...` of `pool-core`, which fail when the fix is taken out. On the fixture `NOT_RUN`: a real server cannot be made to stop inside a message, and the relay sees only TLS records | "Wrong changes" below |
+| c2, a task that ends | `PASS` with a fault put into a private copy. On the product itself `NOT_RUN`: nothing from outside ends a task | "The findings" below |
+| c3, the startup parameter check | `PASS` | the same |
+| c4 and decision 99, the native library switch | `PASS` on this host | the same |
+| c6 and decision 88, the CA file and the chain | `PASS` | the same |
+| c9, a latch at shutdown | `PASS` | the same |
+| g2 and decision 93, the guard baseline | `PASS` | the same |
+| g4 and decision 103, the integration script | `PASS` for what g4 asked. One new fault found on `099a597` (the watchdog outlived the script), sent to the developer, fixed in `ce61930`, and `PASS` on `c66cac7` | the same |
+| Decision 101, the `sqlite3` test | `PASS` | the same |
+| Decision 100 and the fuzz target `auth` | `PASS` | the same |
+| Decision 102, `data_row` | `PASS` | the same |
+
+#### The four checks
+
+Each ran alone, with its output in a file and its own exit status read from `$?`.
+
+| Command | Tree | Exit | Observed |
+|---|---|---|---|
+| `scripts/check.sh all` | `099a597` | 0 | all six `ok`; 24 test results `ok`, none failed: `pool` 26 unit, 87 `check_config`, 19 `commands`; `pool-config` 32 and 123; `pool-control` 6, 3, 14, 26 and 28; `pool-core` 57 and 71; `pool-protocol` 22, 18 and 5; `pool-repo-check` 108 and 112 |
+| `scripts/check.sh integration` | `099a597` | 0 | 30 of 30 in 68 s |
+| `scripts/check.sh integration` | `c66cac7` | 0 | 30 of 30 in 59 s; no container, no temporary directory and no process of the script left |
+| `scripts/check.sh fuzz` | `099a597` | 0 | five targets, 31 s each: `validate` 564551 runs, `startup` 2684085, `frontend_message` 793973, `scram` 518408, `auth` 692858; no file under any `fuzz/artifacts/` |
+| `scripts/check.sh linux-build` | `099a597` | 0 | 23 test results `ok`, `linux build check passed`; `target/release/pool` has `sha256 96eb905f00970af6b30e575bf91557c0b2abc4c7936312d2913b86509c6a2e46`, the same as a build of the checker in a second container of the pinned image |
+
+`scripts/prove-checks.sh --with-linux-build` was not run again. The developer ran it on `bfc4a00` (36 of 36). Since `bfc4a00` nothing under `scripts/` or `tools/` changed but `scripts/integration/run.sh`, which no case of the proof script changes. Its new case 36 was tried by hand below (g2).
+
+#### The server a session reaches is the server that was verified (`0004 AC-29`)
+
+On the fixture, with the node as a relay of the probe. The probe of the daemon keeps its connection to container 1 for the whole test.
+
+| Step | Expected | Observed | Result |
+|---|---|---|---|
+| A normal login | the first statement on the backend connection is the question of the probe, then the SQL of the client | the PostgreSQL log shows two statements of that connection of `pz7_rw`: the question, then the statement of the client | pass |
+| The relay leads new connections to container 2 (another system identifier), three logins | `08006`, no `AuthenticationOk`, `backend.failed` with the class `identity`, and the second server sees no statement of the backend login but the question | each login gets `08006` `the backend connection could not be established`; the authentication messages before it are SASL, SASL continue and SASL final, and never `AuthenticationOk`; `backend.failed` with `class` `identity` and no `sqlstate`, counted 3; the log of container 2 has 3 connections of `pz7_rw` whose only statements are the 3 questions | pass |
+| The cluster and the session that ran before | a refusal of step 8 does not close the cluster | no new `admission.changed`, no session started, and the old session still answers from container 1 | pass |
+| The relay leads to container 1 again | a login works | it works | pass |
+| The node answers the question with an error: the right to run `pg_control_system()` is taken from `PUBLIC` in the backend database | `08006`, the class `identity`, no SQL of the client | `08006`, `backend.failed` with `identity`, one statement on that connection; the probe, which asks in another database, keeps the cluster open; with the right given back a login works | pass |
+
+Another timeline, a node in recovery, two rows and a null cannot be made with the two servers of the fixture. They are in the tests of `pool-core` (`ac29_...`), and the wrong changes below show those tests fail when a comparison is taken out.
+
+#### A node that vanished (`0004 AC-30`)
+
+With `probe.period_ms = 200`, `timeout_ms = 1000`, `observation_expiry_ms = 2000` and `node_loss_timeout_ms = 3000`.
+
+| Step | Expected | Observed | Result |
+|---|---|---|---|
+| `docker pause` on the container of the writer, with three sessions running | new logins close at once; no session ends before the time | closed with `evidence.writer_missing` after 1.1 s, a login gets `57P03`, no `session.ended` yet | pass |
+| The time passes | `node.lost` once, with `node_id` and `cluster_id`; the idle sessions get `08006`, the one in flight `08007`; `session.ended` with `node_lost` | `node.lost` 4.2 s after the pause (1 s for the first sample to fail, then 3 s), level `warn`, one line in the next 2.5 s; idle `08006`, idle in a transaction `08006`, in flight `08007`, all at that moment; three `session.ended` with the reason `node_lost` | pass |
+| `docker unpause` | the mark goes with the first good sample | the cluster opens, a login works, a new session is not ended | pass |
+| A second pause | the event is written again | the session ends with `08006` after 4.1 s; two `node.lost` lines in all; the transaction that was open left no row | pass |
+| The probe fails with the class `tls` for 5 s (the relay cuts the kept connection and answers `N`) | no mark: the node answered | no `node.lost`, and the running session goes on | pass |
+| `connect` failures for 2 s (nothing listens on the port), a `tls` failure, `connect` failures for 2 s | the time starts again in between | no `node.lost`, no session ended | pass |
+| `connect` failures go on | marked after 3 s without another outcome | `node.lost`, and the idle session, whose own connection to the node was never cut, gets `08006` | pass |
+
+**Which node is "the approved writer".** The code takes it from `expected_writer` of the configuration. Decision 105, which came in while this run went on, says so and says why. The probe tried the one case where the two can differ: a journal that approves `pg1` and a configuration that expects `pg2`. The cluster is closed with `authority.config_conflict` and never opens, so it has no session. With `pg1` refusing every connect for 5 s (a loss time of 2 s) there is no `node.lost`. With `pg2` refusing every connect, `node.lost` names `pg2`. That is what the paragraph of decision 105 describes, and it ends nothing. Against the text as it is now the reading fits.
+
+**Keepalive.** The Linux build of `pool` (the binary with the hash above) ran inside the first container of the fixture as the user `postgres`, with PostgreSQL of that container as its node, a `psql` with a statement in flight as one client and a plain socket of `perl` as another. The kernel values there are 7200, 75 and 9, and a tick is 1/100 s. `/proc/net/tcp` gives for each socket which timer is pending (2 is the keepalive timer) and the ticks to go.
+
+| Socket | Timer | Ticks to go |
+|---|---|---|
+| Control: both ends of a pair of `perl` with no `SO_KEEPALIVE`, and the accepted end of a second pair | 0, 0, 0 | |
+| Control: a `perl` socket with `SO_KEEPALIVE` set | 2 | 719695 |
+| Accepted by POOL from `psql` | 2 | 719690 |
+| Accepted by POOL from the plain `perl` client | 2 | 719695 |
+| The other end of that plain connection, which is `perl`'s | 0 | |
+| Opened by POOL to the node: the probe and the backend of the session | 2, 2 | 719681, 719693 |
+
+So every socket POOL accepts and every socket it opens to a node has keepalive on, also when the client never set it, and the first probe is due after the 7200 s of the kernel. That the kernel then ends a dead connection was not run: it needs packets to be dropped, which needs a tool no pinned image has.
+
+#### The findings
+
+| Finding | Probe | Observed | Result |
+|---|---|---|---|
+| c2 | A private copy whose probe task returns after 30 rounds, run on the fixture with three sessions and a shutdown deadline of 20 s | `daemon.failed` with `task` `probe` at the level `error`, exit 3 after 7.6 s, no `daemon.stopping`, `daemon.stopped` last; the idle session gets `57P01` and the one in flight `08007` one second before the exit and not after 20 s; no backend left | pass |
+| c3 | A startup packet of 64844 bytes with 8100 names POOL does not know, with `startup_packet_max_bytes = 65536`, on the debug build | `0A000` after 5 to 24 ms in six tries; a name twice (`user`, `application_name`) and an empty name give `08P01` | pass |
+| c4, decision 99 | `cargo build --locked -p pool -vv` in a private clone with `AWS_LC_SYS_USE_SYSTEM=1`, `AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin=1` and `LIBSQLITE3_SYS_USE_PKG_CONFIG=1` in the environment | exit 0; the build script sees all five AWS-LC switches as `0`, says `Building with: CC` and links `static=aws_lc_0_47_0_crypto` and `static=sqlite3` from its own build folders | pass |
+| The control for it | The same with the line for this target taken out of `.cargo/config.toml` | exit 101, `AWS_LC_SYS_USE_SYSTEM=1 requires a system-installed AWS-LC, but none was found` | the line is what holds it |
+| c6, decision 88: the CA file, through `pool bootstrap` on the fixture | modes 0644, 0444, 0640, 0600 are taken; 0664, 0646, 0666, 0622 are refused | exit 0 for the first four; exit 3 `secret.permissions at node.tls_ca_file` for the other four | pass |
+| c6: the chain of the listener, through `pool run` | 0644 serves; 0664 and 0646 are refused before the journal is written | the daemon serves; exit 3 `secret.permissions at listener.tls_certificate_file`, start sequence still 0 | pass |
+| c6: the owner, in the Linux container with `pool` as `postgres` | root and the service account are taken, another account is refused | owned by root: exit 0; owned by `nobody`: exit 3 `secret.permissions`; owned by `postgres` with mode 0664: exit 3 | pass |
+| c6: why the tests copy the CA with mode 0644 | `git archive` leaves group write on the files it makes | in the build image, after `git archive` and `tar`, `ca.pem`, `node.key` and `Cargo.toml` have mode 664 (`tar.umask` is not set, so its default applies). The product would refuse that CA, so a test that needs a good CA makes a copy with mode 0644. `linux-build` passes with those tests | as the developer says |
+| c9 | The journal locked by the probe when a second primary appears, then SIGTERM while it is still locked | exit 0; after `daemon.stopping` the loop tries once more (`journal.write_failed` `journal.busy`), writes `authority.conflict_latched` with `recorded` false, then `daemon.stopped`; the journal holds no latch, which the spec accepts for a disk that fails | pass |
+| c9, the other way | The journal is free again when the signal comes | exit 0, the last try writes the latch (`conflict_latched` 1, the lines `recorded` false then true) | pass |
+| g2 | The baseline against the block under [Source guard](index.md#source-guard); then a line with `rusqlite` or `aws_lc_rs` added to fourteen files of a private copy | the 35 lines are the same; `rusqlite` is refused in `apps/pool`, `pool-core`, `pool-protocol`, `pool-config`, `pool-control/src/lib.rs` and the tests of `apps/pool`, and taken in `journal.rs` and the tests of `pool-control`; `aws_lc_rs` is refused in the four other members and taken in `pool-core` | pass |
+| g4: no test | `POOL_IT_FILTER=zq9_no_such_test scripts/check.sh integration` | exit 1, `integration: no test ran`, nothing left; on `c66cac7` also the line `POOL_IT_FILTER is set, only matching tests run` (decision 104) | pass |
+| g4: removal by ID | A container of the probe under the very name the script wants (its process ID is known before it starts) | the script exits 1 with `container ... did not start`, and that container is still there afterwards | pass |
+| g4: a signal to the script alone | SIGTERM while the test command sleeps | exit 1 after 0.3 s; its two containers, its temporary directory and the test command are gone | pass |
+| Decision 103: the watchdog | A private copy of the script with the limit at 5 s and a test command that sleeps 60 s | exit 1 after 8 s in all, `integration: the tests did not end within 5 seconds`, nothing left | pass |
+| Decision 103, on `099a597`: what the watchdog leaves | A run that ends by itself with its output through a pipe; and the processes left after a signal | **the `sleep 1800` of the watchdog stayed for up to 30 minutes after every run and held the output of the caller: no end of file on the pipe 20 s after the script had exited. After a signal the watchdog itself stayed too, and would have sent SIGTERM 30 minutes later to a process group number that was long gone.** 17 such `sleep` processes were on the machine | **fail on `099a597`**, sent to the developer |
+| The same on `c66cac7`, after `ce61930` | the watchdog has a process group of its own and ends with the script | end of file on the pipe at once; no process of the run left after a signal or after a normal end; the watchdog still ends a test command that hangs | pass |
+| Decision 101 | `integration.rs` no longer calls `sqlite3`; the unit test of the six states | no call of the tool is left; `each_state_that_is_not_ready_gives_its_own_finding` fails when the finding of the hold is changed; the daemon probe sets the hold with SQLite of its own and gets `authority.restore_pending` from `pool run` | pass |
+| Decision 100 | A fuzz manifest that no longer fits its lockfile; `POOL_FUZZ_SECONDS=0` | `scripts/check.sh fuzz` exits 1 with `cannot update the lock file ... --locked`; exit 1 with `POOL_FUZZ_SECONDS must be a whole number of seconds above 0` | pass |
+| Decision 102 | Two wrong changes to `data_row` | both caught by `data_row_refuses_every_body_that_lies_about_its_columns` | pass |
+| The new key `probe.node_loss_timeout_ms` | 999, 1000, 3600000, 3600001, 0, a negative number, a text, a fraction, a number too large | 1000 and 3600000 are valid; 999, 3600001 and 0 are `config.invalid_value` at the key; the others are refused | pass |
+
+#### Wrong changes to the code of step 15
+
+One at a time in a private clone, each against `cargo test --locked` of its package and then `scripts/check.sh integration`.
+
+| Wrong change | Result |
+|---|---|
+| S1. Step 8 does not compare the timeline | caught by `ac29_the_node_must_name_the_system_identifier_and_timeline_of_the_route_and_not_be_in_recovery` |
+| S2. Step 8 does not compare the system identifier | caught by the same test |
+| S3. Step 8 takes a node that says it is in recovery | caught by the same test |
+| S4. Step 8 does not ask for the status `I` after the answer | **not caught** |
+| S5. A failed step 8 lets the session go on | caught by the `ac29_..._is_refused_with_08006` tests |
+| S6. The status byte of `ReadyForQuery` is read with no race against a conflict or shutdown (c1) | caught by the two `c1_...` tests |
+| S7. After a task ended, the daemon calls `shutdown` and not `shutdown_now` (c2) | **not caught** |
+| S8. A probe task that ends is not noticed (c2) | **not caught** |
+| S9. No last try for a latch at shutdown (c9) | **not caught** |
+| S10. A failure of another class does not start the time of silence again | caught by `ac30_a_failure_of_another_class_starts_the_time_again` |
+| S11. A good sample does not take the mark away | caught by `ac30_a_good_sample_starts_the_time_again_and_removes_the_mark` |
+| S12. `node.lost` is written in every round | caught by `ac30_connect_and_timeout_for_the_whole_time_mark_the_writer_lost_once` |
+| S13. The route view never carries the flag `lost` | caught by `ac30_only_the_writer_counts_and_the_view_carries_the_mark` |
+| S14. The listener socket has no keepalive | **not caught** |
+| S15. A socket to a node has no keepalive | caught by `ac30_a_socket_to_a_node_has_keepalive_on_before_it_connects` |
+| S16. A CA file that the group can write is taken (c6) | caught by `c6_a_ca_file_or_chain_that_others_can_write_or_that_another_account_owns_is_refused` |
+| S17. A CA file of any owner is taken (c6) | caught by the same test |
+| S18. A session on a lost node is told `57P01` | caught by `ac30_an_idle_session_on_a_lost_node_gets_08006` |
+
+Thirteen of eighteen are caught. The five that are not are all in what the probes above showed to work, so they are gaps in the tests and not faults of the product. The first run of this table hung at S4: the runner read the output of the integration check through a pipe, which is how the fault of the watchdog was found.
+
+#### The older steps of this record
+
+Run again, because the files they exercise changed since `af23fa4`:
+
+| Step | Result on `099a597` |
+|---|---|
+| The command probe with no database (state directory, files, lock, secret files, output) | 100 checks, 0 mismatches |
+| The fixture probe (bootstrap, `show-authority`, the probe of the monitor login, a stopped bootstrap, the bytes of a real server) | 34 checks, 0 mismatches |
+| The daemon probe, every section of the runs of milestone 4 and of the full verification, together with the new ones: 34 runs of the daemon, 506 log lines | 165 checks, 0 mismatches in the last pass |
+| The whole binary of `apps/pool/tests/commands.rs`, again and again, on `c66cac7`. Its `ac13` test now holds a listener on the port while `pool run` runs and keeps the output of a failure (commit `331d64e`) | macOS: 30 of 30. The pinned Linux image, as a user that is not root: 31 of 31. No failure and no hang, 19 tests each |
+
+Not run again, with the reason:
+
+- **The lock file probes on Linux.** `apps/pool/src/state.rs` has not changed since `fd62cf4`.
+- **The byte level probe programs of milestones 2 and 3 and of step 9** (the checker's own Rust programs against `pool-protocol` and `pool-core`). They are built against the interfaces of those trees. What changed there is covered in other ways here: the startup parser by the packets sent to the real daemon and by the fuzz check, step 8 and the lost flag by the fixture and by the wrong changes above.
+- **`scripts/prove-checks.sh`**, as said above.
+
+#### Notes that are not failures
+
+- **A stderr that nobody reads.** When the reader of stderr goes away, every write of the log fails without a sign and the daemon serves on: 15 s later it still took a login, and SIGTERM ended it with exit 0. The log task ends only when it panics, so `daemon.failed` with the task `log` is not what a closed stderr gives. The spec does not ask for more. For the architect, since an operator then has a daemon with no log.
+- **One of ten.** In one pass, made while the wrong changes were built beside it, the session with a statement in flight got no message at the shutdown deadline and was closed. In the nine other runs of that case it got `08007`, and never `57P01`. The statement of the probe sends a notice every 0.2 s and the deadline fell on such a moment; the spec allows a close without a message when a message is partly written. Not shown to be that, and not seen again in eight runs made for it.
+- **A configuration that expects another writer than the journal approves** also sets a conflict latch when that other node answers as a primary: it is a primary that the journal did not approve. The cluster was closed anyway. Seen in the probe for decision 105.
+- **`node.lost` for a writer that never answered** comes 3 s after the start in the probe, as the paragraph of decision 105 says it can.
+- **The identity question is visible on the node**: one more statement per login in a log with `log_statement = 'all'`, as the spec says.
+- **Mistakes of the probe in earlier passes**, corrected before the clean pass: it read only the first line of a statement in the PostgreSQL log; its relay accepted a connection and closed it where it meant to refuse the connect, which gives the class `tls` and not `connect`; it expected a closed stderr to end the log task; it did not know the event `node.lost`; and a statement left asleep by one section was counted by another.
+
+#### For the tester
+
+- **The status `I` after the answer of step 8** (S4) has no test: a scripted node that answers the question and then says `T` or `E`.
+- **The listener socket's keepalive** (S14) has no test, so the first half of the first sentence of `0004 AC-30` is held by nothing. On Linux a test can accept a connection and read the option from the accepted socket.
+- **The daemon's own path for a task that ends** (S7, S8): `Server::shutdown_now` is tested in `pool-core`, the watch on the tasks, `daemon.failed` and exit 3 are not. A test needs a task that can be made to end, which the product does not offer; the checker put a fault into a private copy.
+- **The last try for a latch at shutdown** (S9) has no test. The unit test with a second holder of the journal can stop the loop and look for the line.
+- **`0004 AC-29` on the fixture** has a test for another system identifier only, by the nature of the fixture. The error case (the right to run the function taken away) can be made there, as the probe did.
