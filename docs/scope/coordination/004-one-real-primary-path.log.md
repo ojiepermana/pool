@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `004-one-real-primary-path.brief-umum.md` · **Langkah manual:** `004-one-real-primary-path.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 17:44`
+- **Diperbarui:** `2026-11-15 17:47`
 
 ## Sub sesi wave `1`
 
@@ -71,6 +71,7 @@
 | 2026-11-15 | Gerbang langkah 4 di `main`: merge `aad0a94` tanpa konflik, sembilan file ownership, worktree bersih; `scripts/check.sh all` lulus; graph kode delapan file di dalam commit merge = `8332451` (4278 node, komunitas baru untuk `pool-protocol`); sesudah commit `scripts/check.sh linux-build` lulus. Dimulai: `dev-f4-m1` langkah 7 (`crates/pool-core/`), `chk-f4-verify` verify milestone 2 (Range `486b90e..8332451`). `dev-f4-m2` masih di langkah 6. Item architect tentang pengecualian lisensi tanpa versi dan cek pemakaian dependensi berjalan. | lead |
 | 2026-11-15 | Gerbang langkah 6 di `main`: merge `dff749e` tanpa konflik, sebelas file ownership, worktree bersih; `scripts/check.sh all` lulus; `grep` jam, file, dan environment di `crates/pool-control/src` kosong, `rusqlite` hanya di `journal.rs`; graph kode sepuluh file di dalam commit merge = `ca02e92` (4453 node); sesudah commit `scripts/check.sh linux-build` lulus. Catatan developer: `Controller::state()` dan `board()` (accessor baca saja di luar blok spec) dan alasan `authority.unreadable` saat generation habis, untuk dinilai checker; `crates/pool-control/AGENTS.md` basi, untuk `/sync`. `dev-f4-m2` menunggu langkah 7 untuk langkah 8. | lead |
 | 2026-11-15 | Laporan `done` architect (commit `4301748`): keputusan 50 (pengecualian lisensi terikat versi persis, `berat`; `cargo-deny 0.20.2` diuji pada salinan `deny.toml`) dan 51 (cek pemakaian nyata untuk kalimat terakhir `0004 AC-1`). Keduanya arah yang lead minta, jadi dianggap `accept`; gerbang dokumen lulus; merge = `e3d06a2`. Item developer `deny.toml` (lima baris) diberikan ke `dev-f4-m2`, karena `dev-f4-m1` di langkah 7. Akibat untuk operasi: tiap kenaikan versi salah satu dari lima paket itu, juga patch keamanan, menunggu pemeriksaan lisensi oleh orang. Tindak lanjut kecil: satu kalimat "each for one exact version" pada catatan spec 0002 "Dependency policy". | lead (mode `auto`) |
+| 2026-11-15 | Gerbang keputusan 50 di `main`: merge `e10ec05` (hanya `deny.toml`, lima baris `crate = "<nama>@=<versi>"`); `scripts/check.sh deny` dan `guards` lulus; commit merge = `e01902b`. Developer melaporkan `check.sh all` dan `prove-checks` lulus pada `e10ec05`, dan dua probe (versi diubah di salinan) membuat `deny` gagal. `deny.toml` bukan file kode, jadi graph tidak berubah. | lead |
 
 ## Keputusan delegasi
 
