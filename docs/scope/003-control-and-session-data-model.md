@@ -18,7 +18,7 @@ Before 004, the control and protocol owners agree how to distinguish first boots
   - [x] Witness in writer admission: step 9 (`AC-16`), after the milestone "Authority model and the four walks"
 - [x] Verify it: `/check verify control and session data model`
 - [x] Test it: `/test control and session data model`
-- [ ] Review it (fresh model): `/check review control and session data model`
+- [x] Review it (fresh model): `/check review control and session data model`
 - [ ] Document it: `/document control and session data model`
 
 Spec [0003](../specs/0003-control-and-session-data-model/index.md) · code in `crates/pool-config/`, `crates/pool-control/`, `apps/pool/src/report.rs`, `tools/repo-check/`.
