@@ -1489,6 +1489,25 @@ fn ac4_validate_opens_no_file() {
     );
     let config = accepted(text.as_bytes());
     assert_eq!(config.identities().len(), 1);
+
+    // Paths that exist are not read either: the credential file below holds
+    // the canary and invalid TOML, and the state directory is a directory.
+    // A read would show as a changed answer or as the canary in the text.
+    let manifest = env!("CARGO_MANIFEST_DIR");
+    let secret = format!("{manifest}/tests/fixtures/secret-topology-values.toml");
+    assert!(
+        std::fs::read_to_string(&secret)
+            .expect("the fixture exists")
+            .contains(CANARY)
+    );
+    let text = format!(
+        "{}\n[[identity]]\nid = \"a\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"{secret}\"\n",
+        BASE.replace("/var/lib/pool", manifest),
+    );
+    let config = accepted(text.as_bytes());
+    assert_eq!(config.identities().len(), 1);
+    let debug = format!("{config:?} {:?}", config.identities()[0].credential());
+    assert!(!debug.contains(CANARY), "{debug}");
 }
 
 #[test]
@@ -2095,8 +2114,8 @@ fn ac5_an_empty_identity_map_resolves_nothing() {
 }
 
 // Large files: time and positions. The four made inputs follow the text
-// proposed for `0003 AC-15` ("Validation time", commit c72cdfc of
-// arc-f3-spec, not yet accepted) and the existing rule under "Keys" that the
+// of `0003 AC-15` ("Validation time", first written in commit c72cdfc of
+// arc-f3-spec) and the existing rule under "Keys" that the
 // checks must not take time that grows with the square of the number of
 // entries. Asked for by dev-f3-build as the regression tests of the fix
 // "position lookup no longer rescans the file".
@@ -2166,7 +2185,7 @@ fn ac15_inline(port: u16) -> (String, usize) {
 
 #[test]
 fn ac15_made_inputs_have_the_listed_size() {
-    // covers: 0003 AC-15 (proposed). Fast: builds the inputs only.
+    // covers: 0003 AC-15. Fast: builds the inputs only.
     let sizes = [ac15_input_1(), ac15_inline(5432), ac15_inline(0)]
         .map(|(text, count)| (count, text.len()));
     assert_eq!(
@@ -2181,7 +2200,7 @@ fn ac15_made_inputs_have_the_listed_size() {
 
 #[test]
 fn ac15_large_valid_inputs_validate_within_ten_seconds() {
-    // covers: 0003 AC-15 (proposed), 0003 AC-1. Inputs 1 and 2 are valid.
+    // covers: 0003 AC-15, 0003 AC-1. Inputs 1 and 2 are valid.
     // Each call is timed and checked before the next one starts.
     for (name, (text, count)) in [("input 1", ac15_input_1()), ("input 2", ac15_inline(5432))] {
         let started = std::time::Instant::now();
@@ -2194,7 +2213,7 @@ fn ac15_large_valid_inputs_validate_within_ten_seconds() {
 
 #[test]
 fn ac15_one_finding_per_entry_on_one_line_at_each_value() {
-    // covers: 0003 AC-15 (proposed), 0003 AC-2, AC-3. Input 3: every entry
+    // covers: 0003 AC-15, 0003 AC-2, AC-3. Input 3: every entry
     // has port 0, so every entry gives `config.invalid_value` at `node.port`,
     // in file order, on line 2, at the column where its value starts.
     let (text, count) = ac15_inline(0);
@@ -2230,7 +2249,7 @@ fn ac15_one_finding_per_entry_on_one_line_at_each_value() {
 
 #[test]
 fn ac15_findings_follow_the_validation_order_against_the_file_order() {
-    // covers: 0003 AC-15 (proposed), 0003 AC-3. Input 4: the node checks of
+    // covers: 0003 AC-15, 0003 AC-3. Input 4: the node checks of
     // step 4 come before the duplicate id of step 6.
     let text = format!(
         "{}\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"10.0.0.12\"\nport = 0\n",
@@ -2322,9 +2341,8 @@ fn ac3_positions_count_scalars_with_crlf_and_at_block_boundaries() {
         let (before_control, after_control) =
             head.split_at(head.find("[control]").expect("control"));
         let base_offset = before_control.len() + fixed;
-        if base_offset > target {
-            continue;
-        }
+        // Every target is reachable, so no target is skipped.
+        assert!(base_offset <= target, "{base_offset} > {target}");
         let pad = "x".repeat(target - base_offset);
         let text =
             format!("{before_control}#{pad}\r\n{line_start}\"relative\" }}]\r\n{after_control}");
@@ -2345,5 +2363,222 @@ fn ac3_positions_count_scalars_with_crlf_and_at_block_boundaries() {
             )],
             "target {target}"
         );
+    }
+}
+
+// Gaps named by the review of 2026-11-15 (t1, t2, t4), added by /test. Each
+// case fails if the rule it names is removed from the cross checks or from
+// the finding text.
+
+#[test]
+fn ac2_a_repeated_cluster_id_is_reported_at_each_later_entry() {
+    // covers: 0003 AC-2, AC-3 (review t1). Cross check 1 for clusters.
+    let cluster = |sys: &str| {
+        format!(
+            "[[cluster]]\nid = \"main\"\nsystem_identifier = \"{sys}\"\nexpected_writer = \"pg1\"\n"
+        )
+    };
+    let text = base_plus(&cluster("2"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::DuplicateId, key_at("cluster.id", 18, 6))]
+    );
+    let text = base_plus(&format!("{}\n{}", cluster("2"), cluster("3")));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("cluster.id", 18, 6)),
+            (FindingCode::DuplicateId, key_at("cluster.id", 23, 6)),
+        ]
+    );
+}
+
+#[test]
+fn ac3_repeated_ids_are_reported_clusters_then_nodes_then_identities() {
+    // covers: 0003 AC-3 (review t1). Cross check 1 runs over clusters, then
+    // nodes, then identities, whatever the order of the tables in the file.
+    let text = "config_version = 1
+
+[[identity]]
+id = \"a\"
+principal = \"p\"
+database = \"d\"
+cluster = \"main\"
+backend_login = \"l\"
+credential_file = \"/c\"
+
+[[identity]]
+id = \"a\"
+principal = \"p2\"
+database = \"d\"
+cluster = \"main\"
+backend_login = \"l\"
+credential_file = \"/c\"
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"10.0.0.11\"
+port = 5432
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"10.0.0.12\"
+port = 5432
+
+[[cluster]]
+id = \"main\"
+system_identifier = \"1\"
+expected_writer = \"pg1\"
+
+[[cluster]]
+id = \"main\"
+system_identifier = \"2\"
+expected_writer = \"pg1\"
+
+[control]
+state_directory = \"/var/lib/pool\"
+";
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("cluster.id", 37, 6)),
+            (FindingCode::DuplicateId, key_at("node.id", 26, 6)),
+            (FindingCode::DuplicateId, key_at("identity.id", 12, 6)),
+        ]
+    );
+}
+
+#[test]
+fn ac2_a_bad_cluster_id_skips_only_the_writer_check_of_that_cluster() {
+    // covers: 0003 AC-2 (review t2, `topology.rs:731`). The expected_writer
+    // check still runs for every other cluster.
+    let bad = base_with_line(7, "id = \"Main\"");
+    let text = format!(
+        "{bad}\n[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg1\"\n"
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::InvalidValue, key_at("cluster.id", 7, 6)),
+            (
+                FindingCode::UnknownReference,
+                key_at("cluster.expected_writer", 20, 19)
+            ),
+        ]
+    );
+    // The other cluster with a writer of its own gives no finding.
+    let text = format!(
+        "{bad}\n[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg2\"\n\n[[node]]\nid = \"pg2\"\ncluster = \"other\"\nhost = \"10.0.0.12\"\nport = 5432\n"
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("cluster.id", 7, 6))]
+    );
+}
+
+#[test]
+fn ac2_a_node_with_a_bad_cluster_skips_every_writer_check() {
+    // covers: 0003 AC-2 (review t2, `topology.rs:728`). A node whose cluster
+    // failed its check skips cross check 3 as a whole.
+    let text = base_with_line(13, "cluster = \"Main\"");
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.cluster", 13, 11))]
+    );
+    // Also when the bad node is not the writer, and another cluster names a
+    // writer that does not exist.
+    let text = base_plus(
+        "[[node]]\nid = \"pg2\"\ncluster = \"Main\"\nhost = \"10.0.0.12\"\nport = 5432\n\n[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg9\"\n",
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.cluster", 19, 11))]
+    );
+}
+
+#[test]
+fn ac2_a_node_whose_port_failed_is_left_out_of_the_endpoint_check() {
+    // covers: 0003 AC-2, AC-15 (review t2, `topology.rs:772`). Two nodes with
+    // the same host and port 0 give the two port findings and nothing else.
+    let second = |port: &str| {
+        format!("[[node]]\nid = \"pg2\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = {port}\n")
+    };
+    let text = format!("{}\n{}", base_with_line(15, "port = 0"), second("0"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::InvalidValue, key_at("node.port", 15, 8)),
+            (FindingCode::InvalidValue, key_at("node.port", 21, 8)),
+        ]
+    );
+    let text = format!("{}\n{}", base_with_line(15, "port = 0"), second("5432"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.port", 15, 8))]
+    );
+}
+
+/// The canary in positions other than a string value of a known key: keys
+/// that are not in the schema, table names, comments, array entries, values
+/// of the wrong type and a string that does not end. Each text is refused.
+fn canary_positions() -> Vec<String> {
+    let c = CANARY;
+    let node = |line: &str| {
+        format!(
+            "[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = 5432\n{line}\n"
+        )
+    };
+    let base_without_node = BASE
+        .split("[[node]]")
+        .next()
+        .expect("the base has a node")
+        .to_owned();
+    vec![
+        // A key that is not in the schema, inside each table.
+        base_with_line(4, &format!("state_directory = \"/var/lib/pool\"\n{c} = 1")),
+        base_with_line(9, &format!("expected_writer = \"pg1\"\n{c} = \"x\"")),
+        format!("{base_without_node}{}", node(&format!("{c} = true"))),
+        identity_with(c, "1"),
+        format!("{base_without_node}{}", node(&format!("\"{c}\" = 1"))),
+        base_with_line(
+            4,
+            &format!("state_directory = \"/var/lib/pool\"\n{c}.x = 1"),
+        ),
+        format!(
+            "{base_without_node}node = [{{ id = \"pg1\", cluster = \"main\", host = \"h\", port = 1, {c} = 1 }}]\n"
+        ),
+        // A table name.
+        base_plus(&format!("[{c}]\nx = 1\n")),
+        base_plus(&format!("[[{c}]]\nx = 1\n")),
+        base_plus(&format!("[control.{c}]\nx = 1\n")),
+        base_plus(&format!("[\"{c}\"]\n")),
+        // A comment in a file that is refused.
+        format!("# {c}\n{}", base_with_line(15, &format!("port = 0 # {c}"))),
+        // An array entry, and values of the wrong type.
+        base_with_line(15, &format!("port = [\"{c}\"]")),
+        base_with_line(15, &format!("port = \"{c}\"")),
+        base_with_line(12, &format!("id = [\"{c}\"]")),
+        base_with_line(14, &format!("host = {{ {c} = 1 }}")),
+        base_with_line(8, &format!("system_identifier = [1, \"{c}\"]")),
+        identity_with("routing_profile", &format!("[\"{c}\"]")),
+        // A string that does not end, and a key with no value.
+        base_with_line(14, &format!("host = \"{c}")),
+        base_plus(&format!("[[identity]]\n{c}\n")),
+    ]
+}
+
+#[test]
+fn ac4_a_canary_outside_a_value_never_reaches_rejection_text() {
+    // covers: 0003 AC-4 (review t4). Each text is refused, and neither the
+    // Debug nor the Display of the rejection holds any part of the canary.
+    for text in canary_positions() {
+        let rejection = rejected(text.as_bytes());
+        assert!(!rejection.findings().is_empty(), "{text}");
+        for rendered in [format!("{rejection:?}"), rejection.to_string()] {
+            assert!(!rendered.contains(CANARY), "{text}\n{rendered}");
+            assert!(!rendered.contains("9f2c7b1e"), "{text}\n{rendered}");
+        }
     }
 }

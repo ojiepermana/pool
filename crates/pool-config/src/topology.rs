@@ -917,8 +917,10 @@ mod edge_tests {
         for text in ["::1", "a.b-c:d", "A.B", "1", "."] {
             assert!(parse_host(text).is_some(), "{text:?}");
         }
+        // The allowed bytes, written out rather than taken from the code.
+        let allowed_bytes = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-:";
         for byte in 0_u8..=0x7f {
-            let allowed = byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b':');
+            let allowed = allowed_bytes.contains(&byte);
             let text = format!("a{}b", char::from(byte));
             assert_eq!(parse_host(&text).is_some(), allowed, "{byte:#x}");
         }
