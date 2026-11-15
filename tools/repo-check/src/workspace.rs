@@ -232,17 +232,21 @@ fn members(tree: &dyn Tree, report: &mut Report) -> Vec<Member> {
 
 /// Returns the package names of the entries of a lockfile that have no `source` line.
 ///
-/// An entry is the lines from one `[[package]]` line to the next, or to the end of the file.
+/// An entry is the lines from one `[[package]]` line to the next line that starts with `[`, or to the end of the
+/// file (spec 0004, "Proof script and lockfile check"). So a table that Cargo writes after the packages, such as
+/// `[[patch.unused]]`, is never part of the last entry.
 pub fn local_packages(text: &str) -> Vec<String> {
     let mut names = Vec::new();
     let mut entry: Option<(Option<String>, bool)> = None;
     for line in text.lines() {
         let line = line.trim();
-        if line == "[[package]]" {
+        if line.starts_with('[') {
             if let Some((Some(name), false)) = entry.take() {
                 names.push(name);
             }
-            entry = Some((None, false));
+            if line == "[[package]]" {
+                entry = Some((None, false));
+            }
         } else if let Some((name, has_source)) = entry.as_mut() {
             match key_value(line) {
                 Some(("name", value)) if name.is_none() => {
@@ -1016,8 +1020,9 @@ mod tests {
 #[cfg(test)]
 mod lockfile_edge_tests {
     //! Edges of the W4 lockfile check of spec 0003, added by /test
-    //! (0003 AC-13). "An entry is the lines from one `[[package]]` line to
-    //! the next, or to the end of the file."
+    //! (0003 AC-13). Since spec 0004 (`0004 AC-4`) an entry is the lines
+    //! from one `[[package]]` line to the next line that starts with `[`,
+    //! or to the end of the file.
 
     use super::*;
     use crate::tree::MemTree;
@@ -1207,26 +1212,25 @@ mod lockfile_edge_tests {
     }
 
     #[test]
-    fn w4_a_table_after_the_last_entry_counts_as_part_of_it() {
-        // Pins the behaviour that the spec text defines: the last entry runs
-        // to the end of the file. Cargo writes `[[patch.unused]]` tables
-        // after the packages, with their own `source` line. Such a table
-        // after a local last entry hides that entry from W4; this is the
-        // gap the developer's verification record names. A local last entry
-        // followed by a table without `source` is still found.
+    fn w4_a_table_after_the_last_entry_ends_it() {
+        // Spec 0004, "Proof script and lockfile check": an entry ends at the
+        // next line that starts with `[`. Cargo writes `[[patch.unused]]`
+        // tables after the packages, with their own `source` line; such a
+        // table no longer hides a local last entry from W4.
         let unused =
             format!("\n[[patch.unused]]\nname = \"other\"\nversion = \"1.0.0\"\n{REGISTRY}");
         let names = ["pool", "pool-config", "serde", "ghost"];
-        let hidden = format!(
+        let found = format!(
             "{}{}{}{}{unused}",
             local("pool"),
             local("pool-config"),
             registry("serde"),
             local("ghost")
         );
-        assert_eq!(local_packages(&hidden), ["pool", "pool-config"]);
-        assert_eq!(w4_lines(&tree(&hidden, &names)), Vec::<String>::new());
+        assert_eq!(local_packages(&found), ["pool", "pool-config", "ghost"]);
+        assert_eq!(w4_lines(&tree(&found, &names)), [GHOST]);
 
+        // Any table ends the entry, also one without a `source` line.
         let metadata = format!(
             "{}{}{}{}\n[metadata]\nnote = \"no source here\"\n",
             local("pool"),
@@ -1235,6 +1239,16 @@ mod lockfile_edge_tests {
             local("ghost")
         );
         assert_eq!(w4_lines(&tree(&metadata, &names)), [GHOST]);
+
+        // A `source` line after a table belongs to no entry: it does not
+        // hide the local entry before the table.
+        let after_table = format!("{}{}[metadata]\n{REGISTRY}", local("pool"), local("ghost"));
+        assert_eq!(local_packages(&after_table), ["pool", "ghost"]);
+
+        // A table without a `name` line is not an entry, and its lines are
+        // not read as one.
+        let unused_only = format!("{}{unused}", local("pool"));
+        assert_eq!(local_packages(&unused_only), ["pool"]);
 
         // After a registry last entry the table changes nothing.
         let after_registry = format!(
