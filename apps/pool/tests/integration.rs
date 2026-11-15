@@ -544,6 +544,8 @@ fn eventually(seconds: u64, what: &str, mut check: impl FnMut() -> bool) {
 struct Daemon {
     child: std::process::Child,
     log: PathBuf,
+    /// The folder of the test, which the log must never name.
+    root: PathBuf,
 }
 
 impl Daemon {
@@ -558,7 +560,11 @@ impl Daemon {
             .stderr(stderr)
             .spawn()
             .expect("start pool run");
-        Daemon { child, log }
+        Daemon {
+            child,
+            log,
+            root: case.root.clone(),
+        }
     }
 
     fn log(&self) -> String {
@@ -584,31 +590,54 @@ impl Daemon {
         }
     }
 
-    /// Waits for the exit status after a signal the test sent itself.
-    fn stop_after_signal(mut self) -> i32 {
-        let code = self
-            .child
-            .wait()
-            .expect("wait")
-            .code()
-            .expect("an exit status");
-        std::mem::forget(self);
-        code
+    /// Waits for the exit status after a signal the test sent itself, at
+    /// most 45 seconds, and checks the whole log.
+    fn stop_after_signal(self) -> i32 {
+        self.finish("after the signal that the test sent", 45)
     }
 
-    /// Sends SIGTERM and waits for the exit status.
-    fn stop(mut self) -> i32 {
+    /// Sends SIGTERM, waits for the exit status at most 45 seconds (more than
+    /// the default `limits.shutdown_timeout_ms` of 30 seconds), and checks the
+    /// whole log.
+    fn stop(self) -> i32 {
+        self.terminate();
+        self.finish("after SIGTERM from Daemon::stop", 45)
+    }
+
+    fn terminate(&self) {
         let status = Command::new("kill")
             .args(["-TERM", &self.child.id().to_string()])
             .status()
             .expect("kill");
         assert!(status.success());
-        let code = self
-            .child
-            .wait()
-            .expect("wait")
-            .code()
-            .expect("an exit status");
+    }
+
+    /// Waits at most `seconds` for the daemon to exit. One that is still
+    /// running then is killed and the test fails with a message that names
+    /// `stage`. After the exit, every line of the log must be an event of the
+    /// table with only its fields and name nothing of the fixture (round three
+    /// of the tests: every run of the daemon is checked, also those that make
+    /// the probe fail).
+    fn finish(mut self, stage: &str, seconds: u64) -> i32 {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+        let status = loop {
+            if let Some(status) = self.child.try_wait().expect("try_wait") {
+                break status;
+            }
+            if std::time::Instant::now() >= deadline {
+                let _ = self.child.kill();
+                let _ = self.child.wait();
+                panic!(
+                    "the daemon did not exit within {seconds} s {stage}; it was killed. Its log:\n{}",
+                    self.log()
+                );
+            }
+            pause();
+        };
+        let log = self.log();
+        assert_log_fields(&log);
+        assert_log_text_is_clean(&self.root, &log);
+        let code = status.code().expect("an exit status, not a signal");
         std::mem::forget(self);
         code
     }
@@ -684,6 +713,11 @@ fn ready_case(name: &str) -> (Case, u16, AuthorityId) {
 /// Every line of the log is one JSON object with `ts`, `level` and `event`
 /// first, and nothing in the whole log names what it must not.
 fn assert_log_is_clean(case: &Case, log: &str) {
+    assert_log_text_is_clean(&case.root, log);
+}
+
+/// The same for the folder `root` of a test.
+fn assert_log_text_is_clean(root: &Path, log: &str) {
     for line in log.lines() {
         assert!(line.starts_with("{\"ts\":\""), "{line}");
         let after_ts = &line[32..];
@@ -693,7 +727,7 @@ fn assert_log_is_clean(case: &Case, log: &str) {
         assert!(value["event"].is_string(), "{line}");
         assert_ne!(value["event"], "log.unnamed", "{line}");
     }
-    let root = case.root.to_str().expect("utf-8").to_owned();
+    let root = root.to_str().expect("utf-8").to_owned();
     let dir = fixture_dir().to_str().expect("utf-8").to_owned();
     let secrets = [
         password("principal.password"),
@@ -1789,26 +1823,11 @@ fn wait_for_more(daemon: &Daemon, parts: &[&str], before: usize, seconds: u64) {
 }
 
 impl Daemon {
-    /// Sends SIGTERM and waits at most `seconds` for the exit status; a daemon
-    /// that is still running then is killed and the test fails.
-    fn stop_within(mut self, seconds: u64) -> i32 {
-        let status = Command::new("kill")
-            .args(["-TERM", &self.child.id().to_string()])
-            .status()
-            .expect("kill");
-        assert!(status.success());
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
-        loop {
-            if let Some(status) = self.child.try_wait().expect("try_wait") {
-                std::mem::forget(self);
-                return status.code().expect("an exit status");
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "the daemon did not stop within {seconds} s"
-            );
-            pause();
-        }
+    /// Sends SIGTERM and waits at most `seconds` for the exit status, with
+    /// the checks of [`Daemon::finish`].
+    fn stop_within(self, seconds: u64) -> i32 {
+        self.terminate();
+        self.finish("after SIGTERM from Daemon::stop_within", seconds)
     }
 }
 
@@ -2092,6 +2111,34 @@ fn allowed_fields(event: &str) -> Option<&'static [&'static str]> {
     })
 }
 
+/// Every line of `log` is an event of the table under "Log events" with only
+/// its fields, each a string, a whole number or a boolean. Returns the events seen.
+fn assert_log_fields(log: &str) -> std::collections::BTreeSet<String> {
+    let mut seen = std::collections::BTreeSet::new();
+    for line in log.lines() {
+        let value: serde_json::Value = serde_json::from_str(line).expect("one JSON object");
+        let object = value.as_object().expect("an object");
+        let event = object["event"].as_str().expect("event is a string");
+        let allowed =
+            allowed_fields(event).unwrap_or_else(|| panic!("an event outside the table: {line}"));
+        for (key, field) in object {
+            if ["ts", "level", "event"].contains(&key.as_str()) {
+                continue;
+            }
+            assert!(
+                allowed.contains(&key.as_str()),
+                "{key} is not a field of {event}: {line}"
+            );
+            assert!(
+                field.is_string() || field.is_u64() || field.is_i64() || field.is_boolean(),
+                "{key} of {event} is not a string, a whole number or a boolean: {line}"
+            );
+        }
+        seen.insert(event.to_owned());
+    }
+    seen
+}
+
 #[test]
 #[ignore = "needs scripts/check.sh integration"]
 fn it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresql() {
@@ -2125,28 +2172,7 @@ fn it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresq
         fs::read_to_string(case.log_file()).unwrap_or_default()
     );
     assert!(!log.contains(canary), "the canary reached the log:\n{log}");
-    let mut seen = std::collections::BTreeSet::new();
-    for line in log.lines() {
-        let value: serde_json::Value = serde_json::from_str(line).expect("one JSON object");
-        let object = value.as_object().expect("an object");
-        let event = object["event"].as_str().expect("event is a string");
-        let allowed =
-            allowed_fields(event).unwrap_or_else(|| panic!("an event outside the table: {line}"));
-        for (key, field) in object {
-            if ["ts", "level", "event"].contains(&key.as_str()) {
-                continue;
-            }
-            assert!(
-                allowed.contains(&key.as_str()),
-                "{key} is not a field of {event}: {line}"
-            );
-            assert!(
-                field.is_string() || field.is_u64() || field.is_i64() || field.is_boolean(),
-                "{key} of {event} is not a string, a whole number or a boolean: {line}"
-            );
-        }
-        seen.insert(event.to_owned());
-    }
+    let seen = assert_log_fields(&log);
     for event in [
         "daemon.started",
         "admission.changed",

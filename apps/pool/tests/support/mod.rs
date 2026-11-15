@@ -78,14 +78,23 @@ pub async fn read_message<S: AsyncRead + Unpin>(stream: &mut S) -> io::Result<Me
 
 /// Reads messages until an `ErrorResponse` or the end of the stream, and
 /// returns the SQLSTATE of the error, or `None` when none came.
+///
+/// It waits at most 30 seconds (round three of the tests): a stream that
+/// sends nothing more and stays open fails the test with a message, so a
+/// daemon that never ends a session cannot stop the whole check.
 pub async fn next_error<S: AsyncRead + Unpin>(stream: &mut S) -> Option<String> {
-    loop {
-        match read_message(stream).await {
-            Ok(message) if message.tag == b'E' => return message.sqlstate(),
-            Ok(_) => {}
-            Err(_) => return None,
+    let read = async {
+        loop {
+            match read_message(stream).await {
+                Ok(message) if message.tag == b'E' => return message.sqlstate(),
+                Ok(_) => {}
+                Err(_) => return None,
+            }
         }
-    }
+    };
+    tokio::time::timeout(Duration::from_secs(30), read)
+        .await
+        .expect("an error message or the end of the stream within 30 s")
 }
 
 /// The bytes of a `Query` message.
