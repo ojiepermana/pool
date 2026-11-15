@@ -8,7 +8,7 @@ AGENTS.md above is the canonical agent guide (workflow, invariants, documentatio
 
 ## Current state and commands
 
-The repository holds the planning package, the scope 001 workspace (`apps/pool`, the `pool` binary, and `crates/pool-config`) and the scope 002 checks. The only product command is the offline `pool check-config`. There is no listener or proxy path yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
+The repository holds the planning package, the scope 001 workspace (`apps/pool`, the `pool` binary, and `crates/pool-config`), the scope 002 checks and the scope 003 build (`crates/pool-control`, and the cluster, node and identity keys in `pool-config`). The only product command is the offline `pool check-config`. There is no listener or proxy path yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
 
 Each check is one command, and CI (`.github/workflows/ci.yml`) runs the same commands ([spec 0002](docs/specs/0002-standards-and-tooling/index.md#the-check-entry-point)):
 
@@ -40,7 +40,7 @@ The ten numbered safety contracts in spec 0001 are the detailed form of the AGEN
 ## Working with the docs
 
 - [docs/scope/index.md](docs/scope/index.md) is the work queue: 17 features, the last 6 deferred. A status change must update both the index row and the feature file's heading. Feature numbers are stable across renames.
-- Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. Features 1 and 2 are done; their evidence is in the verification records of spec 0001 and spec 0002. The next queued feature is 3 (control and session data model), then the first walking slice whose acceptance is in [docs/testing/strategy.md](docs/testing/strategy.md).
+- Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. Features 1 and 2 are done; their evidence is in the verification records of spec 0001 and spec 0002. Feature 3 (control and session data model) is in progress: it is built, verified and reviewed on the workstation ([spec 0003](docs/specs/0003-control-and-session-data-model/verify.md)), and its pull request evidence is still owed. The next queued feature is 4, the first walking slice whose acceptance is in [docs/testing/strategy.md](docs/testing/strategy.md).
 - [docs/implementation-order.md](docs/implementation-order.md) gives the first handoff and the entry steps for later slices; the scope index owns the order. Create only what the current slice needs; do not scaffold the full proposed tree from `docs/repository-structure.md`.
 - Each fact has one owning file (see "Documentation ownership" in `docs/repository-structure.md`). Edit it there and link from other views. Terms are owned by [docs/glossary.md](docs/glossary.md). Adding or moving a document also means updating [docs/index.md](docs/index.md).
 - Feature status advances only with linked build and test evidence. Documentation alone never moves a scope feature to `done` or a feature inventory row to Implemented or Tested. The states are defined once in the scope index's status lifecycle.

@@ -26,6 +26,7 @@ cargo test -p pool --locked
 - Exit status is 0, 1, 2 or 3 as the [exit status table](../../docs/specs/0001-initial-architecture/index.md#exit-status-and-output) says. Exit 101 (a panic) is always a defect.
 - Write output with `write!` or `writeln!` on the locked `stdout` or `stderr` handle, flush, and turn a failed write into exit 3. Never use `print!`, `println!`, `eprint!` or `eprintln!`.
 - All output text comes from constants, schema key paths and numbers. Nothing read from the file, and no parser or operating system message text, reaches stdout or stderr. Each value's source is in [value sourcing](../../docs/specs/0001-initial-architecture/index.md#value-sourcing).
+- A finding inside a repeated table prints its key and its place, the fourth form of the finding line in [spec 0003](../../docs/specs/0003-control-and-session-data-model/index.md#findings). `output_version` stays `1`.
 - Usage error messages are constant lowercase text (`cli.rs`), and the first usage error ends the run.
 - The file read stays bounded: at most `MAX_CONFIG_BYTES` plus one byte, through `Read::take`.
 - Arguments are parsed by hand. Do not add a parser crate or any other dependency the path does not use ([adopted dependencies](../../docs/specs/0001-initial-architecture/index.md#adopted-dependencies)).

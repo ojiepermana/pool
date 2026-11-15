@@ -3,6 +3,7 @@ itoa
 memchr
 pool
 pool-config
+pool-control
 proc-macro2
 quote
 serde

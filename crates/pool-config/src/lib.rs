@@ -7,6 +7,19 @@
 
 use std::fmt;
 
+mod generation;
+mod identifier;
+mod topology;
+
+pub use generation::{AuthorityRevision, StartSequence, TopologyEpoch};
+pub use identifier::{AuthorityId, ClusterId, IdentityId, NodeId, SystemIdentifier};
+pub use topology::{
+    ClusterConfig, ControlConfig, IdentityRoute, NodeConfig, RoutingProfile, SecretReference,
+};
+
+use toml::Spanned;
+use topology::{IdentityIndex, RawCluster, RawControl, RawIdentity, RawNode, RawTopology};
+
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 
 /// The largest configuration file accepted, in bytes. A file of exactly this
@@ -22,15 +35,29 @@ const KEY_AUTOMATIC_PROMOTION_ENABLED: &str = "automatic_promotion.enabled";
 
 /// A configuration that passed every validation step.
 ///
+/// Restart rule: read and validated again from the file at each start.
+/// Nothing is remembered from the last run.
+///
 /// It has no public constructor; [`validate`] returns one only when the file
 /// produced no finding. Code outside this crate cannot build one:
 ///
-/// ```compile_fail
-/// let config = pool_config::ValidatedConfig {
-///     config_version: 1,
-///     result_cache: pool_config::CapabilityState::Disabled,
-///     automatic_promotion: pool_config::CapabilityState::Disabled,
-/// };
+/// ```compile_fail,E0451
+/// fn change(valid: pool_config::ValidatedConfig) -> pool_config::ValidatedConfig {
+///     pool_config::ValidatedConfig { config_version: 2, ..valid }
+/// }
+/// ```
+///
+/// The same function through the public functions compiles, so the snippet
+/// above can fail only because the fields are private (the code after the
+/// comma is not checked by the stable compiler):
+///
+/// ```
+/// fn change(valid: pool_config::ValidatedConfig) -> pool_config::ValidatedConfig {
+///     assert_eq!(valid.config_version(), 1);
+///     valid
+/// }
+/// let valid = pool_config::validate(b"config_version = 1\n").expect("valid");
+/// let _ = change(valid);
 /// ```
 ///
 /// ```compile_fail
@@ -41,6 +68,11 @@ pub struct ValidatedConfig {
     config_version: u32,
     result_cache: CapabilityState,
     automatic_promotion: CapabilityState,
+    control: Option<ControlConfig>,
+    clusters: Vec<ClusterConfig>,
+    nodes: Vec<NodeConfig>,
+    identities: Vec<IdentityRoute>,
+    identity_index: IdentityIndex,
 }
 
 impl ValidatedConfig {
@@ -57,6 +89,37 @@ impl ValidatedConfig {
     /// The state of the reserved `automatic_promotion` capability.
     pub fn automatic_promotion(&self) -> CapabilityState {
         self.automatic_promotion
+    }
+
+    /// The `[control]` table, or `None` when the file has none.
+    pub fn control(&self) -> Option<&ControlConfig> {
+        self.control.as_ref()
+    }
+
+    /// The `[[cluster]]` entries, in file order.
+    pub fn clusters(&self) -> &[ClusterConfig] {
+        &self.clusters
+    }
+
+    /// The `[[node]]` entries, in file order.
+    pub fn nodes(&self) -> &[NodeConfig] {
+        &self.nodes
+    }
+
+    /// The `[[identity]]` entries, in file order.
+    pub fn identities(&self) -> &[IdentityRoute] {
+        &self.identities
+    }
+
+    /// The route for an exact pair of verified principal and requested
+    /// database, or `None` for every other pair.
+    ///
+    /// Both names are compared byte for byte: nothing is folded to lowercase
+    /// or trimmed. There is no wildcard and no default entry. The lookup does
+    /// not walk every entry.
+    pub fn resolve_identity(&self, principal: &str, database: &str) -> Option<&IdentityRoute> {
+        let index = self.identity_index.get(principal, database)?;
+        self.identities.get(index)
     }
 }
 
@@ -139,6 +202,12 @@ impl fmt::Display for Finding {
             Location::Position { line, column } => {
                 write!(f, "{code} at line {line}, column {column}: {message}")
             }
+            Location::KeyAt { key, line, column } => {
+                write!(
+                    f,
+                    "{code} at {key}, line {line}, column {column}: {message}"
+                )
+            }
         }
     }
 }
@@ -160,6 +229,19 @@ pub enum FindingCode {
     UnsupportedVersion,
     /// A reserved capability has `enabled = true`.
     UnsupportedCapability,
+    /// A value has the right type but not the allowed syntax or range.
+    InvalidValue,
+    /// An `id` repeats an earlier `id` of the same table.
+    DuplicateId,
+    /// A key names a cluster or node that the file does not define, or
+    /// `expected_writer` names a node of another cluster.
+    UnknownReference,
+    /// A node has the host and port of an earlier node.
+    DuplicateEndpoint,
+    /// An identity has the principal and database of an earlier identity.
+    DuplicateIdentity,
+    /// A value is known but not supported by this build.
+    UnsupportedValue,
 }
 
 impl FindingCode {
@@ -173,6 +255,12 @@ impl FindingCode {
             FindingCode::MissingKey => "config.missing_key",
             FindingCode::UnsupportedVersion => "config.unsupported_version",
             FindingCode::UnsupportedCapability => "config.unsupported_capability",
+            FindingCode::InvalidValue => "config.invalid_value",
+            FindingCode::DuplicateId => "config.duplicate_id",
+            FindingCode::UnknownReference => "config.unknown_reference",
+            FindingCode::DuplicateEndpoint => "config.duplicate_endpoint",
+            FindingCode::DuplicateIdentity => "config.duplicate_identity",
+            FindingCode::UnsupportedValue => "config.unsupported_value",
         }
     }
 
@@ -191,6 +279,14 @@ impl FindingCode {
             FindingCode::UnsupportedCapability => {
                 "this capability is not supported by this build; remove the key or set it to false"
             }
+            FindingCode::InvalidValue => "a value is not in the allowed form or range",
+            FindingCode::DuplicateId => "an id is used more than once",
+            FindingCode::UnknownReference => "a reference does not name a matching entry",
+            FindingCode::DuplicateEndpoint => "two nodes have the same host and port",
+            FindingCode::DuplicateIdentity => {
+                "two identity entries have the same principal and database"
+            }
+            FindingCode::UnsupportedValue => "this value is not supported by this build",
         }
     }
 }
@@ -209,6 +305,17 @@ pub enum Location {
         /// The column, counted in Unicode scalar values.
         column: u32,
     },
+    /// The finding applies to a key of one entry of a repeated table, such as
+    /// `node.id`, at a position in the text. The position is where the value
+    /// starts, or where the entry starts when the key is missing.
+    KeyAt {
+        /// The key path without an index, such as `node.id`.
+        key: &'static str,
+        /// The line, counted as for [`Location::Position`].
+        line: u32,
+        /// The column, counted as for [`Location::Position`].
+        column: u32,
+    },
 }
 
 // The structures read from the file accept a table only. A derived
@@ -218,13 +325,25 @@ pub enum Location {
 // span. Unknown keys are rejected, as with `deny_unknown_fields`. A key given
 // twice never reaches them: the syntax step already refuses it.
 
-const RAW_CONFIG_FIELDS: &[&str] = &["config_version", "result_cache", "automatic_promotion"];
+const RAW_CONFIG_FIELDS: &[&str] = &[
+    "config_version",
+    "result_cache",
+    "automatic_promotion",
+    "control",
+    "cluster",
+    "node",
+    "identity",
+];
 const RAW_CAPABILITY_FIELDS: &[&str] = &["enabled"];
 
 struct RawConfig {
     config_version: Option<u32>,
     result_cache: Option<RawCapability>,
     automatic_promotion: Option<RawCapability>,
+    control: Option<RawControl>,
+    cluster: Option<Vec<Spanned<RawCluster>>>,
+    node: Option<Vec<Spanned<RawNode>>>,
+    identity: Option<Vec<Spanned<RawIdentity>>>,
 }
 
 impl<'de> Deserialize<'de> for RawConfig {
@@ -243,12 +362,20 @@ impl<'de> Deserialize<'de> for RawConfig {
                     config_version: None,
                     result_cache: None,
                     automatic_promotion: None,
+                    control: None,
+                    cluster: None,
+                    node: None,
+                    identity: None,
                 };
                 while let Some(field) = map.next_key_seed(KnownField(RAW_CONFIG_FIELDS))? {
                     match field {
                         0 => raw.config_version = Some(map.next_value()?),
                         1 => raw.result_cache = Some(map.next_value()?),
-                        _ => raw.automatic_promotion = Some(map.next_value()?),
+                        2 => raw.automatic_promotion = Some(map.next_value()?),
+                        3 => raw.control = Some(map.next_value()?),
+                        4 => raw.cluster = Some(map.next_value()?),
+                        5 => raw.node = Some(map.next_value()?),
+                        _ => raw.identity = Some(map.next_value()?),
                     }
                 }
                 Ok(raw)
@@ -298,7 +425,7 @@ impl<'de> Deserialize<'de> for RawCapability {
 /// unknown key is an error raised on the key itself, so the parser reports
 /// the key's position. The key text is used only for matching and is never
 /// stored.
-struct KnownField(&'static [&'static str]);
+pub(crate) struct KnownField(pub(crate) &'static [&'static str]);
 
 impl<'de> DeserializeSeed<'de> for KnownField {
     type Value = usize;
@@ -373,6 +500,16 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         KEY_AUTOMATIC_PROMOTION_ENABLED,
         &mut findings,
     );
+    let topology = topology::check(
+        text,
+        RawTopology {
+            control: raw.control,
+            clusters: raw.cluster.unwrap_or_default(),
+            nodes: raw.node.unwrap_or_default(),
+            identities: raw.identity.unwrap_or_default(),
+        },
+        &mut findings,
+    );
 
     if !findings.is_empty() {
         return Err(Rejection { findings });
@@ -381,6 +518,11 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         config_version,
         result_cache,
         automatic_promotion,
+        control: topology.control,
+        clusters: topology.clusters,
+        nodes: topology.nodes,
+        identities: topology.identities,
+        identity_index: topology.identity_index,
     })
 }
 
@@ -416,6 +558,13 @@ fn error_location(text: &str, error: &toml::de::Error) -> Location {
 /// The line is 1 plus the line feeds before the offset. The column is 1 plus
 /// the Unicode scalar values between the start of that line and the offset.
 fn position(text: &str, offset: usize) -> Location {
+    let (line, column) = line_column(text, offset);
+    Location::Position { line, column }
+}
+
+/// The 1 based line and column of a byte offset, counted as [`position`]
+/// counts them.
+pub(crate) fn line_column(text: &str, offset: usize) -> (u32, u32) {
     let bytes = text.as_bytes();
     let prefix = &bytes[..offset.min(bytes.len())];
     let line_feeds = prefix.iter().filter(|&&byte| byte == b'\n').count();
@@ -423,14 +572,90 @@ fn position(text: &str, offset: usize) -> Location {
         .iter()
         .rposition(|&byte| byte == b'\n')
         .map_or(0, |index| index + 1);
-    let scalars = prefix[line_start..]
-        .iter()
-        .filter(|&&byte| byte & 0xC0 != 0x80)
-        .count();
-    Location::Position {
-        line: to_u32(line_feeds.saturating_add(1)),
-        column: to_u32(scalars.saturating_add(1)),
+    let scalars = count_scalar_starts(&prefix[line_start..]);
+    (
+        to_u32(line_feeds.saturating_add(1)),
+        to_u32(scalars.saturating_add(1)),
+    )
+}
+
+/// Bytes between two stored scalar counts in a [`LineIndex`].
+const SCALAR_STRIDE: usize = 256;
+
+/// Answers [`line_column`] for many offsets of one text without rescanning it.
+///
+/// It is built once in time linear in the text. Each lookup is a binary search
+/// over the line starts plus a scan of fewer than [`SCALAR_STRIDE`] bytes, and
+/// gives the same line and column as [`line_column`] for every offset.
+pub(crate) struct LineIndex<'a> {
+    bytes: &'a [u8],
+    /// The byte offset where each line starts; the first is always 0.
+    line_starts: Vec<usize>,
+    /// The scalar values before each multiple of [`SCALAR_STRIDE`].
+    scalars_at_stride: Vec<usize>,
+}
+
+impl<'a> LineIndex<'a> {
+    /// Builds the index of `text`.
+    pub(crate) fn new(text: &'a str) -> Self {
+        let bytes = text.as_bytes();
+        let mut line_starts = vec![0];
+        line_starts.extend(
+            bytes
+                .iter()
+                .enumerate()
+                .filter(|&(_, &byte)| byte == b'\n')
+                .map(|(index, _)| index + 1),
+        );
+        let mut scalars_at_stride = Vec::with_capacity(bytes.len() / SCALAR_STRIDE + 1);
+        let mut scalars = 0;
+        for chunk in bytes.chunks(SCALAR_STRIDE) {
+            scalars_at_stride.push(scalars);
+            scalars += count_scalar_starts(chunk);
+        }
+        scalars_at_stride.push(scalars);
+        Self {
+            bytes,
+            line_starts,
+            scalars_at_stride,
+        }
     }
+
+    /// The 1 based line and column of a byte offset, equal to
+    /// [`line_column`] of the same text and offset.
+    pub(crate) fn line_column(&self, offset: usize) -> (u32, u32) {
+        let offset = offset.min(self.bytes.len());
+        // The line feeds before `offset` are the line starts after 0 that are
+        // at or before it.
+        let line_index = self
+            .line_starts
+            .partition_point(|&start| start <= offset)
+            .saturating_sub(1);
+        let line_start = self.line_starts.get(line_index).copied().unwrap_or(0);
+        let scalars = self
+            .scalars_before(offset)
+            .saturating_sub(self.scalars_before(line_start));
+        (
+            to_u32(line_index.saturating_add(1)),
+            to_u32(scalars.saturating_add(1)),
+        )
+    }
+
+    /// The scalar values in `bytes[..offset]`, for an offset within the text.
+    fn scalars_before(&self, offset: usize) -> usize {
+        let stride = offset / SCALAR_STRIDE;
+        let stored = self.scalars_at_stride.get(stride).copied().unwrap_or(0);
+        let tail = self
+            .bytes
+            .get(stride * SCALAR_STRIDE..offset)
+            .unwrap_or_default();
+        stored + count_scalar_starts(tail)
+    }
+}
+
+/// The bytes that start a Unicode scalar value, so not continuation bytes.
+fn count_scalar_starts(bytes: &[u8]) -> usize {
+    bytes.iter().filter(|&&byte| byte & 0xC0 != 0x80).count()
 }
 
 fn to_u32(value: usize) -> u32 {
@@ -491,5 +716,103 @@ mod tests {
             at.to_string(),
             "config.syntax at line 2, column 5: the file is not valid TOML"
         );
+    }
+}
+
+#[cfg(test)]
+mod line_index_tests {
+    //! `LineIndex` against `line_column` at every byte offset, added by /test
+    //! (0003 AC-3, AC-15; review t5). Both must give the same line and
+    //! column, or two findings of one file would count columns two ways.
+
+    use super::*;
+
+    /// The line and column of a char boundary, counted from the text with
+    /// `str` methods only, as an oracle independent of both functions.
+    fn by_chars(text: &str, offset: usize) -> (u32, u32) {
+        let before = &text[..offset];
+        let line = 1 + before.matches('\n').count();
+        let start = before.rfind('\n').map_or(0, |index| index + 1);
+        let column = 1 + before[start..].chars().count();
+        (to_u32(line), to_u32(column))
+    }
+
+    fn texts() -> Vec<String> {
+        let long = |fill: char, bytes: usize| fill.to_string().repeat(bytes / fill.len_utf8());
+        vec![
+            String::new(),
+            "\n".to_owned(),
+            "\n\n\n".to_owned(),
+            "a\r\nb\r\n\r\nc".to_owned(),
+            "\tkey = 1\n\t\tx\t\n".to_owned(),
+            "\u{e9}\u{20ac}\u{1f600}ab\n\n\u{1f600}".to_owned(),
+            // A line of more than 256 and one of more than 512 bytes.
+            format!("{}\n{}\nend", long('a', 300), long('b', 600)),
+            // Exactly 256 and 512 bytes, so the text ends on a stride.
+            long('x', 256),
+            long('\u{e9}', 512),
+            // Multi byte characters across the stride boundaries 256, 512
+            // and 768: two, three and four byte ones.
+            format!(
+                "{}\u{e9}{}\u{20ac}{}\u{1f600}\r\n\t\u{1f600}",
+                long('a', 255),
+                long('b', 254),
+                long('c', 253)
+            ),
+            // The same with a line feed just before and after each boundary.
+            format!(
+                "{}\n\u{1f600}{}\u{20ac}\n{}",
+                long('a', 255),
+                long('\u{e9}', 254),
+                long('\u{20ac}', 300)
+            ),
+        ]
+    }
+
+    #[test]
+    fn line_index_equals_line_column_at_every_offset() {
+        for text in texts() {
+            let index = LineIndex::new(&text);
+            for offset in 0..=text.len() + 2 {
+                assert_eq!(
+                    index.line_column(offset),
+                    line_column(&text, offset),
+                    "offset {offset} of {} bytes",
+                    text.len()
+                );
+                if text.is_char_boundary(offset) {
+                    assert_eq!(
+                        line_column(&text, offset),
+                        by_chars(&text, offset),
+                        "offset {offset} of {} bytes",
+                        text.len()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn line_index_clamps_offsets_at_and_past_the_end() {
+        let text = "ab\r\n\u{1f600}";
+        let index = LineIndex::new(text);
+        let end = (2, 2);
+        assert_eq!(index.line_column(text.len()), end);
+        assert_eq!(index.line_column(text.len() + 1), end);
+        assert_eq!(index.line_column(usize::MAX), end);
+        assert_eq!(line_column(text, usize::MAX), end);
+        let empty = LineIndex::new("");
+        assert_eq!(empty.line_column(0), (1, 1));
+        assert_eq!(empty.line_column(usize::MAX), (1, 1));
+    }
+
+    #[test]
+    fn line_index_counts_a_carriage_return_and_a_tab_as_one_column_each() {
+        let text = "a\r\n\t\tb";
+        let index = LineIndex::new(text);
+        // The CR is a scalar of line 1; the tab is one column, not a stop.
+        assert_eq!(index.line_column(1), (1, 2));
+        assert_eq!(index.line_column(2), (1, 3));
+        assert_eq!(index.line_column(5), (2, 3));
     }
 }

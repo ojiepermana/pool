@@ -2,7 +2,8 @@
 //! (spec 0001 AC-4 to AC-9).
 
 use pool_config::{
-    CapabilityState, FindingCode, Location, MAX_CONFIG_BYTES, Rejection, ValidatedConfig, validate,
+    CapabilityState, FindingCode, Location, MAX_CONFIG_BYTES, Rejection, RoutingProfile,
+    ValidatedConfig, validate,
 };
 
 const CANARY: &str = "CANARY-9f2c7b1e";
@@ -961,8 +962,1623 @@ fn ac4_validated_config_debug_holds_only_states() {
     let debug = format!("{config:?}");
     assert_eq!(
         debug,
-        "ValidatedConfig { config_version: 1, result_cache: Disabled, automatic_promotion: Disabled }"
+        "ValidatedConfig { config_version: 1, result_cache: Disabled, automatic_promotion: Disabled, \
+         control: None, clusters: [], nodes: [], identities: [], identity_index: IdentityIndex { entries: 0 } }"
     );
     assert_eq!(config.automatic_promotion().as_str(), "disabled");
     assert_eq!(config.result_cache().as_str(), "disabled");
+}
+
+// Spec 0003: the keys [control], [[cluster]], [[node]] and [[identity]]
+// (0003 AC-1 to AC-5).
+
+/// The fifteen line base of the spec 0003 fixtures.
+const BASE: &str = "config_version = 1
+
+[control]
+state_directory = \"/var/lib/pool\"
+
+[[cluster]]
+id = \"main\"
+system_identifier = \"7412345678901234567\"
+expected_writer = \"pg1\"
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"10.0.0.11\"
+port = 5432
+";
+
+/// The base with line `number` (counted from 1) replaced by `line`.
+fn base_with_line(number: usize, line: &str) -> String {
+    let mut lines: Vec<&str> = BASE.lines().collect();
+    lines[number - 1] = line;
+    let mut text = lines.join("\n");
+    text.push('\n');
+    text
+}
+
+/// The base, an empty line, then `extra`.
+fn base_plus(extra: &str) -> String {
+    format!("{BASE}\n{extra}")
+}
+
+/// A complete identity entry with one line replaced or added.
+fn identity_with(key: &str, value: &str) -> String {
+    let mut lines = vec![
+        "[[identity]]".to_owned(),
+        "id = \"orders-app\"".to_owned(),
+        "principal = \"orders_app\"".to_owned(),
+        "database = \"orders\"".to_owned(),
+        "cluster = \"main\"".to_owned(),
+        "backend_login = \"orders_rw\"".to_owned(),
+        "credential_file = \"/etc/pool/secrets/orders_rw\"".to_owned(),
+    ];
+    let prefix = format!("{key} =");
+    let line = format!("{key} = {value}");
+    match lines
+        .iter()
+        .position(|existing| existing.starts_with(&prefix))
+    {
+        Some(index) => lines[index] = line,
+        None => lines.push(line),
+    }
+    base_plus(&(lines.join("\n") + "\n"))
+}
+
+fn key_at(key: &'static str, line: u32, column: u32) -> Location {
+    Location::KeyAt { key, line, column }
+}
+
+/// The single finding of `text`, as (code, key).
+fn single_code_and_key(text: &str) -> (FindingCode, Option<&'static str>) {
+    let found = findings(text.as_bytes());
+    assert_eq!(found.len(), 1, "{text}\n{found:?}");
+    let key = match found[0].1 {
+        Location::Key(key) | Location::KeyAt { key, .. } => Some(key),
+        Location::None | Location::Position { .. } => None,
+    };
+    (found[0].0, key)
+}
+
+fn single_code(text: &str) -> FindingCode {
+    single_code_and_key(text).0
+}
+
+#[test]
+fn ac1_topology_fixtures_are_accepted() {
+    for name in [
+        "valid-topology-minimal.toml",
+        "valid-topology.toml",
+        "valid-topology-names.toml",
+    ] {
+        assert_disabled(&accepted(&fixture(name)));
+    }
+    assert_text_valid("config_version = 1\n");
+}
+
+#[test]
+fn ac1_valid_topology_exposes_its_records_in_file_order() {
+    let config = accepted(&fixture("valid-topology.toml"));
+    let control = config.control().expect("control table");
+    assert_eq!(
+        control.state_directory(),
+        Some(std::path::Path::new("/var/lib/pool"))
+    );
+    assert_eq!(
+        control.authority_id().map(|id| id.to_string()),
+        Some("0123456789abcdef0123456789abcdef".to_owned())
+    );
+
+    let clusters = config.clusters();
+    assert_eq!(clusters.len(), 1);
+    assert_eq!(clusters[0].id().as_str(), "main");
+    assert_eq!(
+        clusters[0].system_identifier().get(),
+        7_412_345_678_901_234_567
+    );
+    assert_eq!(clusters[0].expected_writer().as_str(), "pg1");
+
+    let nodes: Vec<(&str, &str, &str, u16)> = config
+        .nodes()
+        .iter()
+        .map(|node| {
+            (
+                node.id().as_str(),
+                node.cluster().as_str(),
+                node.host(),
+                node.port(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        nodes,
+        [
+            ("pg1", "main", "10.0.0.11", 5432),
+            ("pg2", "main", "10.0.0.12", 5432),
+            ("pg3", "main", "pg3.db.internal", 5433),
+        ]
+    );
+
+    let identities = config.identities();
+    assert_eq!(identities.len(), 2);
+    let orders = &identities[0];
+    assert_eq!(orders.id().as_str(), "orders-app");
+    assert_eq!(orders.cluster().as_str(), "main");
+    assert_eq!(orders.backend_database(), "orders");
+    assert_eq!(orders.backend_login(), "orders_rw");
+    assert_eq!(
+        orders.credential().path(),
+        std::path::Path::new("/etc/pool/secrets/orders_rw")
+    );
+    assert_eq!(orders.routing_profile(), RoutingProfile::Primary);
+    assert_eq!(orders.routing_profile().as_str(), "primary");
+    let report = &identities[1];
+    assert_eq!(report.id().as_str(), "report-app");
+    assert_eq!(report.backend_database(), "orders_reporting");
+    assert_eq!(report.backend_login(), "report_ro");
+}
+
+#[test]
+fn ac1_a_file_without_topology_has_no_records() {
+    let config = accepted(&fixture("valid-minimal.toml"));
+    assert!(config.control().is_none());
+    assert!(config.clusters().is_empty());
+    assert!(config.nodes().is_empty());
+    assert!(config.identities().is_empty());
+    assert!(config.resolve_identity("orders_app", "orders").is_none());
+}
+
+#[test]
+fn ac2_each_invalid_topology_fixture_has_its_one_finding() {
+    let table = [
+        (
+            "invalid-topology-missing-key.toml",
+            FindingCode::MissingKey,
+            key_at("identity.backend_login", 17, 1),
+        ),
+        (
+            "invalid-topology-missing-state-directory.toml",
+            FindingCode::MissingKey,
+            Location::Key("control.state_directory"),
+        ),
+        (
+            "invalid-topology-invalid-value.toml",
+            FindingCode::InvalidValue,
+            key_at("node.id", 12, 6),
+        ),
+        (
+            "invalid-topology-duplicate-id.toml",
+            FindingCode::DuplicateId,
+            key_at("node.id", 18, 6),
+        ),
+        (
+            "invalid-topology-unknown-reference.toml",
+            FindingCode::UnknownReference,
+            key_at("cluster.expected_writer", 9, 19),
+        ),
+        (
+            "invalid-topology-duplicate-endpoint.toml",
+            FindingCode::DuplicateEndpoint,
+            key_at("node.host", 20, 8),
+        ),
+        (
+            "invalid-topology-duplicate-identity.toml",
+            FindingCode::DuplicateIdentity,
+            key_at("identity.principal", 27, 13),
+        ),
+        (
+            "invalid-topology-unsupported-profile.toml",
+            FindingCode::UnsupportedValue,
+            key_at("identity.routing_profile", 24, 19),
+        ),
+    ];
+    for (name, code, location) in table {
+        assert_eq!(findings(&fixture(name)), [(code, location)], "{name}");
+    }
+}
+
+#[test]
+fn ac3_multiple_topology_mistakes_are_reported_in_one_run_in_order() {
+    assert_eq!(
+        findings(&fixture("invalid-topology-multiple.toml")),
+        [
+            (
+                FindingCode::InvalidValue,
+                Location::Key("control.authority_id")
+            ),
+            (
+                FindingCode::InvalidValue,
+                key_at("cluster.system_identifier", 9, 21)
+            ),
+            (FindingCode::InvalidValue, key_at("node.port", 16, 8)),
+            (
+                FindingCode::MissingKey,
+                key_at("identity.credential_file", 18, 1)
+            ),
+            (
+                FindingCode::UnknownReference,
+                key_at("identity.cluster", 22, 11)
+            ),
+        ]
+    );
+}
+
+#[test]
+fn ac3_key_at_findings_display_the_spec_line() {
+    let rejection = rejected(&fixture("invalid-topology-duplicate-id.toml"));
+    assert_eq!(
+        rejection.to_string(),
+        "config.duplicate_id at node.id, line 18, column 6: an id is used more than once"
+    );
+}
+
+#[test]
+fn ac2_which_code_a_bad_value_gets() {
+    let schema = [
+        "config_version = 1\n[node]\nid = \"pg2\"\n".to_owned(),
+        "config_version = 1\n[cluster]\nid = \"main\"\n".to_owned(),
+        "config_version = 1\n[identity]\nid = \"a\"\n".to_owned(),
+        "config_version = 1\nnode = [1]\n".to_owned(),
+        "config_version = 1\ncluster = [\"main\"]\n".to_owned(),
+        "config_version = 1\ncontrol = 1\n".to_owned(),
+        "config_version = 1\ncontrol = []\n".to_owned(),
+        "config_version = 1\n[control]\nweight = 1\n".to_owned(),
+        base_plus("[[node]]\nid = \"pg2\"\nweight = 1\n"),
+        (identity_with("weight", "1")),
+        base_with_line(7, "id = 7"),
+        base_with_line(15, "port = \"5432\""),
+        base_with_line(15, "port = 70000"),
+        base_with_line(15, "port = -1"),
+        base_with_line(8, "system_identifier = 7412345678901234567"),
+        base_with_line(4, "state_directory = 1"),
+        (identity_with("principal", "1")),
+        (identity_with("routing_profile", "true")),
+    ];
+    for text in &schema {
+        assert_eq!(single_code(text), FindingCode::Schema, "{text}");
+    }
+
+    let invalid: Vec<(String, &str)> = vec![
+        (base_with_line(15, "port = 0"), "node.port"),
+        (base_with_line(7, "id = \"\""), "cluster.id"),
+        (
+            base_with_line(12, &format!("id = \"{}\"", "a".repeat(64))),
+            "node.id",
+        ),
+        (base_with_line(12, "id = \"1pg\""), "node.id"),
+        (base_with_line(12, "id = \"Pg1\""), "node.id"),
+        ((identity_with("id", "\"Orders\"")), "identity.id"),
+        (
+            base_with_line(8, "system_identifier = \"0\""),
+            "cluster.system_identifier",
+        ),
+        (
+            base_with_line(8, "system_identifier = \"007\""),
+            "cluster.system_identifier",
+        ),
+        (
+            base_with_line(8, "system_identifier = \"\""),
+            "cluster.system_identifier",
+        ),
+        (
+            base_with_line(8, "system_identifier = \"18446744073709551616\""),
+            "cluster.system_identifier",
+        ),
+        (
+            base_with_line(8, "system_identifier = \"74a\""),
+            "cluster.system_identifier",
+        ),
+        (
+            base_with_line(
+                4,
+                "state_directory = \"/var/lib/pool\"\nauthority_id = \"0123456789abcdef0123456789abcde\"",
+            ),
+            "control.authority_id",
+        ),
+        (
+            base_with_line(
+                4,
+                "state_directory = \"/var/lib/pool\"\nauthority_id = \"0123456789abcdef0123456789abcdef0\"",
+            ),
+            "control.authority_id",
+        ),
+        (
+            base_with_line(
+                4,
+                "state_directory = \"/var/lib/pool\"\nauthority_id = \"0123456789ABCDEF0123456789abcdef\"",
+            ),
+            "control.authority_id",
+        ),
+        (
+            base_with_line(4, "state_directory = \"var/lib/pool\""),
+            "control.state_directory",
+        ),
+        (
+            (identity_with("credential_file", "\"secrets/orders\"")),
+            "identity.credential_file",
+        ),
+        ((identity_with("principal", "\"\"")), "identity.principal"),
+        (
+            (identity_with("database", &format!("\"{}\"", "d".repeat(64)))),
+            "identity.database",
+        ),
+        (
+            (identity_with("backend_database", "\"a\\nb\"")),
+            "identity.backend_database",
+        ),
+        (
+            (identity_with("backend_login", "\"\"")),
+            "identity.backend_login",
+        ),
+        (base_with_line(14, "host = \"db host\""), "node.host"),
+        (base_with_line(14, "host = \"db_host\""), "node.host"),
+        (
+            (identity_with("routing_profile", "\"Primary\"")),
+            "identity.routing_profile",
+        ),
+    ];
+    for (text, key) in &invalid {
+        assert_eq!(
+            single_code_and_key(text),
+            (FindingCode::InvalidValue, Some(*key)),
+            "{text}"
+        );
+    }
+
+    assert_eq!(
+        single_code_and_key(&(identity_with("routing_profile", "\"replica\""))),
+        (
+            FindingCode::UnsupportedValue,
+            Some("identity.routing_profile")
+        )
+    );
+
+    for text in [
+        "config_version = 1\ncluster = []\nnode = []\nidentity = []\n".to_owned(),
+        "config_version = 1\n[control]\n".to_owned(),
+        base_with_line(8, "system_identifier = \"18446744073709551615\""),
+        identity_with("id", &format!("\"{}\"", "a".repeat(63))),
+        (identity_with("principal", &format!("\"{}\"", "é".repeat(31)))),
+        (identity_with("routing_profile", "\"primary\"")),
+        base_plus("[[node]]\nid = \"pg2\"\ncluster = \"main\"\nhost = \"::1\"\nport = 65535\n"),
+        "config_version = 1\nnode = [{ id = \"pg1\", cluster = \"main\", host = \"h\", port = 1 }]\ncluster = [{ id = \"main\", system_identifier = \"1\", expected_writer = \"pg1\" }]\n[control]\nstate_directory = \"/p\"\n".to_owned(),
+    ] {
+        assert_text_valid(&text);
+    }
+}
+
+#[test]
+fn ac2_a_missing_key_in_an_inline_entry_is_at_its_brace() {
+    let text = "config_version = 1\n[control]\nstate_directory = \"/p\"\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"1\"\nexpected_writer = \"pg1\"\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"h\"\nport = 1\n";
+    assert_text_valid(text);
+    let inline = "config_version = 1\n[control]\nstate_directory = \"/p\"\ncluster = [{ id = \"main\", system_identifier = \"1\" }]\n";
+    let found = findings(inline.as_bytes());
+    // `cluster` after `[control]` is a key of the control table.
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].0, FindingCode::Schema);
+    let top = "config_version = 1\ncluster = [{ id = \"main\", system_identifier = \"1\" }]\n[control]\nstate_directory = \"/p\"\n";
+    assert_eq!(
+        findings(top.as_bytes()),
+        [(
+            FindingCode::MissingKey,
+            key_at("cluster.expected_writer", 2, 12)
+        )]
+    );
+}
+
+#[test]
+fn ac2_cross_checks_skip_to_keep_one_finding_per_mistake() {
+    // An invalid cluster id skips the node.cluster and identity.cluster checks.
+    let text = (identity_with("cluster", "\"main\"")).replace("id = \"main\"", "id = \"Main\"");
+    assert_eq!(
+        single_code_and_key(&text),
+        (FindingCode::InvalidValue, Some("cluster.id"))
+    );
+
+    // A node naming an unknown cluster skips the expected_writer check.
+    let text = base_with_line(13, "cluster = \"other\"");
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(
+            FindingCode::UnknownReference,
+            key_at("node.cluster", 13, 11)
+        )]
+    );
+
+    // An invalid node id skips the expected_writer check.
+    let text = base_with_line(12, "id = \"PG1\"");
+    assert_eq!(
+        single_code_and_key(&text),
+        (FindingCode::InvalidValue, Some("node.id"))
+    );
+
+    // expected_writer naming a node of another cluster.
+    let text = base_plus(
+        "[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg1\"\n",
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(
+            FindingCode::UnknownReference,
+            key_at("cluster.expected_writer", 20, 19)
+        )]
+    );
+
+    // A repeated node id resolves to the first entry.
+    let text = base_plus(
+        "[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg1\"\n\n[[node]]\nid = \"pg1\"\ncluster = \"other\"\nhost = \"10.0.0.12\"\nport = 5432\n",
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("node.id", 23, 6)),
+            (
+                FindingCode::UnknownReference,
+                key_at("cluster.expected_writer", 20, 19)
+            ),
+        ]
+    );
+}
+
+#[test]
+fn ac2_endpoints_compare_hosts_without_ascii_case_and_names_byte_for_byte() {
+    let text = base_plus(
+        "[[node]]\nid = \"pg2\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = 5433\n",
+    );
+    assert_text_valid(&text);
+    let host = base_with_line(14, "host = \"db.example\"");
+    let text = format!(
+        "{host}\n[[node]]\nid = \"pg2\"\ncluster = \"main\"\nhost = \"DB.Example\"\nport = 5432\n"
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::DuplicateEndpoint, key_at("node.host", 20, 8))]
+    );
+
+    let first = identity_with("principal", "\"orders_app\"");
+    let second = "\n[[identity]]\nid = \"orders-app-2\"\nprincipal = \"Orders_app\"\ndatabase = \"orders\"\ncluster = \"main\"\nbackend_login = \"orders_rw\"\ncredential_file = \"/etc/pool/secrets/orders_rw\"\n";
+    assert_text_valid(&format!("{first}{second}"));
+}
+
+#[test]
+fn ac4_canary_never_reaches_rejection_or_config_text() {
+    let rejection = rejected(&fixture("secret-topology-values.toml"));
+    assert_eq!(
+        rejection
+            .findings()
+            .iter()
+            .map(|finding| (finding.code(), finding.location()))
+            .collect::<Vec<_>>(),
+        [
+            (FindingCode::InvalidValue, key_at("node.host", 14, 8)),
+            (
+                FindingCode::InvalidValue,
+                key_at("identity.credential_file", 23, 19)
+            ),
+        ]
+    );
+    for text in [format!("{rejection:?}"), rejection.to_string()] {
+        assert!(!text.contains(CANARY), "{text}");
+    }
+
+    let config = accepted(&fixture("valid-topology-names.toml"));
+    let debug = format!("{config:?}");
+    assert!(!debug.contains(CANARY), "{debug}");
+    assert!(debug.contains("canary-app"), "{debug}");
+    for route in config.identities() {
+        let debug = format!("{route:?} {:?}", route.credential());
+        assert!(!debug.contains(CANARY), "{debug}");
+    }
+    for node in config.nodes() {
+        let debug = format!("{node:?}");
+        assert!(!debug.contains("10.0.0.11"), "{debug}");
+        assert!(!debug.contains("5432"), "{debug}");
+    }
+    let control = format!("{:?}", config.control());
+    assert!(!control.contains("/var/lib/pool"), "{control}");
+}
+
+#[test]
+fn ac4_validate_opens_no_file() {
+    let text = format!(
+        "{}\n{}",
+        BASE.replace("/var/lib/pool", "/does/not/exist/pool-state"),
+        "[[identity]]\nid = \"a\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"/does/not/exist/secret\"\n"
+    );
+    let config = accepted(text.as_bytes());
+    assert_eq!(config.identities().len(), 1);
+
+    // Paths that exist are not read either: the credential file below holds
+    // the canary and invalid TOML, and the state directory is a directory.
+    // A read would show as a changed answer or as the canary in the text.
+    let manifest = env!("CARGO_MANIFEST_DIR");
+    let secret = format!("{manifest}/tests/fixtures/secret-topology-values.toml");
+    assert!(
+        std::fs::read_to_string(&secret)
+            .expect("the fixture exists")
+            .contains(CANARY)
+    );
+    let text = format!(
+        "{}\n[[identity]]\nid = \"a\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"{secret}\"\n",
+        BASE.replace("/var/lib/pool", manifest),
+    );
+    let config = accepted(text.as_bytes());
+    assert_eq!(config.identities().len(), 1);
+    let debug = format!("{config:?} {:?}", config.identities()[0].credential());
+    assert!(!debug.contains(CANARY), "{debug}");
+}
+
+#[test]
+fn ac5_resolve_identity_matches_the_exact_pair_only() {
+    let config = accepted(&fixture("valid-topology.toml"));
+    let found = config
+        .resolve_identity("orders_app", "orders")
+        .map(|route| route.id().as_str());
+    assert_eq!(found, Some("orders-app"));
+    let found = config
+        .resolve_identity("report_app", "orders")
+        .map(|route| route.id().as_str());
+    assert_eq!(found, Some("report-app"));
+    for (principal, database) in [
+        ("orders_app", "orders_reporting"),
+        ("orders_app", "other"),
+        ("Orders_app", "orders"),
+        ("orders_app", "Orders"),
+        ("ORDERS_APP", "ORDERS"),
+        ("orders", "orders"),
+        ("orders_ap", "orders"),
+        ("orders_app", "order"),
+        ("orders_app ", "orders"),
+        ("", "orders"),
+        ("orders_app", ""),
+        ("", ""),
+        ("*", "*"),
+        ("report_app", "orders_reporting"),
+    ] {
+        assert!(
+            config.resolve_identity(principal, database).is_none(),
+            "{principal:?} {database:?}"
+        );
+    }
+}
+
+#[test]
+fn ac5_resolve_identity_keeps_names_byte_for_byte() {
+    let text = identity_with("principal", "\" Orders_App \"");
+    let config = accepted(text.as_bytes());
+    assert!(config.resolve_identity(" Orders_App ", "orders").is_some());
+    assert!(config.resolve_identity("Orders_App", "orders").is_none());
+    assert!(config.resolve_identity("orders_app", "orders").is_none());
+}
+
+#[test]
+fn new_finding_codes_and_messages_are_stable() {
+    let table = [
+        (
+            FindingCode::InvalidValue,
+            "config.invalid_value",
+            "a value is not in the allowed form or range",
+        ),
+        (
+            FindingCode::DuplicateId,
+            "config.duplicate_id",
+            "an id is used more than once",
+        ),
+        (
+            FindingCode::UnknownReference,
+            "config.unknown_reference",
+            "a reference does not name a matching entry",
+        ),
+        (
+            FindingCode::DuplicateEndpoint,
+            "config.duplicate_endpoint",
+            "two nodes have the same host and port",
+        ),
+        (
+            FindingCode::DuplicateIdentity,
+            "config.duplicate_identity",
+            "two identity entries have the same principal and database",
+        ),
+        (
+            FindingCode::UnsupportedValue,
+            "config.unsupported_value",
+            "this value is not supported by this build",
+        ),
+    ];
+    for (code, text, message) in table {
+        assert_eq!(code.as_str(), text);
+        assert_eq!(code.message(), message);
+    }
+}
+
+// Edge cases beyond the table rows, added by /test. Each test names the
+// criterion it locks.
+
+/// A TOML basic string holding `text`, with `"`, `\` and control
+/// characters escaped.
+fn toml_string(text: &str) -> String {
+    let mut out = String::from("\"");
+    for scalar in text.chars() {
+        match scalar {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if c < ' ' || c == '\u{7f}' => out.push_str(&format!("\\u{:04X}", u32::from(c))),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Asserts `text` gives exactly one `config.invalid_value` at `key`.
+#[track_caller]
+fn assert_invalid_at(text: &str, key: &'static str) {
+    assert_eq!(
+        single_code_and_key(text),
+        (FindingCode::InvalidValue, Some(key)),
+        "{text}"
+    );
+}
+
+#[test]
+fn ac2_port_edges() {
+    // covers: 0003 AC-2
+    for port in ["1", "65535", "0x1538", "5_432"] {
+        assert_text_valid(&base_with_line(15, &format!("port = {port}")));
+    }
+    assert_eq!(
+        findings(base_with_line(15, "port = 0").as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.port", 15, 8))]
+    );
+    for port in ["65536", "4294967296", "5432.0", "true", "\"\"", "[5432]"] {
+        let text = base_with_line(15, &format!("port = {port}"));
+        assert_eq!(single_code(&text), FindingCode::Schema, "{text}");
+    }
+    // `-0` is the integer zero in TOML, so it is the zero port.
+    assert_invalid_at(&base_with_line(15, "port = -0"), "node.port");
+}
+
+#[test]
+fn ac2_host_edges() {
+    // covers: 0003 AC-2
+    for host in [
+        "a".repeat(253),
+        "::1".to_owned(),
+        "fe80::1:2".to_owned(),
+        "DB-1.Example.COM".to_owned(),
+        "10.0.0.11.".to_owned(),
+        "-".to_owned(),
+    ] {
+        assert_text_valid(&base_with_line(
+            14,
+            &format!("host = {}", toml_string(&host)),
+        ));
+    }
+    for host in [
+        String::new(),
+        "a".repeat(254),
+        "[::1]".to_owned(),
+        "db/1".to_owned(),
+        "db\t1".to_owned(),
+        "dé.example".to_owned(),
+        "db\u{200b}1".to_owned(),
+        "10.0.0.11%en0".to_owned(),
+    ] {
+        assert_invalid_at(
+            &base_with_line(14, &format!("host = {}", toml_string(&host))),
+            "node.host",
+        );
+    }
+}
+
+#[test]
+fn ac2_ac6_id_edges_through_validate() {
+    // covers: 0003 AC-2, AC-6. The ID syntax counts bytes and allows only
+    // ASCII; letters that look the same in another script are refused.
+    for id in [
+        "a".repeat(63),
+        "a-".to_owned(),
+        "a_".to_owned(),
+        "a-_9".to_owned(),
+    ] {
+        assert_text_valid(
+            &base_with_line(7, &format!("id = {}", toml_string(&id))).replace(
+                "cluster = \"main\"",
+                &format!("cluster = {}", toml_string(&id)),
+            ),
+        );
+    }
+    for id in [
+        "a".repeat(64),
+        "\u{440}g1".to_owned(),
+        "\u{ff50}\u{ff47}1".to_owned(),
+        "pg\u{200b}1".to_owned(),
+        "pg1 ".to_owned(),
+        " pg1".to_owned(),
+        "pg1\n".to_owned(),
+        "_pg1".to_owned(),
+        "-pg1".to_owned(),
+        "9pg".to_owned(),
+        "p\u{e9}".to_owned(),
+    ] {
+        assert_invalid_at(
+            &base_with_line(12, &format!("id = {}", toml_string(&id))),
+            "node.id",
+        );
+        assert_invalid_at(&identity_with("id", &toml_string(&id)), "identity.id");
+    }
+}
+
+#[test]
+fn ac2_system_identifier_edges_through_validate() {
+    // covers: 0003 AC-2
+    for value in ["1", "9", "10", "18446744073709551615"] {
+        assert_text_valid(&base_with_line(
+            8,
+            &format!("system_identifier = \"{value}\""),
+        ));
+    }
+    for value in [
+        "+1",
+        "-1",
+        " 1",
+        "1 ",
+        "0x1",
+        "1e3",
+        "1_000",
+        "\u{661}",
+        "99999999999999999999",
+        "00",
+    ] {
+        assert_invalid_at(
+            &base_with_line(8, &format!("system_identifier = {}", toml_string(value))),
+            "cluster.system_identifier",
+        );
+    }
+    let text = base_with_line(8, "system_identifier = 1.5");
+    assert_eq!(single_code(&text), FindingCode::Schema, "{text}");
+}
+
+#[test]
+fn ac2_authority_id_edges_through_validate() {
+    // covers: 0003 AC-2
+    let with = |value: &str| {
+        base_with_line(
+            4,
+            &format!("state_directory = \"/var/lib/pool\"\nauthority_id = {value}"),
+        )
+    };
+    let config = accepted(with(&format!("\"{}\"", "0".repeat(32))).as_bytes());
+    assert_eq!(
+        config
+            .control()
+            .and_then(|control| control.authority_id())
+            .map(|id| *id.as_bytes()),
+        Some([0; 16])
+    );
+    for value in [
+        "\"0123456789abcdef0123456789abcdeg\"".to_owned(),
+        format!("\"{}\"", "\u{e9}".repeat(16)),
+        "\" 123456789abcdef0123456789abcdef\"".to_owned(),
+        "\"0123456789abcdef0123456789abcdef\\n\"".to_owned(),
+        "\"\"".to_owned(),
+    ] {
+        assert_eq!(
+            findings(with(&value).as_bytes()),
+            [(
+                FindingCode::InvalidValue,
+                Location::Key("control.authority_id")
+            )],
+            "{value}"
+        );
+    }
+    let text = with("1");
+    assert_eq!(single_code(&text), FindingCode::Schema, "{text}");
+}
+
+#[test]
+fn ac2_name_syntax_edges() {
+    // covers: 0003 AC-2. 1 to 63 bytes of UTF-8, no character from U+0000 to
+    // U+001F and no U+007F. Bytes are counted, not characters.
+    let valid = [
+        "a".repeat(63),
+        format!("a{}", "\u{e9}".repeat(31)),
+        " ".to_owned(),
+        "orders app".to_owned(),
+        "\u{85}".to_owned(),
+        "\u{1f600}".repeat(15),
+    ];
+    for key in ["principal", "database", "backend_database", "backend_login"] {
+        for name in &valid {
+            assert_text_valid(&identity_with(key, &toml_string(name)));
+        }
+    }
+    let invalid = [
+        "\u{e9}".repeat(32),
+        format!("{}a", "\u{1f600}".repeat(16)),
+        "a\\tb".to_owned(),
+        "a\\u0000".to_owned(),
+        "a\\u007F".to_owned(),
+        "a\\u001F".to_owned(),
+        "a\\r".to_owned(),
+    ];
+    for (key, location) in [
+        ("principal", "identity.principal"),
+        ("database", "identity.database"),
+        ("backend_database", "identity.backend_database"),
+        ("backend_login", "identity.backend_login"),
+    ] {
+        for name in &invalid {
+            // The escapes above are TOML escapes, so the value is written as is.
+            assert_invalid_at(&identity_with(key, &format!("\"{name}\"")), location);
+        }
+    }
+}
+
+#[test]
+fn ac2_path_syntax_edges() {
+    // covers: 0003 AC-2. 1 to 4096 bytes, starts with `/`, no control
+    // character. Nothing checks that the path exists.
+    let long = format!("/{}", "p".repeat(4095));
+    let too_long = format!("/{}", "p".repeat(4096));
+    for path in ["/", "//x", "/a b/\u{e9}", long.as_str()] {
+        assert_text_valid(&base_with_line(
+            4,
+            &format!("state_directory = {}", toml_string(path)),
+        ));
+        assert_text_valid(&identity_with("credential_file", &toml_string(path)));
+    }
+    for path in [
+        "",
+        "./pool",
+        "~/pool",
+        " /pool",
+        "\\\\pool",
+        too_long.as_str(),
+    ] {
+        assert_eq!(
+            findings(
+                base_with_line(4, &format!("state_directory = {}", toml_string(path))).as_bytes()
+            ),
+            [(
+                FindingCode::InvalidValue,
+                Location::Key("control.state_directory")
+            )],
+            "{path:?}"
+        );
+        assert_invalid_at(
+            &identity_with("credential_file", &toml_string(path)),
+            "identity.credential_file",
+        );
+    }
+    for escaped in ["/a\\tb", "/a\\u007F", "/a\\nb"] {
+        assert_invalid_at(
+            &identity_with("credential_file", &format!("\"{escaped}\"")),
+            "identity.credential_file",
+        );
+    }
+}
+
+#[test]
+fn ac2_routing_profile_edges() {
+    // covers: 0003 AC-2. Only the exact text "replica" is unsupported; any
+    // other text but "primary" is invalid.
+    for value in [
+        "", " primary", "primary ", "PRIMARY", "REPLICA", "replica ", "Replica",
+    ] {
+        assert_invalid_at(
+            &identity_with("routing_profile", &toml_string(value)),
+            "identity.routing_profile",
+        );
+    }
+    let config = accepted(identity_with("routing_profile", "\"primary\"").as_bytes());
+    assert_eq!(
+        config.identities()[0].routing_profile(),
+        RoutingProfile::Primary
+    );
+    assert_eq!(RoutingProfile::Primary.as_str(), "primary");
+    let config = accepted(identity_with("id", "\"orders-app\"").as_bytes());
+    assert_eq!(
+        config.identities()[0].routing_profile(),
+        RoutingProfile::Primary
+    );
+}
+
+#[test]
+fn ac1_ac2_empty_and_inline_tables() {
+    // covers: 0003 AC-1, AC-2
+    for text in [
+        "config_version = 1\ncontrol = {}\n",
+        "config_version = 1\ncontrol = { state_directory = \"/p\" }\n",
+        "config_version = 1\ncluster = []\n",
+        "config_version = 1\nidentity = []\n[control]\nstate_directory = \"/p\"\n",
+        "config_version = 1\ncontrol = {}\nnode = []\n",
+    ] {
+        assert_text_valid(text);
+    }
+    // A cluster without any [control] table misses the state directory.
+    let text = "config_version = 1\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"1\"\nexpected_writer = \"pg1\"\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"h\"\nport = 1\n";
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(
+            FindingCode::MissingKey,
+            Location::Key("control.state_directory")
+        )]
+    );
+    // An empty inline control table with a cluster misses it too.
+    let text = format!("config_version = 1\ncontrol = {{}}\n{}", &text[19..]);
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(
+            FindingCode::MissingKey,
+            Location::Key("control.state_directory")
+        )]
+    );
+    // An empty node entry misses its four keys, in key order, at its header.
+    let text = base_plus("[[node]]\n");
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::MissingKey, key_at("node.id", 17, 1)),
+            (FindingCode::MissingKey, key_at("node.cluster", 17, 1)),
+            (FindingCode::MissingKey, key_at("node.host", 17, 1)),
+            (FindingCode::MissingKey, key_at("node.port", 17, 1)),
+        ]
+    );
+    // An empty identity entry misses its six required keys, in key order.
+    let text = base_plus("[[identity]]\n");
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::MissingKey, key_at("identity.id", 17, 1)),
+            (FindingCode::MissingKey, key_at("identity.principal", 17, 1)),
+            (FindingCode::MissingKey, key_at("identity.database", 17, 1)),
+            (FindingCode::MissingKey, key_at("identity.cluster", 17, 1)),
+            (
+                FindingCode::MissingKey,
+                key_at("identity.backend_login", 17, 1)
+            ),
+            (
+                FindingCode::MissingKey,
+                key_at("identity.credential_file", 17, 1)
+            ),
+        ]
+    );
+    // An empty inline node is at its brace; a header with spaces before it is
+    // at its first bracket.
+    let text = "config_version = 1\nnode = [ {} ]\n";
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::MissingKey, key_at("node.id", 2, 10)),
+            (FindingCode::MissingKey, key_at("node.cluster", 2, 10)),
+            (FindingCode::MissingKey, key_at("node.host", 2, 10)),
+            (FindingCode::MissingKey, key_at("node.port", 2, 10)),
+        ]
+    );
+    let text = base_plus("  [[node]]\nid = \"pg2\"\ncluster = \"main\"\nhost = \"h\"\n");
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::MissingKey, key_at("node.port", 17, 3))]
+    );
+}
+
+#[test]
+fn ac3_findings_follow_the_validation_order_not_the_file_order() {
+    // covers: 0003 AC-3. The identity comes first in the file, then the node,
+    // then the cluster, and the control table last; the findings come in the
+    // order of the validation steps, and the same on every run.
+    let text = "config_version = 1\n\n[[identity]]\nid = \"Bad\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"/c\"\n\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"h\"\nport = 0\n\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"0\"\nexpected_writer = \"pg1\"\n\n[control]\nauthority_id = \"x\"\n";
+    let want = [
+        (
+            FindingCode::MissingKey,
+            Location::Key("control.state_directory"),
+        ),
+        (
+            FindingCode::InvalidValue,
+            Location::Key("control.authority_id"),
+        ),
+        (
+            FindingCode::InvalidValue,
+            key_at("cluster.system_identifier", 19, 21),
+        ),
+        (FindingCode::InvalidValue, key_at("node.port", 15, 8)),
+        (FindingCode::InvalidValue, key_at("identity.id", 4, 6)),
+    ];
+    for _ in 0..3 {
+        assert_eq!(findings(text.as_bytes()), want);
+    }
+}
+
+#[test]
+fn ac3_each_repeat_is_reported_at_each_later_entry() {
+    // covers: 0003 AC-2, AC-3. Three nodes with one id give two findings;
+    // a repeated identity id and a repeated pair give one finding each, the
+    // id first (cross check 1 before 6).
+    let node =
+        |line: &str| format!("[[node]]\nid = \"pg1\"\ncluster = \"main\"\n{line}\nport = 5432\n");
+    let text = base_plus(&format!(
+        "{}\n{}",
+        node("host = \"10.0.0.12\""),
+        node("host = \"10.0.0.13\"")
+    ));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("node.id", 18, 6)),
+            (FindingCode::DuplicateId, key_at("node.id", 24, 6)),
+        ]
+    );
+    let entry = "[[identity]]\nid = \"a\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"/c\"\n";
+    let text = base_plus(&format!("{entry}\n{entry}"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("identity.id", 26, 6)),
+            (
+                FindingCode::DuplicateIdentity,
+                key_at("identity.principal", 27, 13)
+            ),
+        ]
+    );
+    // The same pair with a different backend is still a duplicate pair.
+    let second = entry
+        .replace("id = \"a\"", "id = \"b\"")
+        .replace("backend_login = \"l\"", "backend_login = \"other\"");
+    let text = base_plus(&format!("{entry}\n{second}"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(
+            FindingCode::DuplicateIdentity,
+            key_at("identity.principal", 27, 13)
+        )]
+    );
+    // The same principal with another database, or the reverse, is fine.
+    let other_db = second.replace("database = \"d\"", "database = \"d2\"");
+    let other_principal = entry
+        .replace("id = \"a\"", "id = \"c\"")
+        .replace("principal = \"p\"", "principal = \"p2\"");
+    assert_text_valid(&base_plus(&format!(
+        "{entry}\n{other_db}\n{other_principal}"
+    )));
+}
+
+#[test]
+fn ac5_resolve_identity_refuses_names_that_only_look_alike() {
+    // covers: 0003 AC-5. The pair is compared byte for byte: no Unicode
+    // normalization, no case folding, no trimming, no prefix.
+    let text = base_plus(
+        "[[identity]]\nid = \"cafe\"\nprincipal = \"caf\u{e9}\"\ndatabase = \"orders\"\ncluster = \"main\"\nbackend_login = \"orders_rw\"\ncredential_file = \"/c\"\n\n[[identity]]\nid = \"cafe-reports\"\nprincipal = \"caf\u{e9}\"\ndatabase = \"reports\"\ncluster = \"main\"\nbackend_database = \"reports_db\"\nbackend_login = \"reports_ro\"\ncredential_file = \"/r\"\n",
+    );
+    let config = accepted(text.as_bytes());
+    let found = |principal: &str, database: &str| {
+        config
+            .resolve_identity(principal, database)
+            .map(|route| route.id().as_str())
+    };
+    assert_eq!(found("caf\u{e9}", "orders"), Some("cafe"));
+    assert_eq!(found("caf\u{e9}", "reports"), Some("cafe-reports"));
+    for (principal, database) in [
+        ("cafe\u{301}", "orders"),
+        ("CAF\u{c9}", "orders"),
+        ("caf\u{e9}", "\u{43e}rders"),
+        ("caf\u{e9}", "orders\0"),
+        ("caf\u{e9}\0", "orders"),
+        ("caf\u{e9}", "orders\t"),
+        ("caf\u{e9}", "\u{ff4f}rders"),
+        ("caf\u{e9}", "or\u{200b}ders"),
+        ("caf", "orders"),
+        ("caf\u{e9}", "ord"),
+        ("caf\u{e9}", "orders_more"),
+        ("caf\u{e9}", "reports_db"),
+        ("orders_rw", "orders"),
+        ("caf\u{e9}", "*"),
+        ("%", "%"),
+    ] {
+        assert_eq!(
+            found(principal, database),
+            None,
+            "{principal:?} {database:?}"
+        );
+    }
+    // The route carries the backend values, with the default backend
+    // database taken from `database`.
+    let route = config
+        .resolve_identity("caf\u{e9}", "orders")
+        .expect("route");
+    assert_eq!(route.backend_database(), "orders");
+    assert_eq!(route.backend_login(), "orders_rw");
+    assert_eq!(route.credential().path(), std::path::Path::new("/c"));
+    let route = config
+        .resolve_identity("caf\u{e9}", "reports")
+        .expect("route");
+    assert_eq!(route.backend_database(), "reports_db");
+    assert_eq!(route.cluster().as_str(), "main");
+}
+
+#[test]
+fn ac5_an_empty_identity_map_resolves_nothing() {
+    // covers: 0003 AC-5
+    for text in [
+        "config_version = 1\n".to_owned(),
+        "config_version = 1\nidentity = []\n".to_owned(),
+        BASE.to_owned(),
+    ] {
+        let config = accepted(text.as_bytes());
+        for (principal, database) in [("", ""), ("orders_app", "orders"), ("*", "*")] {
+            assert!(config.resolve_identity(principal, database).is_none());
+        }
+    }
+}
+
+// Large files: time and positions. The four made inputs follow the text
+// of `0003 AC-15` ("Validation time", first written in commit c72cdfc of
+// arc-f3-spec) and the existing rule under "Keys" that the
+// checks must not take time that grows with the square of the number of
+// entries. Asked for by dev-f3-build as the regression tests of the fix
+// "position lookup no longer rescans the file".
+
+/// The position of the first byte of `marker` in `text`, by the rule of the
+/// validation order of spec 0001: line = 1 + line feeds before the offset,
+/// column = 1 + Unicode scalars from the line start (a CR counts).
+fn position_of(text: &str, marker: &str) -> (u32, u32) {
+    assert_eq!(
+        text.matches(marker).count(),
+        1,
+        "marker {marker:?} is unique"
+    );
+    position_at(text, text.find(marker).expect("marker"))
+}
+
+fn position_at(text: &str, offset: usize) -> (u32, u32) {
+    let before = &text[..offset];
+    let line = 1 + before.matches('\n').count();
+    let line_start = before.rfind('\n').map_or(0, |index| index + 1);
+    let column = 1 + text[line_start..offset].chars().count();
+    (
+        u32::try_from(line).expect("line"),
+        u32::try_from(column).expect("column"),
+    )
+}
+
+/// Lines 1 to 9 of made input 1.
+const AC15_HEAD: &str = "config_version = 1\n\n[control]\nstate_directory = \"/var/lib/pool\"\n\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"7412345678901234567\"\nexpected_writer = \"n0\"\n";
+
+const AC15_LIMIT: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// Made input 1: one `[[node]]` table per entry, as many as fit.
+fn ac15_input_1() -> (String, usize) {
+    let mut text = String::from(AC15_HEAD);
+    let mut count = 0;
+    loop {
+        let entry = format!(
+            "\n[[node]]\nid = \"n{count}\"\ncluster = \"main\"\nhost = \"h{count}.db.internal\"\nport = 5432\n"
+        );
+        if text.len() + entry.len() > MAX_CONFIG_BYTES {
+            return (text, count);
+        }
+        text.push_str(&entry);
+        count += 1;
+    }
+}
+
+/// Made inputs 2 and 3: every entry inline on line 2, with this port.
+fn ac15_inline(port: u16) -> (String, usize) {
+    let tail = format!("]\n{}", &AC15_HEAD[19..]);
+    let mut text = String::from("config_version = 1\nnode = [");
+    let mut count = 0;
+    loop {
+        let comma = if count == 0 { "" } else { "," };
+        let entry = format!(
+            "{comma}{{id=\"n{count}\",cluster=\"main\",host=\"h{count}.db.internal\",port={port}}}"
+        );
+        if text.len() + entry.len() + tail.len() > MAX_CONFIG_BYTES {
+            text.push_str(&tail);
+            return (text, count);
+        }
+        text.push_str(&entry);
+        count += 1;
+    }
+}
+
+#[test]
+fn ac15_made_inputs_have_the_listed_size() {
+    // covers: 0003 AC-15. Fast: builds the inputs only.
+    let sizes = [ac15_input_1(), ac15_inline(5432), ac15_inline(0)]
+        .map(|(text, count)| (count, text.len()));
+    assert_eq!(
+        sizes,
+        [
+            (13_217, 1_048_511),
+            (16_471, 1_048_558),
+            (17_268, 1_048_559)
+        ]
+    );
+}
+
+#[test]
+fn ac15_large_valid_inputs_validate_within_ten_seconds() {
+    // covers: 0003 AC-15, 0003 AC-1. Inputs 1 and 2 are valid.
+    // Each call is timed and checked before the next one starts.
+    for (name, (text, count)) in [("input 1", ac15_input_1()), ("input 2", ac15_inline(5432))] {
+        let started = std::time::Instant::now();
+        let config = accepted(text.as_bytes());
+        let elapsed = started.elapsed();
+        assert!(elapsed < AC15_LIMIT, "{name}: validate took {elapsed:?}");
+        assert_eq!(config.nodes().len(), count, "{name}");
+    }
+}
+
+#[test]
+fn ac15_one_finding_per_entry_on_one_line_at_each_value() {
+    // covers: 0003 AC-15, 0003 AC-2, AC-3. Input 3: every entry
+    // has port 0, so every entry gives `config.invalid_value` at `node.port`,
+    // in file order, on line 2, at the column where its value starts.
+    let (text, count) = ac15_inline(0);
+    let started = std::time::Instant::now();
+    let rejection = rejected(text.as_bytes());
+    let elapsed = started.elapsed();
+    assert!(elapsed < AC15_LIMIT, "input 3: validate took {elapsed:?}");
+    let want: Vec<(FindingCode, Location)> = text
+        .match_indices("port=0")
+        .map(|(offset, _)| {
+            let (line, column) = position_at(&text, offset + "port=".len());
+            (FindingCode::InvalidValue, key_at("node.port", line, column))
+        })
+        .collect();
+    assert_eq!(want.len(), count);
+    assert_eq!(want[0].1, key_at("node.port", 2, 60));
+    assert!(
+        want.iter()
+            .all(|(_, at)| matches!(at, Location::KeyAt { line: 2, .. }))
+    );
+    let found: Vec<(FindingCode, Location)> = rejection
+        .findings()
+        .iter()
+        .map(|finding| (finding.code(), finding.location()))
+        .collect();
+    assert_eq!(found.len(), count);
+    assert!(
+        found == want,
+        "the first difference: {:?}",
+        found.iter().zip(&want).find(|(a, b)| a != b)
+    );
+}
+
+#[test]
+fn ac15_findings_follow_the_validation_order_against_the_file_order() {
+    // covers: 0003 AC-15, 0003 AC-3. Input 4: the node checks of
+    // step 4 come before the duplicate id of step 6.
+    let text = format!(
+        "{}\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"10.0.0.12\"\nport = 0\n",
+        String::from_utf8(fixture("valid-topology-minimal.toml")).expect("utf-8")
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::InvalidValue, key_at("node.port", 21, 8)),
+            (FindingCode::DuplicateId, key_at("node.id", 18, 6)),
+        ]
+    );
+}
+
+#[test]
+fn ac3_large_file_positions_stay_exact_deep_in_many_lines() {
+    // covers: 0003 AC-2, AC-3. A repeated id and an invalid host near the
+    // end of input 1, more than 79000 lines down.
+    let (text, count) = ac15_input_1();
+    let late = count - 10;
+    let last = count - 1;
+    let text = text
+        .replace(&format!("id = \"n{late}\"\n"), "id = \"n5\"\n")
+        .replace(&format!("\"h{last}.db.internal\""), "\"bad_host\"");
+    let late_at = text.rfind("id = \"n5\"").expect("late id") + "id = ".len();
+    let (dup_line, dup_column) = position_at(&text, late_at);
+    let (host_line, host_column) = position_of(&text, "\"bad_host\"");
+    assert!(host_line > 79_000, "{host_line}");
+    assert_eq!((dup_column, host_column), (6, 8));
+    let started = std::time::Instant::now();
+    let found = findings(text.as_bytes());
+    let elapsed = started.elapsed();
+    assert!(elapsed < AC15_LIMIT, "validate took {elapsed:?}");
+    assert_eq!(
+        found,
+        [
+            (
+                FindingCode::InvalidValue,
+                key_at("node.host", host_line, host_column)
+            ),
+            (
+                FindingCode::DuplicateId,
+                key_at("node.id", dup_line, dup_column)
+            ),
+        ]
+    );
+}
+
+#[test]
+fn ac3_a_finding_after_a_long_comment_has_its_exact_position() {
+    // covers: 0003 AC-2, AC-3. An entry after a comment of 900 KB on one
+    // line.
+    let text = format!(
+        "config_version = 1\n# {}\n{}",
+        "x".repeat(900_000),
+        &BASE[19..]
+    )
+    .replace("port = 5432", "port = 0");
+    let (line, column) = position_of(&text, "0\n");
+    assert_eq!((line, column), (16, 8));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.port", line, column))]
+    );
+}
+
+#[test]
+fn ac3_positions_count_scalars_with_crlf_and_at_block_boundaries() {
+    // covers: 0003 AC-2, AC-3. (d) CRLF line ends, multi byte characters in
+    // a comment and in a value before the finding on the same line, and the
+    // finding's offset on and next to a 256 byte boundary.
+    let head = "config_version = 1\r\n# \u{e9}\u{20ac}\u{1f600} comment\r\n[control]\r\nstate_directory = \"/p\"\r\n[[cluster]]\r\nid = \"main\"\r\nsystem_identifier = \"1\"\r\nexpected_writer = \"pg1\"\r\nnode = [{ id = \"pg1\", cluster = \"main\", host = \"h\", port = 1 }]\r\n";
+    // `node` after `[[cluster]]` would belong to the cluster; put it first.
+    let head = head.replace(
+        "[control]\r\n",
+        "node = [{ id = \"pg1\", cluster = \"main\", host = \"h\", port = 1 }]\r\n[control]\r\n",
+    );
+    let head = head.replace(
+        "expected_writer = \"pg1\"\r\nnode = [{ id = \"pg1\", cluster = \"main\", host = \"h\", port = 1 }]\r\n",
+        "expected_writer = \"pg1\"\r\n",
+    );
+    // The identity line: a principal with multi byte characters, then the
+    // invalid value. The identity array goes before [control] too.
+    let line_start = "identity = [{ id = \"a\", principal = \"\u{e9}\u{20ac}\u{1f600}\", database = \"d\", cluster = \"main\", backend_login = \"l\", credential_file = ";
+    for target in [255_usize, 256, 257, 511, 512, 513] {
+        // Pad with an ASCII comment line so that the opening quote of the
+        // bad value lands at byte offset `target`.
+        let fixed = line_start.len() + "#\r\n".len();
+        let (before_control, after_control) =
+            head.split_at(head.find("[control]").expect("control"));
+        let base_offset = before_control.len() + fixed;
+        // Every target is reachable, so no target is skipped.
+        assert!(base_offset <= target, "{base_offset} > {target}");
+        let pad = "x".repeat(target - base_offset);
+        let text =
+            format!("{before_control}#{pad}\r\n{line_start}\"relative\" }}]\r\n{after_control}");
+        assert_eq!(text.find("\"relative\""), Some(target), "{text}");
+        let (line, column) = position_of(&text, "\"relative\"");
+        // Line 1 the version, 2 the comment with é€😀, 3 the node, 4 the
+        // padding comment, 5 the identity.
+        assert_eq!(line, 5);
+        assert_eq!(
+            usize::try_from(column).expect("column"),
+            1 + line_start.chars().count()
+        );
+        assert_eq!(
+            findings(text.as_bytes()),
+            [(
+                FindingCode::InvalidValue,
+                key_at("identity.credential_file", line, column)
+            )],
+            "target {target}"
+        );
+    }
+}
+
+// Gaps named by the review of 2026-11-15 (t1, t2, t4), added by /test. Each
+// case fails if the rule it names is removed from the cross checks or from
+// the finding text.
+
+#[test]
+fn ac2_a_repeated_cluster_id_is_reported_at_each_later_entry() {
+    // covers: 0003 AC-2, AC-3 (review t1). Cross check 1 for clusters.
+    let cluster = |sys: &str| {
+        format!(
+            "[[cluster]]\nid = \"main\"\nsystem_identifier = \"{sys}\"\nexpected_writer = \"pg1\"\n"
+        )
+    };
+    let text = base_plus(&cluster("2"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::DuplicateId, key_at("cluster.id", 18, 6))]
+    );
+    let text = base_plus(&format!("{}\n{}", cluster("2"), cluster("3")));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("cluster.id", 18, 6)),
+            (FindingCode::DuplicateId, key_at("cluster.id", 23, 6)),
+        ]
+    );
+}
+
+#[test]
+fn ac3_repeated_ids_are_reported_clusters_then_nodes_then_identities() {
+    // covers: 0003 AC-3 (review t1). Cross check 1 runs over clusters, then
+    // nodes, then identities, whatever the order of the tables in the file.
+    let text = "config_version = 1
+
+[[identity]]
+id = \"a\"
+principal = \"p\"
+database = \"d\"
+cluster = \"main\"
+backend_login = \"l\"
+credential_file = \"/c\"
+
+[[identity]]
+id = \"a\"
+principal = \"p2\"
+database = \"d\"
+cluster = \"main\"
+backend_login = \"l\"
+credential_file = \"/c\"
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"10.0.0.11\"
+port = 5432
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"10.0.0.12\"
+port = 5432
+
+[[cluster]]
+id = \"main\"
+system_identifier = \"1\"
+expected_writer = \"pg1\"
+
+[[cluster]]
+id = \"main\"
+system_identifier = \"2\"
+expected_writer = \"pg1\"
+
+[control]
+state_directory = \"/var/lib/pool\"
+";
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("cluster.id", 37, 6)),
+            (FindingCode::DuplicateId, key_at("node.id", 26, 6)),
+            (FindingCode::DuplicateId, key_at("identity.id", 12, 6)),
+        ]
+    );
+}
+
+#[test]
+fn ac2_a_bad_cluster_id_skips_only_the_writer_check_of_that_cluster() {
+    // covers: 0003 AC-2 (review t2, `topology.rs:731`). The expected_writer
+    // check still runs for every other cluster.
+    let bad = base_with_line(7, "id = \"Main\"");
+    let text = format!(
+        "{bad}\n[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg1\"\n"
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::InvalidValue, key_at("cluster.id", 7, 6)),
+            (
+                FindingCode::UnknownReference,
+                key_at("cluster.expected_writer", 20, 19)
+            ),
+        ]
+    );
+    // The other cluster with a writer of its own gives no finding.
+    let text = format!(
+        "{bad}\n[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg2\"\n\n[[node]]\nid = \"pg2\"\ncluster = \"other\"\nhost = \"10.0.0.12\"\nport = 5432\n"
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("cluster.id", 7, 6))]
+    );
+}
+
+#[test]
+fn ac2_a_node_with_a_bad_cluster_skips_every_writer_check() {
+    // covers: 0003 AC-2 (review t2, `topology.rs:728`). A node whose cluster
+    // failed its check skips cross check 3 as a whole.
+    let text = base_with_line(13, "cluster = \"Main\"");
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.cluster", 13, 11))]
+    );
+    // Also when the bad node is not the writer, and another cluster names a
+    // writer that does not exist.
+    let text = base_plus(
+        "[[node]]\nid = \"pg2\"\ncluster = \"Main\"\nhost = \"10.0.0.12\"\nport = 5432\n\n[[cluster]]\nid = \"other\"\nsystem_identifier = \"2\"\nexpected_writer = \"pg9\"\n",
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.cluster", 19, 11))]
+    );
+}
+
+#[test]
+fn ac2_a_node_whose_port_failed_is_left_out_of_the_endpoint_check() {
+    // covers: 0003 AC-2, AC-15 (review t2, `topology.rs:772`). Two nodes with
+    // the same host and port 0 give the two port findings and nothing else.
+    let second = |port: &str| {
+        format!("[[node]]\nid = \"pg2\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = {port}\n")
+    };
+    let text = format!("{}\n{}", base_with_line(15, "port = 0"), second("0"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::InvalidValue, key_at("node.port", 15, 8)),
+            (FindingCode::InvalidValue, key_at("node.port", 21, 8)),
+        ]
+    );
+    let text = format!("{}\n{}", base_with_line(15, "port = 0"), second("5432"));
+    assert_eq!(
+        findings(text.as_bytes()),
+        [(FindingCode::InvalidValue, key_at("node.port", 15, 8))]
+    );
+}
+
+/// The canary in positions other than a string value of a known key: keys
+/// that are not in the schema, table names, comments, array entries, values
+/// of the wrong type and a string that does not end. Each text is refused.
+fn canary_positions() -> Vec<String> {
+    let c = CANARY;
+    let node = |line: &str| {
+        format!(
+            "[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = 5432\n{line}\n"
+        )
+    };
+    let base_without_node = BASE
+        .split("[[node]]")
+        .next()
+        .expect("the base has a node")
+        .to_owned();
+    vec![
+        // A key that is not in the schema, inside each table.
+        base_with_line(4, &format!("state_directory = \"/var/lib/pool\"\n{c} = 1")),
+        base_with_line(9, &format!("expected_writer = \"pg1\"\n{c} = \"x\"")),
+        format!("{base_without_node}{}", node(&format!("{c} = true"))),
+        identity_with(c, "1"),
+        format!("{base_without_node}{}", node(&format!("\"{c}\" = 1"))),
+        base_with_line(
+            4,
+            &format!("state_directory = \"/var/lib/pool\"\n{c}.x = 1"),
+        ),
+        format!(
+            "{base_without_node}node = [{{ id = \"pg1\", cluster = \"main\", host = \"h\", port = 1, {c} = 1 }}]\n"
+        ),
+        // A table name.
+        base_plus(&format!("[{c}]\nx = 1\n")),
+        base_plus(&format!("[[{c}]]\nx = 1\n")),
+        base_plus(&format!("[control.{c}]\nx = 1\n")),
+        base_plus(&format!("[\"{c}\"]\n")),
+        // A comment in a file that is refused.
+        format!("# {c}\n{}", base_with_line(15, &format!("port = 0 # {c}"))),
+        // An array entry, and values of the wrong type.
+        base_with_line(15, &format!("port = [\"{c}\"]")),
+        base_with_line(15, &format!("port = \"{c}\"")),
+        base_with_line(12, &format!("id = [\"{c}\"]")),
+        base_with_line(14, &format!("host = {{ {c} = 1 }}")),
+        base_with_line(8, &format!("system_identifier = [1, \"{c}\"]")),
+        identity_with("routing_profile", &format!("[\"{c}\"]")),
+        // A string that does not end, and a key with no value.
+        base_with_line(14, &format!("host = \"{c}")),
+        base_plus(&format!("[[identity]]\n{c}\n")),
+    ]
+}
+
+#[test]
+fn ac4_a_canary_outside_a_value_never_reaches_rejection_text() {
+    // covers: 0003 AC-4 (review t4). Each text is refused, and neither the
+    // Debug nor the Display of the rejection holds any part of the canary.
+    for text in canary_positions() {
+        let rejection = rejected(text.as_bytes());
+        assert!(!rejection.findings().is_empty(), "{text}");
+        for rendered in [format!("{rejection:?}"), rejection.to_string()] {
+            assert!(!rendered.contains(CANARY), "{text}\n{rendered}");
+            assert!(!rendered.contains("9f2c7b1e"), "{text}\n{rendered}");
+        }
+    }
 }

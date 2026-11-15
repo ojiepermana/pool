@@ -45,12 +45,20 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [crates/pool-config/AGENTS.md](../crates/pool-config/AGENTS.md) | crates/pool-config agent guide |
 | [crates/pool-config/CLAUDE.md](../crates/pool-config/CLAUDE.md) | Claude Code pointer to crates/pool-config/AGENTS.md |
 
+## crates/pool-control
+
+| Path | Document |
+|---|---|
+| [crates/pool-control/AGENTS.md](../crates/pool-control/AGENTS.md) | crates/pool-control agent guide |
+| [crates/pool-control/CLAUDE.md](../crates/pool-control/CLAUDE.md) | Claude Code pointer to crates/pool-control/AGENTS.md |
+
 ## docs/adr
 
 | Path | Document |
 |---|---|
 | [docs/adr/0001-initial-architecture.md](adr/0001-initial-architecture.md) | ADR 0001. Initial architecture |
 | [docs/adr/0002-standards-and-tooling.md](adr/0002-standards-and-tooling.md) | ADR 0002. Standards and tooling |
+| [docs/adr/0003-control-and-session-data-model.md](adr/0003-control-and-session-data-model.md) | ADR 0003. Control and session data model |
 
 ## docs/architecture
 
@@ -120,6 +128,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/reviews/2026-11-14-scope-001-stack-and-workspace.md](reviews/2026-11-14-scope-001-stack-and-workspace.md) | Review. Scope 001, stack and workspace (2026-11-14) |
 | [docs/reviews/2026-11-14-scope-002-standards-and-tooling.md](reviews/2026-11-14-scope-002-standards-and-tooling.md) | Review. Scope 002, standards and tooling (2026-11-14) |
+| [docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md](reviews/2026-11-15-scope-003-control-and-session-data-model.md) | Review. Scope 003, control and session data model (2026-11-15) |
 
 ## docs/scope
 
@@ -166,6 +175,14 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/specs/0002-standards-and-tooling/index.md](specs/0002-standards-and-tooling/index.md) | 0002. Standards and tooling |
 | [docs/specs/0002-standards-and-tooling/rationale.md](specs/0002-standards-and-tooling/rationale.md) | Standards and tooling rationale |
 | [docs/specs/0002-standards-and-tooling/verify.md](specs/0002-standards-and-tooling/verify.md) | 0002. Verification record |
+
+## docs/specs/0003-control-and-session-data-model
+
+| Path | Document |
+|---|---|
+| [docs/specs/0003-control-and-session-data-model/index.md](specs/0003-control-and-session-data-model/index.md) | 0003. Control and session data model |
+| [docs/specs/0003-control-and-session-data-model/rationale.md](specs/0003-control-and-session-data-model/rationale.md) | Control and session data model rationale |
+| [docs/specs/0003-control-and-session-data-model/verify.md](specs/0003-control-and-session-data-model/verify.md) | 0003. Verification record |
 
 ## docs/testing
 

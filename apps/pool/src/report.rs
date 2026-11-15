@@ -103,6 +103,7 @@ impl JsonFinding {
             Location::None => (None, None, None),
             Location::Key(key) => (Some(key), None, None),
             Location::Position { line, column } => (None, Some(line), Some(column)),
+            Location::KeyAt { key, line, column } => (Some(key), Some(line), Some(column)),
         };
         JsonFinding {
             code: finding.code().as_str(),

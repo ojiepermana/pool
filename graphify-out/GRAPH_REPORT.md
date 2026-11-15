@@ -1,102 +1,104 @@
 # Graph Report - pool  (2026-11-15)
 
 ## Corpus Check
-- 31 files · ~191,500 words
+- 23 files · ~283,048 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2324 nodes · 6222 edges · 114 communities (89 shown, 25 thin omitted)
-- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 786 edges (avg confidence: 0.85)
-- Token cost: 0 input · 0 output
+- 3466 nodes · 10781 edges · 117 communities (92 shown, 25 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 1254 edges (avg confidence: 0.88)
+- Token cost: 904,736 input · 251,864 output
 
 ## Community Hubs (Navigation)
 - check-config Integration Tests
 - repo_check/docs.rs
 - pool-config Validation Tests
-- Linux Build Evidence, AC-2 and VM Architecture
-- Doc
-- pool CLI Entry and Argument Parsing: cli.rs: ci.rs
+- Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6
+- workspace.rs: Decisions and runner ups (decisions 1 to 38, aut
+- Scope 003 Coordination Brief, Log and Manual Steps
+- Glossary and Routing Profiles
+- workspace.rs: src/workspace.rs: src/workspace.rs
 - Scope 002 Brief Rules: apps/pool agent guide
 - pool-config Validation Library
-- Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6
-- workspace.rs: src/workspace.rs
-- Workspace Layout, Bounded Read and FIFO Limit
-- ids.rs
-- Configuration Keys and Secret References
-- Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation
-- Scope 002 Brief Rules
-- Review Clarifications and check-config Usage Rules
-- Standards, Tooling and Release Qualification
-- Scope 001 Coordination Brief, Log and Authorization: Follow-up 11: scope 002 adds automatic CI checks
-- Spec 0002: Standards and tooling
-- Glossary and Routing Profiles
-- Feature Inventory and Parity Matrix
-- Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene
-- Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, 
-- check.sh
-- workspace.rs: src/workspace.rs: src/workspace.rs
-- Security Requirements and Features F-100 to F-108
-- Summary of the first pass: seven required checks
-- Offline Bounds, Parser Depth and Known Limits
-- Feature Inventory and Parity Matrix: Feature inventory and parity matrix
-- Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide
-- Load Balancing and Replica Selection: High availability PRD
-- SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack
-- workspace.rs: src/workspace.rs: text.rs
-- Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende
-- Spec 0002: Standards and tooling: Remote proof (remote steps 1-8, run by the lead)
-- workspace.rs: Decisions and runner ups (decisions 1 to 38, aut
-- Security Requirements and Features F-100 to F-108: Trust boundaries
-- Scaffold Step and dev-f1-build Gate: 0001. Verification record: 0001. Verification record: 0001. Verification record
 - Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories
-- Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)
+- SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack
+- Doc
+- Workspace Layout, Bounded Read and FIFO Limit
+- pool CLI Entry and Argument Parsing: cli.rs: ci.rs
+- Spec 0003 Authority Model: Startup States and Bootstrap
+- Spec 0003 Configuration Keys, Findings and Fixtures
+- Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation
+- ids.rs
+- Spec 0002: Standards and tooling
+- Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene
+- Review Clarifications and check-config Usage Rules
+- Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, 
+- Spec 0003 Writer Admission and Conflict Evidence
+- Linux Build Evidence, AC-2 and VM Architecture
+- Standards, Tooling and Release Qualification
+- Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108
+- Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide
+- Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)
+- Feature Inventory and Parity Matrix: Feature inventory and parity matrix
 - Scaffold Step and dev-f1-build Gate: 0001. Verification record
-- SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack
+- Scope 001 Coordination Log, Closing and Blockers
+- Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende
+- check.sh
+- Spec 0003 Decision, Rationale and Scope 004 Handoff
+- Scope 002 Brief Rules
+- Summary of the first pass: seven required checks
+- cli.rs Parsing and Test Count Evidence
+- Leases, Cancellation and Login Routing
+- Scope 001 Coordination Brief, Log and Authorization: Follow-up 11: scope 002 adds automatic CI checks
+- workspace.rs: src/workspace.rs: text.rs
+- Load Balancing and Replica Selection: High availability PRD: pool README
+- Spec 0003 Delegated Decisions and Workspace Guards
+- Security Requirements and Features F-100 to F-108
+- SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence
+- Spec 0003 Journal Schema and Cross Check Findings
+- check-config Exit Status and AC-11 Readings
 - SQL Routing and Replica Profiles: Protocol engine: Protocol engine
+- Topology Administration, Promotion and Operation Records
 - Security Requirements and Features F-100 to F-108: Health monitoring PRD
 - Slices, Milestones and Readiness Gates
-- Load Balancing and Replica Selection: High availability PRD: pool README
 - repo_check/ci.rs
 - repo_check/ci.rs: repo_check/ci.rs
-- Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)
-- Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6: Second review, fix round at ee8e750 (range 9e03a
-- Slices, Milestones and Readiness Gates: Contributing to POOL
-- workspace.rs
+- SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack
+- Spec 0003 Records Table and Node Naming
+- workspace.rs: src/workspace.rs
 - pool-config Validation Library: pool/src/report.rs
-- prove-checks.sh
-- Changelog, Feature 1 Done and Spec Status
-- Leases, Cancellation and Login Routing
-- Spec 0002: Standards and tooling: Verify after the review fixes at a3258e4 (PASS f
-- repo_check/ci.rs: Fixture
-- Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling
-- workspace.rs: Workspace guards W1-W7
-- Protocol Contract and Driver Compatibility: Driver compatibility matrix
-- Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories: AC-4 Dependencies, licenses and advisories (carg
-- Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,
-- Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table
-- Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json): Initial architecture rationale
 - Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende
-- Review Clarifications and check-config Usage Rules: pool/src/main.rs
-- Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108
-- SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence
-- Doc: Report
-- Pgpool Baseline, Competitors and Feasibility: Pgpool configuration coverage inventory
 - Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal
-- repo_check/ci.rs: Outcome
-- Pgpool Baseline, Competitors and Feasibility: Feasibility study
-- repo_check/ci.rs: common.rs
-- Load Balancing and Replica Selection: High availability PRD: High availability PRD
-- Changed section (scope 002)
-- Pgpool Baseline, Competitors and Feasibility: Competitor analysis
-- Protocol Contract and Driver Compatibility: Driver compatibility matrix: PostgreSQL protocol analysis
-- Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207
+- prove-checks.sh
+- Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling
+- Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)
+- repo_check/ci.rs: Fixture
 - Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle
-- Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Reviewer roster (12 review and risk owner roles,: Reviewer roster (12 review and risk owner roles,
-- Leases, Cancellation and Login Routing: Query cache PRD
-- Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide: Planned Architecture
-- Spec 0002: Standards and tooling: Remote step 3: the branch rule (ruleset 27266107
-- Scope 002 Brief Rules: Closing follows spec 0002 remote step 7 (closing
-- Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207: Pgpool baseline modes and POOL dispositions
+- Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,
+- High Availability PRD and Multi Proxy Authority
+- Protocol Contract and Driver Compatibility: Driver compatibility matrix
+- Linux Only /dev/full Write Tests
+- Security Features, Identity Requirements and Spec 0003 Security Model
+- Doc: Report
+- Security Requirements and Features F-100 to F-108: Trust boundaries
+- Pgpool Baseline, Competitors and Feasibility: Competitor analysis
+- Spec 0003 Build Plan and Scope 003 Milestones
+- repo_check/ci.rs: Outcome
+- Pgpool Baseline, Competitors and Feasibility: Pgpool configuration coverage inventory
+- Spec 0003 Identifier and Generation Types
+- Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207
+- Scope 002 Remote Steps and Feature 2 Done
+- repo_check/ci.rs: common.rs
+- Pgpool Baseline, Competitors and Feasibility: Feasibility study
+- Scope 002 Review Rounds and Open Minors
+- Slices, Milestones and Readiness Gates: Contributing to POOL
+- Protocol Contract and Driver Compatibility: Driver compatibility matrix: PostgreSQL protocol analysis
+- Reviewer Roster and Review Roles
+- Offline Bounds, Parser Depth and Known Limits
+- Deployment Reference and Four VM Lab
+- Query Cache PRD and V2 Deferred Features
+- Configuration Keys and Secret References
+- Changed section (scope 002)
 - linux-build.sh
 - Doc: BTreeMap
 - repo_check/ci.rs: Display
@@ -118,42 +120,59 @@
 - pool CLI Entry and Argument Parsing: cli.rs: ci.rs: Report
 - ids.rs: Report
 - workspace.rs: src/workspace.rs: Report
-- repo_check/ci.rs: Fixture
+- repo_check/ci.rs Fixture
 - repo_check/docs.rs: Fixture: Fixture
 - repo_check/workspace.rs
 - repo_check/ci.rs: Vec
+- pool-control Authority Model Crate
 
 ## God Nodes (most connected - your core abstractions)
-1. `Spec 0002: Standards and tooling (Status: Accepted)` - 117 edges
-2. `Spec 0001. POOL initial architecture` - 80 edges
-3. `Log koordinasi: 001-stack-and-workspace (coordination log)` - 63 edges
-4. `Glossary` - 63 edges
-5. `Coordination log: 002-standards-and-tooling` - 61 edges
-6. `AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full)` - 55 edges
-7. `AC-2 Linux build (container check ends with 'linux build check passed' and shows host aarch64-unknown-linux-gnu)` - 50 edges
-8. `good_tree()` - 48 edges
-9. `2. Standards and tooling (done)` - 46 edges
-10. `Report` - 44 edges
+1. `Spec 0002: Standards and tooling (Status: Accepted)` - 130 edges
+2. `Spec 0001. POOL initial architecture` - 99 edges
+3. `Spec 0003. Control and session data model (Status: In Progress, 2026-11-15)` - 86 edges
+4. `Coordination log: 003-control-and-session-data-model (start hash ca9a897, decision mode auto, wave 1 of 2026-11-15, updated 2026-11-15 14:44; final state: every feature 3 box ticked, closed local only with no push, F3-1 still open)` - 86 edges
+5. `Glossary` - 84 edges
+6. `4. One real primary path (planned)` - 77 edges
+7. `3. Control and session data model (in-progress)` - 73 edges
+8. `Log koordinasi: 001-stack-and-workspace (coordination log)` - 64 edges
+9. `Coordination log: 002-standards-and-tooling` - 63 edges
+10. `Independent review of scope 003 (control and session data model, spec 0003), 2026-11-15: verdict Approve with nits, no Blocker and no Major, 15 Minor findings and 18 nits, range ca9a897..be06393 on main, main reviewer claude-fable-5-2` - 56 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `0003 full verification: scripts/check.sh linux-build passes on aaad537 and on the tree of 4c61e3b in rust:1.100.0-slim-bookworm (linux/arm64): cargo test --workspace 240 passed with the ac15_ and ac16_ tests; Linux evidence for the time limit of AC-15` --references--> `linux-build.sh script`  [INFERRED]
+  docs/specs/0003-control-and-session-data-model/verify.md → scripts/linux-build.sh
 - `Where a Change Belongs (documentation ownership table)` --semantically_similar_to--> `Documentation ownership model (scope, specs, PRDs, ADRs, research)`  [INFERRED] [semantically similar]
   docs/index.md → AGENTS.md
-- `Added: exit status convention for POOL commands (0 success, 1 input rejected, 2 usage error, 3 could not finish)` --semantically_similar_to--> `Exit status and command output convention (0/1/2/3, stdout result, one line JSON)`  [INFERRED] [semantically similar]
-  CHANGELOG.md → docs/engineering-standards.md
-- `enabled_true_is_refused_in_every_table_spelling()` --implements--> `AC-5 Result cache is refused (config.unsupported_capability at result_cache.enabled)`  [EXTRACTED]
-  crates/pool-config/tests/validate.rs → docs/specs/0001-initial-architecture/index.md
-- `result_cache_enabled_is_refused()` --implements--> `AC-5 Result cache is refused (config.unsupported_capability at result_cache.enabled)`  [EXTRACTED]
-  crates/pool-config/tests/validate.rs → docs/specs/0001-initial-architecture/index.md
-- `automatic_promotion_enabled_is_refused()` --implements--> `AC-6 Automatic promotion is refused (config.unsupported_capability at automatic_promotion.enabled)`  [EXTRACTED]
-  crates/pool-config/tests/validate.rs → docs/specs/0001-initial-architecture/index.md
+- `Reading: JSON field order is checked on the raw line (agreed, also done byte for byte)` --references--> `ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order()`  [INFERRED]
+  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
+- `Extra runs beyond the spec: mode 000 file exits 3 io.permission_denied; closed stdout or stderr pipe exits 3 with no output and no panic (not the /dev/full case)` --references--> `ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic()`  [INFERRED]
+  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
+- `Extra runs beyond the spec: mode 000 file exits 3 io.permission_denied; closed stdout or stderr pipe exits 3 with no output and no panic (not the /dev/full case)` --references--> `ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic()`  [INFERRED]
+  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
 
 ## Import Cycles
 - None detected.
 
 ## Hyperedges (group relationships)
+- **Changelog entries of scope 003 (control and session data model): 13 Added and 5 Changed bullets** — changelog_added_topology_configuration_keys, changelog_added_six_topology_finding_codes, changelog_added_fourth_finding_line, changelog_added_exact_identity_map_lookup, changelog_added_identifier_and_generation_types, changelog_added_pool_control_library, changelog_added_four_walks_and_model_test, changelog_added_validation_time_limit, changelog_added_witness_check_in_writer_admission, changelog_added_thirteen_topology_fixtures, changelog_added_spec_0003_documents, changelog_added_journal_format_and_record_contracts, changelog_added_ten_glossary_terms, changelog_changed_workspace_three_packages, changelog_changed_prove_checks_case_17, changelog_changed_node_means_configured_server, changelog_changed_shared_conventions_identifier_rule, changelog_changed_specs_0001_0002_dated_notes [EXTRACTED 1.00]
+- **Scope 003 review: the three caller limits m1, m2 and m3 to read before scope 004 calls writer_admission** — docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m1, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m2, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m3 [EXTRACTED 1.00]
+- **Scope 003 review: the test gaps owned by the tester (t1 cluster duplicate id, t2 skip rules, t3 compile_fail tests, t4 canary positions, t5 LineIndex)** — docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_t1, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_t2, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_t3, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_t4, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_t5 [EXTRACTED 1.00]
 - **After closing: Docker on, Linux build run by chk-f1-verify-2 and the lead, feature 1 done and spec Accepted, scope 002 shares the checkout** — docs_scope_coordination_001_stack_and_workspace_log_decision_docker_on_linux_build_runs, docs_scope_coordination_001_stack_and_workspace_log_decision_feature_1_done_spec_accepted, docs_scope_coordination_001_stack_and_workspace_log_decision_scope_002_shares_checkout, docs_scope_coordination_001_stack_and_workspace_log_chk_f1_verify_2, docs_scope_coordination_001_stack_and_workspace_log_history_after_closing, docs_scope_coordination_001_stack_and_workspace_log_closing_after_closing, docs_scope_coordination_001_stack_and_workspace_log_closing_remaining_blockers [EXTRACTED 1.00]
 - **Target ARM: F1-N1 answered, arc-f1-update-2 moves the Linux target to aarch64, chk-f1-verify-3 records the aarch64 evidence, feature 1 stays done** — docs_scope_coordination_001_stack_and_workspace_log_decision_f1_n1_arm_target, docs_scope_coordination_001_stack_and_workspace_log_decision_feature_1_stays_done, docs_scope_coordination_001_stack_and_workspace_log_decision_checker_merges_architect_branch, docs_scope_coordination_001_stack_and_workspace_log_arc_f1_update_2, docs_scope_coordination_001_stack_and_workspace_log_chk_f1_verify_3, docs_scope_coordination_001_stack_and_workspace_log_history_target_arm, docs_scope_coordination_001_stack_and_workspace_log_closing_target_arm, docs_scope_coordination_001_stack_and_workspace_log_blocker_vm_architecture_unconfirmed [EXTRACTED 1.00]
+- **What spec 0003 must settle: the scope 003 boundary, three paths to trace, three questions before scope 004, the split with scope 004 and 009, and the required sources** — docs_scope_coordination_003_control_and_session_data_model_log_spec_0003, docs_scope_coordination_003_control_and_session_data_model_brief_umum_scope_003_boundary, docs_scope_coordination_003_control_and_session_data_model_brief_umum_three_paths_to_trace, docs_scope_coordination_003_control_and_session_data_model_brief_umum_three_questions_before_004, docs_scope_coordination_003_control_and_session_data_model_brief_umum_split_with_scope_004, docs_scope_coordination_003_control_and_session_data_model_brief_umum_required_sources [EXTRACTED 1.00]
+- **Spec 0003 acceptance in the scope 003 log: the accept decision, the merge gate, feature 3 in progress and the ticked Design it box** — docs_scope_coordination_003_control_and_session_data_model_log_decision_spec_0003_accepted, docs_scope_coordination_003_control_and_session_data_model_log_decision_spec_merge_gate, docs_scope_coordination_003_control_and_session_data_model_log_decision_feature_3_in_progress, docs_scope_coordination_003_control_and_session_data_model_log_checked_design_it, docs_scope_coordination_003_control_and_session_data_model_log_arc_f3_spec, docs_scope_coordination_003_control_and_session_data_model_log_spec_0003 [EXTRACTED 1.00]
+- **Scope 003 wave 1 sub sessions: arc-f3-spec active, dev-f3-build, chk-f3-verify, tst-f3-test and chk-f3-review on standby** — docs_scope_coordination_003_control_and_session_data_model_log_wave_1, docs_scope_coordination_003_control_and_session_data_model_log_arc_f3_spec, docs_scope_coordination_003_control_and_session_data_model_log_dev_f3_build, docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_verify, docs_scope_coordination_003_control_and_session_data_model_log_tst_f3_test, docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_review [EXTRACTED 1.00]
 - **aarch64 Linux evidence: verdict, revision, image variant, compiler, binary, tests, fixture blocks and AC coverage for the declared target** — docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_why, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_verdict, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_revision, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_checkout_docker, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_architecture, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_command, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_image, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_compiler, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_build_binary, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_test_counts, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_linux_only_tests, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_fixture_blocks, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_ui_box, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_ac_coverage, docs_specs_0001_initial_architecture_verify_linux_evidence_aarch64_files [EXTRACTED 1.00]
+- **The four made inputs of 0003 AC-15 (many lines, one line, one line with every entry wrong, findings against file order), built by the tests at run time and never committed** — docs_specs_0003_control_and_session_data_model_index_validation_time_made_input_1, docs_specs_0003_control_and_session_data_model_index_validation_time_made_input_2, docs_specs_0003_control_and_session_data_model_index_validation_time_made_input_3, docs_specs_0003_control_and_session_data_model_index_validation_time_made_input_4 [EXTRACTED 1.00]
+- **The seven start classification states of spec 0003; only Ready can lead to an open admission** — docs_specs_0003_control_and_session_data_model_index_state_uninitialized, docs_specs_0003_control_and_session_data_model_index_state_unconfirmed, docs_specs_0003_control_and_session_data_model_index_state_missing, docs_specs_0003_control_and_session_data_model_index_state_unreadable, docs_specs_0003_control_and_session_data_model_index_state_mismatch, docs_specs_0003_control_and_session_data_model_index_state_held, docs_specs_0003_control_and_session_data_model_index_state_ready, docs_specs_0003_control_and_session_data_model_index_fn_classify_startup [EXTRACTED 1.00]
+- **The three points of 0003 Follow-up 4 that scope 004 settles before the daemon calls writer_admission for the first time (m1 a latch set after the start, m2 who builds a journal value, m3 the two duties about samples)** — docs_specs_0003_control_and_session_data_model_index_follow_up_4_point_m1, docs_specs_0003_control_and_session_data_model_index_follow_up_4_point_m2, docs_specs_0003_control_and_session_data_model_index_follow_up_4_point_m3 [EXTRACTED 1.00]
+- **Journal schema version 1 of spec 0003: store, approved_topology, member and quarantine** — docs_specs_0003_control_and_session_data_model_index_journal_schema_v1, docs_specs_0003_control_and_session_data_model_index_table_store, docs_specs_0003_control_and_session_data_model_index_table_approved_topology, docs_specs_0003_control_and_session_data_model_index_table_member, docs_specs_0003_control_and_session_data_model_index_table_quarantine [EXTRACTED 1.00]
+- **The ten writer admission reasons of spec 0003 that close a Ready cluster, in order** — docs_specs_0003_control_and_session_data_model_index_reason_authority_cluster_unknown, docs_specs_0003_control_and_session_data_model_index_reason_authority_config_conflict, docs_specs_0003_control_and_session_data_model_index_reason_authority_conflict_latched, docs_specs_0003_control_and_session_data_model_index_reason_authority_writer_quarantined, docs_specs_0003_control_and_session_data_model_index_reason_evidence_writer_missing, docs_specs_0003_control_and_session_data_model_index_reason_evidence_writer_identity, docs_specs_0003_control_and_session_data_model_index_reason_evidence_writer_in_recovery, docs_specs_0003_control_and_session_data_model_index_reason_evidence_writer_timeline, docs_specs_0003_control_and_session_data_model_index_reason_evidence_second_primary, docs_specs_0003_control_and_session_data_model_index_reason_evidence_timeline_ahead, docs_specs_0003_control_and_session_data_model_index_fn_writer_admission [EXTRACTED 1.00]
+- **The three major cross check findings of spec 0003 and the decisions that closed them** — docs_specs_0003_control_and_session_data_model_rationale_cross_check, docs_specs_0003_control_and_session_data_model_rationale_cc_1_conflict_not_latched, docs_specs_0003_control_and_session_data_model_rationale_cc_2_members_not_recorded, docs_specs_0003_control_and_session_data_model_rationale_cc_3_start_wrote_before_classifying, docs_specs_0003_control_and_session_data_model_rationale_decision_18_durable_conflict_latch, docs_specs_0003_control_and_session_data_model_rationale_decision_19_journal_records_members [EXTRACTED 1.00]
+- **0003 review findings of 2026-11-15 that the rationale sorts as work for scope 004 and records in Follow-up 4 (m1, m2, m3, m6, m7, t6 and nit n2)** — docs_specs_0003_control_and_session_data_model_rationale_review_m1, docs_specs_0003_control_and_session_data_model_rationale_review_m2, docs_specs_0003_control_and_session_data_model_rationale_review_m3, docs_specs_0003_control_and_session_data_model_rationale_review_m6, docs_specs_0003_control_and_session_data_model_rationale_review_m7, docs_specs_0003_control_and_session_data_model_rationale_review_t6, docs_specs_0003_control_and_session_data_model_rationale_review_n2 [EXTRACTED 1.00]
+- **Witness thread of the spec 0003 record: the milestone 3 finding that a Ready state is not tied to its witness, the step 9 change in writer_admission, the developer and checker probes and the ac16_ tests** — docs_specs_0003_control_and_session_data_model_verify_m3_finding_ready_not_tied_to_witness, docs_specs_0003_control_and_session_data_model_verify_m5_step_9_witness_check_change, docs_specs_0003_control_and_session_data_model_verify_m5_dev_step_9_probe, docs_specs_0003_control_and_session_data_model_verify_m5_checker_step_9_probe_262144_calls, docs_specs_0003_control_and_session_data_model_verify_test_it_group_ac16_witness [EXTRACTED 1.00]
+- **Validation time thread of the spec 0003 record: the quadratic validate finding of milestone 2, the tester's failing ac15_ tests, the LineIndex fix of step 8 and its proof on macOS and in the Linux container** — docs_specs_0003_control_and_session_data_model_verify_m2_finding_validate_time_quadratic, docs_specs_0003_control_and_session_data_model_verify_test_it_finding_1_validate_quadratic, docs_specs_0003_control_and_session_data_model_verify_m5_step_8_line_index_change, docs_specs_0003_control_and_session_data_model_verify_m5_checker_ac15_tests_fail_on_old_code, docs_specs_0003_control_and_session_data_model_verify_m5_checker_time_against_size, docs_specs_0003_control_and_session_data_model_verify_full_linux_build [EXTRACTED 1.00]
+- **W4 [[patch.unused]] gap thread of the spec 0003 record: the milestone 1 note on where a lockfile entry ends, the tester's pinning test and finding 2, and the checker's confirmation with a suggested rule text change** — docs_specs_0003_control_and_session_data_model_verify_m1_reading_where_a_lockfile_entry_ends, docs_specs_0003_control_and_session_data_model_verify_test_it_group_lockfile_edge_tests, docs_specs_0003_control_and_session_data_model_verify_test_it_finding_2_w4_table_after_last_entry, docs_specs_0003_control_and_session_data_model_verify_full_reading_w4_gap_confirmed [EXTRACTED 1.00]
 - **Scope 001 Document it and /sync (CHANGELOG.md, real commands in CLAUDE.md, CONTRIBUTING.md and README.md per Follow-up 8, AGENTS.md, strategy and scope index corrections)** — docs_scope_coordination_001_stack_and_workspace_log_decision_document_it_by_lead, docs_scope_coordination_001_stack_and_workspace_log_decision_sync_branch, changelog, docs_specs_0001_initial_architecture_index_follow_up_document_real_commands, claude_planned_commands, contributing_checks, readme_build_and_check, agents_workspace_two_packages_no_ci, docs_testing_strategy_proposed_cargo_checks, docs_scope_index_feature_1_state [EXTRACTED 1.00]
 - **Linux target confirmation for 0001 AC-2 (delegated x86_64 choice, blocker, user value F1-N1, F1-2 build)** — docs_scope_coordination_001_stack_and_workspace_log_delegated_linux_target, docs_scope_coordination_001_stack_and_workspace_log_blocker_vm_architecture_unconfirmed, docs_scope_coordination_001_stack_and_workspace_manual_f1_n1_vm_architecture, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build, docs_specs_0001_initial_architecture_index_ac_2, docs_specs_0001_initial_architecture_index_x86_64_linux_target [EXTRACTED 1.00]
 - **Scope 001 review findings (first pass Changes requested: Major array accepted, six Minors, Nits; closed in the fix round)** — docs_reviews_2026_11_14_scope_001_stack_and_workspace_verdict_first, docs_reviews_2026_11_14_scope_001_stack_and_workspace_major_array_accepted, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_1_config_version_constant, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_2_parser_depth_untested, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_3_permission_denied_untested, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_4_column_test_weak, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_5_no_automated_guard, docs_reviews_2026_11_14_scope_001_stack_and_workspace_minor_6_verify_record_stale, docs_reviews_2026_11_14_scope_001_stack_and_workspace_nits, docs_reviews_2026_11_14_scope_001_stack_and_workspace_finding_status [EXTRACTED 1.00]
@@ -170,10 +189,15 @@
 - **Spec 0001 second run still BLOCKED on the Linux build (verdict, AC-2, AC-11 /dev/full, Linux only tests, F1-2)** — docs_specs_0001_initial_architecture_verify_second_run_verdict, docs_specs_0001_initial_architecture_verify_second_run_linux_build_blocked, docs_specs_0001_initial_architecture_index_ac_2, docs_specs_0001_initial_architecture_index_ac_11, docs_specs_0001_initial_architecture_verify_second_run_linux_only_tests, apps_pool_tests_check_config_a_failed_write_exits_3_without_stderr, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build, docs_scope_coordination_001_stack_and_workspace_log_blocker_linux_build_not_run, docs_scope_coordination_001_stack_and_workspace_log_decision_feature_1_not_done_before_linux_build [EXTRACTED 1.00]
 - **Spec 0001 full verify second run on the merged tree (revision, 134 tests, commands, clarified rule checks, AC coverage)** — docs_specs_0001_initial_architecture_verify_second_run, docs_specs_0001_initial_architecture_verify_second_run_revision, docs_specs_0001_initial_architecture_verify_second_run_test_counts, docs_specs_0001_initial_architecture_verify_second_run_commands, docs_specs_0001_initial_architecture_verify_second_run_clarified_rules, docs_specs_0001_initial_architecture_verify_second_run_ac_coverage, docs_specs_0001_initial_architecture_verify_second_run_ac_pass, docs_specs_0001_initial_architecture_verify_second_run_rule_array_reserved_table, docs_specs_0001_initial_architecture_verify_second_run_rule_long_canary_array, docs_specs_0001_initial_architecture_verify_second_run_rule_schema_step_ends_run [EXTRACTED 1.00]
 - **Spec 0001 workstation evidence (commands, tests, fixtures, locked set)** — docs_specs_0001_initial_architecture_verify_workstation_evidence, docs_specs_0001_initial_architecture_verify_workstation_commands, docs_specs_0001_initial_architecture_verify_test_results, docs_specs_0001_initial_architecture_verify_fixture_transcripts, docs_specs_0001_initial_architecture_verify_locked_dependencies, docs_specs_0001_initial_architecture_verify_toolchain_selection, docs_specs_0001_initial_architecture_verify_fixtures, docs_specs_0001_initial_architecture_verify_ac_pass_workstation [EXTRACTED 1.00]
+- **Scope 003 review: findings that need a spec decision by the architect before or in scope 004 (m1, m2, m3, m6, m8, t6)** — docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m1, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m2, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m3, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m6, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_m8, docs_reviews_2026_11_15_scope_003_control_and_session_data_model_minor_t6 [INFERRED 0.85]
 - **Linux build evidence closes feature 1: container build PASS proves AC-2 and the /dev/full clause of AC-11, manual F1-1 and F1-2 PASS, feature 1 done, spec 0001 Accepted** — docs_specs_0001_initial_architecture_verify_linux_evidence, docs_specs_0001_initial_architecture_verify_linux_evidence_verdict, docs_specs_0001_initial_architecture_index_ac_2, docs_specs_0001_initial_architecture_index_ac_11, docs_scope_coordination_001_stack_and_workspace_manual_f1_1_start_docker_desktop, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build, docs_scope_001_stack_and_workspace, docs_specs_0001_initial_architecture_index_status_in_progress [INFERRED 0.85]
 - **Graph refresh ownership during coordination (lead updates graphify-out on main, deviating from AGENTS.md step 6)** — docs_scope_coordination_001_stack_and_workspace_brief_umum_graph_update_ownership, docs_scope_coordination_001_stack_and_workspace_brief_umum_forbidden_paths, agents, docs_scope_coordination_001_stack_and_workspace_brief_umum_lead_session, docs_scope_coordination_001_stack_and_workspace_log_decision_graph_ownership [INFERRED 0.85]
 - **Linux build evidence blocked on the user starting the Docker daemon** — docs_scope_coordination_001_stack_and_workspace_brief_umum_manual_steps_policy, docs_scope_coordination_001_stack_and_workspace_brief_umum_linux_build_evidence, docs_scope_coordination_001_stack_and_workspace_brief_umum_local_toolchain, docs_scope_coordination_001_stack_and_workspace_manual_f1_1_start_docker_desktop, docs_scope_coordination_001_stack_and_workspace_log_blocker_docker_daemon_off, docs_scope_coordination_001_stack_and_workspace_manual_f1_2_run_linux_build [INFERRED 0.85]
 - **Session pinned lease model** — docs_architecture_connection_pooling_session_pooling, docs_architecture_sql_routing_login_time_backend_selection, docs_architecture_data_plane_initial_admission, docs_architecture_data_plane_operation_admission, docs_architecture_sql_routing_no_primary_fallback, docs_architecture_data_plane_no_retry_after_dispatch, docs_specs_0001_initial_architecture_index_virtual_cancellation_credentials [INFERRED 0.85]
+- **Scope 003 review follow-up thread: the chk-f3-review report, its merge and tick, the lead's follow-up of the Minors, the architect notes, the tester's gap tests, the t3 fix, the three merges after the review and the Minors left open** — docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_review, docs_scope_coordination_003_control_and_session_data_model_log_decision_review_merged, docs_scope_coordination_003_control_and_session_data_model_log_decision_review_minors_follow_up, docs_scope_coordination_003_control_and_session_data_model_log_arc_f3_spec_review_follow_ups, docs_scope_coordination_003_control_and_session_data_model_log_tst_f3_test_review_gaps, docs_scope_coordination_003_control_and_session_data_model_log_dev_f3_build_fix_review_t3, docs_scope_coordination_003_control_and_session_data_model_log_decision_three_merges_after_review, docs_scope_coordination_003_control_and_session_data_model_log_decision_review_minors_left_open, docs_scope_coordination_003_control_and_session_data_model_log_checked_review_it [INFERRED 0.95]
+- **Scope 003 validation time thread (0003 AC-15, Build plan step 8): the quadratic validate finding of verify milestone 2, the decision to fix it now, the spec update and its accept, three delegated decisions, the code fix and its gate, the ac15_ tests, the full verification and the ticked milestone** — docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_verify_milestone_2, docs_scope_coordination_003_control_and_session_data_model_log_decision_quadratic_validate_fixed_now, docs_scope_coordination_003_control_and_session_data_model_log_arc_f3_spec_update_ac_15_and_ac_16, docs_scope_coordination_003_control_and_session_data_model_log_decision_spec_update_ac_15_accepted, docs_scope_coordination_003_control_and_session_data_model_log_dd_validation_time_is_criterion, docs_scope_coordination_003_control_and_session_data_model_log_dd_time_bound_covers_invalid_files, docs_scope_coordination_003_control_and_session_data_model_log_dd_how_validation_time_is_checked, docs_scope_coordination_003_control_and_session_data_model_log_dev_f3_build_fix_validation_time, docs_scope_coordination_003_control_and_session_data_model_log_decision_step_8_code_gate, docs_scope_coordination_003_control_and_session_data_model_log_tst_f3_test_test_it, docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_verify_full_verification, docs_scope_coordination_003_control_and_session_data_model_log_checked_validation_time [INFERRED 0.95]
+- **Scope 003 witness in writer admission thread (0003 AC-16, Build plan step 9): the Ready state finding of verify milestone 3, the architect's needs-decision summary, option A taken by the lead, the berat delegated decision, the step 9 code and its gate, the ac16_ tests, the full verification and the ticked milestone** — docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_verify_milestone_3_and_4, docs_scope_coordination_003_control_and_session_data_model_log_decision_ready_state_finding_from_verify_milestone_3, docs_scope_coordination_003_control_and_session_data_model_log_arc_f3_spec_update_ac_15_and_ac_16, docs_scope_coordination_003_control_and_session_data_model_log_decision_option_a_witness_in_writer_admission, docs_scope_coordination_003_control_and_session_data_model_log_dd_ready_state_tied_to_witness, docs_scope_coordination_003_control_and_session_data_model_log_dev_f3_build_step_9, docs_scope_coordination_003_control_and_session_data_model_log_decision_step_9_gate, docs_scope_coordination_003_control_and_session_data_model_log_tst_f3_test_test_it, docs_scope_coordination_003_control_and_session_data_model_log_chk_f3_verify_full_verification, docs_scope_coordination_003_control_and_session_data_model_log_checked_witness_in_writer_admission [INFERRED 0.95]
+- **GitHub write path for scope 003: the pull request replaces the push to main, blocker and manual step F3-1, its pass criteria, and the read only rule for sub sessions** — docs_scope_coordination_003_control_and_session_data_model_log_decision_pr_replaces_push_main, docs_scope_coordination_003_control_and_session_data_model_log_blocker_f3_1, docs_scope_coordination_003_control_and_session_data_model_manual_f3_1, docs_scope_coordination_003_control_and_session_data_model_manual_f3_1_pass_criteria, docs_scope_coordination_003_control_and_session_data_model_brief_umum_github_read_only [INFERRED 0.95]
 - **Scope 001 wave 1 delivery pipeline (build notes, scaffold, verify, test, review)** — docs_scope_coordination_001_stack_and_workspace_brief_umum_work_order, docs_scope_coordination_001_stack_and_workspace_log_arc_f1_update, docs_scope_coordination_001_stack_and_workspace_log_dev_f1_build, docs_scope_coordination_001_stack_and_workspace_log_chk_f1_verify, docs_scope_coordination_001_stack_and_workspace_log_tst_f1_test, docs_scope_coordination_001_stack_and_workspace_log_chk_f1_review [INFERRED 0.95]
 - **Competitor reference set for POOL comparisons** — docs_research_pgpool_baseline_pgpool_ii_4_7_3, docs_research_competitor_analysis_pgbouncer, docs_research_competitor_analysis_pgcat, docs_research_competitor_analysis_odyssey, docs_research_competitor_analysis_haproxy [EXTRACTED 1.00]
 - **POOL Workspace Units (two apps and four internal crates)** — docs_repository_structure_apps_pool, docs_repository_structure_apps_pool_cli, docs_repository_structure_pool_protocol, docs_repository_structure_pool_config, docs_repository_structure_pool_core, docs_repository_structure_pool_control [EXTRACTED 1.00]
@@ -198,375 +222,387 @@
 - **Scope 002 required checks tooling in the changelog** — changelog_added_check_entry_point, changelog_added_ci_definition, changelog_added_branch_rule, changelog_added_dependency_policy, changelog_added_repo_check, changelog_added_prove_checks [INFERRED 0.85]
 - **Automatic failover and result caching disabled by default** — agents_automatic_failover_and_result_caching_disabled, docs_feature_matrix_f_088_optional_memory_cache, docs_security_security_requirements_sec_10_disable_automatic_promotion_and_caching, docs_feature_matrix_initial_exclusions [INFERRED 0.95]
 
-## Communities (114 total, 25 thin omitted)
+## Communities (117 total, 25 thin omitted)
 
 ### Community 0 - "check-config Integration Tests"
-Cohesion: 0.05
-Nodes (110): Invocation, parse(), parse_check_config(), Item, Iterator, Option, run(), take_value() (+102 more)
+Cohesion: 0.06
+Nodes (109): a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read(), ac11_a_file_that_cannot_be_opened_is_permission_denied() (+101 more)
 
 ### Community 1 - "repo_check/docs.rs"
 Cohesion: 0.05
-Nodes (77): line_of(), base_could_not_run_for_a_revision_that_does_not_exist(), base_could_not_run_when_an_owner_file_at_the_base_cannot_be_read(), base_could_not_run_when_the_root_is_a_folder_inside_a_repository(), base_could_not_run_when_the_root_is_not_a_git_repository(), base_refuses_a_revision_that_starts_with_a_hyphen_as_not_a_commit(), d1_checks_images_reference_definitions_and_links_to_directories(), d1_decodes_percent_twenty_and_drops_angle_brackets() (+69 more)
+Nodes (78): line_of(), base_could_not_run_for_a_revision_that_does_not_exist(), base_could_not_run_when_an_owner_file_at_the_base_cannot_be_read(), base_could_not_run_when_the_root_is_a_folder_inside_a_repository(), base_could_not_run_when_the_root_is_not_a_git_repository(), base_refuses_a_revision_that_starts_with_a_hyphen_as_not_a_commit(), d1_checks_images_reference_definitions_and_links_to_directories(), d1_decodes_percent_twenty_and_drops_angle_brackets() (+70 more)
 
 ### Community 2 - "pool-config Validation Tests"
+Cohesion: 0.03
+Nodes (136): ac15_findings_follow_the_validation_order_against_the_file_order(), ac15_inline(), ac15_input_1(), ac15_large_valid_inputs_validate_within_ten_seconds(), ac15_made_inputs_have_the_listed_size(), ac15_one_finding_per_entry_on_one_line_at_each_value(), ac1_a_file_without_topology_has_no_records(), ac1_ac2_empty_and_inline_tables() (+128 more)
+
+### Community 3 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6"
 Cohesion: 0.06
-Nodes (57): ac4_sec10_automatic_promotion_empty_table_validates_as_disabled_in_every_spelling(), ac4_sec10_automatic_promotion_enabled_false_validates_in_every_spelling(), ac4_sec10_automatic_promotion_left_out_validates_as_disabled(), ac4_sec10_result_cache_empty_table_validates_as_disabled_in_every_spelling(), ac4_sec10_result_cache_enabled_false_validates_in_every_spelling(), ac4_sec10_result_cache_left_out_validates_as_disabled(), ac4_validated_config_debug_holds_only_states(), ac5_ac6_sec10_one_capability_off_does_not_hide_the_other_turned_on() (+49 more)
+Nodes (68): Before the remote steps: m3, r2-m1, r2-m3, r2-m4, in order of weight, M3 (major): rule W5 misses a forbidden dependency in four ordinary TOML spellings, M4 (major): a required check can be switched off and pool-repo-check ci still passes, m16 (minor): C5 accepts more permissions after a blank line or a comment, m3 (minor): the evidence is older than the tree that will be pushed, r2-m1 (minor, second round): the condition before step 1 cannot be met word for word, r2-m10 (minor, second round): a member written in single quotes is not checked at all, r2-m11 (minor, second round): two additions to W5 are right but not in the spec, and one is applied too widely (+60 more)
 
-### Community 3 - "Linux Build Evidence, AC-2 and VM Architecture"
+### Community 4 - "workspace.rs: Decisions and runner ups (decisions 1 to 38, aut"
+Cohesion: 0.04
+Nodes (80): Evidence box: scripts/check.sh all passes on this branch, Template sections: What and why, Acceptance criteria, Evidence, Safety and review, Baseline and policy changes, Pull request template (.github/pull_request_template.md), Baseline W2: paths that must not exist (apps/pool-cli, crates/pool-protocol, crates/pool-core, crates/pool-control), Baseline W3: plain text no .rs file under apps/ or crates/ may contain (std::net, TcpListener, TcpStream, UdpSocket, thread and runtime patterns), Baseline W1: package names of crates/pool-config/fuzz/Cargo.lock (24 names), Baseline W5: allowed dependencies between workspace packages (pool -> pool-config), Baseline W1: package names of the root Cargo.lock (18 names) (+72 more)
+
+### Community 5 - "Scope 003 Coordination Brief, Log and Manual Steps"
+Cohesion: 0.04
+Nodes (147): coordinate skill (.claude/skills/coordinate: roles, decision modes, report template), Sub session flow (read brief, general rules, role file, invoke skill, work in existing worktree), Confirmed project defaults (two engineers, conservative lab validation, Apache 2.0, one modular daemon plus CLI), Feature 3 in progress: its design is accepted in spec 0003 and its build has not been verified yet; no proxy behavior is implemented, At a glance: 17 features (1-2 done, 3 in-progress, 4-11 planned, 12-17 deferred), Scope file ownership rules, Scope legend: features 1 and 2 done, feature 3 in progress with an accepted design, other features planned including deferred; Needs a decision and Deferred tags, Status lifecycle (+139 more)
+
+### Community 6 - "Glossary and Routing Profiles"
+Cohesion: 0.06
+Nodes (68): ADR 0002. Standards and tooling, What is still not proven after the remote steps, Evidence gathered (2026-11-14 scratch runs), Remote note 2: BLOCKED in step 3 by open review threads, Remote note 4: clean tree and HEAD on main before a block, Remote note 1: no ci run for the first pull request, Option 1: shell entry point, Rust check program, GitHub Actions, PR-only main (chosen), Update after the remote steps of 2026-11-14 and 2026-11-15 (+60 more)
+
+### Community 7 - "workspace.rs: src/workspace.rs: src/workspace.rs"
+Cohesion: 0.07
+Nodes (75): key_value(), assert_ok(), assert_problem(), baseline(), check(), dependencies(), dependencies_of(), Dependency (+67 more)
+
+### Community 8 - "Scope 002 Brief Rules: apps/pool agent guide"
+Cohesion: 0.05
+Nodes (61): F-030 Validation and reset (close uncertain sessions), F-033 SQL AST classification (PostgreSQL 18 grammar adapter), F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica), F-070 Split brain prevention (mutation authority distinct from fencing), F-107 Rate and resource limits (admission, frame and auth CPU budgets), docs/reviews section of the documentation index (one review row), Where a Change Belongs (documentation ownership table), SEC-13 Inventory dependencies and native components with notices and advisories (+53 more)
+
+### Community 9 - "pool-config Validation Library"
+Cohesion: 0.02
+Nodes (295): ClusterId, ac6_authority_id_counts_bytes_and_round_trips_every_byte(), authority_id_round_trips(), AuthorityId, is_name_id(), lower_hex_value(), Display, Formatter (+287 more)
+
+### Community 10 - "Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories"
 Cohesion: 0.09
-Nodes (58): Sub session arc-f1-update-2 (architect update: spec 0001 Linux target to aarch64-unknown-linux-gnu after the user's F1-N1 value ARM; done, commit 41e8eda: AC-2, target table, Linux build --platform linux/arm64, Follow-up 6, 7, 9, rationale Linux target update; merged to main), Resolved former blocker: proxy and PostgreSQL VM architecture for 0001 AC-2 (F1-N1) answered ARM by the user 2026-11-14, target moved to aarch64-unknown-linux-gnu; no open blocker remains (Follow-up 11 waits for /scope and holds nothing), Sub session chk-f1-verify-3 (checker verify: Linux build evidence for aarch64, 0001 AC-2 and the /dev/full clause of AC-11; first turn standby, done, commit 38da818: revision 41e8eda, exit 0, host aarch64, 136 tests, two Linux only tests ok, 30 fixture blocks, no emulation; merged to main), Closing: all green branches merged; Document and /sync recorded; closing commit docs(scope): close 001-stack-and-workspace coordination; pushed 2026-11-14; five sub sessions archived and cleaned up; nothing retained; after closing chk-f1-verify-2 merged and feature 1 done; remaining blockers VM architecture (F1-N1), Follow-up 11 waits for /scope, Closing, after closing: claude/chk-f1-verify-2-dcd4b8 (972e160) merged with --no-ff; fmt, clippy and 134 tests green on main; lead Linux build at 18e9228 passed with 136 tests; commit docs(scope): mark 001 stack and workspace done, then push; afterwards chk-f1-verify-2 archived and its worktree and branch removed without force, Closing remaining blockers: none for scope 001 (F1-N1 answered ARM, Linux evidence recorded for aarch64); Follow-up 11 of spec 0001 waits for /scope, Closing, Target ARM: claude/arc-f1-update-2-29134c (8bd7a30, holding 41e8eda and the evidence commit 38da818 from claude/chk-f1-verify-3-4a7edd) merged with --no-ff; fmt, clippy and workstation tests green; commit docs(scope): record the aarch64 Linux target for 001, then push; afterwards both sessions archived and their worktrees and branches removed without force, Decision: checker merged the architect branch into its worktree so the spec update and evidence reach main in one merge commit and one graph update; built revision 41e8eda; x86_64 no longer declared (architect, biasa, as the lead recommended), 18e9228 record stays as history; lead told the scope 002 lead Follow-up 9 now means a Linux arm64 runner (+50 more)
+Nodes (54): m10 (minor): unsound advisories on indirect dependencies do not fail deny, m11 (minor): half of the dependency policy has no proving case, r2-m14 (minor, second round): proof case 22 leaves a clone in the Cargo home on every run, r2-m15 (minor, second round): unsound = "all" has no proving case and is not on the list of unproven parts, Commit 7c752a9: fuzz crash check looks for a file under fuzz/artifacts/validate/, Full verify: /check verify standards and tooling at 535bd15 (PASS for everything that can run on the workstation), Milestone 1: Dependency policy and fuzz harness (Build plan steps 1 and 2, macOS workstation, commits da17dae and d9f7a7b), Checker run /check verify, milestone 1: verdict PASS at revision 59e4cf5 by chk-f2-verify (+46 more)
 
-### Community 4 - "Doc"
-Cohesion: 0.11
-Nodes (47): Anchors, append(), assert_ok(), assert_problem(), check(), d1_absolute_and_escaping_paths(), d1_missing_file(), d1_reference_definition_and_percent_space() (+39 more)
+### Community 11 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack"
+Cohesion: 0.06
+Nodes (59): Decision mode auto (architect asks lead to accept spec; others interpret ambiguous criteria, needs-decision only when spec text must change), tracing 0.1.44 (structured events and spans), Keputusan delegasi (delegated spec decisions taken on the user's behalf; four berat rows plus one biasa summary), Clarification 10: a file with two schema errors reports the one whose key sorts first, not the first in the file; spec now says one finding per step is the parser's choice; runner up sort errors by file position (needs a second walk over the generic table), Build notes evidence gathered (registry, scratch build, parser behavior, image check), Parser behavior evidence (toml Display and message() leak the canary), Workspace build notes rationale (2026-11-14), Observed: of two schema errors the reported one is the alphabetically first key, not the first in the file (zzz line 2, aaa line 3 reports line 3); one spec sentence would remove the doubt, no criterion depends on it (+51 more)
 
-### Community 5 - "pool CLI Entry and Argument Parsing: cli.rs: ci.rs"
+### Community 12 - "Doc"
 Cohesion: 0.11
+Nodes (48): Anchors, append(), assert_ok(), assert_problem(), check(), d1_absolute_and_escaping_paths(), d1_missing_file(), d1_reference_definition_and_percent_space() (+40 more)
+
+### Community 13 - "Workspace Layout, Bounded Read and FIFO Limit"
+Cohesion: 0.13
+Nodes (58): SEC-10 Disable automatic promotion and result caching by default, SEC-11 Logs/metrics/traces free of credentials, cancellation keys and raw SQL, SEC-12 Validate a whole configuration generation before publication; rotation drains retired identities, SEC-14 Independent review of security sensitive, protocol, parser and HA changes, SEC-4 Secrets in protected files or provider references; redaction, Security review boundaries, T-12 Secret disclosure through diagnostics, F-075 Automatic Failover (disabled in V1) (+50 more)
+
+### Community 14 - "pool CLI Entry and Argument Parsing: cli.rs: ci.rs"
+Cohesion: 0.10
 Nodes (49): BTreeSet, assert_ok(), assert_problem(), c1_checks_every_workflow_file(), c1_hash_without_version_comment(), c1_tag_instead_of_hash(), c2_renamed_job(), c3_job_without_run() (+41 more)
 
-### Community 6 - "Scope 002 Brief Rules: apps/pool agent guide"
+### Community 15 - "Spec 0003 Authority Model: Startup States and Bootstrap"
 Cohesion: 0.05
-Nodes (49): Apache 2.0 project license, Administration requires authentication and authorization, Invariant: automatic failover and result caching stay disabled until approved and proven, Invariant: close uncertain pooled state, Documentation Ownership Roles (scope, specs, PRDs, ADRs), Documentation ownership model (scope, specs, PRDs, ADRs, research), Invariant: fail closed on unknown role or unsafe routing, Invariant: health failure does not authorize promotion (+41 more)
+Nodes (88): 0003 AC-11 freshness (PRD-005 AC-3): an observation as old as the expiry or sampled later than now is no evidence; pool-control never reads a clock (the grep for Instant::now, SystemTime, std::fs, std::env prints nothing), 0003 AC-7 clean startup: no journal and no control.authority_id gives Uninitialized and Closed with authority.uninitialized; plan_bootstrap plans only with fresh fitting observations of every node; a journal the configuration does not name is Unconfirmed, 0003 AC-8 missing journal: a witness without a journal is Missing, an unreadable journal is Unreadable, another identity is Mismatch; all closed, and plan_bootstrap refuses with bootstrap.witness_present or bootstrap.store_present, The authority model in pool-control (spec 0003): a library with one dependency, pool-config; everything is a plain function over values; the caller reads the journal, the clock and the probes and passes what it found, classify_startup(config, probe) -> AuthorityState: classifies a start from what the journal reader found and from whether the configuration carries control.authority_id (the witness), plan_bootstrap(config, probe, observations, now, expiry) -> Result<BootstrapPlan, BootstrapRefused>: decides whether the bootstrap command may write, for every configured cluster at once, 0003 Follow-up 4: scope 004 fixes the bootstrap command, the probe and its queries, the probe period and observation expiry keys, the file permission checks and how each authentication method names the verified principal; it must report the current timeline, lock the state directory exclusively and offer a way to read the authority ID again; added on 2026-11-15 from the review: seven points (m1, m2, m3, n2, m6, m7, t6), the first three before the daemon first calls writer_admission, 0003 Follow-up 9: scope 012 needs ordered epochs across several proxies; the authority ID plus the topology epoch is the local form of that; a journal per daemon is not merged into a shared authority (+80 more)
 
-### Community 7 - "pool-config Validation Library"
-Cohesion: 0.09
-Nodes (33): capability_state(), Finding, FindingCode, KnownField, Location, position(), RawCapability, RawConfig (+25 more)
+### Community 16 - "Spec 0003 Configuration Keys, Findings and Fixtures"
+Cohesion: 0.05
+Nodes (95): Operator map from verified principal and database to backend identity, 0003 AC-1 new keys are accepted: each valid-topology* fixture exits 0 in both formats with exactly the valid report of spec 0001; every spec 0001 fixture keeps its result; config_version = 1 alone stays valid, 0003 AC-2 one mistake, one finding: each invalid-topology-* fixture except invalid-topology-multiple.toml exits 1 with exactly one finding with the listed code, key, line and column, 0003 AC-3 whole configuration (SEC-12): invalid-topology-multiple.toml reports its five findings in one run in the listed order; pool_config::validate stays the only way to a ValidatedConfig, 0003 AC-4 no file content in output (SEC-4, SEC-11): CANARY-9f2c7b1e appears in neither stdout, stderr, Debug nor Display for the two canary fixtures; validate opens no file, 0003 AC-5 identity map (0001 SC-3, SEC-2): ValidatedConfig::resolve_identity returns the route for an exact principal and database pair and None otherwise; no wildcard, no default; the library half of PRD-001 AC-1, 0003 Build plan step 3: Configuration keys in pool-config (keys, findings, validation order, public boundary with resolve_identity and hand written Debug, every fixture, validate.rs, the Location::KeyAt arm in apps/pool/src/report.rs); satisfies AC-5 and the library half of AC-1 to AC-4, 0003 Build plan step 4: The new finding line in apps/pool (Location::KeyAt rendering in the human and JSON formats, check_config.rs with every new fixture in both formats); completes AC-1 to AC-4 (+87 more)
 
-### Community 8 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6"
-Cohesion: 0.09
-Nodes (48): M3 (major): rule W5 misses a forbidden dependency in four ordinary TOML spellings, M4 (major): a required check can be switched off and pool-repo-check ci still passes, m16 (minor): C5 accepts more permissions after a blank line or a comment, r2-m10 (minor, second round): a member written in single quotes is not checked at all, r2-m11 (minor, second round): two additions to W5 are right but not in the spec, and one is applied too widely, r2-m6 (minor, second round): C5 still accepts a permission after a comment in the first column, r2-m7 (minor, second round): nothing before jobs: is held, and the spec does not list that, r2-m8 (minor, second round): C3 reads keys without their place (+40 more)
-
-### Community 9 - "workspace.rs: src/workspace.rs"
-Cohesion: 0.10
-Nodes (38): Into, feature_heading(), Problem, Report, Display, Fn, Formatter, Option (+30 more)
-
-### Community 10 - "Workspace Layout, Bounded Read and FIFO Limit"
-Cohesion: 0.17
-Nodes (46): First Handoff: the Workspace, Review conformance by criterion table (AC-1 to AC-13: AC-2 not judged, AC-7 deviates for the array row, AC-11 /dev/full clause not judged), The eight items asked of the review (conformance, SEC-10 and SEC-11, no secret in output or Debug, read limit and offline, unsafe_code and package set, crate boundaries, test quality, rubric), First review run at 02bdcbe: tests 3 + 64 + 3 + 57, fmt, clippy, release build, metadata, grep, nm -u; second pass with twelve made files, Delegated decision (berat, 0001 AC-4, AC-6): automatic promotion capability key named automatic_promotion (cache: result_cache) over automatic_failover, Delegated decisions (biasa, 0001 AC-1, AC-12): 17 build notes choices (pinned rust slim bookworm image and git archive HEAD, std argument parsing, serde_json, no thiserror/anyhow/tracing, two pass validation, 1 MiB limit, ...), SEC-10 Disable automatic promotion and result caching by default, AC-1 Workspace and toolchain pin (two members, Rust 1.100.0, Cargo.lock committed) (+38 more)
-
-### Community 11 - "ids.rs"
-Cohesion: 0.11
-Nodes (42): heading(), assert_ok(), assert_problem(), check(), citation_at(), citations(), citations_are_parsed(), criterion() (+34 more)
-
-### Community 12 - "Configuration Keys and Secret References"
-Cohesion: 0.07
-Nodes (44): ac12_dev_null_is_an_empty_file_that_misses_config_version(), clap 4.6.7 (CLI argument contract, not adopted in 001), Five new nits in the fix range: deny_unknown_fields phrase at index.md:431, config_version start value at lib.rs:354, 1_048_577 literal at main.rs:89, compile_fail breadth at lib.rs:28, stale CLAUDE.md and AGENTS.md lines, 3. Control and session data model (planned), Sub session arc-f1-update continued (architect update: deny_unknown_fields phrase in step 4, one syntax or schema finding chosen by the parser; done at 5670851 without AC change, lead gate passed, merged into the parent of the docs(changelog) commit), Decision: of two schema errors the one with the alphabetically first key is reported, not the first in the file; spec states the choice belongs to the parser (mode auto, follows the code); runner up sort by file position; sent to arc-f1-update, Delegated decision (berat, 0001 AC-9): check-config diagnostics contain only constant text, schema key path, line and column, never file content, Bounded configuration read (at most 1048577 bytes via Read::take) (+36 more)
-
-### Community 13 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation"
+### Community 17 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation"
 Cohesion: 0.06
-Nodes (44): Rust technology evaluation, actions/cache v6.1.0 pinned by commit (keeps built cargo-deny), actions/checkout v7.0.1 pinned by commit, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Adopted in scope 002 (tools, not product dependencies; pool and pool-config gain none), Dependency adoption gate, axum 0.8.9 (administration endpoints), cargo-cyclonedx 0.5.10 (CycloneDX JSON SBOM, run by hand until scope 011) (+36 more)
+Nodes (46): Audit of reused pgwire components in frontend authentication, Allowed downloads and installs (crates adopted by spec 0002, pinned toolchain, cargo-deny, cargo-fuzz), Single rustls crypto provider (aws-lc-rs feature family), actions/cache v6.1.0 pinned by commit (keeps built cargo-deny), actions/checkout v7.0.1 pinned by commit, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Adopted in scope 002 (tools, not product dependencies; pool and pool-config gain none), axum 0.8.9 (administration endpoints) (+38 more)
 
-### Community 14 - "Scope 002 Brief Rules"
-Cohesion: 0.08
-Nodes (42): Added: branch rule file .github/rulesets/main.json and PR template; main only via PR with seven passing checks, merge commit, empty bypass list, Session model per role (architect/checker fable-5-2, developer/tester opus-5-5), Coordination log: 002-standards-and-tooling, arc-f2-spec (architect, writes spec 0002; reused for spec notes, review fixes and remote step notes), Lead gate for dev-f2-audit merge (clean worktree, 6-file diff, 0 deletions, links/anchors present, sampled claims match manifest), Build order from spec 0002 Parallel sessions (steps 1-4 and 9 independent; 5 then 6; 7 after 1-6; 8 after 2-3; 10 last; 11 by lead), chk-f2-review (checker review, fresh model; Blocked then Approve with nits), Date correction: 36 log dates wrongly written 2026-11-15 corrected to 2026-11-14 from machine clock, commit timestamps and GitHub; only PR #1 merge (06:37 WIB) and later are 2026-11-15; 'Diperbarui' now taken from machine clock (+34 more)
+### Community 18 - "ids.rs"
+Cohesion: 0.11
+Nodes (43): heading(), assert_ok(), assert_problem(), check(), citation_at(), citations(), citations_are_parsed(), criterion() (+35 more)
 
-### Community 15 - "Review Clarifications and check-config Usage Rules"
-Cohesion: 0.13
-Nodes (21): skip_dir(), FsTree, git(), GitTree, MemTree, path_exists(), root_must_be_the_top_of_the_work_tree(), BTreeMap (+13 more)
-
-### Community 16 - "Standards, Tooling and Release Qualification"
-Cohesion: 0.08
-Nodes (41): F-018 CancelRequest and BackendKeyData, Glossary, Approved Writer, Backend, Backend Login, Baseline File (text list of what a workspace guard allows today), Branch Rule (GitHub ruleset for main kept as a repository file; avoid branch protection), Configuration Generation (+33 more)
-
-### Community 17 - "Scope 001 Coordination Brief, Log and Authorization: Follow-up 11: scope 002 adds automatic CI checks"
-Cohesion: 0.16
-Nodes (40): a_failed_write_exits_3_without_stderr(), ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr(), Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Box ticked: Verify it (/check verify stack and workspace), Linux build (0001 AC-2) and the two Linux only tests passed for the declared target aarch64-unknown-linux-gnu at 41e8eda; record under Linux evidence: container build for aarch64 in verify.md; the earlier x86_64 run at 18e9228 stays there as history, Linux build evidence (a macOS build is not proof of the Linux build), Local toolchain (Rust stable 1.99.1, 1.100.0 available via rustup, host aarch64-apple-darwin, Docker 29.9.2 with daemon off), Manual steps policy (Docker Desktop, GitHub settings, PR, push, system tools, real PostgreSQL or VM are user only; blocked steps recorded as BLOCKED owner user) (+32 more)
-
-### Community 18 - "Spec 0002: Standards and tooling"
-Cohesion: 0.13
-Nodes (36): B1 (blocker): remote step 4 may be accepted by GitHub and move main, r2-m2 (minor, second round): the probe gate does not look at the bypass list, r2-m3 (minor, second round): an empty PROBE or BEFORE turns a push into a delete request, AC-12 A failed check blocks a merge, on the remote, AC-13 Branch rule, AC-3 The checks run in CI on a real pull request, ci run 1 (43606905477) on 6cbc33e, pull_request, success, ci run 2 (43607256415) on a9870c6, failure (fmt and clippy) (+28 more)
-
-### Community 19 - "Glossary and Routing Profiles"
+### Community 19 - "Spec 0002: Standards and tooling"
 Cohesion: 0.10
-Nodes (35): A change reaches main only through a pull request whose seven checks passed and whose review threads are resolved; direct push refused by the branch rule; writing to GitHub needs user permission each time, A change reaches main only through a pull request whose checks passed (described in spec 0002), ADR 0002. Standards and tooling, Engineering standards, Dependency and Configuration Change Rules (dependency policy checks advisories, licenses and sources on every PR; locked package change updates its baseline file), Tests and Evidence Standard, Engineering Workflow, Documentation index (+27 more)
+Nodes (45): B1 (blocker): remote step 4 may be accepted by GitHub and move main, r2-m13 (minor, second round): check.sh fuzz still follows an exported CDPATH, r2-m2 (minor, second round): the probe gate does not look at the bypass list, ci run 1 (43606905477) on 6cbc33e, pull_request, success, ci run 2 (43607256415) on a9870c6, failure (fmt and clippy), ci run 3 (43607823191) on 5452f9c, pull_request, success; linux-build log is the AC-5 CI evidence, ci run 4 (43654217182) for the push to main at d463c1d, success, 339 tests, Commit 2a7d9d284f96: empty probe commit of remote step 4, in no branch (+37 more)
 
-### Community 20 - "Feature Inventory and Parity Matrix"
-Cohesion: 0.08
-Nodes (35): Planning assumptions and decisions, Retry only before initial lease and ReadyForQuery exposure, Apache 2.0 license, Persisted approved writer, epoch and quarantine, First deployment: one proxy VM, primary and two replicas on Proxmox, GA verification depth for data safety features, Independent review resolutions (seven approved fixes), One daemon with separate modules plus separate CLI (+27 more)
+### Community 20 - "Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene"
+Cohesion: 0.09
+Nodes (45): Allowed downloads (crates adopted by build notes, pinned Rust toolchain, container images only with running Docker daemon), Commit convention (conventional commits per Build plan step, subject 'type(scope): spec 0001 step n', spec status Proposed to In Progress), Final report rule (one report per item via SendMessage, done only when committed, clean tree and merged main; STATUS line first), Always forbidden paths for sub sessions (docs/scope, docs/prd, AGENTS.md, CLAUDE.md, graphify-out, .claude, spec content outside ownership), Lead session: Stack and workspace coordination [0c7929], pool check-config (offline configuration validation command), Process constraints (no listener, no PostgreSQL contact, no real credentials, fixtures only including fake secrets for redaction tests), SEC-10 mandatory coverage (cache and automatic promotion omitted or disabled is safe, requesting either is rejected, invalid fixtures fail, fake secrets never in output) (+37 more)
 
-### Community 21 - "Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene"
-Cohesion: 0.10
-Nodes (35): Aturan umum brief: 001-stack-and-workspace (general brief rules), Allowed downloads (crates adopted by build notes, pinned Rust toolchain, container images only with running Docker daemon), Change path for scope 001: no PR, per sub session branch, lead merges to main with --no-ff after green gate, Commit convention (conventional commits per Build plan step, subject 'type(scope): spec 0001 step n', spec status Proposed to In Progress), coordinate skill (.claude/skills/coordinate: roles, decision modes, report template), Decision mode auto (architect asks lead to accept spec; others interpret ambiguous criteria, needs-decision only when spec text must change), Disk constraint (29 GiB free, max 2 full Rust builds, CARGO_PROFILE_DEV_DEBUG=0, CARGO_INCREMENTAL=0, delete target/ before done), Final report rule (one report per item via SendMessage, done only when committed, clean tree and merged main; STATUS line first) (+27 more)
+### Community 21 - "Review Clarifications and check-config Usage Rules"
+Cohesion: 0.12
+Nodes (22): skip_dir(), FsTree, git(), GitTree, join(), MemTree, path_exists(), root_must_be_the_top_of_the_work_tree() (+14 more)
 
 ### Community 22 - "Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, "
+Cohesion: 0.08
+Nodes (39): Risk ownership and milestone review process, Health monitoring failure scenarios (SQL failure, revoked permission, clock jump, replay pause, primary isolation), Qualified release artifacts (tagged package or image, checksums, SBOM, notices), Handoff for Later Slices, Release Practices, Cross Check Before Development, Development Readiness Review, Initial Package Checks (+31 more)
+
+### Community 23 - "Spec 0003 Writer Admission and Conflict Evidence"
 Cohesion: 0.09
-Nodes (33): Git and Release Standards (main only via PR with seven required checks, scripts/check.sh <name>, empty bypass list; remote rule status recorded in verification record), Dependencies and critical path, Milestones, Release Practices, Planning package validation, Cross Check Before Development, Development Readiness Review, Initial Package Checks (+25 more)
+Nodes (55): Drain, detach and attach node operations, Two observed primaries close write admission, Separation of observed health/role from maintenance and desired membership, Cluster management PRD, Generation checked journaled mutations, Administration mutation retry contract, 0003 AC-12 authority is never derived from observation: over the small domain writer_admission is Open only for the node that is both the approved writer in the journal and the expected_writer in the configuration; Authority, EligiblePrimary, Closed and BootstrapPlan cannot be built outside pool-control, 0003 AC-9 conflicting role evidence (0001 SC-8, PRD-006 AC-2, PRD-005 AC-1): every row of walk 3 gives the listed result; only full agreement opens; a second primary or a later timeline asks for the conflict latch (+47 more)
 
-### Community 23 - "check.sh"
+### Community 24 - "Linux Build Evidence, AC-2 and VM Architecture"
 Cohesion: 0.13
-Nodes (32): ci workflow (.github/workflows/ci.yml): seven required checks on GitHub Actions, Concurrency group per event name and ref; only pull request runs are cancelled, Job clippy: runs scripts/check.sh clippy, Job deny: runs scripts/check.sh deny, Job docs: runs scripts/check.sh docs, Job fmt: runs scripts/check.sh fmt, Job guards: runs scripts/check.sh guards, Job linux-build: runs scripts/check.sh linux-build (+24 more)
+Nodes (38): Sub session arc-f1-update-2 (architect update: spec 0001 Linux target to aarch64-unknown-linux-gnu after the user's F1-N1 value ARM; done, commit 41e8eda: AC-2, target table, Linux build --platform linux/arm64, Follow-up 6, 7, 9, rationale Linux target update; merged to main), F1-2 after the F1-N1 answer (ARM): the spec block uses --platform linux/arm64 and expects host aarch64-unknown-linux-gnu, no emulation on Apple silicon, about 283 MB; rerun by chk-f1-verify-3 at 41e8eda PASS, 136 tests, sha256 cb184231...2d3532, User value F1-N1: proxy and PostgreSQL VM architecture, answered by the user 2026-11-14: ARM; spec 0001 target changed to aarch64-unknown-linux-gnu (--platform linux/arm64) via architect (update) and the Linux build rerun; 0001 AC-2 PASS for aarch64 at 41e8eda, Image check: index digest sha256:7c7d4eb4...51b7a37 is an OCI image index with linux/arm64/v8 (sha256:a05e7b80..., about 283 MB) and linux/amd64 (sha256:476f6598..., about 323 MB) variants, read with docker buildx imagetools inspect on 2026-11-14, Linux target update (2026-11-14): the user answered Follow-up 6 'VM saya ARM'; the delegated x86_64 decision is withdrawn and the aarch64 runner up is now the user's value, Linux target update changes: declared target aarch64 with a linux/arm64 builder; AC-2 keeps its ID with the host aarch64 line; the Linux build command changes only --platform and the grep host line; Follow-up 6, 7, 9 and one Consequences line reworded, Decision (berat): declared Linux target aarch64-unknown-linux-gnu over x86_64-unknown-linux-gnu; the user gave the value, the lead accepted the change to AC-2 of an Accepted spec before it was written, Decision (biasa): x86_64-unknown-linux-gnu is not kept as a second declared target; runner up was declaring both with one Linux build each (+30 more)
 
-### Community 24 - "workspace.rs: src/workspace.rs: src/workspace.rs"
-Cohesion: 0.17
-Nodes (32): assert_ok(), assert_problem(), good(), good_tree_passes(), lock(), w1_counts_duplicates(), w1_extra_package_in_lockfile(), w1_missing_lockfile_is_a_fault() (+24 more)
+### Community 25 - "Standards, Tooling and Release Qualification"
+Cohesion: 0.07
+Nodes (40): Balancing features F-048 to F-053, F-053 Lag filtering and primary fallback (fallback disabled in V1), F-053 Lag Filtering and Primary Fallback, Routing Preview, [[cluster]] table keys: cluster[].id (ClusterId, unique), cluster[].system_identifier (a string in SystemIdentifier syntax), cluster[].expected_writer (a NodeId naming a node of this cluster), Key cluster[].expected_writer: the operator's statement of which node is the writer; it seeds the approved writer at bootstrap and must keep agreeing with the journal, or writes stay closed, Record Cluster: pool-config ClusterConfig, read by both planes; from the configuration file; read and validated again at restart, nothing remembered; built in 003, ClusterId type (pool-config identifier: 1 to 63 bytes, the first a to z, the rest a to z, 0 to 9, _ or -; built by parse) (+32 more)
 
-### Community 25 - "Security Requirements and Features F-100 to F-108"
-Cohesion: 0.10
-Nodes (31): F-067 Manual plan and promotion (operator plan plus verified fence), F-072 RPO and commit uncertainty (all-writer barrier, explicit unknown loss window), F-075 Automatic Failover (disabled in V1), Failover features F-067 to F-075, Write Barrier, Authoritative barrier across every write path, Axum REST administration API plus CLI, V1 Release Gate (+23 more)
+### Community 26 - "Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108"
+Cohesion: 0.09
+Nodes (35): F-011 Prepared statements (session ownership, no cross backend replay), Protocol Features (F-001 to F-022), Critical Path Handoffs, Core MVP, CancellationEntry, Lease, Declared PostgreSQL 18 protocol profile (3.0/3.2), Session (+27 more)
 
-### Community 26 - "Summary of the first pass: seven required checks"
+### Community 27 - "Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide"
+Cohesion: 0.07
+Nodes (36): pool check-config command (reads one file, calls pool_config::validate, prints a report, exits; no socket, thread or async runtime), Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only), apps/pool and crates/pool-config sections of the documentation index (nested AGENTS.md and CLAUDE.md rows), Bounded file read: at most MAX_CONFIG_BYTES plus one byte via Read::take, Leaking fake canary CANARY-9f2c7b1e into output is a security regression (SEC-11), Output only from constants, schema key paths and numbers; no file, parser or OS text reaches stdout/stderr, Exit status 0/1/2/3 contract; exit 101 (panic) is always a defect; failed write becomes exit 3, Arguments parsed by hand with the standard library (no parser crate) (+28 more)
+
+### Community 28 - "Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)"
+Cohesion: 0.07
+Nodes (39): ADR 0001. Initial architecture, Decision: Build plan step 1 sets spec Status to In Progress; the stale 'lifecycle status remains Proposed' wording is tidied at /sync, not by sub sessions, Clarification 9: Decision status sentence and Follow-up 1 reworded to hold in every status; runner up leave to the lead at close, Document corrections of spec 0003 (seven items in files the spec does not own: the engineering standards shared conventions row and workspace paragraph, repository structure, the glossary rows Observation and Approved writer, docs/index.md, agent and contributor files, and the pointer notes in spec 0001 and 0002, item 7, applied on 2026-11-15 in the commit after the spec was accepted), Decision (lead, 2026-11-15): scope 003 reconciliation found no other worktree, no unmerged branch, peer sessions belong to other projects, docs/specs holds only 0001 and 0002, no scope 003 code on main (crates/ holds only pool-config) and no conflict markers in spec 0001 or 0002, 0003 review findings of 2026-11-15 not recorded in the spec, because another file or session owns each: t1 to t5 (tests, the tester), n5, n6, n11, n18 (code comments and the verification record), n1, n3, n7 to n10, n17 (code and tests), n13 (rows of spec 0001 and 0002), n14 (the glossary), the first half of n16 (AGENTS.md and CLAUDE.md, the Document it box), 0003 verify m4 edits of Build plan step 6 (Document corrections items 1 to 4): the engineering-standards row 'Identifier and generation types' gets the rule in place of Pending, two first paragraphs name crates/pool-control, two glossary rows say node, Scope 003 review strength: the change to spec 0001 behaviour is one line of code and the old fixtures keep their results (+31 more)
+
+### Community 29 - "Feature Inventory and Parity Matrix: Feature inventory and parity matrix"
+Cohesion: 0.08
+Nodes (34): Cache features F-088 to F-093, F-065 Primary identification (durably approved writer with fresh evidence), F-066 Topology reconciliation (durable writer/epoch/quarantine), F-088 Optional memory cache (result caching disabled in V1), F-134 pcp_invalidate_query_cache (deferred until cache qualification), Clustering mode features F-094 to F-099, Observability features F-109 to F-114, PCP operation equivalents F-120 to F-134 (+26 more)
+
+### Community 30 - "Scaffold Step and dev-f1-build Gate: 0001. Verification record"
+Cohesion: 0.09
+Nodes (35): pool, pool-config, pool-config-fuzz, serde_json 1.0.154 (JSON command output, adopted in 001), Code in apps/pool/ and crates/pool-config/, Row 10 evidence: from the second verification pass, checked on a debug pool at b6ce165 (macOS, Rust 1.100.0): zzz/aaa reports line 3, reversed reports line 2, unknown key in [result_cache] with wrong type in [automatic_promotion] reports the [automatic_promotion] line, two syntax errors on lines 2 and 3 report line 2, Full verify: /check verify stack and workspace (checker chk-f1-verify, 2026-11-14, rerun from its own checkout against the real pool binary), Binary under test: target/release/pool from cargo build --locked --release (Mach-O arm64; macOS checksum, not the AC-2 record) (+27 more)
+
+### Community 31 - "Scope 001 Coordination Log, Closing and Blockers"
 Cohesion: 0.13
-Nodes (31): State of the first pass findings (table in the second review), Nits of the first pass (placeholders, rustup self-update, missing rustfmt component exit 1, concurrency group, W7 before the marker, ...), Strengths of the first pass: safe ruleset payload, tight CI security, correct runner label, strict deny.toml, honest verify.md, Summary of the first pass: seven required checks behind scripts/check.sh, guards that pass while the protected thing is broken, The fragile points the lead asked about (table): second workflow file, job without runs-on, secrets["X"], shell:, W5 rename, W4 comment, --base hyphen, W7 message, CDPATH, check_sbom, stale sentence, docs --base parent repo, M1 (major): the branch rule goes live before any check has run on a GitHub runner, M2 (major): the steps after the merge are not written down, M5 (major): rule D6 passes when the base revision cannot be read (+23 more)
+Nodes (34): First review scope: 30 files in range a82cf67..02bdcbe on main (26 code, manifest and fixture files, Cargo.lock, 3 docs), Five new nits in the fix range: deny_unknown_fields phrase at index.md:431, config_version start value at lib.rs:354, 1_048_577 literal at main.rs:89, compile_fail breadth at lib.rs:28, stale CLAUDE.md and AGENTS.md lines, Box ticked: Review it (fresh model) (/check review stack and workspace), Sub session arc-f1-update continued (architect update: deny_unknown_fields phrase in step 4, one syntax or schema finding chosen by the parser; done at 5670851 without AC change, lead gate passed, merged into the parent of the docs(changelog) commit), Sub session arc-f1-update reused (architect update: nine spec 0001 clarifications from the review in index.md and a new rationale.md table, commit 5f1e995, no AC added or changed; merged with dev-f1-build), Resolved former blocker: Linux build evidence blocked while the Docker daemon was off; user started Docker Desktop (F1-1 PASS), Resolved former blocker: untracked .graphifyignore and graphify-out/cache/last_query_stamp held the closing push; done at d2fda37 (.graphifyignore committed, last_query_stamp gitignored), Resolved former blocker: 0001 AC-2 and the /dev/full clause of AC-11 not run; Linux build passed at 18e9228 with 136 tests (F1-2 PASS), no longer holds feature 1 done (+26 more)
 
-### Community 27 - "Offline Bounds, Parser Depth and Known Limits"
-Cohesion: 0.14
-Nodes (26): CapabilityState, ValidatedConfig, Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Minor 5: AC-8 constructor guarantee, AC-12 package set and grep, AC-13 stop line have no automated guard (suggested compile_fail doc tests and scope 002 CI steps), Decision: non-blocking spec gap from tst-f1-test: --format=<bytes not UTF-8> gives unexpected argument but the spec lacks 'separate'; architect to add a sentence, joined with the review round; checker notes config_version() constant and --config=<bytes not UTF-8>, Decision: review Minors (config_version() constant, Location::None untested, io.permission_denied untested, loose column test, no automatic AC-8/AC-12/AC-13 guard, verify.md only at 5f44d88) routed to the developer fix, scope 002 Follow-up and reverify; cheap Nits fixed, SEC-12 Validate a whole configuration generation before publication; rotation drains retired identities (+18 more)
-
-### Community 28 - "Feature Inventory and Parity Matrix: Feature inventory and parity matrix"
-Cohesion: 0.10
-Nodes (30): Feature inventory and parity matrix, Cache features F-088 to F-093, Inventory Coverage Limits, F-024 Transaction Mode (refused, session pooling only), F-030 Validation and reset (close uncertain sessions), F-056 Primary Standby Role Observation, F-065 Primary identification (durably approved writer with fresh evidence), F-088 Optional Memory Cache (disabled in V1) (+22 more)
-
-### Community 29 - "Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide"
-Cohesion: 0.10
-Nodes (28): Context files (nested AGENTS.md for apps/pool and crates/pool-config), tools/repo-check (pool-repo-check) and crates/pool-config/fuzz are packages outside the workspace with their own lockfiles; locked package set, inter-package dependency or CI file changes also change a tools/repo-check/baseline file or spec 0002 rule text, Safe first party Rust and bounded resources, Workspace lint unsafe_code = forbid applied to every member, Workspace conventions (inherited workspace.package fields, unsafe_code forbid, workspace.dependencies once, committed Cargo.lock, no sockets/threads/runtime, cargo test harness only, packages outside workspace, commits name Build plan step, PR-only path to main), Dependency declared once under workspace.dependencies, taken only when the current path uses it; Cargo.lock committed (0001 AC-12); no dev-dependencies or build script, apps/pool agent guide, Bounded file read: at most MAX_CONFIG_BYTES plus one byte via Read::take (+20 more)
-
-### Community 30 - "Load Balancing and Replica Selection: High availability PRD"
+### Community 32 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende"
 Cohesion: 0.12
-Nodes (28): Tracer Bullet Build Approach, Cluster Features (F-061 to F-066), F-065 Primary Identification, F-066 Topology reconciliation (durable writer/epoch/quarantine), HA Features (F-081 to F-087), Protocol Features (F-001 to F-022), Recovery Features (F-076 to F-080), Critical Path Handoffs (+20 more)
+Nodes (32): position_counts_lines_and_scalars(), ac7_column_counts_characters_not_bytes_before_the_error(), Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, Minor 4: the column test cannot fail for a byte count (multibyte key is the unknown key, column 1 either way), Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests (+24 more)
 
-### Community 31 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack"
+### Community 33 - "check.sh"
+Cohesion: 0.10
+Nodes (39): Concurrency group per event name and ref; only pull request runs are cancelled, Job clippy: runs scripts/check.sh clippy, Job deny: runs scripts/check.sh deny, Job docs: runs scripts/check.sh docs, Job fmt: runs scripts/check.sh fmt, Job guards: runs scripts/check.sh guards, Job linux-build: runs scripts/check.sh linux-build, Job test: runs scripts/check.sh test (+31 more)
+
+### Community 34 - "Spec 0003 Decision, Rationale and Scope 004 Handoff"
+Cohesion: 0.06
+Nodes (45): ADR 0003. Control and session data model (an index entry that points at spec 0003 and its rationale, not a second decision record), 4. One real primary path (planned), Tracer Bullet build approach, Spec 0003 decision point 3: the journal (one SQLite file), the bootstrap command, the probe and the admission wiring are specified here and built in scope 004; operation records, backup, reconcile and API in scope 009; fence receipts in scope 010, Spec 0003 decision point 4: no third party dependency is added; SQLite is adopted in scope 004 with its own review of native code and licenses, Spec 0003 decision point 1: pool-config gains the keys for [control], [[cluster]], [[node]] and [[identity]], their validation, the identifier and generation types and the identity map lookup, Spec 0003 decision point 2: a third workspace crate crates/pool-control holds the authority model (start classification, bootstrap, writer admission); it reads no file, clock or socket; its tests are the four walks, Spec 0003. Control and session data model (Status: In Progress, 2026-11-15) (+37 more)
+
+### Community 35 - "Scope 002 Brief Rules"
+Cohesion: 0.09
+Nodes (32): arc-f2-spec (architect, writes spec 0002; reused for spec notes, review fixes and remote step notes), Linux target moved to aarch64 (user VM is ARM); Follow-up 9 means an arm64 CI runner without emulation, Lead gate for dev-f2-audit merge (clean worktree, 6-file diff, 0 deletions, links/anchors present, sampled claims match manifest), Build order from spec 0002 Parallel sessions (steps 1-4 and 9 independent; 5 then 6; 7 after 1-6; 8 after 2-3; 10 last; 11 by lead), chk-f2-verify (checker verify; milestones 1-4, full verify, re-verify after review fixes, remote evidence), Penutupan: all green branches merged by 311989a; merges per branch listed; no push to main; scope via PR #1, closing via scope/002-closing; cleanup after closing PR, Closing follows spec 0002 remote step 7 (closing commit pushed as scope/002-closing and merged through a PR), not skill step 9; merge hash and cleanup reported in session, Date correction: 36 log dates wrongly written 2026-11-15 corrected to 2026-11-14 from machine clock, commit timestamps and GitHub; only PR #1 merge (06:37 WIB) and later are 2026-11-15; 'Diperbarui' now taken from machine clock (+24 more)
+
+### Community 36 - "Summary of the first pass: seven required checks"
+Cohesion: 0.13
+Nodes (32): State of the first pass findings (table in the second review), Nits of the first pass (placeholders, rustup self-update, missing rustfmt component exit 1, concurrency group, W7 before the marker, ...), Strengths of the first pass: safe ruleset payload, tight CI security, correct runner label, strict deny.toml, honest verify.md, Summary of the first pass: seven required checks behind scripts/check.sh, guards that pass while the protected thing is broken, The fragile points the lead asked about (table): second workflow file, job without runs-on, secrets["X"], shell:, W5 rename, W4 comment, --base hyphen, W7 message, CDPATH, check_sbom, stale sentence, docs --base parent repo, M1 (major): the branch rule goes live before any check has run on a GitHub runner, M2 (major): the steps after the merge are not written down, M5 (major): rule D6 passes when the base revision cannot be read (+24 more)
+
+### Community 37 - "cli.rs Parsing and Test Count Evidence"
+Cohesion: 0.12
+Nodes (26): Format, Invocation, parse(), parse_check_config(), Item, Iterator, Option, run() (+18 more)
+
+### Community 38 - "Leases, Cancellation and Login Routing"
 Cohesion: 0.11
-Nodes (28): ADR 0001. Initial architecture, Session pooling (one frontend owns one backend lease), Login time backend selection on pinned lease, Security and Review Requirements, Automatic Promotion (reserved and off), Reserved Capability, Result Cache (reserved and off), tracing 0.1.44 (structured events and spans) (+20 more)
+Nodes (29): Apache 2.0 license, First deployment: one proxy VM, primary and two replicas on Proxmox, Independent review resolutions (seven approved fixes), pg_query parser with PostgreSQL 18 grammar, Prometheus metrics and tracing logs, rustls and tokio-rustls with one crypto provider, Tokio runtime with bounded tasks and queues, V1 Release Gate (+21 more)
 
-### Community 32 - "workspace.rs: src/workspace.rs: text.rs"
+### Community 39 - "Scope 001 Coordination Brief, Log and Authorization: Follow-up 11: scope 002 adds automatic CI checks"
+Cohesion: 0.14
+Nodes (28): Linux build evidence (a macOS build is not proof of the Linux build), Local toolchain (Rust stable 1.99.1, 1.100.0 available via rustup, host aarch64-apple-darwin, Docker 29.9.2 with daemon off), Manual steps policy (Docker Desktop, GitHub settings, PR, push, system tools, real PostgreSQL or VM are user only; blocked steps recorded as BLOCKED owner user), Box ticked: Scaffold from the decision (/develop stack and workspace), Linux build (0001 AC-2) and the two Linux only tests passed for the declared target aarch64-unknown-linux-gnu at 41e8eda; record under Linux evidence: container build for aarch64 in verify.md; the earlier x86_64 run at 18e9228 stays there as history, Checked in wave 1: F1 Scaffold from the decision (dev-f1-build done and chk-f1-verify report, merged 5f44d88; manual F1-1, F1-2 NOT_RUN), Manual step F1-1: start Docker Desktop so the developer and verify sessions can run the Linux build (0001 AC-2); PASS 2026-11-14, user started Docker Desktop, docker info exit 0 (server 29.9.2), Manual step F1-2: run the spec 0001 Linux build command (0001 AC-2 and the /dev/full clause of AC-11); PASS 2026-11-14 at 18e9228, run by chk-f1-verify-2 and the lead: exit 0, 136 tests, binary sha256 0481be18...f7bdb3 (+20 more)
+
+### Community 40 - "workspace.rs: src/workspace.rs: text.rs"
 Cohesion: 0.13
 Nodes (17): backtick_runs(), baseline_lines(), code_lines(), dotted_parts(), fence_closes(), fence_open(), leading_key(), Option (+9 more)
 
-### Community 33 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende"
-Cohesion: 0.13
-Nodes (27): position_counts_lines_and_scalars(), ac7_column_counts_characters_not_bytes_before_the_error(), Review: scope 001 stack and workspace (2026-11-14), reviewer claude-fable-5-2, author claude-opus-5-5, Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, First review scope: 30 files in range a82cf67..02bdcbe on main (26 code, manifest and fixture files, Cargo.lock, 3 docs), Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, Minor 4: the column test cannot fail for a byte count (multibyte key is the unknown key, column 1 either way), First review nits (11): --format=<bytes> equals form, --help=x after check-config, u64::MAX read fallback, FIFO blocks, duplicated value block, capability_state comment, repeated numbers in messages, three weak tests, stale status sentence (+19 more)
+### Community 41 - "Load Balancing and Replica Selection: High availability PRD: pool README"
+Cohesion: 0.10
+Nodes (28): Disclosure and support (private reporting channel), Weighted round robin replica selection, Walking Slice Milestone, Phase 0 Research and architecture, Phase 1 Foundation, Phase 2 Core proxy, Phase 3 SQL routing, Phase 4 Production reliability (+20 more)
 
-### Community 34 - "Spec 0002: Standards and tooling: Remote proof (remote steps 1-8, run by the lead)"
-Cohesion: 0.12
-Nodes (27): Branch rule and change path (main ruleset), Build plan step 11: Remote evidence (run by the lead, remote steps 1 to 7), How a change reaches main (six steps: branch, scope/<number>-<slug> push and PR, checks, settle review threads, merge, closing PR), Closing pull request from scope/<number>-closing, Automatic Copilot code review on the owner's account, Note: a first pull request that does not start the ci workflow (close and reopen), Follow-up 12: Decide whether required_review_thread_resolution stays true, Follow-up 13: Remote steps 1 to 6 have run; steps 7 and 8 still to run (+19 more)
+### Community 42 - "Spec 0003 Delegated Decisions and Workspace Guards"
+Cohesion: 0.07
+Nodes (50): 0003 AC-10 restore (PRD-006 AC-3): a journal whose hold is restore_pending is Held and closed with authority.restore_pending whatever the observations say; every row of walk 4 gives the listed result, 0003 AC-13 workspace and guards (0002 AC-6): exactly three workspace members pool, pool-config and pool-control; pool-control depends only on pool-config; the same sixteen third party packages; check.sh all and prove-checks.sh pass with changed baselines; the W4 addition has two tests, Baseline file changes of spec 0003 in tools/repo-check/baseline: add pool-control to lock-packages.txt (W1), remove crates/pool-control from forbidden-paths.txt (W2), add 'pool-control -> pool-config' to internal-dependencies.txt (W5); forbidden-source-patterns.txt does not change, 0003 Build plan step 1: Workspace member and guards (crates/pool-control manifest and lib.rs, root Cargo.toml, Cargo.lock, three baseline files, the W4 lockfile check with two tests, case 17 pointed at the scope 004 file, Status set to In Progress); satisfies AC-13, W4 addition of spec 0003 (the answer to spec 0002 Follow-up 10): every [[package]] entry of the root Cargo.lock without a source line must be a member written in members; the test helper gives non members a registry source line; reading the dependency edges from the lockfile is the runner up, Workspace and guards section of spec 0003: crates/pool-control becomes the third workspace member (inherits the five workspace fields, depends on pool-config with workspace = true, workspace lints, no dev-dependencies and no build script); apps/pool does not depend on pool-control yet, so until scope 004 Cargo prints 'warning: unused workspace dependency pool-control' (Follow-up 4, point m7), Cross check finding 6 of spec 0003: the new W4 check would fail the existing test tree and the evidence of step 1 could not run before its commit; the test helper gets a source line and the proving script runs after the commit, Decisions taken for spec 0003: 27 choices made in the auto decision mode, each the recommended option with its runner up and the way back; heavy marks a public contract, a format on disk or a part of the security model (18 heavy); decisions 20 to 27 were added by the updates of 2026-11-15 (+42 more)
 
-### Community 35 - "workspace.rs: Decisions and runner ups (decisions 1 to 38, aut"
+### Community 43 - "Security Requirements and Features F-100 to F-108"
 Cohesion: 0.11
-Nodes (27): C3 fixed shape after jobs: (allowed keys, exact run values, one-line run steps, last run is the job's own check), C3 allowed key list (runs-on, timeout-minutes, steps, uses, with, persist-credentials, fetch-depth, path, key, run), D3 scope index and feature files agree, Follow-up 11: Runner up for CI guards: W7-style comparison of ci.yml and main.json, Direct push probe: an empty commit made with git commit-tree on top of origin/main, Proof case 22: deny rejects a Git source dependency (source-not-allowed), Proof case 24: guards C3 rejects continue-on-error, Remote step 4: a direct push is refused (AC-13) (+19 more)
+Nodes (25): GET /v1/nodes node status route, Axum REST administration API plus CLI, pool check-config, Failover plan and execute API (/v1/failover/plans), Failover operation phases (Planned to Completed or Failed/NeedsReview), Promoter role distinct from observer/operator, PromotionPlan, Candidate replica leases retired before promotion (+17 more)
 
-### Community 36 - "Security Requirements and Features F-100 to F-108: Trust boundaries"
-Cohesion: 0.13
-Nodes (26): F-069 Old primary fencing (external verified exclusion), F-070 Split brain prevention (mutation authority distinct from fencing), F-071 Uncertain promotion result (durable intent and reconciliation), F-105 Administrative roles (viewer, operator, promoter, configuration), R-08 Split brain, R-20 Fencing provider unavailable, Operational security defaults, SEC-6 Authenticate all administration (+18 more)
+### Community 44 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence"
+Cohesion: 0.15
+Nodes (26): ApprovedTopology record, AuditEvent record, FenceReceipt record, Operation record, Local SQLite operation journal (single writer), Value sourcing table, All-writer write barrier, Candidate and RPO policy (+18 more)
 
-### Community 37 - "Scaffold Step and dev-f1-build Gate: 0001. Verification record: 0001. Verification record: 0001. Verification record"
-Cohesion: 0.13
-Nodes (25): Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests, What is left after the second review: Minor 6 verify record on the merged tree; AC-12 and AC-13 guards wait for scope 002 (Follow-up 11), Box ticked: Scaffold from the decision (/develop stack and workspace), Decision: dev-f1-build branch passed the gate on the staged merge (Rust 1.100.0: fmt, clippy, 31 tests, four fixture commands, Cargo.lock 18 packages, AC-12 grep empty); merged as 5f44d88, Decision: developer AC readings passed to chk-f1-verify (--help=x and -h=x as help, JSON field order on the raw line, /dev/full test Linux only, milestone number 3), Decision: fix round merge 4ebcf93, review log b6ce165; re-review on 02bdcbe..4ebcf93 closes the Major (37 probe files), Minor 1 to 4, Minor 5 in part (Follow-up 11), Minor 6 by chk-f1-verify, 10 of 11 Nits; five optional new Nits routed, Build plan step 4: Workstation evidence, Spec 0001 verify.md (workstation and Linux evidence record) (+17 more)
+### Community 45 - "Spec 0003 Journal Schema and Cross Check Findings"
+Cohesion: 0.08
+Nodes (30): Persisted approved writer, epoch and quarantine, SQLite journal for operations, audit and approved writer/epoch/quarantine, Approved writer, epoch and quarantine authority, The journal of spec 0003: journal.sqlite3 in control.state_directory (directory mode 0700, files 0600), one journal per daemon, WAL, synchronous FULL, foreign_keys ON, one writer, every mutation one BEGIN IMMEDIATE transaction; application_id 1347374924 (the bytes POOL) and user_version 1; built in scope 004, Journal migrations of spec 0003: forward only, numbered, one transaction each; a file with a version above what the binary knows is Unreadable; a failed migration leaves the version and the daemon closed; later slices add tables by migration, Journal schema version 1 of spec 0003: four STRICT tables, store, approved_topology, member and quarantine; the statements were run against SQLite 3.54.0 on 2026-11-15, Record Approved topology (approved writer, members, conflict latch): pool-control, one row per cluster made by bootstrap; writer and members change only by a reviewed operation; an observation can only add the latch; SQLite; compared with configuration and fresh observations before any write (0001 SC-8), Journal table approved_topology: per cluster_id the system_identifier (decimal text), approved_writer, writer_timeline, topology_epoch, conflict_latched, changed_revision and changed_unix_ms (+22 more)
 
-### Community 38 - "Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories"
-Cohesion: 0.14
-Nodes (25): m11 (minor): half of the dependency policy has no proving case, r2-m14 (minor, second round): proof case 22 leaves a clone in the Cargo home on every run, AC-11 Each check catches a wrong change, locally, AC-16 Inventory (CycloneDX SBOM), AC-17 Choices recorded, AC-18 Reviewer roster, AC-19 Documents match the workspace (item 12 waits for remote evidence), Reading: a cargo-cyclonedx that exits 3 gives exit 1 for sbom (+17 more)
+### Community 46 - "check-config Exit Status and AC-11 Readings"
+Cohesion: 0.16
+Nodes (24): ac11_a_first_argument_that_is_not_a_command_is_unknown(), Clarification evidence: review record docs/reviews/2026-11-14-scope-001-stack-and-workspace.md (rows 1 to 7); debug pool build at 07f7994 rerun for rows 2, 3, 4, 6 (81-part key config.syntax null location, 80-part key config.schema, x = "éé" junk at column 10), AC-11 passes on the workstation; /dev/full part waits for the Linux build, Linux evidence AC coverage: replaces only the two BLOCKED rows of the second run; AC-2 PASS from a clean 18e9228; /dev/full clause of AC-11 PASS, so AC-11 is PASS in full, Rules made clearer in the review, each checked on the binary (17 rows, all PASS), Rule check: --format=<bytes> and --config=<bytes> not UTF-8 exit 2 unexpected argument; --format <bytes> as separate value is wrong format value, Rule check: --help=x and -h=x after check-config print help; the first argument is compared whole; --version and -V are unknown option after check-config, Rule check: the schema step ends the run (config_version = 2 with result_cache = [true] gives one config.schema only) (+16 more)
 
-### Community 39 - "Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)"
-Cohesion: 0.14
-Nodes (24): GA workflow depth (behavior verification, tests, fresh review, documentation), POOL: PostgreSQL 18 proxy, session pooler and cluster operations project in Rust; repository holds the planning package, the scope 001 workspace slice and the scope 002 required checks (scripts/check.sh, tools/repo-check, deny.toml, CI definition), not an implemented proxy, User asked for scope 001 and then scope 002 on 2026-11-14 and nothing beyond them; further implementation begins only when explicitly requested, Cargo workspace holds only the pool and pool-config packages; CI defined in .github/workflows/ci.yml, each job runs scripts/check.sh <name>, runnable locally, Added: spec 0001 build notes, AC-1 to AC-13, five step build plan, verification record and independent review; Linux container build (AC-2) passed for aarch64-unknown-linux-gnu, Configuration keys convention (config_version, snake_case, unit suffixes, _file secrets, reserved tables), Exit status and command output convention (0/1/2/3, stdout result, one line JSON), Log event fields and redaction convention (ts, level, event; redaction by type) (+16 more)
+### Community 47 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine"
+Cohesion: 0.11
+Nodes (24): F-018 CancelRequest and BackendKeyData (virtual per lease keys), T-05 Late cancellation affects another user, Backend cleanup and reset (rollback, DISCARD ALL, idle ReadyForQuery), Backend connection lifecycle state machine (Connecting, Idle, Leased, Cleaning, Draining, Closed), Pool key (pool identity), Pool limits and operations, Statement pooling (not planned for V1), Transaction pooling (deferred) (+16 more)
 
-### Community 40 - "Scaffold Step and dev-f1-build Gate: 0001. Verification record"
-Cohesion: 0.19
-Nodes (24): Box ticked: Test it (/test stack and workspace), Spec 0001 build notes (adopted crates, build plan, ID'd criteria, fixture and Linux build commands), Standby first turn of a new session (STATUS: standby until lead sends 'mulai'), Spec 0001 verify.md (acceptance evidence record, UI / manual section), Work order (build notes, scaffold, verify and test in parallel, fresh session review, document by lead), Sub session arc-f1-update (architect update: record build notes in spec 0001; merged to bed9fad, spec commit a6e0042), Checked in wave 1: F1 Test it (tst-f1-test commits 5ad687d, fae4bc6; 127 tests green on main; F1-2 NOT_RUN for two Linux-only tests), Sub session chk-f1-review (checker review on a fresh model; first report failed, Changes requested 1 Major 6 Minor 11 Nit, commit 4a9d5e9; re-review b898d37 done, Approve with nits; merged with chk-f1-verify) (+16 more)
-
-### Community 41 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack"
-Cohesion: 0.13
-Nodes (23): Cluster management, Authenticated SQL health probes, Configured backend registration, Drain, attach and quarantine operations, Backend health state machine (Unknown, Healthy, Suspect, Unavailable, Recovering), Replication freshness and byte lag, Weighted round robin replica selection, Observation record (+15 more)
-
-### Community 42 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine"
+### Community 48 - "Topology Administration, Promotion and Operation Records"
 Cohesion: 0.12
-Nodes (23): Connection pooling, Backend cleanup and reset (rollback, DISCARD ALL, idle ReadyForQuery), Backend connection lifecycle state machine (Connecting, Idle, Leased, Cleaning, Draining, Closed), Pool key (pool identity), Pool limits and operations, Statement pooling (not planned for V1), Transaction pooling (deferred), Data plane (+15 more)
+Nodes (27): F-067 Manual plan and promotion (operator plan plus verified fence), F-071 Uncertain promotion result (durable intent and reconciliation), F-072 RPO and commit uncertainty (all-writer barrier, explicit unknown loss window), Failover features F-067 to F-075, Operational security defaults, SEC-5 Least privilege database logins; separate monitor and promotion roles, SEC-7 Persist administrative intent before an external effect, T-11 Journal tampering, loss or disk full (+19 more)
 
-### Community 43 - "Security Requirements and Features F-100 to F-108: Health monitoring PRD"
-Cohesion: 0.14
-Nodes (23): Balancing features F-048 to F-053, F-053 Lag Filtering and Primary Fallback, F-053 Lag filtering and primary fallback (fallback disabled in V1), F-060 Network partitions (health changes eligibility only), F-101 TLS and mTLS verification, Health features F-054 to F-060, Eligible Replica, Replica Profile (+15 more)
+### Community 49 - "Security Requirements and Features F-100 to F-108: Health monitoring PRD"
+Cohesion: 0.15
+Nodes (23): F-060 Network partitions (health changes eligibility only), F-101 TLS and mTLS verification, Health features F-054 to F-060, AC-1 Reachable wrong-role or wrong-cluster node cannot become eligible, AC-3 Expired observation refused at acquisition after publisher pause, Failure/recovery thresholds and flapping control, SEC-1 Require TLS and verify backend CA plus server name, T-03 Backend impersonation (+15 more)
 
-### Community 44 - "Slices, Milestones and Readiness Gates"
-Cohesion: 0.17
-Nodes (22): POOL agent guide (AGENTS.md), Agent workflow (read scope, inspect reality, define slice, apply standards, validate, update graph), Knowledge graph refresh before commit (graphify-out kept current, included in same commit), Agent Workflow, Scope 001 authorization (/coordinate run on 2026-11-14 is the explicit request to build scope 001 only), Log koordinasi: 001-stack-and-workspace (coordination log), Sub session arc-f1-update reused (architect update: nine spec 0001 clarifications from the review in index.md and a new rationale.md table, commit 5f1e995, no AC added or changed; merged with dev-f1-build), Resolved former blocker: untracked .graphifyignore and graphify-out/cache/last_query_stamp held the closing push; done at d2fda37 (.graphifyignore committed, last_query_stamp gitignored) (+14 more)
-
-### Community 45 - "Load Balancing and Replica Selection: High availability PRD: pool README"
+### Community 50 - "Slices, Milestones and Readiness Gates"
 Cohesion: 0.13
-Nodes (22): Tracer Bullet build approach, Walking Slice Milestone, R-24 Walking slice exceeds its estimate, Roadmap, Delivery slices, Phase 0 Research and architecture, Phase 1 Foundation, Phase 2 Core proxy (+14 more)
+Nodes (24): Scope 001 authorization (/coordinate run on 2026-11-14 is the explicit request to build scope 001 only), A change reaches main only through a pull request whose checks passed (described in spec 0002), Graph policy: graphify-out tracked in git; lead updates graph in merge commits only for that commit's files; unchanged-knowledge files carried without re-extraction; log re-extracted fully at closing, Decision: running /coordinate on scope 001 is read as the explicit request to build scope 001, Decision: sub sessions do not run graphify or commit graphify-out; lead updates the graph in the merge commit on main, Decision: graphify update . is unsafe for code merges here (dropped 28 brief-umum semantic nodes, ran verify.md through AST, renamed community labels); code is AST-extracted per merged file through the Python API, Decision: log updates that only change sub session status are committed with the next tick, since each doc commit costs 100k to 220k tokens of graph update, Decision: the scope 002 coordination (Standards and tooling lead) works in the same main checkout since 7cba873; both leads agreed to alternate merges and graph updates, git add per path, never stage the other coordination's files; pushing main also carries the scope 002 commits (+16 more)
 
-### Community 46 - "repo_check/ci.rs"
+### Community 51 - "repo_check/ci.rs"
 Cohesion: 0.21
 Nodes (18): a_cargo_exit_3_outside_pool_repo_check_is_a_failed_check(), a_failed_check_wins_over_one_that_could_not_run(), a_missing_cargo_exits_3_with_one_line_that_names_it(), a_missing_git_makes_docs_exit_3(), a_missing_repo_check_manifest_makes_guards_exit_3(), a_passing_check_ends_with_its_ok_line_and_exits_0(), a_wrong_cargo_deny_version_exits_3_and_names_the_tools_command(), all_keeps_going_after_a_failure_and_exits_1() (+10 more)
 
-### Community 47 - "repo_check/ci.rs: repo_check/ci.rs"
+### Community 52 - "repo_check/ci.rs: repo_check/ci.rs"
 Cohesion: 0.17
 Nodes (21): c1_checks_every_workflow_file(), c1_names_an_action_pinned_by_tag(), c1_requires_the_version_comment(), c2_names_a_job_that_is_not_a_required_check(), c2_names_a_required_check_that_has_no_job(), c3_names_a_run_step_with_logic_of_its_own(), c3_names_the_shell_key(), c3_rejects_a_multi_line_run_block() (+13 more)
 
-### Community 48 - "Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)"
-Cohesion: 0.10
-Nodes (20): Added: pool check-config --config <PATH> [--format human|json], offline check; opens no socket, starts no thread, reads at most 1 MiB plus one byte, Added: scripts/check.sh <name>, one command per check, same as CI (fmt, clippy, test, deny, guards, docs, linux-build, plus fuzz, sbom, tools); all runs first six; exits 0/1/2/3, Added: .github/workflows/ci.yml with seven jobs on ubuntu-24.04-arm; runs on PR, push to main and daily; read access only, no secret, actions pinned by full commit hash, Added: first configuration contract (config_version = 1 plus reserved result_cache and automatic_promotion tables; asking for either is config.unsupported_capability, SEC-10), Added: exit status convention for POOL commands (0 success, 1 input rejected, 2 usage error, 3 could not finish), Added: fixed finding codes (config.syntax, config.schema, config.missing_key, config.unsupported_version, config.too_large, config.not_utf8) with line and column; output from constant text, key names and positions only, so no secret appears (SEC-11), Added: fifteen configuration fixtures and 134 automated tests on the workstation; 136 on Linux because two need /dev/full, Added: pool --help and pool --version (+12 more)
+### Community 53 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack"
+Cohesion: 0.15
+Nodes (19): Replication freshness and byte lag, Operation admission boundary, Bounded frame validation, Authentication adapter (reviewed pgwire components), Protocol finite state machine, Transaction state tracking (ReadyForQuery status), Routing decision matrix, Eventual read consistency for replica sessions (+11 more)
 
-### Community 49 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6: Second review, fix round at ee8e750 (range 9e03a"
-Cohesion: 0.13
-Nodes (20): Added: spec 0002 with 0002 AC-1 to AC-20, ADR 0002, verification record and independent review, Review, main (scope 002, standards and tooling), 2026-11-14, Before the remote steps: m3, r2-m1, r2-m3, r2-m4, in order of weight, r2-m1 (minor, second round): the condition before step 1 cannot be met word for word, r2-m12 (minor, second round): closed holes that no test holds closed, r2-m4 (minor, second round): the cleanup of step 4 offers the forced push first, r2-m5 (minor, second round): verify.md still uses the old step numbers, The new Remote proof, step by step: no command can leave the remote in an unintended state (+12 more)
+### Community 54 - "Spec 0003 Records Table and Node Naming"
+Cohesion: 0.12
+Nodes (22): F-018 CancelRequest and BackendKeyData, Record Audit event: pool-control, appended and never changed, no SQL and no secret; SQLite plus export; kept at restart; built in 009, Record Credential (the secret itself): pool-core wrapper that prints [REDACTED] and cannot be serialized; memory only; read again at restart and its credential generation starts over; built in 004, Record Lease: pool-core, made at initial admission, pinned to one frontend until the session ends (0001 SC-1) and never moved; no lease, backend or lease generation survives a restart; built in 004, Record Node: pool-config NodeConfig, read by both planes; from the configuration file; same restart rule as the cluster record; built in 003, Record Secret reference: pool-config SecretReference, the key credential_file; built in 003, Record Verified principal: pool-core, made when frontend authentication succeeds and ended with the session; memory; gone at restart; built in 004, Record Virtual cancellation credential: pool-core (0001 SC-9), made per lease from random bytes and revoked before release; never on disk or in telemetry; a cancel request after a restart matches nothing; built in 006 (+14 more)
 
-### Community 50 - "Slices, Milestones and Readiness Gates: Contributing to POOL"
-Cohesion: 0.13
-Nodes (20): Claude Code guidance (CLAUDE.md), deny needs cargo-deny 0.20.2, installed under target/tools by scripts/check.sh tools, Current state: planning package, scope 001 workspace (apps/pool, crates/pool-config) and scope 002 checks; only product command is offline pool check-config; no listener or proxy path; Rust 1.100.0 pinned, linux-build and prove-checks --with-linux-build need a running Docker daemon; a macOS build is not Linux evidence; evidence in spec 0001 and spec 0002 verification records, Features 1 and 2 are done with evidence in spec 0001 and spec 0002 verification records; next queued feature is 3 (control and session data model), then the first walking slice, Commands CI defines: scripts/check.sh all (fmt, clippy, test, deny, guards, docs), scripts/check.sh <name> (plus linux-build, fuzz, sbom, tools), scripts/prove-checks.sh, single cargo test, repo-check tests, check-config on valid-minimal.toml, Working with the Docs, Contributing to POOL (+12 more)
+### Community 55 - "workspace.rs: src/workspace.rs"
+Cohesion: 0.19
+Nodes (10): Into, Problem, Report, Display, Fn, Formatter, Option, Result (+2 more)
 
-### Community 51 - "workspace.rs"
-Cohesion: 0.13
-Nodes (19): Build plan step 4: CI definition, branch rule and pull request template, Build plan step 7: Proof that the checks bite (twenty eight cases), C1 actions pinned by commit hash, C2 job ids equal required status check contexts, C4 exactly one runs-on per job, value ubuntu-24.04-arm, C5 ci.yml is the only workflow file, one top-level permissions: contents: read, no pull_request_target or secrets, CI definition (.github/workflows/ci.yml), CI definition guards C1-C5 (+11 more)
+### Community 56 - "pool-config Validation Library: pool/src/report.rs"
+Cohesion: 0.16
+Nodes (14): IoFinding, JsonCapabilities, JsonFinding, JsonReport, Outcome, Option, Result, Self (+6 more)
 
-### Community 52 - "pool-config Validation Library: pool/src/report.rs"
-Cohesion: 0.18
-Nodes (12): IoFinding, JsonCapabilities, JsonFinding, JsonReport, Outcome, Option, Result, Self (+4 more)
+### Community 57 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende"
+Cohesion: 0.14
+Nodes (18): Scope 002 boundary: align written rules with workspace and install required checks, Build it: /develop standards and tooling (four milestones, checked), Capture conventions: /audit (checked), Code in deny.toml, crates/pool-config/fuzz/, scripts/, .github/, tools/repo-check/, Documentation checks (links/anchors, scope status agreement, stable requirement IDs), Done when: documented conventions match the workspace and format, lint, test and dependency checks run in CI, GA boxes: verify, test, review (fresh model), document (all checked), Milestone: dependency policy and fuzz harness, Build plan steps 1-2 (AC-4, AC-15, AC-20), checked (+10 more)
 
-### Community 53 - "prove-checks.sh"
-Cohesion: 0.28
-Nodes (17): append(), apply_case_4(), check(), delete_lines_starting(), delete_table(), expect(), insert_after(), matched() (+9 more)
-
-### Community 54 - "Changelog, Feature 1 Done and Spec Status"
+### Community 58 - "Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal"
 Cohesion: 0.20
-Nodes (17): error_location(), ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding(), ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location(), serde_json 1.0.154 (JSON command output, adopted in 001), Minor 2: the toml parser depth limit (80 levels) and the Location::None branch of error_location have no test; the unbounded feature is not pinned off, Code in apps/pool/ and crates/pool-config/, Adopted dependencies (serde, toml, serde_json), Cargo.lock with exactly sixteen locked packages (+9 more)
+Nodes (19): pool check-config Command, Snapshot generation in spec 0003: a type created in 004 in pool-control, starts at 1 at each start, advanced by each published topology snapshot; does not survive a restart, Record Topology snapshot: built by pool-control and mapped by the daemon into the route view of pool-core; immutable; rebuilt at restart with snapshot generation 1; built in 004, TimelineId type (pool-control: the PostgreSQL timeline, a whole number from 1 to 4294967295; like MonotonicTime it derives Copy, PartialOrd, Ord and Hash, as the identifier and generation types of pool-config do), Spec 0003 option 4 (rejected): put the authority model into pool-config; it saves three baseline lines but breaks the boundary the repository structure sets, and it would have to move in 004, Repository structure (2026-11-15): the paths that exist today are the workspace (apps/pool, crates/pool-config, crates/pool-control) and the tooling of spec 0002, Admission, Snapshot Generation (+11 more)
 
-### Community 55 - "Leases, Cancellation and Login Routing"
-Cohesion: 0.20
-Nodes (17): SQL routing PRD, admit_on_pinned_backend(frame, session_state, classification, policy), Classification, classify(sql, parser_version), No primary fallback in V1, Primary profile sessions stay pinned, Restricted read only replica profile, RouteProfile (+9 more)
+### Community 59 - "prove-checks.sh"
+Cohesion: 0.24
+Nodes (19): append(), apply_case_4(), check(), delete_lines_starting(), delete_table(), expect(), insert_after(), matched() (+11 more)
 
-### Community 56 - "Spec 0002: Standards and tooling: Verify after the review fixes at a3258e4 (PASS f"
-Cohesion: 0.27
-Nodes (17): m7 (minor): a failing git is not noticed in scripts/linux-build.sh, AC-1 One entry point (scripts/check.sh <name>, exit codes 0/1/2/3), AC-14 Pull request path, AC-2 CI definition (seven jobs on ubuntu-24.04-arm), AC-5 Linux build without emulation, linux-build.sh first part probes with a stand-in docker: not a repo, no commit, broken index, dubious ownership, dirty tree, CDPATH, Milestone 2: Check entry point and CI files (Build plan steps 3 and 4, commits 9747ff0, ba0a046, 7c752a9), Checker run /check verify, milestone 2: verdict PASS at revision fb4f93d (+9 more)
+### Community 60 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling"
+Cohesion: 0.15
+Nodes (17): Manual steps policy (Docker, GitHub settings, push, PRs run only by user), Copilot Code Review left two unresolved threads (scripts/check.sh CDPATH in fuzz child shell; text.rs double backtick code span); required_review_thread_resolution blocked merge; fixed in 8cfb720 and 3bb3cd2, merged 6fc1838, Delegated (berat) 0002 AC-4: license allowlist exactly Apache-2.0, MIT, Unicode-3.0 plus NCSA exception for libfuzzer-sys, Delegated (berat) 0002 AC-13: /coordinate closes a scope through a PR per scope; lead no longer pushes main, Delegated 0002 AC-4: unsound = "all" added to deny.toml now, Delegated (berat) 0002 AC-13: zero required approvals now, one when a second maintainer account exists, User answered 'Ya, selesaikan': lead resolved the remaining Copilot thread on PR #1; permission for PR #1 only, F2-2 Start Docker Desktop (PASS 2026-11-14) (+9 more)
 
-### Community 57 - "repo_check/ci.rs: Fixture"
+### Community 61 - "Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)"
+Cohesion: 0.26
+Nodes (17): Box ticked: Record the build notes the handoff requires in spec 0001 ([x], via merge bed9fad), Evidence: verification record, independent review and changelog, Checked in wave 1: F1 build notes recorded (arc-f1-update done, commit a6e0042, merged to bed9fad; AC-1..AC-13 and 5 step Build plan present, docs only), Feature 1 done: every box ticked, workstation evidence and Linux build evidence recorded; no proxy behavior implemented, Linux build expected result and record afterwards (exit 0, x86_64 host, /dev/full test, image digest, binary sha256), aarch64 evidence verdict PASS for AC-2 and the /dev/full clause of AC-11: exit 0, last line linux build check passed, Linux evidence verdict PASS for AC-2 and the /dev/full clause of AC-11: exit 0, last line linux build check passed; every spec 0001 criterion now has a passing record, Second run verdict BLOCKED for the same single reason: eleven criteria met, nothing failed; AC-2 and the Linux clause of AC-11 not run (Docker off); both passed later under Linux evidence (+9 more)
+
+### Community 62 - "repo_check/ci.rs: Fixture"
 Cohesion: 0.23
 Nodes (6): Fixture, Outcome, PathBuf, Self, String, run()
 
-### Community 58 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling"
+### Community 63 - "Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle"
 Cohesion: 0.13
-Nodes (16): Added: deny.toml checked by cargo-deny 0.20.2 on product and fuzz lockfiles; licenses exactly Apache-2.0, MIT, Unicode-3.0 plus NCSA for libfuzzer-sys; advisories, unmaintained and unsound fail; none ignored (SEC-13), GitHub read-only rule for sessions, Manual steps policy (Docker, GitHub settings, push, PRs run only by user), Copilot Code Review left two unresolved threads (scripts/check.sh CDPATH in fuzz child shell; text.rs double backtick code span); required_review_thread_resolution blocked merge; fixed in 8cfb720 and 3bb3cd2, merged 6fc1838, Delegated (berat) 0002 AC-4: license allowlist exactly Apache-2.0, MIT, Unicode-3.0 plus NCSA exception for libfuzzer-sys, Delegated 0002 AC-4: unsound = "all" added to deny.toml now, Delegated (berat) 0002 AC-13: zero required approvals now, one when a second maintainer account exists, User granted GitHub write for scope 002 to the lead only (push main, test branch, test PR, branch protection) (+8 more)
+Nodes (19): Checks to run before proposing a change (Rust 1.100.0 pinned; scripts/check.sh all), Box ticked: Document it (/document stack and workspace), Checked in wave 1: F1 Document it (lead, CHANGELOG.md range a2dca30..HEAD, real commands in CLAUDE.md, CONTRIBUTING.md, README.md; commit docs(changelog); manual F1-1, F1-2 NOT_RUN), Closing /sync: AGENTS.md gains the pull request path convention (closing m6); CLAUDE.md names features 1 and 2 done and feature 3 next, Decision: Document it run by the lead through the document skill (changelog, range a2dca30..HEAD): new CHANGELOG.md; per spec 0001 Follow-up 8 the command sections of CLAUDE.md, CONTRIBUTING.md and README.md now name real commands, Scope 003 closing, Document and /sync: feature 3 over ca9a897..52c0312, CHANGELOG.md commit 21c9e27; /sync on 2026-11-15 touched AGENTS.md, CLAUDE.md, apps/pool/AGENTS.md, crates/pool-config/AGENTS.md, new crates/pool-control AGENTS.md and CLAUDE.md, docs/index.md, README.md and the risk register; no tick refused by /sync, Added (scope 003): a limit on validation time at the 1 MiB file limit: three made files of almost 1 MiB, one invalid with one finding per entry, each validate within 10 seconds in a debug build (0003 AC-15), Added (scope 003): a check in writer_admission that a ready authority still belongs to the configuration it was confirmed with; a configuration without control.authority_id, or with another value, closes writes (0003 AC-16) (+11 more)
 
-### Community 59 - "workspace.rs: Workspace guards W1-W7"
+### Community 64 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,"
+Cohesion: 0.13
+Nodes (16): Decision mode auto, Spec 0001 Follow-up 9 and 11 (Linux build in CI, automated AC-12/AC-13 checks), Spec 0002-standards-and-tooling, Disk budget rule (max 2 concurrent Rust builds, delete target before done), GitHub read-only rule for sessions, Sub sessions never update graphify-out; lead updates graph in merge commit, Verification before reporting (fmt, clippy, test, check-config, clean tree), Query the knowledge graph before reading files to locate code, contracts or decisions (+8 more)
+
+### Community 65 - "High Availability PRD and Multi Proxy Authority"
+Cohesion: 0.18
+Nodes (15): SEC-9 Allowlisted structured fencing/recovery adapters, T-09 Command injection through fencing/recovery hooks, HA Features (F-081 to F-087), Recovery Features (F-076 to F-080), V1.5 Milestone, ControllerEpoch, Endpoint failover via external load balancing or controlled VIP, External coordination adapter (+7 more)
+
+### Community 66 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix"
 Cohesion: 0.17
-Nodes (16): Build plan step 5: Repository check program, workspace and CI rules, Follow-up 10: Decide how W4 and W5 learn packages before a third crate (Cargo.lock edges), Known limits of the guards, W1 lockfile package set guard (three lockfiles vs baseline files), W2 forbidden paths guard, W3 forbidden source patterns guard (plain text tripwire), W4 lint inheritance guard (comments cut, * member is a problem), W5 internal dependencies guard (four spellings, package = renames) (+8 more)
+Nodes (15): Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk streaming, Extended Query and pipelining behavior, Variable length cancellation keys (protocol 3.2, up to 256 bytes), Python asyncpg (V1 gate), Bun SQL/PostgreSQL client (V1 gate), Go lib/pq (V1 gate), Go pgx (V1 gate) (+7 more)
 
-### Community 60 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix"
-Cohesion: 0.17
-Nodes (15): Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk streaming, Extended Query and pipelining behavior, Variable length cancellation keys (protocol 3.2, up to 256 bytes), Virtual per lease cancellation keys, Driver compatibility matrix, Python asyncpg (V1 gate), Bun SQL/PostgreSQL client (V1 gate) (+7 more)
+### Community 67 - "Linux Only /dev/full Write Tests"
+Cohesion: 0.28
+Nodes (13): a_failed_write_exits_3_without_stderr(), ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr(), Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Review test coverage: what is covered well and the gaps (array starting with a boolean, permission denied arm, no span arm, column through validate, AC-8/12/13 guards, --format=<bytes>), Sub session chk-f1-verify-2 (checker verify after closing: Linux build evidence for AC-2 and the /dev/full clause of AC-11; report done, commit 972e160: revision 18e9228, exit 0, host x86_64-unknown-linux-gnu, 136 tests (3 + 68 + 3 + 60 + 2), two Linux only tests ok, 30 fixture blocks, no canary leaked; merged to main), Sub session chk-f1-verify-3 (checker verify: Linux build evidence for aarch64, 0001 AC-2 and the /dev/full clause of AC-11; first turn standby, done, commit 38da818: revision 41e8eda, exit 0, host aarch64, 136 tests, two Linux only tests ok, 30 fixture blocks, no emulation; merged to main), F1-2 pass criteria as written while the target was x86_64: exit 0, host x86_64-unknown-linux-gnu, tests pass including the two Linux-only failed-write tests, one block per fixture and format (0 valid-*, 1 others), no canary leaked, last line linux build check passed, Both Linux only tests passed on aarch64 (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr; cfg target_os linux, /dev/full as stdout, check_config.rs lines 525 and 1781) (+5 more)
 
-### Community 61 - "Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories: AC-4 Dependencies, licenses and advisories (carg"
-Cohesion: 0.26
-Nodes (15): m10 (minor): unsound advisories on indirect dependencies do not fail deny, r2-m15 (minor, second round): unsound = "all" has no proving case and is not on the list of unproven parts, AC-15 Fuzz harness, AC-20 Lint rules that were only written down, AC-4 Dependencies, licenses and advisories (cargo-deny 0.20.2), Commit 7c752a9: fuzz crash check looks for a file under fuzz/artifacts/validate/, Milestone 1: Dependency policy and fuzz harness (Build plan steps 1 and 2, macOS workstation, commits da17dae and d9f7a7b), Reading: cargo-fuzz creates an empty fuzz/artifacts/validate/ directory; a script must test for a file in it, not for the directory (+7 more)
-
-### Community 62 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,"
-Cohesion: 0.14
-Nodes (15): Brief general rules: 002-standards-and-tooling, Decision mode auto, Disk budget rule (max 2 concurrent Rust builds, delete target before done), Always forbidden files (docs/scope, docs/prd, AGENTS.md, CLAUDE.md, graphify-out, .claude, spec 0001) unless the brief allows, Sub sessions never update graphify-out; lead updates graph in merge commit, Query the knowledge graph before reading files to locate code, contracts or decisions, Lead address Standards and tooling [f2769a] via SendMessage, Real state on 2026-11-14 (18 package Cargo.lock, public repo, main unprotected, Docker running, feature 1 done, aarch64 target) (+7 more)
-
-### Community 63 - "Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table"
-Cohesion: 0.15
-Nodes (14): Added: three shared conventions in the engineering standards (configuration keys, exit status with command output, log event fields with redaction), Pending shared conventions (identifier/generation types 003, SQLSTATEs 004, metric names by 006, admin API versioning 009), Shared Conventions Table, Slice, Verification Record, Walking Slice (glossary term), Handoff for Later Slices, Stable ID Citation Rule (+6 more)
-
-### Community 64 - "Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json): Initial architecture rationale"
+### Community 68 - "Security Features, Identity Requirements and Spec 0003 Security Model"
 Cohesion: 0.22
-Nodes (14): Control plane, Durable approved writer authority, ApprovedTopology record, AuditEvent record, FenceReceipt record, Operation record, Local SQLite operation journal (single writer), Future multi proxy deployment (+6 more)
-
-### Community 65 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende"
-Cohesion: 0.20
-Nodes (14): 2. Standards and tooling (done), Build it: /develop standards and tooling (four milestones, checked), Capture conventions: /audit (checked), Code in deny.toml, crates/pool-config/fuzz/, scripts/, .github/, tools/repo-check/, Done when: documented conventions match the workspace and format, lint, test and dependency checks run in CI, GA boxes: verify, test, review (fresh model), document (all checked), Milestone: dependency policy and fuzz harness, Build plan steps 1-2 (AC-4, AC-15, AC-20), checked, Milestone: check entry point and CI files, steps 3-4 (AC-1, AC-2, AC-5, AC-13, AC-14), checked (+6 more)
-
-### Community 66 - "Review Clarifications and check-config Usage Rules: pool/src/main.rs"
-Cohesion: 0.26
-Nodes (12): Format, check_config(), main(), read_bounded(), ExitCode, Path, Result, Vec (+4 more)
-
-### Community 67 - "Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108"
-Cohesion: 0.19
-Nodes (13): Separate Frontend and Backend Identity, F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), F-106 Audit and log redaction, F-107 Rate and resource limits (admission, frame and auth CPU budgets), F-108 Secure reload (validate entire generation before publication), Security features F-100 to F-108, R-11 Authentication or role confusion, SEC-2 Independently authenticated frontend and backend identities (+5 more)
-
-### Community 68 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence"
-Cohesion: 0.26
-Nodes (13): Deployment reference, Initial four VM lab, Independent fencing authority, Deployment ownership matrix, Failover and recovery, All-writer write barrier, Candidate and RPO policy, Fencing contract (allowlisted adapter) (+5 more)
+Nodes (13): F-100 SCRAM SHA 256 and PLUS (terminated frontend auth, separate backend mapping), F-105 Administrative roles (viewer, operator, promoter, configuration), F-106 Audit and log redaction, F-108 Secure reload (validate entire generation before publication), Security features F-100 to F-108, SEC-2 Independently authenticated frontend and backend identities, SEC-3 SCRAM PLUS only with valid channel binding; bounded work factors, SEC-6 Authenticate all administration (+5 more)
 
 ### Community 69 - "Doc: Report"
 Cohesion: 0.26
 Nodes (10): Args, main(), parse(), ExitCode, Option, PathBuf, Result, String (+2 more)
 
-### Community 70 - "Pgpool Baseline, Competitors and Feasibility: Pgpool configuration coverage inventory"
-Cohesion: 0.23
-Nodes (12): Configuration features F-115 to F-119, F-117 Pgpool Parameter Coverage (207 sample spellings), F-117 Pgpool parameter coverage (207 sample spellings mapped), Pgpool baseline, Baseline gaps (planning inventory, not parity certification), License and source reuse policy, PCP commands, SQL commands and pgpool_adm reference surface, Tagged sample and source manifest (V4_7_3) (+4 more)
+### Community 70 - "Security Requirements and Features F-100 to F-108: Trust boundaries"
+Cohesion: 0.29
+Nodes (12): F-069 Old primary fencing (external verified exclusion), Control module, Data plane, Database trust domain, Fencing infrastructure, Operation journal, Operator management domain, Telemetry domain (+4 more)
 
-### Community 71 - "Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal"
-Cohesion: 0.39
-Nodes (12): pool check-config Command, Repository proposal, apps/pool daemon, apps/pool-cli admin CLI, Core and Control Independence, Merge or Defer Candidate Crates (no common crate), pool-config crate, pool-control crate (+4 more)
+### Community 71 - "Pgpool Baseline, Competitors and Feasibility: Competitor analysis"
+Cohesion: 0.30
+Nodes (12): HAProxy (general TCP/HTTP proxy, GPL), Odyssey (C multithreaded pooler, BSD 3 Clause), PgBouncer (C event driven pooler, ISC), PgCat (Rust/Tokio routing proxy, MIT), Pgpool-II 4.7.3 (selected baseline), Pgpool Watchdog coordination, Watchdog option family (55 options), Competitor analysis (+4 more)
 
-### Community 72 - "repo_check/ci.rs: Outcome"
+### Community 72 - "Spec 0003 Build Plan and Scope 003 Milestones"
+Cohesion: 0.21
+Nodes (18): 0003 AC-14 records and conventions: every record marked built in this slice exists as a public type whose documentation comment states its restart rule; the shared conventions row 'Identifier and generation types' names the rule, Build plan of spec 0003 (a tracer bullet: a workspace that still passes every check with the new member, then the configuration path from file to finding, then the authority rules, then the evidence; each step ends with a commit named 'spec 0003 step <n>'; steps 8 and 9 were added on 2026-11-15 after the verification of milestones 2 and 3), 0003 Build plan step 2: Identifier and generation types in crates/pool-config/src with unit tests and the two compile_fail documentation tests; satisfies AC-6, 0003 Build plan step 5: Authority model in pool-control (the types, classify_startup, plan_bootstrap, writer_admission, walkthroughs.rs, admission_model.rs, a restart rule comment on every public record type); needs steps 1, 2 and 3; satisfies AC-7 to AC-12 and the code half of AC-14, 0003 Build plan step 6: Document corrections (items 1 to 4), evidence scripts/check.sh docs; completes AC-14, 0003 Build plan step 7: Evidence (check.sh all, prove-checks.sh, check.sh fuzz and the cargo metadata command) recorded with commands, results and revision in docs/specs/0003-control-and-session-data-model/verify.md; evidence for AC-1 to AC-14, Parallel sessions of the spec 0003 Build plan: step 1 and steps 2 to 4 share no file and can run at the same time; step 5 needs both; steps 6 and 7 come last; steps 8 (crates/pool-config and apps/pool only) and 9 (crates/pool-control only) were added after them and can run at the same time, Decision (lead, 2026-11-15): build split for spec 0003: milestone 1 (step 1) and milestone 2 (steps 2 to 4) share no file and run at the same time; milestone 3 (step 5) after both are merged; milestone 4 (steps 6 and 7) last; verify.md is created by both developers and the lead resolves the add/add conflict by taking both sections (+10 more)
+
+### Community 73 - "repo_check/ci.rs: Outcome"
 Cohesion: 0.18
 Nodes (5): Outcome, Display, Formatter, Result, Vec
 
-### Community 73 - "Pgpool Baseline, Competitors and Feasibility: Feasibility study"
-Cohesion: 0.18
-Nodes (11): Feasibility study, Automatic promotion (not ready for initial release), Go or no go milestones, Commercial and maintenance assumptions, Manual promotion (feasible with external dependencies), Operational ownership boundaries, Query result caching (high uncertainty), Session pooling feasibility (high feasibility, high correctness risk) (+3 more)
+### Community 74 - "Pgpool Baseline, Competitors and Feasibility: Pgpool configuration coverage inventory"
+Cohesion: 0.25
+Nodes (11): Configuration features F-115 to F-119, F-117 Pgpool parameter coverage (207 sample spellings mapped), F-117 Pgpool Parameter Coverage (207 sample spellings), Baseline gaps (planning inventory, not parity certification), PCP commands, SQL commands and pgpool_adm reference surface, Tagged sample and source manifest (V4_7_3), Other configuration surfaces (HBA, PCP credentials, PAM, LDAP), Remaining behavioral qualification (+3 more)
 
-### Community 74 - "repo_check/ci.rs: common.rs"
+### Community 75 - "Spec 0003 Identifier and Generation Types"
+Cohesion: 0.30
+Nodes (14): 0003 AC-6 identifier and generation types: identifiers refuse text outside their syntax and compare exactly; TopologyEpoch, AuthorityRevision and StartSequence only read, compare and advance by one, never past 9223372036854775807; comparing two kinds does not compile, Observation has no generation number in spec 0003: it carries its sample time, each probe sample replaces the last one of that node, and evidence is read again fresh when it is needed, Generations table of spec 0003 (where each generation starts, what advances it, whether it survives a restart, who compares it), AuthorityRevision type: the authority revision, one per journal, starts at 1 at bootstrap, advanced by every transaction that changes the approved topology, members, conflict latch, quarantine, a membership decision or the hold; survives restart; every durable mutation names the revision it expects, StartSequence type: the start sequence, one per journal, starts at 0 at bootstrap, advanced by each daemon start that finds its journal Ready before anything is admitted; survives restart; scopes every memory generation, TopologyEpoch type: the topology epoch, one per cluster, starts at 1 at bootstrap, advanced by a change of the approved writer (010) or a reconcile naming another writer (009); survives restart in the journal; compared by the pool key, Identifier and generation types (shared convention of spec 0003: one type per identifier and generation, built only by a checking function, a generation only reads, compares and advances by one and fails closed at the top, shared types live in pool-config, memory generations are scoped by the start sequence), 0003 decision 8 (heavy): topology epoch, authority revision and start sequence survive a restart in the journal; all other generations live in memory, scoped by the start sequence; runner up: a durable configuration generation (+6 more)
+
+### Community 76 - "Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207"
+Cohesion: 0.18
+Nodes (11): Pgpool baseline modes and POOL dispositions, native_replication and snapshot_isolation modes (deferred), streaming_replication mode (initial operating model), Connections and identity option family (48 options), Logs, files and reset option family (28 options), Relation metadata option family (6 options), Replication and routing option family (17 options), Canonical runtime declaration census (RT-001 to RT-186) (+3 more)
+
+### Community 77 - "Scope 002 Remote Steps and Feature 2 Done"
+Cohesion: 0.20
+Nodes (10): Delegated 0002 AC-13: push probe is an empty git commit-tree commit atop origin/main owned by no PR; rule installed after seven checks are green on the runner, Delegated (berat) 0002 AC-13: main protected by a GitHub ruleset with no bypass, PR only with seven checks, merge commits only, Feature 2 marked done and spec 0002 Accepted: every box checked and GA steps link evidence (verify, test, independent review, changelog, remote evidence); remote step 8 daily run NOT_RUN, does not hold, Remote step 3 (0002 AC-13): ruleset 27266107 active with deletion, non_fast_forward, pull_request, required_status_checks; seven contexts; no bypass; PR #1 BLOCKED by unresolved Copilot review threads, Remote step 4 (0002 AC-13): empty commit-tree push probe to main rejected GH013 (changes must be made through a pull request, 7 of 7 required checks expected), Remote step 5 (0002 AC-12): PR #2 with deliberate format error, run 43607256415 failure, fmt and clippy fail, BLOCKED; closed without merge, branch deleted, Remote step 6 (0002 AC-3): PR #1 mergeStateStatus CLEAN, merged as d463c1d, fast forward pull, push run 43654217182 success, Wave 1 history (2026-11-14 to 2026-11-15): all scope 002 boxes checked, feature 2 done; since remote step 3 main only accepts PR changes; feature 3 next and waits for user request (+2 more)
+
+### Community 78 - "repo_check/ci.rs: common.rs"
 Cohesion: 0.24
 Nodes (5): Command, Path, every_command_passes_on_the_committed_tree(), the_root_defaults_to_the_current_directory(), repository_root()
 
-### Community 75 - "Load Balancing and Replica Selection: High availability PRD: High availability PRD"
-Cohesion: 0.27
-Nodes (10): Fence Receipt, High availability PRD, Cancellation dispatch to the session-owning proxy, ControllerEpoch, Endpoint failover via external load balancing or controlled VIP, Established consensus for one operation authority, External coordination adapter, Query routing on local immutable snapshots (+2 more)
+### Community 79 - "Pgpool Baseline, Competitors and Feasibility: Feasibility study"
+Cohesion: 0.20
+Nodes (10): Automatic promotion (not ready for initial release), Go or no go milestones, Commercial and maintenance assumptions, Manual promotion (feasible with external dependencies), Query result caching (high uncertainty), Session pooling feasibility (high feasibility, high correctness risk), Transparent arbitrary read splitting (low confidence), Failover and recovery option family (15 options) (+2 more)
 
-### Community 76 - "Changed section (scope 002)"
+### Community 80 - "Scope 002 Review Rounds and Open Minors"
 Cohesion: 0.22
-Nodes (9): Changelog (CHANGELOG.md; Keep a Changelog 1.1.0 format, Semantic Versioning 2.0.0), Changed section (scope 002), Changed: root Cargo.toml denies Clippy lints dbg_macro, print_stderr, print_stdout, todo, unimplemented workspace wide, Changed: CONTRIBUTING.md and README.md name scripts/check.sh and describe the pull request path to main, Changed: planning documents that said no workspace existed now match the tree, Changed: spec 0001 follow ups on CI and automatic guards marked answered by 0002 AC-5 and 0002 AC-6, Changelog format: Keep a Changelog 1.1.0 and Semantic Versioning 2.0.0, Document it by lead via document skill: twelve Added entries and new Changed section in CHANGELOG.md (range 18e9228..8d40f5c) (+1 more)
+Nodes (10): Session model per role (architect/checker fable-5-2, developer/tester opus-5-5), chk-f2-review (checker review, fresh model; Blocked then Approve with nits), Delegated 0002 AC-7: close M4 by extending rule C3 (allowed key list under jobs:, no continuation after run:, known check names), Checker note left open: live ruleset has three keys absent from .github/rulesets/main.json (require_extra_approval_for_unattributed_changes, required_reviewers, do_not_enforce_on_create), Open blockers at close: none holds feature 2; open for user F2-N1 to F2-N5, F2-4, F2-5; open review minors and three live rule keys absent from main.json, Minors deliberately left open (m14, m15, m18, m19, rest of m17, m20-m23, r2-m2, r2-m6 to r2-m15), listed in spec 0002 Known limits or the review file, Review fix rounds A and B: arc-f2-spec rewrites spec text first; dev-f2-audit M3, M5, m13, m9, C3-C5 and proof cases 22-28; dev-f2-build m8, m9, m10 unsound=all, m7 linux-build.sh; merged ee8e750, Review update of spec 0002 accepted (d33ca1d): remote steps renumbered 1 push branch and PR, 2 Linux build line, 3 ruleset, 4 empty commit-tree push probe, 5 deliberately failing PR, 6 merge, 7 closing PR, 8 daily run; 28 proof cases (+2 more)
 
-### Community 77 - "Pgpool Baseline, Competitors and Feasibility: Competitor analysis"
-Cohesion: 0.47
-Nodes (9): Competitor analysis, Compare only equivalent pool modes at pinned releases, HAProxy (general TCP/HTTP proxy, GPL), Odyssey (C multithreaded pooler, BSD 3 Clause), PgBouncer (C event driven pooler, ISC), PgCat (Rust/Tokio routing proxy, MIT), Competitor reference roles recommendation, Pgpool-II 4.7.3 (selected baseline) (+1 more)
-
-### Community 78 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix: PostgreSQL protocol analysis"
-Cohesion: 0.22
-Nodes (9): Proposed stopping rules, PostgreSQL protocol analysis, Close uncertain sessions cleanup policy, Independent backend credentials per mapped login identity, Proposed protocol limits (64 KiB startup, 16 MiB message), Replication and special clients, SCRAM channel binding per terminated TLS channel, Session state inventory (+1 more)
-
-### Community 79 - "Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207"
-Cohesion: 0.22
-Nodes (9): Pgpool Watchdog coordination, Connections and identity option family (48 options), Logs, files and reset option family (28 options), Relation metadata option family (6 options), Canonical runtime declaration census (RT-001 to RT-186), Source-only delta names (hidden aliases, health_check_test, replication_mode), Streaming and health option family (24 options), Streaming sample census (CFG-001 to CFG-207, 207 spellings) (+1 more)
-
-### Community 80 - "Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle"
-Cohesion: 0.31
-Nodes (9): Decision: Build plan step 1 sets spec Status to In Progress; the stale 'lifecycle status remains Proposed' wording is tidied at /sync, not by sub sessions, Feature 2 is not done without linked real CI evidence, Feature 2 marked done and spec 0002 Accepted: every box checked and GA steps link evidence (verify, test, independent review, changelog, remote evidence); remote step 8 daily run NOT_RUN, does not hold, Wave 1 history (2026-11-14 to 2026-11-15): all scope 002 boxes checked, feature 2 done; since remote step 3 main only accepts PR changes; feature 3 next and waits for user request, Feature 2 done: required checks run in CI on every pull request and main takes a change only through a pull request whose checks passed, Status lifecycle, Follow-up 1: foundation and decision ledger ratified; the build of scope 001 was requested on 2026-11-14; every later scope stays queued until requested, Decision status sentence: ratification settles the content; the Status line follows scope feature 001 per the status lifecycle (+1 more)
-
-### Community 81 - "Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Reviewer roster (12 review and risk owner roles,: Reviewer roster (12 review and risk owner roles,"
+### Community 81 - "Slices, Milestones and Readiness Gates: Contributing to POOL"
 Cohesion: 0.25
-Nodes (8): Added: reviewer roster in the engineering standards; every role Not assigned today, A review is never done by the session or person that wrote the change, Repository owner decides while Project lead, Maintainer or Release maintainer is not assigned, Reviewer roster (12 review and risk owner roles, all Not assigned, with fresh model eligibility per role), Reviewer Roster (glossary term), Reviewer roster (who holds each review role, where a fresh model may review), Delegated (berat) 0002 AC-18: repository owner decides only for Project lead, Maintainer and Release maintainer while unassigned, F2-N1 Reviewer roster (user-only value: holders of 12 roles or confirm Not assigned)
+Nodes (9): A change describes problem, feature/spec, intended behavior, safety boundary and validation; small PRs, conventional commits, acceptance criteria and real test evidence; independent review for protocol, auth, parser and failover work, Project has its first workspace slice and is otherwise in planning; start from the docs index, scope and engineering standards, Every pull request runs seven required checks, reproduce a failed check X with scripts/check.sh X; later property, PostgreSQL integration and compatibility/fuzz/chaos tests; do not invent passing results, Security reporting in SECURITY.md; no secrets or user SQL in issues; named maintainer team and private reporting channel still needed before production releases, Commit convention: conventional commits per Build plan step, subject type(scope): spec 0002 step <n>, F2-N4 Private security report channel and maintainer team, Contributing to POOL, Apache 2.0 contributions; no third party code without per file license review and provenance record (+1 more)
 
-### Community 82 - "Leases, Cancellation and Login Routing: Query cache PRD"
+### Community 82 - "Protocol Contract and Driver Compatibility: Driver compatibility matrix: PostgreSQL protocol analysis"
+Cohesion: 0.22
+Nodes (9): Proposed protocol limits (64 KiB startup, 16 MiB message), Replication and special clients, SCRAM channel binding per terminated TLS channel, Session state inventory, Features outside the initial support claim, PostgreSQL protocol analysis, Proposed stopping rules, Close uncertain sessions cleanup policy (+1 more)
+
+### Community 83 - "Reviewer Roster and Review Roles"
+Cohesion: 0.25
+Nodes (8): Reviewer roster (who holds each review role, where a fresh model may review), Delegated (berat) 0002 AC-18: repository owner decides only for Project lead, Maintainer and Release maintainer while unassigned, Spec 0003: SEC-14 independent review is met by the scope box Review it (fresh model); the review needs the Control engineer role of the reviewer roster, which a fresh model may hold for code, Added: reviewer roster in the engineering standards; every role Not assigned today, Reviewer roster (12 review and risk owner roles, all Not assigned, with fresh model eligibility per role), Reviewer Roster (glossary term), A review is never done by the session or person that wrote the change, Repository owner decides while Project lead, Maintainer or Release maintainer is not assigned
+
+### Community 84 - "Offline Bounds, Parser Depth and Known Limits"
+Cohesion: 0.46
+Nodes (8): error_location(), ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding(), ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location(), Minor 2: the toml parser depth limit (80 levels) and the Location::None branch of error_location have no test; the unbounded feature is not pinned off, Rule check: 1 MiB files of brackets and nested inline tables end with one config.syntax, no crash or exit 101, Rule check: a dotted key with 81 parts is config.syntax with no location; 80 parts is inside the parser limit, Nesting deeper than the toml parser allows (e.g. a dotted key with 81 parts) is config.syntax; for a dotted key or table header the finding has no location (line and column null), toml unbounded feature stays off: parser stops at a fixed nesting depth (80 levels in toml 1.2.1), so a 1 MiB file of brackets cannot exhaust the stack
+
+### Community 85 - "Deployment Reference and Four VM Lab"
 Cohesion: 0.38
-Nodes (7): Manual failover first; automatic failover and cache disabled, V2 Milestone, Phase 6 Advanced features, Query cache PRD, Caching disabled until a separate contract is approved and proven, Candidate CacheKey, Cache invalidation and dependency contract
+Nodes (7): Initial four VM lab, Future multi proxy deployment, Independent fencing authority, Deployment ownership matrix, Deployment reference, External etcd for future coordination, Operational V1 (four VM scenario with replica routing and fenced manual promotion)
 
-### Community 83 - "Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide: Planned Architecture"
+### Community 86 - "Query Cache PRD and V2 Deferred Features"
+Cohesion: 0.38
+Nodes (7): V2 Milestone, Phase 6 Advanced features, Candidate CacheKey, Cache invalidation and dependency contract, Query cache PRD, Manual failover first; automatic failover and cache disabled, Caching disabled until a separate contract is approved and proven
+
+### Community 87 - "Configuration Keys and Secret References"
+Cohesion: 0.39
+Nodes (8): Public boundary added to pool-config by spec 0003: ValidatedConfig::control, clusters, nodes, identities and resolve_identity; ControlConfig, ClusterConfig, NodeConfig, IdentityRoute, SecretReference and RoutingProfile; hand written Debug prints identifiers only; no public constructor, Default or Deserialize, Record Validated configuration: pool-config ValidatedConfig, made by validate and published whole or not at all (SEC-12); the configuration generation starts at 1 at each start; type in 003, number in 004, pool-control gotcha: the tests get a ValidatedConfig by calling pool_config::validate on TOML text written in the test; there are no fixture files in crates/pool-control, FindingCode (config.* codes), pool_config::validate, Public boundary of pool-config, Rejection (never empty list of findings), ValidatedConfig
+
+### Community 88 - "Changed section (scope 002)"
 Cohesion: 0.33
-Nodes (6): Credentials, cancellation secrets and sensitive SQL excluded from default telemetry, Virtual Cancellation Model, Data Plane vs Control Plane Separation, Planned Architecture, Spec 0001 lifecycle status mirrors scope feature 1: In Progress while the foundation is built and proven, Accepted when the feature is done, Technology Stack (Tokio, rustls, pg_query, Axum, SQLite journal)
+Nodes (6): Document it by lead via document skill: twelve Added entries and new Changed section in CHANGELOG.md (range 18e9228..8d40f5c), Changed section (scope 002), Changed: root Cargo.toml denies Clippy lints dbg_macro, print_stderr, print_stdout, todo, unimplemented workspace wide, Changed: CONTRIBUTING.md and README.md name scripts/check.sh and describe the pull request path to main, Changed: planning documents that said no workspace existed now match the tree, Changed: spec 0001 follow ups on CI and automatic guards marked answered by 0002 AC-5 and 0002 AC-6
 
-### Community 84 - "Spec 0002: Standards and tooling: Remote step 3: the branch rule (ruleset 27266107"
-Cohesion: 0.47
-Nodes (6): r2-m13 (minor, second round): check.sh fuzz still follows an exported CDPATH, Commit 3bb3cd2: equal-length backtick runs paired in text.rs, fix for review thread r4574073117, Commit 8cfb720: CDPATH= cd -- in check_fuzz, fix for review thread r4574073043, Remote step 3: the branch rule (ruleset 27266107, four rule types, seven contexts), Copilot review thread on scripts/check.sh line 164: exported CDPATH in check_fuzz, Copilot review thread on tools/repo-check/src/text.rs line 186: link inside a double backtick code span
-
-### Community 85 - "Scope 002 Brief Rules: Closing follows spec 0002 remote step 7 (closing"
-Cohesion: 0.40
-Nodes (5): Penutupan: all green branches merged by 311989a; merges per branch listed; no push to main; scope via PR #1, closing via scope/002-closing; cleanup after closing PR, Closing follows spec 0002 remote step 7 (closing commit pushed as scope/002-closing and merged through a PR), not skill step 9; merge hash and cleanup reported in session, Delegated (berat) 0002 AC-3, AC-19: remote evidence enters main through a second PR scope/<number>-closing, replacing /coordinate skill step 9, Delegated (berat) 0002 AC-13: /coordinate closes a scope through a PR per scope; lead no longer pushes main, F2-4 Update /coordinate skill text: step 9 push main and the lead-only push limit no longer runnable; replacement in spec 0002 Branch rule and change path (NOT_RUN)
-
-### Community 86 - "Pgpool Baseline, Competitors and Feasibility: Streaming sample census (CFG-001 to CFG-207, 207: Pgpool baseline modes and POOL dispositions"
-Cohesion: 0.50
-Nodes (4): Pgpool baseline modes and POOL dispositions, native_replication and snapshot_isolation modes (deferred), streaming_replication mode (initial operating model), Replication and routing option family (17 options)
+### Community 116 - "pool-control Authority Model Crate"
+Cohesion: 0.10
+Nodes (15): Closed, ClosedReason, EligiblePrimary, AuthorityRevision, NodeId, TopologyEpoch, state_reason(), Authority (+7 more)
 
 ## Knowledge Gaps
-- **131 isolated node(s):** `docs/reviews section of the documentation index (one review row)`, `F-060 Network partitions (health changes eligibility only)`, `F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica)`, `Concurrency group per event name and ref; only pull request runs are cancelled`, `Permissions: contents read only, no secret` (+126 more)
+- **132 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+127 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **25 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Spec 0001. POOL initial architecture` connect `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)` to `Linux Build Evidence, AC-2 and VM Architecture`, `Scope 002 Brief Rules: apps/pool agent guide`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `Workspace Layout, Bounded Read and FIFO Limit`, `Configuration Keys and Secret References`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Standards, Tooling and Release Qualification`, `Scope 001 Coordination Brief, Log and Authorization: Follow-up 11: scope 002 adds automatic CI checks`, `Glossary and Routing Profiles`, `Feature Inventory and Parity Matrix`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Security Requirements and Features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Load Balancing and Replica Selection: High availability PRD`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record: 0001. Verification record: 0001. Verification record`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Leases, Cancellation and Login Routing`, `Spec 0002: Standards and tooling: Verify after the review fixes at a3258e4 (PASS f`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json): Initial architecture rationale`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Load Balancing and Replica Selection: High availability PRD: High availability PRD`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Leases, Cancellation and Login Routing: Query cache PRD`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide: Planned Architecture`?**
-  _High betweenness centrality (0.281) - this node is a cross-community bridge._
-- **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Scope 002 Brief Rules: apps/pool agent guide`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Scope 002 Brief Rules`, `Standards, Tooling and Release Qualification`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Summary of the first pass: seven required checks`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Load Balancing and Replica Selection: High availability PRD`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Spec 0002: Standards and tooling: Remote proof (remote steps 1-8, run by the lead)`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Slices, Milestones and Readiness Gates`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6: Second review, fix round at ee8e750 (range 9e03a`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `workspace.rs`, `Spec 0002: Standards and tooling: Verify after the review fixes at a3258e4 (PASS f`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `workspace.rs: Workspace guards W1-W7`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories: AC-4 Dependencies, licenses and advisories (carg`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Changed section (scope 002)`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Reviewer roster (12 review and risk owner roles,: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Brief Rules: Closing follows spec 0002 remote step 7 (closing`?**
-  _High betweenness centrality (0.219) - this node is a cross-community bridge._
-- **Why does `Workspace guards W1-W7` connect `workspace.rs: Workspace guards W1-W7` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs`, `Glossary and Routing Profiles`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`?**
-  _High betweenness centrality (0.117) - this node is a cross-community bridge._
-- **What connects `docs/reviews section of the documentation index (one review row)`, `F-060 Network partitions (health changes eligibility only)`, `F-045 Unknown and failed parsing (keep primary lease, reject on restricted replica)` to the rest of the system?**
-  _131 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Spec 0003 Delegated Decisions and Workspace Guards`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`?**
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
+- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Glossary and Routing Profiles`, `Scope 002 Brief Rules: apps/pool agent guide`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Linux Build Evidence, AC-2 and VM Architecture`, `Standards, Tooling and Release Qualification`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Scope 001 Coordination Log, Closing and Blockers`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Leases, Cancellation and Login Routing`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Security Requirements and Features F-100 to F-108`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Topology Administration, Promotion and Operation Records`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack`, `Spec 0003 Records Table and Node Naming`, `pool-config Validation Library: pool/src/report.rs`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `High Availability PRD and Multi Proxy Authority`, `Spec 0003 Identifier and Generation Types`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Query Cache PRD and V2 Deferred Features`?**
+  _High betweenness centrality (0.107) - this node is a cross-community bridge._
+- **Why does `3. Control and session data model (in-progress)` connect `Scope 003 Coordination Brief, Log and Manual Steps` to `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Spec 0003 Build Plan and Scope 003 Milestones`, `pool-config Validation Library`, `Spec 0003 Delegated Decisions and Workspace Guards`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Identifier and Generation Types`, `Spec 0003 Authority Model: Startup States and Bootstrap`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Topology Administration, Promotion and Operation Records`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`?**
+  _High betweenness centrality (0.084) - this node is a cross-community bridge._
+- **What connects `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165` to the rest of the system?**
+  _132 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**
-  _Cohesion score 0.05064836003051106 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.059716430358632194 - nodes in this community are weakly interconnected._
 - **Should `repo_check/docs.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.050957481337228175 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `pool-config Validation Tests` be split into smaller, more focused modules?**
-  _Cohesion score 0.06060606060606061 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03233622216009691 - nodes in this community are weakly interconnected._

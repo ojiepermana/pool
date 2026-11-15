@@ -35,7 +35,7 @@ fn good_tree(name: &str) -> Fixture {
     );
     f.write(
         "Cargo.lock",
-        "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\n",
+        "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
     );
     f.write(
         "crates/pool-config/fuzz/Cargo.lock",
@@ -81,7 +81,10 @@ fn workspace_passes_on_a_small_correct_tree() {
 fn w1_names_a_package_that_the_lockfile_has_and_the_baseline_does_not() {
     // covers: 0002 AC-6, W1
     let f = good_tree("ws_w1_extra");
-    f.append("Cargo.lock", "\n[[package]]\nname = \"zmij\"\n");
+    f.append(
+        "Cargo.lock",
+        "\n[[package]]\nname = \"zmij\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
+    );
     f.check("workspace", &[])
         .assert_problem("workspace", "W1", &["Cargo.lock", "zmij"]);
 }
@@ -108,7 +111,7 @@ fn w1_counts_a_package_that_appears_twice() {
     let f = good_tree("ws_w1_twice");
     f.append(
         "Cargo.lock",
-        "\n[[package]]\nname = \"serde\"\nversion = \"2.0.0\"\n",
+        "\n[[package]]\nname = \"serde\"\nversion = \"2.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
     );
     f.check("workspace", &[])
         .assert_problem("workspace", "W1", &["Cargo.lock", "serde"]);

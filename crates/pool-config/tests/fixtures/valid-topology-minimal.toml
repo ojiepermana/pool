@@ -1,0 +1,15 @@
+config_version = 1
+
+[control]
+state_directory = "/var/lib/pool"
+
+[[cluster]]
+id = "main"
+system_identifier = "7412345678901234567"
+expected_writer = "pg1"
+
+[[node]]
+id = "pg1"
+cluster = "main"
+host = "10.0.0.11"
+port = 5432
