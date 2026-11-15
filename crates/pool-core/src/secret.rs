@@ -843,12 +843,15 @@ mod tests {
                 "{mode:o}"
             );
         }
-        // Another account than the service account and root.
-        let path = dir.file("ok-other-owner", &pem, 0o644);
-        assert_eq!(
-            read_trust_roots(&path, owner.wrapping_add(1)).map(|_| ()),
-            Err(SecretError::Permissions)
-        );
+        // Another account than the service account and root. Skipped when the test runs as root,
+        // as in the Linux image: a file of root is allowed, which the pure rule below checks.
+        if owner != 0 {
+            let path = dir.file("ok-other-owner", &pem, 0o644);
+            assert_eq!(
+                read_trust_roots(&path, owner.wrapping_add(1)).map(|_| ()),
+                Err(SecretError::Permissions)
+            );
+        }
         // The rule itself, for the owner root that a test cannot create.
         assert!(certificate_allowed(0o100_644, 0, 1000));
         assert!(certificate_allowed(0o100_644, 1000, 1000));

@@ -1895,3 +1895,68 @@ Built on 2026-11-16 on top of `main` at `6ba9e36`, as decisions 86 and 96 and fi
 - `77e57f8`, **a last try for each latch** (c9). When the loop stops, every latch on `unrecorded_latches()` is written once more before the journal is closed, and one that still fails gets `authority.conflict_latched` with `recorded` false. Test: `control::tests::c9_a_latch_still_open_at_shutdown_is_tried_once_more_and_said_so`, which fails without the last try: one line and one failed write instead of two.
 
 Gates on this tree, on macOS: `cargo test -p pool --locked` and `scripts/check.sh integration` passed (26 of 26). In `scripts/check.sh all`, every check but `test` passed, and `test` failed in one place only, the test `ac2_the_committed_w3_baseline_is_the_block_of_spec_0004` of `tools/repo-check`. The spec on `main` already has the lines `rusqlite` and `aws_lc_rs` of decision 93 (finding g2), and the committed `forbidden-source-patterns.txt` does not have them yet. That file belongs to another part of step 15, so this is not something stage 1 changed, and stage 1 does not touch `tools/`.
+
+### Crates, tooling and build (developer A)
+
+Built on 2026-11-16 on macOS (workstation, Docker running, not Linux and not CI), on top of `main` at `adeb0a0` and then `b92a300` (merged in `58461ce`, which keeps the tests of both sides in `crates/pool-core/src/backend/tests.rs`). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2` on `nightly-2026-10-17`. One commit for each part, each named for this step and its finding:
+
+| Commit | Finding | What changed |
+|---|---|---|
+| `195a07a` | g2, decision 93 | `rusqlite` and `aws_lc_rs` are bare lines of the source guard, allowed in `crates/pool-control/src/journal.rs`, `crates/pool-control/tests` and `crates/pool-core`; the baseline is the block of [Source guard](index.md#source-guard) line for line. No code had to change. Case 36 of `scripts/prove-checks.sh` names `rusqlite` in `apps/pool/src/main.rs` |
+| `4703bb5` | c3 | `parse_startup` keeps the names it has seen in a `HashSet`, so a repeated name costs one lookup. No answer changes; the golden and split tests of `pool-protocol` pass unchanged |
+| `b3d9d5b` | c4, decision 87 | `.cargo/config.toml` with the two lines of [Native code](index.md#native-code); `journal::tests::the_linked_sqlite_is_the_bundled_3_54_1` |
+| `a5de823` | g5, n5, n13 | `NOTICE`: "AWS-LC 5.12.0, as bundled in aws-lc-sys 0.47.0". The two comments name `JournalRead::bootstrap_plan`. `scripts/check.sh fuzz` refuses `POOL_FUZZ_SECONDS` of `0`, `abc` and `-5`, and checks each fuzz lockfile with `cargo metadata --locked` before the run |
+| `d5211fe` | the full verification | The two corrections of the step 14 evidence: seven hermetic only messages, and `integration.rs` for `0004 AC-13` |
+| `d91f619` | M2, decision 85 | `EligiblePrimary::system_identifier()` and `writer_timeline()`; the twin doc test reads all six accessors |
+| `77a89a8` | M1, decision 84 | `probe.node_loss_timeout_ms`: default 30000, 1000 to 3600000, no cross rule, `ProbeConfig::node_loss_timeout()`. `valid-serving-limits.toml` holds 1000; the range table, the key list and the `Debug` text of `tests/validate.rs` name it |
+| `4affb99` | M1 | Step 1 of the backend connection resolves the name and tries each address on a `tokio::net::TcpSocket` with `set_keepalive(true)` before it connects. `ac30_a_socket_to_a_node_has_keepalive_on_before_it_connects` (IPv4 and IPv6) |
+| `6d7ad51` | M2 | `BackendConnection::verify_identity` and `BackendError::Identity` (class `identity`); `ac29_the_node_must_name_...` with the writer and eleven refused answers |
+| `68d9427` | M2, M1 | `Route` carries `system_identifier` and `timeline`; step 8 runs for every session before `AuthenticationOk`. `RouteState::Closed` carries `lost`, `RouteView::is_lost`, `EndReason::NodeLost` (`node_lost`); a lost node is cut like a conflict and told as backend loss. In `apps/pool/src/control.rs`, as the lead allowed for the build only: the two fields, `lost: false`, and `lost: false` in the literals of its test module |
+| `fb4e724` | decision 86 | `Server::shutdown_now()`: shutdown from step 4 on, with the same last limit of 2 s |
+| `27f9495` | n1 | The lease is dropped before the bounded close of the client |
+| `bb4df12`, `e19fe7e` | c6, decision 88 | A CA file or a certificate chain with a write bit for the group or others, or owned by another account than the service account or root, is `secret.permissions`. `read_certificate_chain`, `read_trust_roots` and `load::node` take the owner; `, owner` at their three callers in `apps/pool` |
+| `94d2940` | M2 | The one line of `apps/pool/src/daemon.rs` that builds the server calls `Server::with_identity_query(server_parts, pool_control::PROBE_QUERY)` |
+
+#### Tests and what they catch
+
+| Test | Holds | Mutation | Result |
+|---|---|---|---|
+| `ac29_another_system_identifier_...`, `..._another_timeline_...`, `..._a_node_in_recovery_...`, `..._an_error_...`, `..._two_rows_...`, `..._a_null_...`, `..._no_row_...` in `tests/session.rs` | `08006` before `AuthenticationOk`, one backend, the question asked once, no `Query` of the client at the node, the backend closed, `backend.failed` with the class `identity` | the answer of step 8 not checked | all seven fail |
+| `ac29_the_answer_of_the_approved_writer_lets_the_session_open`, `ac29_a_server_built_without_the_question_refuses_every_login` | the writer passes; `Server::new` fails closed | | pass |
+| `ac30_a_query_in_flight_on_a_lost_node_gets_08007`, `ac30_an_idle_session_on_a_lost_node_gets_08006` | the mark ends the session with `08007` or `08006`, the backend closed, `session.ended` with `node_lost` | the mark ignored | both fail at their own limit of 15 s, no hang |
+| `ac30_silence_without_the_mark_ends_no_session` | a cluster closed without a conflict or the mark keeps its session; a conflict over the mark gives `57P01` | | pass |
+| `shutdown_now_ends_every_session_at_once_and_returns_within_its_limit` | with a deadline of 600 s: `57P01` idle and in a transaction, `08007` with a query in flight, back within 3 s, no accept after | `shutdown_now` as `shutdown` | fails at its limit of 5 s |
+| `step_12_closes_the_backend_before_the_client_that_does_not_read` | the backend closed within 600 ms of a conflict while the client that does not read still holds the session | the old order | fails: 0 closed |
+| `c6_a_ca_file_or_chain_that_others_can_write_or_that_another_account_owns_is_refused` in `secret.rs` | 644, 444, 600, 400, 640, 604 pass; 664, 646, 666, 620, 602, 660 and another owner refused; root allowed by the rule. The case of another owner is skipped when the test runs as root (`e19fe7e`): in the Linux image the file of the test belongs to root, which the rule allows | group write allowed | fails at 664 |
+
+**One test that failed and then passed.** `ac30_a_query_in_flight_on_a_lost_node_gets_08007` failed 10 of 10 times when the three `ac30_` tests ran together (`assert!(eventually(|| !named(&events, "session.ended").is_empty()).await)` at line 2224), and passed when it ran alone, where the event was there with `reason` `node_lost`. The cause is in the test, not the code: `tracing` caches the interest of a callsite, and the other two tests ended sessions on threads with no subscriber. With a subscriber in all three, as the `ac24_` tests do, the whole `tests/session.rs` binary passed 10 of 10 runs, and later every run.
+
+#### What the build switch does, run both ways (c4)
+
+| Run | Linked SQLite | Result |
+|---|---|---|
+| With `.cargo/config.toml`, no variable | 3.54.1 | the version test passes |
+| With the file and `LIBSQLITE3_SYS_USE_PKG_CONFIG=1` | 3.54.1 | passes: `force` wins |
+| Without the file and `LIBSQLITE3_SYS_USE_PKG_CONFIG=1` | 3.54.0, the SQLite of the host from Homebrew `pkg-config` | **fails**: `left: "3.54.0"` |
+| Without the file, no variable | 3.54.1 | passes |
+
+For AWS-LC, with the file and `AWS_LC_SYS_USE_SYSTEM=1` the build is from source. **With the file and `AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin=1` the build script of `aws-lc-sys` 0.47.0 still looks for an installed AWS-LC**, because it reads the name with the target before the plain one (`optional_env_crate_target`), and `force` covers only the plain name. On this host it found none and the build failed; on a host that has one it would link it. This is a gap in the two lines of [Native code](index.md#native-code), for the architect. `libsqlite3-sys` 0.40.0 reads only the one name and then builds the bundled source, so SQLite is covered.
+
+**`cargo fuzz run` has no `--locked`** in `cargo-fuzz` 0.13.2. The check runs `cargo metadata --locked --manifest-path <crate>/fuzz/Cargo.toml` first, which refuses a lockfile that would have to change.
+
+#### Checks on the final tree
+
+On macOS unless a row says otherwise; Docker running. `0004 AC-29` and `0004 AC-30` are proven here in their hermetic halves only: the fixture cases and the control loop belong to `dev-f4-m2`.
+
+| Command | Tree | Exit | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | every commit of the table above, and `e19fe7e` | 0 | fmt, clippy, test, deny, guards, docs |
+| `cargo test -p pool-core --locked` | `e19fe7e` | 0 | 56 unit and 67 session tests |
+| `scripts/check.sh integration` | `94d2940` | 0 | 29 of 29 against PostgreSQL 18.7 of the pinned image. The commits from `68d9427` to `bb4df12` refuse every login there with `08006` and the class `identity`, because the daemon still built its server with `Server::new`; `94d2940` hands it the probe query. The branch reached `main` as one merge (`653d864`) |
+| `scripts/check.sh fuzz` | `94d2940` | 0 | four targets, 31 s each, no crash file |
+| `scripts/prove-checks.sh` | `6d7ad51` | 0 | 36 of 36, with case 36; `linux-build` not proven in that run |
+| `cargo test --locked -p pool-core` in `rust:1.100.0-slim-bookworm` by its pinned digest, from `git archive HEAD`, as root | `bb4df12` | not recorded (the output went through `grep`) | `test result: FAILED. 55 passed; 1 failed`: the c6 test, at the case of another owner (the file belongs to root) |
+| The same | `e19fe7e` | 0 | 56 unit and 67 session tests, `c6_`, `ac29_` and `ac30_` among them |
+| `scripts/check.sh linux-build` | `94d2940` | 1 | **failed** in four tests of `apps/pool/tests/commands.rs` (two `ac9_` lock cases, `ac10_`, `ac11_`), each with `secret.permissions at node.tls_ca_file`. `git archive` writes the tree with `tar.umask` 002, so in the image `crates/pool-core/tests/fixtures/ca.pem` is mode 664, owned by root, and `commands.rs` names that committed file. The rule of decision 88 refuses the group write bit, as it must. The fix is on the test side, a copy of the CA with mode 0644 in the folder of the test, given to `dev-f4-m2`. Not run again yet |
+| `scripts/prove-checks.sh --with-linux-build` | | not run | waits for that fix on `main` |
+
