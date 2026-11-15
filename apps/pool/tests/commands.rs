@@ -545,6 +545,30 @@ fn ac9_a_secret_or_ca_file_that_cannot_be_used_ends_bootstrap_with_its_key() {
 }
 
 #[test]
+fn c6_a_ca_file_that_the_group_or_others_can_write_ends_bootstrap_with_its_key() {
+    // covers: spec 0004 decision 88 (finding c6 of the independent review),
+    // through the binary: a CA file with a write bit for the group or others
+    // is `secret.permissions` at `node.tls_ca_file`, and nothing is written.
+    // The same file with mode 0644 passes the check and the bootstrap goes
+    // on to the probe, which finds no node and is refused.
+    let layout = Layout::new("ca-mode");
+    for mode in [0o664, 0o646, 0o666] {
+        fs::set_permissions(&layout.ca, fs::Permissions::from_mode(mode)).expect("chmod");
+        assert_error(
+            &layout,
+            "bootstrap",
+            "secret.permissions",
+            Some("node.tls_ca_file"),
+            "a secret file has the wrong type, mode or owner",
+        );
+    }
+    fs::set_permissions(&layout.ca, fs::Permissions::from_mode(0o644)).expect("chmod");
+    let run = command("bootstrap", &layout.config, "human");
+    assert_eq!(run.code, 1, "{} {}", run.stdout, run.stderr);
+    assert_eq!(layout.entries(), ["pool.lock"], "no journal file");
+}
+
+#[test]
 fn ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal() {
     // covers: 0004 AC-11 (hermetic part), AC-12. A closed port, then a
     // listener that accepts and never speaks: both within the timeout.
