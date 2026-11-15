@@ -447,6 +447,113 @@ The made inputs were built by a probe script outside the repository, as [Validat
 | `0003 AC-16` | the code of `8135cca` and the step 9 probe row above | pass on the workstation for the code. The `ac16_` tests and their run come from `tst-f3-test` |
 | `0003 AC-7` to `0003 AC-12` | the walks and the small domain pass unchanged on `8135cca` | pass |
 
+### Checker run: `/check verify`, milestone 5
+
+Recorded by the checker session `chk-f3-verify` on 2026-11-15 at revision `aaad537` (`main`), on macOS 27.0.1, arm64 (workstation, not Linux and not CI). Docker was running (`docker info` exit 0, server 29.9.2). The code of step 8 is `be8bcf1` and the code of step 9 is `8135cca`. The `ac15_` tests are in `32a7b24` and the `ac16_` tests in `26210ce`, both from the tester. The checker wrote neither the code nor the tests. Every command was run again from this session's own checkout, with `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`. The developer's record above is kept as it was. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`. Every probe file, probe program and mutation lived in private clones outside the repository. No file of the repository was changed for a probe.
+
+The workstation was busy with other work during this run (load average 20 to 29 on 10 cores). So every time below is an upper bound, and single slow runs are noise. Where a number looked off, the run was repeated and the repeats are named.
+
+**Verdict: PASS for step 8 (`0003 AC-15`) and PASS for step 9 (`0003 AC-16`).** The two rows that the developer left as "not run" (`ac15_` and `ac16_`) were run here and pass. Three points lie outside the letter of the criteria and are listed under "Findings outside the criteria".
+
+**Step 8, the commands of the record**
+
+- [x] The made inputs, built by the checker's own program from the text under [Validation time](index.md#validation-time), not by the tests → input 1 has 13217 entries and 1048511 bytes, input 2 has 16471 and 1048558, input 3 has 17268 and 1048559 → `0003 AC-15`
+- [x] `cargo test -p pool-config -p pool --locked ac15_` → exit 0. `tests/validate.rs` 4 passed in 1.77 s, `tests/check_config.rs` 1 passed in 1.29 s → `0003 AC-15`
+- [x] `pool check-config` on inputs 1, 2 and 3, debug build, from start to exit → 0.45 s, 0.54 s and 0.51 s in the human format, 0.45 s, 0.45 s and 0.57 s in the JSON format. Exit 0, 0 and 1. The release build needs at most 0.18 s for each. All far below 10 seconds → `0003 AC-15`
+- [x] Input 3 through the binary, both formats → `configuration invalid`, `findings: 17268`, then 17268 lines, each `config.invalid_value` at `node.port` on line 2. The checker counted the column of every `port=` value in the input by itself and compared all 17268, in order: the first is column 60 and the last is column 1048402. The JSON output is one line with 17268 objects and the same positions → `0003 AC-15`
+- [x] Input 4 → `config.invalid_value` at `node.port`, line 21, column 8, then `config.duplicate_id` at `node.id`, line 18, column 6. That is against file order → `0003 AC-15`
+- [x] The 28 fixtures, binary of `d26016c` (before the fix) against the binary of `aaad537`, both formats → standard output, standard error and exit status compared: 168 comparisons, 0 differences. The debug build gives the same bytes as the release build → `0003 AC-1`, `0003 AC-2`, `0003 AC-3`
+- [x] `scripts/check.sh all` → exit 0, `ok` for `fmt`, `clippy`, `test`, `deny`, `guards` and `docs`. 448 tests passed, 0 failed
+- [x] `scripts/check.sh fuzz` → exit 0, `Done 95672 runs in 61 second(s)`, no file under `crates/pool-config/fuzz/artifacts/validate/`. The run count is about a twelfth of the earlier runs. The corpus has grown to 8714 files and the machine was busy. No crash and no timeout
+
+**Step 8, extra checks**
+
+- [x] The `ac15_` tests fail on the code before the fix → in a private clone of `d26016c`, with `crates/pool-config/tests/validate.rs` and `apps/pool/tests/check_config.rs` taken from `aaad537`, `cargo test -p pool-config --locked --test validate ac15_ -- --test-threads 1` gives exit 101: `ac15_large_valid_inputs_validate_within_ten_seconds ... FAILED` with `input 1: validate took 239.244506292s`, and `ac15_one_finding_per_entry_on_one_line_at_each_value ... FAILED` with `input 3: validate took 1098.076026583s`. `ac15_made_inputs_have_the_listed_size` and `ac15_findings_follow_the_validation_order_against_the_file_order` pass there, as they should: they are not about time. The run took 1337 seconds. The test through the binary, `ac15_the_binary_reports_every_finding_of_input_3_within_ten_seconds`, was started on the old code too, and the checker stopped it after 10 minutes without a result. Run by hand, the old debug binary had not exited after 60 seconds on input 3, in the human format and in the JSON format, so that test cannot pass there either → `0003 AC-15`
+- [x] The old release binary on the three inputs, for comparison → input 1 takes 4.8 to 6.9 s, input 2 takes 30 to 31 s, input 3 takes 39 to 42 s. The new one takes at most 0.1 s. The outputs are the same byte for byte, also the 17268 findings of input 3
+- [x] `LineIndex` against `line_column` and against a third count written by the checker → a test module added to a private clone compares the three for every byte offset, also 600 offsets past the end, of 56 texts: empty, one scalar, CRLF, tabs, scalars of two, three and four bytes, lines of 255, 256 and 257 bytes, a line of 8000 bytes, 3000 empty lines, and 40 texts from a fixed seed. 156160 offsets, all equal → `0003 AC-2`, `0003 AC-3`
+- [x] Positions through the binary on the checker's own large files, each compared with the checker's own count of line and column → all equal, in both formats and both builds:
+
+  | Shape, at the 1 MiB limit | Findings | Last position |
+  |---|---|---|
+  | Input 3 after one comment line of 524 KB with `é€😀` | 8772 | line 3, column 524106 |
+  | Inline entries 200 spaces apart on one line | 4040 | line 2, column 1048186 |
+  | One line of identities with `é€😀` in each name, `routing_profile = "replica"` | 7503 | line 2, column 958166 |
+  | Input 1 with CRLF line ends and `port = 0` | 12745 | line 76479, column 8 |
+  | Nodes after 8900 comment lines, `port = 0` | 2097 | line 21503, column 8 |
+  | Nodes after one comment line of 524 KB, `port = 0` | 6925 | line 41560, column 8 |
+  | Nodes after more than a million empty lines | 542 | line 1030201, column 11 |
+  | Every node names an unknown cluster | 13216 | line 79309, column 11 |
+  | Every identity names an unknown cluster | 7018 | line 56157, column 11 |
+  | Every node repeats one `id` | 15812 | each later `id` |
+  | Every identity repeats one pair | 7202 | line 57635, column 13 |
+  | `node = [{},{},...]` on one line | 1398064 | line 2, column 1048554 |
+  | `[[node]]` and nothing else, with LF and with CRLF | 466024 and 419420 | line 116507 and line 104856, column 1 |
+
+- [x] Time against size → each shape was built at a quarter, at half and at the full limit, and run through the debug and the release build in both formats. 37 shapes in the first set, 9 more in a second set. For every shape the time about doubles when the size doubles. Three rows that looked worse in the first pass (`crlf` with findings, repeated endpoints, `[[node]]` with CRLF) were run three more times and are linear. Debug build, human format, seconds:
+
+  | Shape | Quarter | Half | Full |
+  |---|---|---|---|
+  | Input 1, many lines | 0.12 | 0.22 | 0.45 |
+  | Input 2, one line | 0.12 | 0.23 | 0.54 |
+  | Input 3, one line, every entry wrong | 0.13 | 0.26 | 0.51 |
+  | CRLF, every entry wrong | 0.12 | 0.24 | 0.49 |
+  | One comment line of half the file in front, every entry wrong | 0.08 | 0.15 | 0.33 |
+  | One line of identities with multi byte names, every entry wrong | 0.11 | 0.22 | 0.42 |
+  | Every node repeats one `id` | 0.15 | 0.29 | 0.56 |
+  | Every node repeats one endpoint | 0.13 | 0.26 | 0.54 |
+  | Every node names an unknown cluster | 0.12 | 0.24 | 0.47 |
+  | Identities only, valid | 0.10 | 0.20 | 0.39 |
+  | One cluster per node, valid | 0.11 | 0.22 | 0.46 |
+  | `[[node]]` and nothing else (466024 findings) | 0.45 | 1.09 | 2.78 |
+  | `node = [{},...]` (1398064 findings) | 1.12 | 2.09 | 4.50 |
+  | `identity = [{},...]` (2097084 findings) | 1.53 | 3.00 | 6.47 |
+  | One syntax error at the end of input 1 | 0.04 | 0.07 | 0.15 |
+  | One unknown key at the end of input 2 | 0.11 | 0.18 | 0.35 |
+  | `[t0]`, `[t1]`, ... (parser only, then one schema error) | 0.20 | 0.40 | 0.78 |
+  | `[x.t0]`, `[x.t1]`, ... | 0.18 | 0.36 | 0.75 |
+  | One inline table with every key different | 0.17 | 0.35 | 0.70 |
+
+  The other shapes are: comment lines in front of valid entries, a million empty lines, a duplicate key at the end, an unknown key in the last entry, a repeated key in every `[[node]]`, dotted keys, an array of integers, an array of empty arrays, nested arrays of tables, headers that grow deeper, tables under a parent that is never written, a `state_directory` of 1 MiB as one string and as a multi line string, a string of escapes, and comment lines of one byte. None takes longer than 1 second in the debug build at the limit, and none grows faster than the file → `0003 AC-15`
+- [x] The old binary against the new one on the checker's shapes → 74 comparisons at a quarter of the limit and 14 at the full limit (inputs 1 to 4, CRLF with findings, the multi byte line, the long comment line): standard output, standard error and exit status are equal in all 88
+- [x] `std::time::Instant` → `grep -rn 'Instant\|SystemTime' crates apps tools --include='*.rs'` names two files only, `crates/pool-config/tests/validate.rs` and `apps/pool/tests/check_config.rs`. No file under `crates/pool-config/src` or `crates/pool-control/src` reads a clock, also not in a test module → `0003 AC-11`, `0003 AC-15`
+- [x] The tests against the spec text, by reading → the tests build inputs 1 to 3 by the rule of the spec, check the time after each input with the constant 10 seconds, read the columns of input 3 from the text they built (every finding, not the first and the last only), and build input 4 from `valid-topology-minimal.toml`. The binary test writes its input under `env!("CARGO_TARGET_TMPDIR")` and checks both formats. This is what [Validation time](index.md#validation-time), [Value sourcing](index.md#value-sourcing) and the table under [Tests and who owns them](index.md#tests-and-who-owns-them) ask
+
+**Step 9, the commands of the record**
+
+- [x] `cargo test -p pool-control --locked ac16_` → exit 0, 3 passed: `ac16_a_ready_state_with_a_configuration_without_witness_is_unconfirmed`, `ac16_a_ready_state_with_a_configuration_of_another_witness_is_a_mismatch`, `ac16_the_witness_check_comes_before_every_other_reason` → `0003 AC-16`
+- [x] `cargo test -p pool-control --locked` → exit 0. `tests/walkthroughs.rs` 26 passed, `tests/admission_model.rs` 3 passed, doc tests 4 passed. The four walks and `open_only_on_full_agreement` are among them → `0003 AC-7` to `0003 AC-12`
+- [x] `grep -rnE 'Instant::now|SystemTime|std::fs|std::env' crates/pool-control/src` → no output, exit 1 → `0003 AC-11`
+- [x] The code, by reading → `writer_admission` in `crates/pool-control/src/admission.rs` returns the reason of the state for every state but `Ready`. In `Ready` it compares `config.control()` and its `authority_id()` with `authority.authority_id()` before it builds the evidence or looks up the cluster. `None` gives `Unconfirmed` alone, another value gives `Mismatch` alone. The documentation comment says so and no longer says that every rule runs in `Ready`. No signature and no reason name changed (the only code file in `git diff c10e550 8135cca` is this one, 17 lines added and 4 removed) → `0003 AC-16`
+
+**Step 9, extra checks**
+
+- [x] The checker's own probe, written from the paragraph on the witness under [Writer admission](index.md#writer-admission) → the whole domain of the milestone 3 probe (65536 cases: `expected_writer`, approved writer, journal timeline, quarantine, latch, configured system identifier, and eight observations for each of three nodes) was run with a state classified `Ready` from witness `X` and a configuration that differs only in `control.authority_id`. With no witness, every case gives `authority.unconfirmed` alone. With witness `Y`, every case gives `authority.mismatch` alone. Each case was asked for the cluster `main` and for a cluster the configuration does not have, so 262144 calls in all, and `latches_conflict()` is false in every one → `0003 AC-16`
+- [x] More shapes → a configuration with no `[control]` table and no cluster gives `authority.unconfirmed` alone. So does one with a `state_directory`, no witness and no cluster. A witness one hexadecimal digit away gives `authority.mismatch`. A configuration that also differs in its clusters, nodes and `expected_writer` gives the one witness reason for every cluster asked. A second configuration value with the same witness `X` opens `pg1` as before. A state that is not `Ready` keeps its own reason with every configuration: `Uninitialized`, `Missing`, `Unreadable`, `Unconfirmed`, `Mismatch` and `Held` were each asked with the configurations of witness `X`, of witness `Y`, of no witness and of no `[control]` table → `0003 AC-16`
+- [x] With the configuration the state was classified from, nothing changed → the checker's model of milestone 3 passes unchanged on `aaad537`: the exact list of reasons in 65536 cases, 474 open answers, the classification table, the freshness cases, two clusters and the bootstrap table → `0003 AC-7` to `0003 AC-12`, `0003 AC-16`
+- [x] Mutations of the witness check, in a private clone, against the tests of the repository → `admission.rs` of `c10e550` (before step 9) fails all three `ac16_` tests. A missing witness let through fails two of them, another witness let through fails two, and the witness compared after the cluster lookup fails all three. No other test of `tests/walkthroughs.rs` or `tests/admission_model.rs` fails, so the walks do not depend on the change. The file was put back and all tests pass again
+
+**Findings outside the criteria**
+
+- **A file within the limit can give two million findings and 190 MB of output.** `identity = [{},{},...]` on one line holds 349514 empty entries in 1 MiB. Each one gives six `config.missing_key` findings, 2097084 in all. The time is linear in the file, so the rule under [Validation time](index.md#validation-time) holds. But the report is 190709698 bytes in the human format and 251525214 bytes in the JSON format, and the human format writes one line per call to the operating system. Measured on the busy machine: 6.5 to 8.2 seconds in the debug build and 9.4 and 13.8 seconds in two runs of the release build for the human format, 1.5 and 3.3 seconds for the JSON format in the release build. `0003 AC-15` names inputs 1 to 3 only, and they stay below 1 second, so the criterion is met. The checker leaves two questions to the review and the architect: whether standard output should be written through a buffer, and whether a run should stop collecting after some number of findings. Neither is needed for this slice
+- **The record of the tester counts 91 tests in `crates/pool-config/tests/validate.rs` and 257 in all.** The tree has 95 and 261: `grep -c '#\[test\]'` gives 75 for `79de174` and 95 for `32a7b24`, `26210ce` and `aaad537`, and `scripts/check.sh all` runs 95 in that file. The 20 new tests are the 16 that the table "What each group locks" names for `validate.rs` plus the four `ac15_` tests. The table under "Test counts" is off by four. It changes no result. The tester owns that section
+- **A word in three test comments.** The comments of the `ac15_` tests say `0003 AC-15 (proposed)`. The criterion is in the accepted spec now. A note for the review
+
+**Readings the checker assessed**
+
+- **A stored count every 256 bytes plus a binary search is "any other way with the same bound".** The checker accepts it. A lookup is one binary search over the line starts and two scans of at most 255 bytes each, one from the stored count before the offset and one from the stored count before the start of its line. So no lookup counts from the top of the file or from the start of a line, which is the first rule of [Validation time](index.md#validation-time), and a line that holds the whole file costs the same as a short one, which is the second. Building the index walks the file twice. The total is the size of the file plus the number of lookups times a constant plus a logarithm, so it stays inside the bound. The measurements agree for every shape tried. The one position of a syntax or schema error still uses the old `line_column`, once per run, as the spec allows
+- **Is another path still quadratic below 1 MiB?** The checker found none. The cross checks use hash sets and maps (measured: 15812 repeated ids, 13759 repeated endpoints, 13216 unknown references, 7202 repeated pairs, 6427 wrong writers, each linear). The identity index is a sorted map. The report is one pass. The `toml` parser stayed linear on every parser shape above. The rule leaves the parser out, and the checker did not find a reason to bring it in
+- **The witness check runs before the cluster lookup, so `authority.cluster_unknown` does not appear with a wrong witness.** The checker accepts it. It is the text of `0003 AC-16` ("when the cluster asked for is not in the configuration: the checks for `Ready` do not run") and of the paragraph under [Writer admission](index.md#writer-admission) ("The reason is reported alone"). It is also the safe order: a configuration that does not belong to the journal should not be asked which clusters it has
+- **The tester wrote three `ac16_` tests where Build plan step 9 names two cases.** The checker accepts it. The two cases of the plan are the first two tests. The third adds a configuration that differs in more than the witness. The developer wrote no test for step 9, and the brief of the coordination gave the tests to the tester
+
+**Criteria in this milestone**
+
+| Criterion | Result |
+|---|---|
+| `0003 AC-15` | met on the workstation: the three inputs have the listed entries and bytes, `validate` and the binary stay far below 10 seconds in the debug build, input 3 gives one finding per entry at the column of its value, the binary exits 1 in both formats with 17268 findings, and input 4 gives its two findings against file order. The tests fail on the code before the fix |
+| `0003 AC-16` | met on the workstation: no witness gives `authority.unconfirmed` alone and another witness gives `authority.mismatch` alone, for healthy observations, for a second primary and for an unknown cluster, never with the latch, over 262144 calls. With the configuration of the state, every earlier result is unchanged |
+| `0003 AC-2`, `0003 AC-3` (positions) | met on the workstation: no position changed for any fixture or probe file, and every position agrees with the checker's own count |
+| `0003 AC-7` to `0003 AC-12` | met on the workstation: unchanged with the matching witness |
+
 ## Test it: tests added by /test
 
 Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15. The tests are in commits `32a7b24` (steps 1 to 8) and `26210ce` (step 9); every command below without another revision ran on `26210ce`, which holds `main` at `eaaef95`, with steps 8 and 9. The tests add edges and error cases and do not repeat the walks. Every new test names the criterion it locks in its name, in a `covers:` comment or in the comment of its test module. No production line, manifest, `Cargo.lock`, fixture or baseline changed: the source files of `pool-config` and `pool-repo-check` only gained `#[cfg(test)]` modules at their end.
@@ -517,3 +624,94 @@ The `pool-config` run skipped the three slow tests, because on `32a7b24` they to
 
 1. **`validate` took time that grew with the square of the number of entries** (`0003 AC-15`). On `32a7b24`, before step 8, `ac15_large_valid_inputs_validate_within_ten_seconds` failed. Step 8 (`be8bcf1`, on `main` through `ebc9228`) fixes it; on `26210ce` every `ac15_` test passes in under 2 seconds.
 2. **W4 counts a table after the last entry as part of that entry.** `w4_a_table_after_the_last_entry_counts_as_part_of_it` pins it: a local package that is not a member, written last and followed by a `[[patch.unused]]` table with its own `source` line, is not reported. By the text of spec 0003 ("an entry is the lines from one `[[package]]` line to the next, or to the end of the file") this is the specified behaviour, not a defect. It is a gap: Cargo writes such tables after the packages. Changing it changes the rule text, so it is for the architect.
+
+## Full verification: /check verify
+
+Recorded by the checker session `chk-f3-verify` on 2026-11-15 for revision `4c61e3b` (`main`), on macOS 27.0.1, arm64 (workstation, not CI). Docker was running (`docker info` exit 0, server 29.9.2, `arm64`), so the Linux build ran in a container. This run covers the whole feature, `0003 AC-1` to `0003 AC-16`, and closes the scope boxes "Build it" and "Verify it" as far as a workstation can. The checker wrote no code and no test. Every command was run from this session's own checkout, with `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`. Probes that change a file ran in private clones outside the repository.
+
+**Verdict: PASS.** All sixteen criteria are met on the workstation, and the workspace tests pass in the Linux container. One kind of evidence is not there: the seven checks on a pull request. It is listed under "Not run" with its owner.
+
+**Two revisions.** The run started on `aaad537`, where the checkout had the same tree as `main`. While it ran, `main` moved to `4c61e3b`. `git diff aaad537 4c61e3b` names one file under `apps`, `crates` and `tools`, the test file `crates/pool-control/tests/admission_model.rs` (73 lines added: `open_only_on_full_agreement` now compares the exact list of reasons of every closed answer with a rule of its own). Beside it there are two lines in the tester's part of this file and two files under `docs/scope/`. No production code, manifest, script, baseline or fixture changed. The checker merged `main` and ran these again on its checkout `e7c914d`, whose tree is the tree of `4c61e3b` plus the first version of this section (`git diff 4c61e3b e7c914d` names this file only): `scripts/check.sh all`, `cargo test -p pool-control --locked`, `scripts/check.sh linux-build`, `scripts/prove-checks.sh --with-linux-build` and the 60 mutations. Every other step below ran on `aaad537`, and no file on its path differs in `4c61e3b`.
+
+**What was run again, and what was not.** The checker runs of milestones 1 to 4 above passed at `60fcb08`, `198a1cd` and `d26016c`. A step of those runs is not repeated here unless code on its path changed. Since `d26016c` the production code changed in three files only:
+
+- `crates/pool-config/src/lib.rs` and `crates/pool-config/src/topology.rs` (step 8, `be8bcf1`): how a span becomes a line and a column. This is on the path of every finding with a position, so the fixture steps of `0003 AC-1` to `0003 AC-4` were run again.
+- `crates/pool-control/src/admission.rs` (step 9, `8135cca`): the witness check. This is on the path of every admission in `Ready`, so the walks, the small domain and the checker's model of `0003 AC-7` to `0003 AC-12` were run again.
+
+Everything else that `git diff d26016c aaad537 -- apps crates tools` shows is test code. `git diff eaaef95 aaad537 --numstat -- crates apps tools` (the merge of the tester) names eight files with 2585 lines added and none removed: four test files, and four source files that each gained one `#[cfg(test)]` module after their last line (`generation.rs`, `identifier.rs` and `topology.rs` of `pool-config`, and `tools/repo-check/src/workspace.rs`). No production line changed in that merge. `git diff 2648ae1 aaad537` is empty for `Cargo.toml`, `Cargo.lock`, every member manifest, `deny.toml`, `scripts/`, `.github/`, `tools/repo-check/baseline/`, the manifest and lockfile of `tools/repo-check` and `crates/pool-config/fuzz/`. `git diff d26016c aaad537` is empty for `crates/pool-config/tests/fixtures/`.
+
+### Commands on the final tree
+
+- [x] `scripts/check.sh all` → exit 0 on `aaad537` and again on the tree of `4c61e3b`: `ok` for `fmt`, `clippy`, `test`, `deny`, `guards` and `docs`. 448 tests passed, 0 failed, both times. `deny` shows only the known `license-exception-not-encountered` warning → all criteria
+- [x] `scripts/prove-checks.sh --with-linux-build` → exit 0, `prove-checks: commit aaad537eaf61e853158bdfe775d5ae9ce376ddb2`, and again with `prove-checks: commit e7c914dec21228c771a3d90c2f52042f78f3b8ab` (the tree of `4c61e3b`): cases 1 to 28 `PASS`, no `FAIL`, `all checks reject their bad change`, both times. Case 17 matched `D3: docs/scope/004-one-real-primary-path.md:1: status disagrees: done in the heading, planned in docs/scope/index.md`. Case 20 ran the Linux build in Docker → `0003 AC-13`
+- [x] `scripts/check.sh linux-build` on the good tree → exit 0, `linux build check passed`, on `aaad537` and again on the tree of `4c61e3b`, with the same numbers and the same binary checksum. Image `rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`, `linux/arm64`, host `aarch64-unknown-linux-gnu`, `rustc 1.100.0`. `cargo test --locked --workspace` in the container: 240 passed, 0 failed, with the five `ac15_` tests (`tests/validate.rs` 95 passed in 4.19 s, `tests/check_config.rs` 80 passed in 1.62 s) and the three `ac16_` tests. The 28 fixtures gave their exit status in both formats, with no canary text. The release binary has the SHA-256 `9e23011ed9c9dfa54461f5161af3d5715c538e919b0a37aa18ccb7330f368c82`. This is Linux evidence for the time limit of `0003 AC-15`, which a run on macOS is not → `0003 AC-1` to `0003 AC-16`
+- [x] `scripts/check.sh fuzz` → exit 0, `Done 95672 runs in 61 second(s)`, no crash file (see the note in the checker run of milestone 5)
+- [x] `cargo metadata --no-deps --format-version 1 --locked` → exit 0, three workspace members: `pool` (`pool-config`, `serde`, `serde_json`), `pool-config` (`serde`, `toml`), `pool-control` (`pool-config`) → `0003 AC-13`
+- [x] `Cargo.lock` → 19 entries, the three workspace packages and sixteen others, unchanged since milestone 1 → `0003 AC-13`
+- [x] `cargo test -p pool-config -p pool --locked ac15_` → 4 and 1 passed → `0003 AC-15`
+- [x] `cargo test -p pool-control --locked ac16_` → 3 passed → `0003 AC-16`
+- [x] `cargo test -p pool-control --locked` on the tree of `4c61e3b` → exit 0. `tests/walkthroughs.rs` 26 passed, `tests/admission_model.rs` 3 passed, doc tests 4 passed
+- [x] `cargo test -p pool-control --locked walk_` → 4 passed. `cargo test -p pool-control --locked open_only_on_full_agreement` → 1 passed, with the exact count of 130 open answers. `cargo test -p pool-control --locked --doc` → 4 passed, each marked `compile fail` → `0003 AC-7` to `0003 AC-12`
+- [x] `grep -rnE 'Instant::now|SystemTime|std::fs|std::env' crates/pool-control/src` → no output, exit 1 → `0003 AC-11`
+- [x] `grep -rnE 'std::fs|File::|std::env|std::net|std::process|\.exists\(|metadata\(|Instant|SystemTime' crates/pool-config/src crates/pool-control/src` → no output, exit 1 → `0003 AC-4`, `0003 AC-11`
+- [x] `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` → exit 0. The same for `valid-topology.toml` → exit 0 → `0003 AC-1`
+
+### Steps run again because their path changed
+
+- [x] The thirteen topology fixtures through the built binary, compared with the table under [Fixtures](index.md#fixtures) → each gives the listed exit status, and every code, key, line and column is as listed, in both formats. `invalid-topology-multiple.toml` gives its five findings in the listed order, and `secret-topology-values.toml` its two → `0003 AC-1`, `0003 AC-2`, `0003 AC-3`
+- [x] The three `valid-topology*` fixtures → the same bytes as `valid-minimal.toml` in both formats, which is the valid report of spec 0001 → `0003 AC-1`
+- [x] All 28 fixtures (13 of this spec and 15 of spec 0001), binary of `d26016c` against the binary of `aaad537` (the same production code as `4c61e3b`) → 168 comparisons of standard output, standard error and exit status, 0 differences → `0003 AC-1`, `0003 AC-2`, `0003 AC-3`
+- [x] The canary → `grep` finds `CANARY`, `9f2c7b1e` and `not-a-real` in none of the 56 output files and in no standard error → `0003 AC-4`
+- [x] Positions in large files, against the checker's own count → see the checker run of milestone 5: sixteen shapes at the limit, up to line 1030201 and column 1048402, with CRLF and with scalars of two, three and four bytes → `0003 AC-2`, `0003 AC-3`
+- [x] The checker's model of milestone 3, unchanged, on the final tree → the exact reasons in 65536 cases with 474 open answers, the classification table, freshness, two clusters, the bootstrap table and the derives: 6 probe tests passed → `0003 AC-7` to `0003 AC-12`
+- [x] The 60 mutations of milestone 3, again, against the tests of the repository only → all 60 still apply to the code. 59 make a test fail. The one left is `A26`, the control that changes nothing. Each of the 13 that no test caught before is caught now, by `ac9_timelines_compare_with_the_journal_not_with_each_other`, `ac9_a_second_cluster_does_not_affect_the_first`, `open_carries_the_epoch_and_revision_of_the_journal`, `ac11_a_tie_hides_evidence_only_at_the_latest_time`, `ac11_the_latest_sample_decides_even_when_it_is_from_the_future`, `the_answer_does_not_depend_on_the_order_or_on_older_samples`, `ac7_ac8_ac10_start_classification_edges`, `ac7_bootstrap_checks_six_to_eight_look_only_at_fitting_nodes` or `ac7_bootstrap_judges_each_cluster_on_its_own_and_ignores_unconfigured_nodes`. This agrees with the record of the tester. The run on `4c61e3b` gives the same 59 and the same one → `0003 AC-7` to `0003 AC-12`
+- [x] The restart rules → each line that milestone 3 lists for `0003 AC-14` still holds a comment that starts with `Restart rule:` on the named type: `lib.rs:38`, `topology.rs:53`, `:88`, `:117`, `:166`, `:226`, `generation.rs:54`, `:71`, `:80`, `authority.rs:31`, `:52`, `:65`, `:90`, `:134`, `admission.rs:100`, `:143`, `bootstrap.rs:63`, `:81`, `observation.rs:74` → `0003 AC-14`
+
+**The Cargo warning that is left.** Cargo prints one manifest warning, `warning: unused workspace dependency pool-control`, for `Cargo.toml:14`. It ends in scope 004, when `apps/pool` takes the dependency. No other warning appears in `scripts/check.sh all`, on the workstation or in the container.
+
+### Not run
+
+| Evidence | Status | Reason | Owner |
+|---|---|---|---|
+| The seven checks (`fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards`, `docs`) on a pull request for scope 003 | `NOT_RUN` | The user holds back the permission to write to GitHub (`F3-1` of the manual file, answered "Belum, lokal dulu" on 2026-11-15). No session may push or open a pull request. The same seven commands pass on the workstation, and `linux-build` passes in the container | user |
+| The refusal of an unmapped pair on a real connection (the other half of `PRD-001 AC-1`) | outside this slice | `0003 AC-5` asks for the library half only and gives the connection half to scope 004 | scope 004 |
+
+The manual step, as the lead recorded it: with `gh auth status` signed in as the owner, a clean main checkout and `HEAD` on `main`, run `git push origin main:scope/003-control-and-session-data-model`, then `gh pr create --base main --head scope/003-control-and-session-data-model`, wait for `gh pr checks scope/003-control-and-session-data-model`, then `gh pr merge scope/003-control-and-session-data-model --merge` and `git pull --ff-only origin main`. It passes when the seven checks pass on that pull request and it is merged with a merge commit. Only this step can show that the change passes CI on a runner.
+
+Nothing is `BLOCKED`.
+
+### Readings of the tester that the checker assessed
+
+- **`0003 AC-11`: a latest sample from the future hides an older fresh sample.** The checker accepts it, as in milestone 3. The paragraph "Fresh" says that the functions use the observation with the latest `sampled_at`, and that one that is not fresh is no evidence. For the approved writer this closes (`evidence.writer_missing`). For another node it is silence, which does not close. `ac11_the_latest_sample_decides_even_when_it_is_from_the_future` pins it
+- **`0003 AC-2`: `port = -0` is `config.invalid_value`.** The checker accepts it. Observed through the binary: `port = -0`, `port = +0`, `port = 0` and `port = 0x0` each give `config.invalid_value` at `node.port`, line 15, column 8, and `port = -1` gives `config.schema`. In TOML, `-0` and `+0` are the integer 0, so the row "A port of 0" applies, not the row for `port = -1`
+- **`0003 AC-2`: a name with U+0080 to U+009F is valid.** The code follows the text: the [name syntax](index.md#keys) lists "U+0000 to U+001F, and U+007F" and nothing else. Observed: a principal with U+001F or U+007F is refused, and one with U+0080, U+009B, U+009F, U+00A0, U+2028 or U+202E is accepted. The checker reads this as a small gap in the text, not as the wrong behaviour of the code. "No control character" in plain words would cover U+0080 to U+009F too, which Unicode also counts as control characters, and the parenthesis narrows it. Today nothing prints a name (`0003 AC-4`), so nothing can go wrong with it in this slice. The checker suggests that the architect either add U+0080 to U+009F to the list, or say in one sentence that the list is complete on purpose and that a later slice which prints a name has to escape it. This is an offer, not a need, and it changes no verdict
+- **W4: a table after the last entry counts as part of it.** The checker confirms that the gap is real, with Cargo 1.100.0, in a private clone. A new package `crates/zzz-extra` that is not written in `members`, taken by `pool-control` with a path dependency, plus an unused `[patch.crates-io]` entry that points to a local git repository: `cargo metadata` then lists four workspace members and writes `zzz-extra` as the last `[[package]]` entry, without a `source` line, followed by `[[patch.unused]]` with `name`, `version` and a `source` line. With `zzz-extra` also added to `lock-packages.txt`, `pool-repo-check workspace` prints `ok`. So the addition to W4 does not see this package. Two things have to come together: the package has to sort after every other package by name, and the manifest has to hold an unused patch that is not a path. Rule W1 still reports the package as long as the baseline is not edited in the same change, and a baseline edit is seen in review. The code does what the text of this spec says, so this is not a failed step of `0003 AC-13`. The checker suggests a change of the rule text to the architect: an entry ends at the next line that starts a table (a line that starts with `[`), not only at the next `[[package]]` line. The test `w4_a_table_after_the_last_entry_counts_as_part_of_it` then has to change with it
+
+### Verdict for each criterion
+
+| Criterion | Verdict | Evidence |
+|---|---|---|
+| `0003 AC-1` | met | Milestone 2 (`198a1cd`). Again in this run: the three `valid-topology*` fixtures give the valid report byte for byte, and all 28 fixtures give the same output as before the fix |
+| `0003 AC-2` | met | Milestone 2. Again in this run: the eight single mistake fixtures against the table, positions in large files against the checker's own count, `port = -0` and the control characters through the binary |
+| `0003 AC-3` | met | Milestone 2. Again in this run: the five findings of `invalid-topology-multiple.toml` in order. The `compile_fail` doc tests of `pool-config` pass |
+| `0003 AC-4` | met | Milestone 2. Again in this run: no canary in any output, and `pool-config` opens no file |
+| `0003 AC-5` | library half met | Milestone 2, code unchanged. The tests are in the 448. The connection half belongs to scope 004 |
+| `0003 AC-6` | met | Milestone 2, code unchanged. The tests are in the 448 |
+| `0003 AC-7` | met | Milestone 3 (`d26016c`). Again in this run: the walk, the classification and bootstrap probes |
+| `0003 AC-8` | met | Milestone 3. Again in this run: the walk and the probes |
+| `0003 AC-9` | met | Milestone 3. Again in this run: the walk, and the exact reasons in 65536 cases |
+| `0003 AC-10` | met | Milestone 3. Again in this run: the walk and the probes |
+| `0003 AC-11` | met | Milestone 3. Again in this run: the freshness probe, and both `grep` commands print nothing |
+| `0003 AC-12` | met | Milestone 3. Again in this run: 8192 cases with 130 open answers, 65536 cases with 474, and the four `compile_fail` doc tests |
+| `0003 AC-13` | met | Milestone 1 (`60fcb08`). Again in this run: `cargo metadata`, the lockfile, `scripts/check.sh all`, `scripts/prove-checks.sh --with-linux-build` and the Linux build. Evidence from CI is `NOT_RUN` |
+| `0003 AC-14` | met | Milestones 3 and 4. Again in this run: the restart rules at the listed lines, and `scripts/check.sh docs` |
+| `0003 AC-15` | met | The checker run of milestone 5, and the `ac15_` tests on macOS and in the Linux container |
+| `0003 AC-16` | met | The checker run of milestone 5, and the `ac16_` tests on macOS and in the Linux container |
+
+Every public type, key, fixture and package that the spec names was found where the spec puts it in milestones 1 to 4, and none of those places changed since. No specced item is missing and none is built but unused, except the workspace dependency that waits for scope 004.
+
+### For the review
+
+- The human report writes one line per call to the operating system, and a file at the limit can give two million findings (the first finding outside the criteria in the checker run of milestone 5).
+- The three `ac15_` comments that still say "(proposed)", and the count of 91 where the tree has 95 in the record of the tester.
+- The two offers to the architect above: the control characters U+0080 to U+009F in a name, and where a lockfile entry ends for rule W4.
