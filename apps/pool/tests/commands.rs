@@ -797,7 +797,7 @@ impl Layout {
     }
 }
 
-/// 50 ms on a small runtime of the test: rule W3 keeps `std::thread` out of the tests too.
+/// 50 ms on a small runtime of the test: rule W3 keeps threads out of the tests too.
 fn pause() {
     tokio::runtime::Builder::new_current_thread()
         .enable_time()

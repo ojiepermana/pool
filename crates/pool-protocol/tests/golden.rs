@@ -193,6 +193,7 @@ fn first_packets_give_their_rows() {
 
 #[test]
 fn first_packets_split_at_every_byte_give_the_same_result() {
+    // covers: 0004 AC-28.
     for (name, bytes) in golden_first_packets() {
         let tls = after_tls(name);
         let whole = first_packets(tls, &[&bytes]);
@@ -322,6 +323,7 @@ fn golden_messages() -> Vec<(&'static str, Vec<u8>)> {
 
 #[test]
 fn messages_split_at_every_byte_give_the_same_result() {
+    // covers: 0004 AC-28.
     for (name, bytes) in golden_messages() {
         let whole = messages(4096, &[&bytes]);
         assert_eq!(whole.len(), 1, "{name}");
@@ -502,6 +504,7 @@ fn every_pool_error_has_its_exact_bytes() {
 
 #[test]
 fn a_length_field_is_checked_before_anything_is_reserved() {
+    // covers: 0004 AC-28.
     // A first packet that claims 4 GiB is refused after its eight header bytes.
     let mut reader = FirstPacketReader::new(STARTUP_MAX);
     assert_eq!(
