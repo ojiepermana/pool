@@ -2560,7 +2560,7 @@ impl Drop for Paused {
 fn it_ac30_a_paused_writer_is_marked_lost_and_its_sessions_end() {
     // covers: 0004 AC-30, M1 of the independent review. Container 1 is
     // paused, so it closes nothing and answers nothing. With
-    // `probe.node_loss_timeout_ms = 2000` the control loop marks pg1 lost
+    // `probe.node_loss_timeout_ms = 6000` the control loop marks pg1 lost
     // and writes `node.lost`; the session with a query in flight gets 08007
     // and the idle one 08006, and both end with the reason `node_lost`.
     let case = Case::new("paused-writer");
@@ -2571,10 +2571,12 @@ fn it_ac30_a_paused_writer_is_marked_lost_and_its_sessions_end() {
     let text = fs::read_to_string(&case.config).expect("read");
     let text = text.replacen(
         "observation_expiry_ms = 8000\n",
-        "observation_expiry_ms = 8000\nnode_loss_timeout_ms = 2000\n",
+        "observation_expiry_ms = 8000\nnode_loss_timeout_ms = 6000\n",
         1,
     );
-    assert!(text.contains("node_loss_timeout_ms = 2000"));
+    // Decision 109: the loss time is at least twice the period plus the
+    // probe timeout, 2 * 200 + 5000 = 5400 here.
+    assert!(text.contains("node_loss_timeout_ms = 6000"));
     fs::write(&case.config, text).expect("write");
     let daemon = Daemon::start(&case);
     daemon.wait_for(
