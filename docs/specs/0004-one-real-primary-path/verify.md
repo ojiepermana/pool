@@ -1596,3 +1596,155 @@ During the mutation runs one run with M7 was ended by the limit of the runner wh
 - **A second primary and the latch on the fixture.** It needs a second PostgreSQL with the same system identifier (a copy of container 1 made with `pg_basebackup` and promoted), which `scripts/integration/` does not make. The path through `control.rs` is held by the unit tests above, with a real journal.
 - **`Daemon::stop` of `integration.rs` waits without a limit.** M7 shows it: the existing shutdown test hangs instead of failing. The new tests use `stop_within(20)`. `Daemon::stop` is called 13 times and `stop_after_signal` twice in the existing tests; giving them a limit is a small change of the helper, left as a follow up for the lead to assign.
 - **The hold `restore_pending` needs the `sqlite3` tool on the host** of `scripts/check.sh integration`. It is on this workstation (`sqlite3` 3.54.0). Whether the hosted runner of the CI job `integration` has it was not checked, because that job does not exist yet (manual step M2). Without it the test fails with a message that names the tool.
+
+## Full verification
+
+The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.
+
+This run does not repeat the checker runs above. It asks three things: did anything change since each of them, do all checks pass on the final tree, and is there a verdict for every criterion.
+
+**Verdict: feature 4 PASS** on the workstation and in the pinned Linux image. Every criterion from `0004 AC-1` to `AC-28` and `0003 AC-17` to `AC-19` is met. What is left is manual and is listed at the end with its reason and its owner. Three notes go to their owners and do not change the verdict.
+
+### The final tree against the trees of the earlier runs
+
+- **No line of production code changed since `fd62cf4`**, the fix of the lock file race. `git diff --numstat d4fdb62..af23fa4 -- crates apps tools scripts` names thirteen files: ten test files, and three source files whose only change sits inside their `#[cfg(test)]` module (`apps/pool/src/control.rs` 342 lines added after line 260, the module starts at line 222; `crates/pool-core/src/scram.rs` 18; `crates/pool-core/src/secret.rs` 119; no line removed in any of the three). `scripts/`, `tools/repo-check/src/`, `deny.toml`, `Cargo.toml`, `Cargo.lock` and both fuzz packages are the same as on `d4fdb62`.
+- **The Linux release binary is the same file.** `scripts/check.sh linux-build` on `af23fa4` prints `sha256 7ccc2e2ba0ba2b3df8f4acef60e937f2a0207c54caa80cd1e21c481072a9ca7a` for `target/release/pool`, the hash the developer recorded on `22182fb`, the first tree with the fix.
+- So every earlier verdict of the checker still holds for the product. What had to be looked at again is the tests, the checks and the documents.
+
+### Every check on the final tree
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | exit 0 | exit 0, all six `ok`, 24 test results `ok` and none failed. `pool` 18 unit, 87 `check_config`, 17 `commands`; `pool-config` 32 and 123; `pool-control` 5, 3, 14, 23 and 28; `pool-core` 50 and 47; `pool-protocol` 22, 16 and 4; `pool-repo-check` 108 and 112 | pass |
+| `scripts/check.sh integration` | exit 0, 26 tests, nothing left | exit 0, 26 of 26 in 42 s; no container of this run, no temporary directory | pass |
+| `scripts/check.sh fuzz` | no crash file | exit 0: `validate` 654436 runs, `startup` 2921491, `frontend_message` 1082817, `scram` 4834686, each 31 s; no file under any `fuzz/artifacts/` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0, 22 test results `ok`, `pool 0.1.0`, `linux build check passed` | pass |
+| `scripts/prove-checks.sh --with-linux-build` | every case rejects its change | exit 0 in 2 min 19 s: cases 1 to 35 `PASS`, case 20 with Docker, `all checks reject their bad change`; the tree clean afterwards | pass |
+| `cargo build --workspace --locked`, after touching every crate root | no warning | 0 warnings | pass |
+| The use check of [Adopted dependencies](index.md#adopted-dependencies) | no line | no line | pass |
+| `cargo metadata --no-deps --format-version 1` | five members, six pairs, `pool-protocol` with no dependency | `pool`, `pool-config`, `pool-control`, `pool-core`, `pool-protocol`; the six pairs of the spec; `pool-protocol` has none; no package has a dev or build dependency | pass |
+
+The probes of the checker, again on `af23fa4` (they are described in the runs above):
+
+| Probe | Checks | Mismatches |
+|---|---|---|
+| The command probe with no database (state directory, files, lock, secret files, output) | 100 | 0 |
+| The fixture probe (bootstrap, `show-authority`, the probe, a stopped bootstrap, the bytes of a real server) | 34 | 0 |
+| The daemon probe (23 runs of `pool run`: not ready, walking result, startup, node, control loop, teardown, lost COMMIT, limits, memory, shutdown, messages, the whole log of 375 lines) | 131 | 0 |
+
+### A verdict for every criterion
+
+"Obtained on" is the tree of the checker run that holds the detail. "On `af23fa4`" is what was run again in this run. The product code is the same on all of them from the tree named.
+
+| Criterion | Verdict | Obtained on | On `af23fa4` |
+|---|---|---|---|
+| `0004 AC-1` | met | the shape on `486b90e`; the last sentence (the use check, no warning) on `d4fdb62` | `cargo metadata`, the build and the use check, above |
+| `0004 AC-2` | met | `d8797a5`, `486b90e`; rule W3 again with 125 changed lines on `3b58997` | `guards` inside `all`; the six cases in `prove-checks.sh` |
+| `0004 AC-3` | met | `486b90e`; the exact versions on `59b7e2c`; both fuzz lockfiles and decision 70 on `d4fdb62` | `deny` inside `all`; `linux-build`; `NOTICE` read against the lockfile, below |
+| `0004 AC-4` | met | `d8797a5`, `486b90e` | `prove-checks.sh`, 35 of 35 |
+| `0004 AC-5` to `AC-8` | met | `d8797a5`, `486b90e`, `8332451` | the tests of `pool-config` and `check_config.rs` inside `all`; `crates/pool-config/src` has not changed since |
+| `0004 AC-9` | met | the secret files on `77ca71f`; the state directory and the lock on `ecd0ee5`; the lock file race on `fd62cf4` and `d4fdb62` | the command probe; `commands.rs` inside `all` and in the repetition below |
+| `0004 AC-10` | met | the library half on `59b7e2c`; the journal of a real bootstrap on `ecd0ee5` | the fixture probe |
+| `0004 AC-11` | met | `3b58997` (it failed there for a stopped bootstrap), fixed and met on `ecd0ee5` | the fixture probe |
+| `0004 AC-12` | met | the library half on `59b7e2c`; the monitor login and the server log on `3b58997` | the fixture probe |
+| `0004 AC-13` | met | `d4fdb62`, all six states | the daemon probe |
+| `0004 AC-14` | met | the hermetic half on `8783337` (not met there for a client that does not read), fixed and met on `5b11ca3`; the last report of `in_hot_standby` on `3b58997`; the fixture on `d4fdb62` | the daemon probe |
+| `0004 AC-15` | met | byte level on `8332451` and `3b58997`; the library half on `77ca71f`; hermetic on `8783337`; the fixture on `d4fdb62`, with the reading of decision 72 | the daemon probe |
+| `0004 AC-16` | met | byte level on `8332451` and `3b58997`; the library half on `77ca71f`; hermetic on `8783337`; the fixture on `d4fdb62` | the daemon probe |
+| `0004 AC-17` | met | hermetic on `8783337`; the fixture on `d4fdb62` | the daemon probe |
+| `0004 AC-18` | met | `d4fdb62`, with another SQL file than the tests use | the daemon probe |
+| `0004 AC-19` | met | hermetic on `8783337`; the fixture on `d4fdb62` | the daemon probe |
+| `0004 AC-20` | met | hermetic on `8783337`; the fixture on `d4fdb62` | the daemon probe |
+| `0004 AC-21` | met | `d4fdb62` | the daemon probe: about 18 MiB against 96 MiB |
+| `0004 AC-22` | met | hermetic on `8783337`; the fixture on `d4fdb62` | the daemon probe |
+| `0004 AC-23` | met | byte level on `8332451` and `3b58997`; hermetic on `8783337`; a real server on `d4fdb62` | the daemon probe |
+| `0004 AC-24` | met | `Debug` of the types of `pool-protocol` and `pool-core` on `3b58997`; the log on `d4fdb62` | the daemon probe, 375 lines |
+| `0004 AC-25` | met | hermetic on `8783337` (not met there for a client that does not read), fixed and met on `5b11ca3`; the daemon with sessions on `d4fdb62` | the daemon probe |
+| `0004 AC-26` | met | `3b58997` (a pass, a failing test, SIGTERM, no Docker, the digest) | `integration`, 26 of 26, nothing left; the CI job is manual |
+| `0004 AC-27` | met | `d4fdb62` | `fuzz`; the CI job is manual |
+| `0004 AC-28` | met | `8332451`, and again with one reader per connection on `3b58997` | the tests of `pool-protocol` inside `all` |
+| `0003 AC-17` | met | `59b7e2c`; a receipt out of order on `3b58997` | the tests of `pool-control` inside `all`; the daemon probe sets and records a latch |
+| `0003 AC-18` | met | the guard half on `d8797a5` and `486b90e`; the code half on `59b7e2c` | `guards` and the tests of `pool-control` inside `all` |
+| `0003 AC-19` | met | the guard half on `d8797a5`; the code half on `59b7e2c`; the method name of decision 57 on `3b58997` | `guards` inside `all` and its case in `prove-checks.sh` |
+
+No criterion is left between two runs. The two that were once not met (`0004 AC-14` and `AC-25`, for a client that does not read) and the two findings of milestone 3 (`AC-11` and `AC-9`) each have a fix and a run of the checker after it.
+
+### Step 14: the evidence table
+
+The table [Evidence per criterion](#evidence-per-criterion) names, for each criterion, a check or a test file. Each of them exists and passed on `af23fa4` in the commands above. The four tests it names for the hermetic messages exist where it says. The rows that are `NOT_RUN` or `BLOCKED` (the CI jobs, M2, M3) have a reason and `owner: user`. `docs/index.md` has a row for this file.
+
+Two things in it are not exact, and both go to its author:
+
+- **Its list of messages that are proved only hermetically has four entries, and the record of step 11 has seven.** It leaves out another SCRAM header, a COPY response of the tag `W` and an authentication message of 1025 bytes, and then says that every other message has had a real `psql` or PostgreSQL on the other end. For those three that is not so. The record as a whole does name them, under step 11, so the rule "A golden message is not proof of a wire format" is kept; the summary of step 14 is too short by three.
+- **The row for `0004 AC-13` names `commands.rs` alone.** The states `unconfirmed`, `mismatch` and `restore_pending` need a real journal and are tested in `integration.rs`.
+
+The table says "at `ecd0ee5`", with a paragraph for `22182fb`. That is the date of that record. This section is the one for `af23fa4`.
+
+### The tests the tester added
+
+Eight wrong changes, one at a time, in a private copy of `af23fa4`, each against `cargo test --locked` of its package and then `scripts/check.sh integration`:
+
+| Wrong change | Result |
+|---|---|
+| T1. `route_view` never sets the conflict flag (M1 of the run of milestone 4) | caught by four unit tests of `control.rs`, among them `ac14_route_view_marks_a_positive_conflict_and_not_silence` |
+| T2. The route view is published after the latch writes (M2) | caught by `ac14_the_conflict_view_is_published_before_the_latch_is_written` |
+| T3. A latch is never written to the journal (M3) | caught by `ac14_a_second_primary_latches_the_cluster_in_the_journal_through_the_control_loop` and two more |
+| T4. An open route stays fresh one hour more (M4) | caught by `ac14_an_open_route_is_fresh_exactly_until_its_snapshot_says` |
+| T5. `daemon.started` carries a field the table does not have | caught by `it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresql` |
+| T6. `probe.failed` carries a field `host` with the address of the node | **not caught** |
+| T7. `session.started` swaps the principal ID and the identity ID | caught by `it_the_walking_fixture_gives_the_same_answers_through_pool` |
+| T8. `session.started` loses the field `topology_epoch` | caught by `ac24_session_events_carry_exactly_the_fields_of_the_spec_and_ids_in_place_of_names` |
+
+So the tests for M1 to M4 guard what they say, and the order of decision 12 is now held by a test. T6 shows the one gap: the field check and the search for names run on the log of three tests (`assert_log_is_clean` is called three times), and none of those three runs writes `probe.failed`. The tests that do make the probe fail do not search their log. `0004 AC-24` speaks of a whole run of the integration check. The daemon probe of the checker searches every log of its 23 runs, so the product is clean today; the gap is in what the tests would notice tomorrow. For the tester.
+
+**The `sqlite3` tool of the host.** `it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds` sets the hold with `sqlite3`. Run with a `PATH` that has no `sqlite3` (the other tools the test needs were on it), the test fails: `panicked at apps/pool/tests/integration.rs:2031:10: the sqlite3 tool of the host (needed by this test): Os { code: 2, kind: NotFound ... }`, `test result: FAILED. 0 passed; 1 failed`. It is not skipped. Two notes: the spec says of the integration check that the host needs no tool, and this test now needs one; and whether the hosted runner has it is not known until manual step M2.
+
+### The two tests that were once unstable
+
+`apps/pool/tests/commands.rs` on `af23fa4`: the whole test binary, run again and again. The output of every run that fails or hangs is kept.
+
+| Where | Runs | Passed | Failed | Hung |
+|---|---|---|---|---|
+| macOS, nothing else of this session running on the host (the Linux runs went on in Docker beside it) | 50 | 50 | 0 | 0 |
+| macOS, with 20 busy loops on the 10 cores | 40 | 40 | 0 | 0 |
+| The pinned Linux image, as a user that is not root | 50 | 50 | 0 | 0 |
+| The pinned Linux image, with 16 busy loops in the container | 40 | 40 | 0 | 0 |
+
+180 runs of 17 tests each, no failure and no hang, so no output had to be kept. A run takes about 10 seconds on both, also under load, because most of it is waiting for probe timeouts.
+
+- **The lock race test** (`ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked`, after `9765845`). Each child now waits at a gate of its own and the test waits at most 60 seconds for each, so the hang of the run of milestone 4 can no longer stop a check: it would be a failure with a message. It did not fail here in 180 runs.
+- **`ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds`.** It failed once for the debugger and once for the tester, with no output kept. It did not fail here in 180 runs, so there is still no output to send to its developer. What can be said from reading it: the test takes a port by binding port 0 and letting it go, runs `pool run` four times, and after each run binds that port again to show the listener never took it. Other tests of the same binary do the same in other threads at the same time, and some of them keep a listener. If one of them is handed the port this test let go, the last assert fails though `pool run` did nothing wrong. The other candidate is the limit of 5 seconds on a run of `pool run` on a busy machine. Neither is shown. For the developer of step 8: let the test hold its listener on the port while `pool run` runs, which also proves more (a `pool run` that tried to bind would fail in another way), and keep the output of a failure.
+
+### The documents the developers touched
+
+| Document | Compared with | Result |
+|---|---|---|
+| `docs/research/technology-evaluation.md`, "Adopted in scope 004" | `Cargo.lock`, the root `Cargo.toml`, `deny.toml`, `scripts/check.sh`, the header of the bundled SQLite | the six versions (`tokio` 1.54.1, `rustls` 0.23.46, `tokio-rustls` 0.26.6, `aws-lc-rs` 1.19.0, `rusqlite` 0.42.0, `tracing` 0.1.44) and their features are the ones locked and declared; `aws-lc-sys` 0.47.0, `libsqlite3-sys` 0.40.0 and SQLite 3.54.1; 75 lockfile entries, 70 from the registry; the five license exceptions by crate with their exact versions; the image tag and digest. No difference |
+| `NOTICE` | the same | names SQLite 3.54.1 through `libsqlite3-sys` 0.40.0 and `rusqlite` 0.42.0 with its public domain dedication, and AWS-LC 0.47.0 through `aws-lc-sys` and `aws-lc-rs` 1.19.0 with the terms of its parts and the license texts. No difference |
+| `docs/engineering-standards.md` | items 1 of [Document corrections](index.md#document-corrections) | the row for SQLSTATEs holds the rule and the link; the first paragraph names the five members |
+| `docs/repository-structure.md` | item 2 | the first paragraph names the five paths |
+| `docs/index.md` | the files of this spec | rows for `index.md`, `rationale.md` and `verify.md`, and for ADR 0004 |
+| Spec 0002, rules W1 and W6 | the tool | a dated note now says the count is four lockfiles, which closes the note of the run of step 12 |
+
+Two sentences that the developer of step 13 already named are still as they were, and belong to the "Document it" box: the paragraph on the fuzz package in `docs/engineering-standards.md` names only `crates/pool-config/fuzz/`, and the row of `apps/pool` in the crate table of `docs/repository-structure.md` says it depends on all four internal crates, where it depends on three.
+
+### What is left, and who owns it
+
+| Step | State | Reason | Owner |
+|---|---|---|---|
+| M2 (`F4-3`): the jobs `integration` and `fuzz` in `.github/workflows/ci.yml` and the two contexts in `.github/rulesets/main.json` | `NOT_RUN` | `.github/` is no file of a session. Until it is done there is no Linux evidence of the fixture from a hosted runner, and no run of the fuzz job | user |
+| M3 (`F4-1`): push, pull request, the nine checks on the remote, the rule on the remote | `NOT_RUN` | writing to GitHub needs the user's permission each time | user |
+| `F4-5`: a report of a secret scanner on `crates/pool-core/tests/fixtures/node.key` | `NOT_RUN` | it can only come once the pull request exists. The answer is decision 62: one test key is committed on purpose, and its first line says what it is | user |
+| M4 (`F4-4`): a running Docker daemon | met on this workstation | every check that needs it ran here | user, on any other machine |
+| M1 (`F4-2`): the license decision | done on 2026-11-15 | the five exceptions are in `deny.toml` with exact versions | done |
+
+Every step that a session can run has run and passed on `af23fa4`. Evidence from CI is the one kind that is missing, and no claim in this record rests on it.
+
+### Notes for the owners
+
+- **For the tester:** the gap of T6 above. `Daemon::stop` of `integration.rs` still waits without a limit in the older tests, as the tester's own list says.
+- **For the developer of step 14:** the two inexact places in the evidence table.
+- **For the architect:** a test of the integration check now needs a tool of the host (`sqlite3`), against the sentence that the host needs no tool. Either the sentence or the test should give.
+- **For the developer of step 8:** the reading of the `ac13` test above.
