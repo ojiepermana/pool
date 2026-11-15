@@ -1,4 +1,2 @@
 # Baseline of spec 0002 (docs/specs/0002-standards-and-tooling/index.md), rule W2: paths that must not exist
 apps/pool-cli
-crates/pool-protocol
-crates/pool-core
