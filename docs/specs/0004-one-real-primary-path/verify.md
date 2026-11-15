@@ -83,6 +83,46 @@ Notes that are not failures:
 - No committed test compares the baseline file with the block in the spec, and no committed test runs the real baseline against the paths of `0004 AC-2`. The unit tests use baselines of their own. The probes above did both by hand.
 - CI evidence does not exist yet. It waits for the pull request.
 
+### Checker run of the whole milestone
+
+Build plan steps 1 to 3, on 2026-11-15 at 17:35 WIB, by the checker session, on the merged tree `486b90e` (macOS 27.0.1, arm64, with Docker 29.9.2 running; the Linux build ran in the pinned image, the rest on the workstation, and none of it is CI). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`. Every command below was run in this session. The probes used a private clone of `486b90e` and changed nothing in the repository. This run repeats the checks of steps 1 and 2 on the new tree, because the baselines and the proof script changed again with step 3.
+
+**Verdict: milestone 1 PASS** on the workstation and in the pinned Linux image. Two halves of its criteria belong to later steps and were not checked: the dependency warning of `0004 AC-1` (step 10) and the second fuzz lockfile of `0004 AC-3` (step 12).
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo metadata --no-deps --format-version 1 --locked` | five members, the six pairs of [Workspace](index.md#workspace), `pool-protocol` with no dependency, no `dev-dependencies`, no build script | members `pool`, `pool-config`, `pool-control`, `pool-core`, `pool-protocol`; pairs `pool -> pool-config`, `pool -> pool-control`, `pool -> pool-core`, `pool-control -> pool-config`, `pool-core -> pool-config`, `pool-core -> pool-protocol`; `pool-protocol` has no dependency; every dependency of every member is a normal one; no member has a build script; each member has the five inherited fields. The third party dependencies of each member equal the table | pass |
+| Probe, `Cargo.lock` against [locked packages](rationale.md#locked-packages): name and version of every entry | the 70 entries of the rationale and the five members | 75 entries. The 70 with a `source` line equal the rationale list by name and version. The five without one are the members at 0.1.0. No entry of `d8797a5` was removed or changed | pass |
+| Probe, the baselines against the spec text | W1 the lockfile names, W2 only `apps/pool-cli`, W5 the six lines | `lock-packages.txt` holds the 73 distinct names of the lockfile; `forbidden-paths.txt` holds `apps/pool-cli` alone; `internal-dependencies.txt` holds the six lines of the spec | pass |
+| Probe, the adopted dependencies in the root `Cargo.toml` against [Adopted dependencies](index.md#adopted-dependencies) | the six versions and feature lists | `tokio` 1.54.1, `rustls` 0.23.46, `tokio-rustls` 0.26.6, `aws-lc-rs` 1.19.0, `rusqlite` 0.42.0 and `tracing` 0.1.44, each without default features and with the listed features | pass |
+| `scripts/check.sh all` | exit 0 | exit 0: `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` all `ok`. `deny` printed `advisories ok, bans ok, licenses ok, sources ok` for the product lockfile and for `crates/pool-config/fuzz/Cargo.lock` | pass |
+| Probe, which packages need the new licenses: `cargo deny --locked --config deny.toml list --layout license` | only the five packages of manual step M1 | `ISC`: `aws-lc-rs` 1.19.0, `aws-lc-sys` 0.47.0, `rustls-webpki` 0.103.17, `untrusted` 0.9.0, and `rustls` 0.23.46, which also offers `Apache-2.0` and `MIT` and needs no exception. `BSD-3-Clause`: `aws-lc-sys` 0.47.0 and `subtle` 2.6.1. On the product lockfile the only exception that is not met is the old one for `libfuzzer-sys`, so all five new ones are used. On the fuzz lockfile the five are not met, which is a warning, as the spec says | pass |
+| Probe, each of the five exceptions removed in turn in the clone, then `cargo deny --locked --config deny.toml check licenses` | the check fails each time | five of five: exit 4, `error[rejected]: failed to satisfy license requirements`, `licenses FAILED`. With the file as committed: `licenses ok`. The general list is `Apache-2.0`, `MIT`, `Unicode-3.0`, as before, and the five blocks equal the block under [Dependency policy](index.md#dependency-policy) | pass |
+| Probe, `NOTICE` against the locked sources | SQLite and AWS-LC with version and terms, copied from the locked packages | `NOTICE` names SQLite 3.54.1 and AWS-LC 0.47.0. `sqlite3.h` of the locked `libsqlite3-sys` 0.40.0 defines `SQLITE_VERSION "3.54.1"` and opens with the dedication that `NOTICE` quotes. The ISC, MIT, BSD 3-Clause and MIT-0 texts of `NOTICE` equal lines 247 to 316 of the `LICENSE` file of the locked `aws-lc-sys` 0.47.0 (`diff` empty), and the list of parts and their terms follows that file | pass |
+| `scripts/check.sh linux-build` on the committed tree | exit 0 | exit 0: `host: aarch64-unknown-linux-gnu`, `Compiling aws-lc-sys v0.47.0` and `Compiling libsqlite3-sys v0.40.0` in the release build (51.62 s) and in the test build, 15 test results `ok` and none failed, 80 fixture runs each with the exit status its name asks for, `pool 0.1.0`, binary `sha256 a31960798a172e78c26f315a61998bef8b43e0d6e27f2b28af29221bc753123c`, `linux build check passed` | pass |
+| Probe, the tools of the pinned image: `docker run` of `rust:1.100.0-slim-bookworm@sha256:7c7d4eb4...` with `command -v` for fifteen tools | a C compiler and no other build tool | `cc` and `gcc` (Debian 12.2.0) and `perl` exist. `g++`, `cmake`, `make`, `ninja`, `nasm`, `yasm`, `clang`, `go`, `python3`, `bindgen` and `pkg-config` do not. So the native code was compiled by the C compiler of the image alone | pass |
+| `scripts/prove-checks.sh --with-linux-build` on the committed tree `486b90e` | every case rejects its change | exit 0, `all checks reject their bad change`, cases 1 to 35 `PASS`, case 20 ran with Docker. Case 9 matched `W2: apps/pool-cli: forbidden path apps/pool-cli exists` | pass |
+| Probe, case 9 without its baseline line: make `apps/pool-cli/.keep` in the clone, then delete `apps/pool-cli` from `forbidden-paths.txt` | rejected with the line, accepted without it | exit 1 with the `W2` line; `pool-repo-check workspace: ok` without the line | pass |
+| Probe, the 125 edits of the first checker run, repeated on `486b90e` | as `0004 AC-2` says | 125 of 125 as expected. The 35 edits that must be accepted now give `pool-repo-check workspace: ok` and exit 0, also in `crates/pool-core`, which exists now | pass |
+| Probe, pairs that rule W5 must refuse: `pool-core -> pool-control`, `pool-control -> pool-core`, `pool-config -> pool-protocol`, `pool-protocol -> pool-config`, each added to a manifest in the clone | `W5` each time | four of four, for example `W5: crates/pool-core/Cargo.toml:10: dependency pool-core -> pool-control is not allowed by internal-dependencies.txt` | pass |
+| Probe, rules W4 and W1 on the new members: `[lints]` removed from `crates/pool-core/Cargo.toml`; `aws-lc-sys` removed from `lock-packages.txt` | `W4`, `W1` | `W4: crates/pool-core/Cargo.toml: the manifest has no [lints] table with workspace = true`; `W1: Cargo.lock: package aws-lc-sys is in the lockfile but not in the baseline lock-packages.txt` | pass |
+
+| Criterion | Checker verdict |
+|---|---|
+| `0004 AC-1`, the shape | met. Five members, six pairs, `pool-protocol` without a dependency, the lockfile of the rationale, no `apps/pool-cli`, no `dev-dependencies`, no build script. The last sentence (no `unused workspace dependency` line) waits for Build plan step 10 and was not checked |
+| `0004 AC-2` | met again on `486b90e` |
+| `0004 AC-3` | met for what exists. `deny` passes on the product lockfile and on the one fuzz lockfile there is; the second one comes with Build plan step 12. Five exceptions by crate, the general list unchanged, and no other package needs them. `NOTICE` names both libraries with version and terms. The Linux build passes with the C compiler of the pinned image and no other tool |
+| `0004 AC-4` | met again on `486b90e`, with case 9 on `apps/pool-cli` |
+| `0003 AC-19`, guard half of `0003 AC-18` | met for the guard, as in the first run |
+
+Notes that are not failures:
+
+- Cargo prints seven `unused dependency` warnings: `pool-control` and `pool-core` in `apps/pool`, `rusqlite` in `pool-control`, and `pool-config`, `pool-protocol`, `tokio-rustls` and `tracing` in `pool-core`. Each is a dependency or a member that step 3 added, so each is covered by the exception of [Adopted dependencies](index.md#adopted-dependencies), which ends with step 10. No other warning was printed, and the older `unused workspace dependency pool-control` line is gone.
+- No first party code names `tokio`, `rustls`, `aws-lc-rs` or `tracing` yet, and Cargo prints no warning for `tokio`, `rustls` and `aws-lc-rs` in `pool-core`, or for `tokio` and `tracing` in `apps/pool`. So a build without the warning is not proof that every dependency is used. The check of `0004 AC-1` at step 10 may want a second look at that.
+- The five exceptions name a crate and no version, as the block in the spec does. Manual step M1 named versions. A later version of one of the five would pass under the same exception, and rule W1 compares names only. Whether to pin the version in `deny.toml` is a question for the architect and the Release maintainer.
+- `NOTICE` has no copyright line for the project. `LICENSE` holds the Apache text with no copyright notice, and the spec asks for the name of the project and its license, which `NOTICE` gives. Adding a copyright holder is a decision of a person.
+- CI evidence does not exist yet. It waits for the pull request.
+
 ## Milestone 2: Configuration and wire format
 
 This section covers Build plan step 5 only, on 2026-11-15, on macOS (workstation, not Linux and not CI). Commit `31f41fd` (step 5), merged with `main` at `03f54a9` in `586edfd`. Step 4 (the wire format) is built by another session and gets its own part of this section. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2` with `nightly-2026-10-17`.
@@ -162,3 +202,26 @@ Notes that are not failures:
 - `probe.period_ms = 60000` is inside its own range, and no file with that value can be valid, because the expiry is at most 60000 and the timeout at least 100. The largest period a valid file can hold is 59900. The spec text may want to say so; the code follows the text as written.
 - The old binary and the new one exit 3 with nothing on stderr when the reader of stdout is gone. That is the behavior from before this step.
 - CI evidence does not exist yet. It waits for the pull request.
+
+### Checker run after decisions 47 and 49
+
+The two changes to step 5 that followed the first checker run, on 2026-11-15 at 17:35 WIB, by the checker session, on the merged tree `486b90e`: the fixture `secret-serving-values.toml` is now `valid-serving-secret-values.toml` (decision 47), and `probe.period_ms` stops at 30000 (decision 49). Where the first checker run above names `secret-serving-values.toml` or a period of 60000, it describes the tree `d8797a5`. Every command below was run in this session, with the `pool` binary built from `486b90e`.
+
+**Verdict: both changes PASS**, and `0004 AC-5` still holds.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | exit 0 | exit 0. `cargo test`: 32 unit and 123 in `tests/validate.rs` for `pool-config`, 3 unit and 84 in `tests/check_config.rs` for `pool`, 0 failed | pass |
+| Probe, the renamed fixture: the Git blob of `secret-serving-values.toml` at `d8797a5` and of `valid-serving-secret-values.toml` now | the same content | both are blob `9a58de9d8b5cf4ee8fc56d9ee09e62b3bdde87bc`; the old name no longer exists in the fixture folder | pass |
+| Probe, the start of every fixture name against its result: all 40 fixtures through the binary, both formats | `valid-*` exit 0, `invalid-*` and `secret-*` exit 1, the canary in no output | 80 runs, 80 as expected: 10 `valid-`, 26 `invalid-`, 4 `secret-`, and no other start. The four `secret-*` fixtures exit 1 (`0001 AC-9`). The canary is in eight fixtures and in no output | pass |
+| The same loop inside `scripts/check.sh linux-build` | every fixture with the exit status its name asks for | `linux build check passed`; `valid-serving-secret-values.toml` exits 0 in both formats | pass |
+| Probe, the twelve fixtures of spec 0004 through the binary, both formats | the table under [Fixtures](index.md#fixtures) | as in the first run; `valid-serving-secret-values.toml` gives the same bytes as the valid report, with the canary in the file and in no output | pass |
+| Probe, `probe.period_ms` through the binary, on files made from `valid-serving.toml` | 30000 valid, above it `config.invalid_value` at `probe.period_ms` | 30000 with the timeout at 30000 and the expiry at 60000: valid. 30000 with the default timeout and the expiry at 31000: valid. 30001, 59900, 60000 and 60001: one finding each, `config.invalid_value` at `probe.period_ms`. 99: the same finding. 100: valid | pass |
+| Probe, the other ranges, types, missing keys and the order of the new checks, repeated | as [Keys](index.md#keys) says | 138 of 138 as expected, and the order of the fourteen findings is the one of the first run | pass |
+
+| Criterion | Checker verdict |
+|---|---|
+| `0004 AC-5` | still met. The renamed fixture has the same content and the same result, and the new upper bound of `probe.period_ms` is enforced at its own key |
+| `0001 AC-9` | holds for every `secret-*` fixture: each exits 1 and none leaks the canary |
+
+Note that is not a failure: with decision 49 the first note of the first checker run above (a period of 60000 that no expiry can cover) is settled. Every value in the range of the period can now be used with some timeout and expiry.
