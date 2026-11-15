@@ -22,6 +22,14 @@ fn good_tree(name: &str) -> Fixture {
         "# spec 0002\npool-repo-check\n",
     );
     f.write(
+        &format!("{baseline}/protocol-fuzz-lock-packages.txt"),
+        "# spec 0004\npool-protocol\npool-protocol-fuzz\n",
+    );
+    f.write(
+        "crates/pool-protocol/fuzz/Cargo.lock",
+        "version = 4\n\n[[package]]\nname = \"pool-protocol\"\n\n[[package]]\nname = \"pool-protocol-fuzz\"\n",
+    );
+    f.write(
         &format!("{baseline}/forbidden-paths.txt"),
         "# spec 0002\ncrates/pool-core\napps/pool-cli\n",
     );

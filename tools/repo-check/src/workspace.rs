@@ -9,14 +9,18 @@ use crate::tree::{Tree, file_name, join};
 /// The directory that holds the baseline files.
 pub const BASELINE: &str = "tools/repo-check/baseline";
 
-/// The three lockfiles and their baseline files (rule W1).
-pub const LOCKFILES: [(&str, &str); 3] = [
+/// The four lockfiles and their baseline files (rule W1). Rule W6 refuses every other `Cargo.lock`.
+pub const LOCKFILES: [(&str, &str); 4] = [
     ("Cargo.lock", "lock-packages.txt"),
     (
         "crates/pool-config/fuzz/Cargo.lock",
         "fuzz-lock-packages.txt",
     ),
     ("tools/repo-check/Cargo.lock", "tool-lock-packages.txt"),
+    (
+        "crates/pool-protocol/fuzz/Cargo.lock",
+        "protocol-fuzz-lock-packages.txt",
+    ),
 ];
 
 /// The script that holds the copy of the Linux build command (rule W7).
@@ -682,6 +686,14 @@ mod tests {
                 "# spec 0002\npool-repo-check\n",
             ),
             (
+                "tools/repo-check/baseline/protocol-fuzz-lock-packages.txt",
+                "# spec 0004\npool-protocol\n",
+            ),
+            (
+                "crates/pool-protocol/fuzz/Cargo.lock",
+                "[[package]]\nname = \"pool-protocol\"\n",
+            ),
+            (
                 "tools/repo-check/baseline/forbidden-paths.txt",
                 "# spec 0002\napps/pool-cli\ncrates/pool-core\n",
             ),
@@ -1045,6 +1057,40 @@ mod tests {
     }
 
     #[test]
+    fn w1_and_w6_know_the_lockfile_of_the_protocol_fuzz_package() {
+        // Spec 0004, "Fuzzing": the fourth lockfile has its own baseline.
+        let mut tree = good();
+        tree.set(
+            "crates/pool-protocol/fuzz/Cargo.lock",
+            "[[package]]\nname = \"pool-protocol\"\n\n[[package]]\nname = \"ghost\"\n",
+        );
+        assert_problem(
+            &tree,
+            "W1",
+            &[
+                "crates/pool-protocol/fuzz/Cargo.lock",
+                "ghost",
+                "protocol-fuzz-lock-packages.txt",
+            ],
+        );
+        let mut tree = good();
+        tree.remove("crates/pool-protocol/fuzz/Cargo.lock");
+        let report = check(&tree);
+        assert!(
+            report
+                .faults
+                .iter()
+                .any(|f| f.contains("crates/pool-protocol/fuzz/Cargo.lock")),
+            "{}",
+            report.dump()
+        );
+        // The file at its place is no stray lockfile; one beside it is.
+        let mut tree = good();
+        tree.set("crates/pool-protocol/Cargo.lock", "");
+        assert_problem(&tree, "W6", &["crates/pool-protocol/Cargo.lock"]);
+    }
+
+    #[test]
     fn w6_unexpected_lockfile() {
         let mut tree = good();
         tree.set("apps/pool/Cargo.lock", "");
@@ -1146,6 +1192,14 @@ mod lockfile_edge_tests {
             (
                 "tools/repo-check/baseline/tool-lock-packages.txt",
                 "# spec 0002\npool-repo-check\n",
+            ),
+            (
+                "tools/repo-check/baseline/protocol-fuzz-lock-packages.txt",
+                "# spec 0004\npool-protocol\n",
+            ),
+            (
+                "crates/pool-protocol/fuzz/Cargo.lock",
+                "[[package]]\nname = \"pool-protocol\"\n",
             ),
             (
                 "tools/repo-check/baseline/forbidden-paths.txt",
@@ -1409,6 +1463,14 @@ mod source_guard_tests {
             (
                 "tools/repo-check/baseline/tool-lock-packages.txt",
                 "# spec 0002\npool-repo-check\n",
+            ),
+            (
+                "tools/repo-check/baseline/protocol-fuzz-lock-packages.txt",
+                "# spec 0004\npool-protocol\n",
+            ),
+            (
+                "crates/pool-protocol/fuzz/Cargo.lock",
+                "[[package]]\nname = \"pool-protocol\"\n",
             ),
             (
                 "tools/repo-check/baseline/forbidden-paths.txt",

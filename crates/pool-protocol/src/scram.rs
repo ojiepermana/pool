@@ -34,7 +34,7 @@ impl Gs2Header {
 }
 
 /// A client-first message that POOL accepts as a server.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ClientFirst {
     /// The GS2 header.
     pub header: Gs2Header,
@@ -42,6 +42,45 @@ pub struct ClientFirst {
     pub bare: String,
     /// The client nonce.
     pub nonce: String,
+}
+
+impl std::fmt::Debug for ClientFirst {
+    /// The header only; the bare message and the nonce print `[REDACTED]`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ClientFirst")
+            .field("header", &self.header)
+            .field("bare", &"[REDACTED]")
+            .field("nonce", &"[REDACTED]")
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for ServerFirst {
+    /// The iteration count only; the nonce, the salt and the text print `[REDACTED]`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ServerFirst")
+            .field("nonce", &"[REDACTED]")
+            .field("salt", &"[REDACTED]")
+            .field("iterations", &self.iterations)
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for ClientFinal {
+    /// Nothing of the message: the proof and the rest print `[REDACTED]`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ClientFinal([REDACTED])")
+    }
+}
+
+impl std::fmt::Debug for ServerFinal {
+    /// The variant only; the signature prints `[REDACTED]`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Verifier(_) => "ServerFinal::Verifier([REDACTED])",
+            Self::Error => "ServerFinal::Error",
+        })
+    }
 }
 
 fn is_printable(text: &str) -> bool {
@@ -100,7 +139,7 @@ pub fn client_first_bare(nonce: &str) -> String {
 }
 
 /// A server-first message.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ServerFirst {
     /// The whole nonce: the client nonce followed by the server nonce.
     pub nonce: String,
@@ -165,7 +204,7 @@ pub fn parse_server_first(data: &[u8], client_nonce: &str) -> Result<ServerFirst
 }
 
 /// A client-final message that POOL accepts as a server.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ClientFinal {
     /// The client-final-message-without-proof, which goes into the auth message.
     pub without_proof: String,
@@ -232,7 +271,7 @@ pub fn auth_message(
 }
 
 /// A server-final message.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum ServerFinal {
     /// `v=`: the server signature.
     Verifier([u8; PROOF_LEN]),

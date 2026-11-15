@@ -72,12 +72,22 @@ impl HeaderReader {
 }
 
 /// A whole message: its tag and its body.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Message {
     /// The tag byte.
     pub tag: u8,
     /// The body, without tag and length.
     pub body: Vec<u8>,
+}
+
+impl std::fmt::Debug for Message {
+    /// The tag and the length of the body; never the body, which can hold SQL or text from PostgreSQL.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Message")
+            .field("tag", &char::from(self.tag))
+            .field("body_len", &self.body.len())
+            .finish()
+    }
 }
 
 /// Why a whole message could not be read.
@@ -92,7 +102,7 @@ pub enum FrameError {
 /// Reads whole messages under a limit on the body, from pieces of any size.
 ///
 /// The body is reserved only after its length has been checked against the limit.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MessageReader {
     limit: u32,
     header: HeaderReader,
@@ -153,6 +163,16 @@ impl MessageReader {
         let body = std::mem::take(body);
         self.current = None;
         (used, Some(Ok(Message { tag, body })))
+    }
+}
+
+impl std::fmt::Debug for MessageReader {
+    /// The limit and how many bytes are still wanted; never the body read so far.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MessageReader")
+            .field("limit", &self.limit)
+            .field("wanted", &self.wanted())
+            .finish()
     }
 }
 

@@ -1,0 +1,36 @@
+[package]
+name = "pool-protocol-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+pool-protocol = { path = ".." }
+
+[[bin]]
+name = "startup"
+path = "fuzz_targets/startup.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "frontend_message"
+path = "fuzz_targets/frontend_message.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "scram"
+path = "fuzz_targets/scram.rs"
+test = false
+doc = false
+bench = false

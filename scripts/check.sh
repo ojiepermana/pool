@@ -19,7 +19,8 @@ usage: scripts/check.sh <name> [<name>...]
 required checks: fmt clippy test deny linux-build guards docs
 all              fmt clippy test deny guards docs, in that order, without stopping at a failure
 tools            make cargo-deny available under target/tools
-fuzz             run the fuzz target validate (not a required check)
+fuzz-tools       make cargo-fuzz and the fuzz toolchain available
+fuzz             run every fuzz target of both fuzz packages (not a required check)
 integration      run apps/pool/tests/integration.rs against PostgreSQL 18 in Docker (not a required check)
 sbom             write target/sbom/pool.cdx.json (not a required check)
 
@@ -90,7 +91,8 @@ check_fmt() {
   need_command cargo fmt || return 1
   run cargo fmt --all --check || return 1
   run cargo fmt --check --manifest-path tools/repo-check/Cargo.toml || return 1
-  run cargo fmt --check --manifest-path crates/pool-config/fuzz/Cargo.toml
+  run cargo fmt --check --manifest-path crates/pool-config/fuzz/Cargo.toml || return 1
+  run cargo fmt --check --manifest-path crates/pool-protocol/fuzz/Cargo.toml
 }
 
 check_clippy() {
@@ -111,7 +113,11 @@ check_deny() {
     missing "cargo-deny $CARGO_DENY_VERSION is required; run scripts/check.sh tools" || return 1
   fi
   run cargo deny --locked --config deny.toml check || return 1
-  run cargo deny --locked --manifest-path crates/pool-config/fuzz/Cargo.toml --config deny.toml check
+  # The list of allowed licenses is the list of the product, and the command above keeps it from growing unseen.
+  # A fuzz lockfile holds a part of the product and the fuzz runtime, so for it an allowed license that no package
+  # uses is not an error (spec 0004, "Dependency policy"). Every other rule of deny.toml applies unchanged.
+  run cargo deny --locked --manifest-path crates/pool-config/fuzz/Cargo.toml --config deny.toml check -A license-not-encountered || return 1
+  run cargo deny --locked --manifest-path crates/pool-protocol/fuzz/Cargo.toml --config deny.toml check -A license-not-encountered
 }
 
 check_linux_build() {
@@ -159,24 +165,53 @@ check_integration() {
   run3 env POOL_IT_IMAGE="$POSTGRES_IMAGE" scripts/integration/run.sh
 }
 
+check_fuzz_tools() {
+  need_command cargo fuzz-tools || return 1
+  need_command rustup fuzz-tools || return 1
+  if tool_is fuzz cargo-fuzz "$CARGO_FUZZ_VERSION"; then
+    echo "cargo-fuzz $CARGO_FUZZ_VERSION is already available"
+  elif ! cargo install --locked --root target/tools "cargo-fuzz@$CARGO_FUZZ_VERSION"; then
+    missing "fuzz-tools: cargo install of cargo-fuzz $CARGO_FUZZ_VERSION failed" || return 1
+  fi
+  if rustup toolchain list | grep -q "^$FUZZ_TOOLCHAIN"; then
+    echo "the toolchain $FUZZ_TOOLCHAIN is already installed"
+  elif ! rustup toolchain install --profile minimal "$FUZZ_TOOLCHAIN"; then
+    missing "fuzz-tools: rustup toolchain install $FUZZ_TOOLCHAIN failed" || return 1
+  fi
+}
+
+# Runs one fuzz target of one package on its corpus, its seed directory (when it has one) and its committed
+# regression inputs. Usage: fuzz_target <crate dir> <target> <max_len> [<seed dir>]
+fuzz_target() {
+  crate=$1
+  target=$2
+  max_len=$3
+  seed=${4:-}
+  mkdir -p "$crate/fuzz/corpus/$target"
+  run env CARGO_TARGET_DIR="$ROOT/target/fuzz" sh -c 'CDPATH= cd -- "$1" && shift && exec cargo "+$1" fuzz run "$2" "fuzz/corpus/$2" "fuzz/regressions/$2" $5 -- "-max_total_time=$3" "-max_len=$4"' \
+    fuzz "$crate" "$FUZZ_TOOLCHAIN" "$target" "$seconds" "$max_len" "$seed" || return 1
+  # cargo-fuzz creates the directory even when nothing crashed, so only a file in it is a finding.
+  if [ -d "$crate/fuzz/artifacts/$target" ] && [ -n "$(find "$crate/fuzz/artifacts/$target" -type f | head -n 1)" ]; then
+    echo "fuzz: a crash file exists under $crate/fuzz/artifacts/$target/; report it with its bytes" >&2
+    status=1
+    return 1
+  fi
+}
+
 check_fuzz() {
   need_command cargo fuzz || return 1
   need_command rustup fuzz || return 1
   if ! tool_is fuzz cargo-fuzz "$CARGO_FUZZ_VERSION"; then
-    missing "cargo-fuzz $CARGO_FUZZ_VERSION is required; run cargo install --locked --root target/tools cargo-fuzz@$CARGO_FUZZ_VERSION" || return 1
+    missing "cargo-fuzz $CARGO_FUZZ_VERSION is required; run scripts/check.sh fuzz-tools" || return 1
   fi
   if ! rustup toolchain list | grep -q "^$FUZZ_TOOLCHAIN"; then
-    missing "the toolchain $FUZZ_TOOLCHAIN is required; run rustup toolchain install $FUZZ_TOOLCHAIN" || return 1
+    missing "the toolchain $FUZZ_TOOLCHAIN is required; run scripts/check.sh fuzz-tools" || return 1
   fi
-  seconds=${POOL_FUZZ_SECONDS:-60}
-  mkdir -p crates/pool-config/fuzz/corpus/validate
-  run env CARGO_TARGET_DIR="$ROOT/target/fuzz" sh -c 'CDPATH= cd -- crates/pool-config && exec cargo "+$1" fuzz run validate fuzz/corpus/validate tests/fixtures -- "-max_total_time=$2" -max_len=4096' fuzz "$FUZZ_TOOLCHAIN" "$seconds" || return 1
-  # cargo-fuzz creates the directory even when nothing crashed, so only a file in it is a finding.
-  if [ -d crates/pool-config/fuzz/artifacts/validate ] && [ -n "$(find crates/pool-config/fuzz/artifacts/validate -type f | head -n 1)" ]; then
-    echo "fuzz: a crash file exists under crates/pool-config/fuzz/artifacts/validate/; report it with its bytes" >&2
-    status=1
-    return 1
-  fi
+  seconds=${POOL_FUZZ_SECONDS:-30}
+  fuzz_target crates/pool-config validate 4096 tests/fixtures || return 1
+  fuzz_target crates/pool-protocol startup 16384 || return 1
+  fuzz_target crates/pool-protocol frontend_message 16384 || return 1
+  fuzz_target crates/pool-protocol scram 4096
 }
 
 check_sbom() {
@@ -208,7 +243,7 @@ names=
 for arg in "$@"; do
   case "$arg" in
     all) names="$names fmt clippy test deny guards docs" ;;
-    fmt | clippy | test | deny | linux-build | guards | docs | tools | fuzz | sbom | integration) names="$names $arg" ;;
+    fmt | clippy | test | deny | linux-build | guards | docs | tools | fuzz-tools | fuzz | sbom | integration) names="$names $arg" ;;
     *)
       echo "scripts/check.sh: unknown check: $arg" >&2
       usage
@@ -226,6 +261,7 @@ for name in "$@"; do
   status=0
   case "$name" in
     linux-build) check_linux_build || : ;;
+    fuzz-tools) check_fuzz_tools || : ;;
     *) "check_$name" || : ;;
   esac
   case "$status" in
