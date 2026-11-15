@@ -13,6 +13,8 @@ The build of this slice is small and runs without a listener, a database or an a
 
 These criteria cover scope 003 only. Cite them as `0003 AC-n`. Fixture names refer to [Fixtures](#fixtures). Reason names refer to [Writer admission](#writer-admission) and [Bootstrap](#bootstrap).
 
+Note of 2026-11-16, from the [review](../../reviews/2026-11-16-scope-004-one-real-primary-path.md) of scope 004 (finding d4): `AC-17`, `AC-18` and `AC-19` below were added to this spec with spec 0004, and scope 004 built and verified them, after feature 3 was done. So the first sentence above is true for `AC-1` to `AC-16`. The three later ones keep their numbers and their place here, because they are rules of `pool-control`, which this spec owns.
+
 **User stories**:
 
 - As an operator, I want to write my clusters, nodes and identity map in one file and have it checked at my desk, so that a wrong reference or a duplicate is found before POOL starts.
@@ -740,6 +742,8 @@ pub struct BootstrapRefused { /* private; never empty */ } // reasons() -> &[Boo
 `StoredAuthority` has public fields because the journal reader has to fill it. In the product the only code that builds a `StoreProbe` is that reader, which scope 004 places inside `pool-control`. Tests build one by hand.
 
 Note of 2026-11-15, with spec 0004 ([Follow-up](#follow-up) 14): the block above leaves out seven public accessors that the code has had since the build: `MonotonicTime::since_origin()`, which returns the `Duration`; `Observation::node()`, `Observation::sampled_at()` and `Observation::outcome()`; and `Authority::authority_id()`, `Authority::authority_revision()` and `Authority::start_sequence()`. They are part of the interface.
+
+Note of 2026-11-16, with [spec 0004](../0004-one-real-primary-path/index.md#backend-connection) (its decision 85, from the independent review of scope 004): `EligiblePrimary` gets two more accessors that only read, `system_identifier()` and `writer_timeline()`. They give the system identifier and the writer timeline of the approved topology, which are the values `writer_admission` compared the sample with before it answered `Open`. The daemon copies them into the route view, and a session compares them with what the node says on its own connection (`0004 AC-29`). The fields stay private, and no code outside this crate can build an `EligiblePrimary`.
 
 Update of 2026-11-15, with spec 0004. The interface gains what follows. The exact signatures of the journal, the board, the snapshot and the controller are in spec 0004, under [The journal on disk](../0004-one-real-primary-path/index.md#the-journal-on-disk) and [Control loop and topology snapshot](../0004-one-real-primary-path/index.md#control-loop-and-topology-snapshot).
 
