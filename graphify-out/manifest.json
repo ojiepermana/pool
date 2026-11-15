@@ -108,16 +108,16 @@
     "semantic_hash": ""
   },
   "docs/index.md": {
-    "mtime": 1794662878.1984997,
-    "seen": 1794662910.369161,
+    "mtime": 1794735395.472204,
+    "seen": 1794736905.6090581,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": ""
+    "semantic_hash": "6aec86b5dbbd9ff5dcb07c08502444c9"
   },
   "docs/plan/decision-ledger.md": {
-    "mtime": 1794623188.8460188,
-    "seen": 1794623470.244085,
+    "mtime": 1794735395.4728806,
+    "seen": 1794736905.609061,
     "ast_hash": "ac5e3f9cb55f9515d4a2ab33c3a2bdcf",
-    "semantic_hash": "ac5e3f9cb55f9515d4a2ab33c3a2bdcf"
+    "semantic_hash": "200f506cad7cfe86ccb271d9613a102b"
   },
   "docs/plan/dependencies.md": {
     "mtime": 1794624116.1769624,
@@ -276,10 +276,10 @@
     "semantic_hash": "b864d7b94b54718fa5e9b03891dc511e"
   },
   "docs/scope/004-one-real-primary-path.md": {
-    "mtime": 1794623415.6864564,
-    "seen": 1794623470.244102,
+    "mtime": 1794735411.0171676,
+    "seen": 1794736905.609063,
     "ast_hash": "0f02a5c9ff5fc4f8f39b086760919223",
-    "semantic_hash": "0f02a5c9ff5fc4f8f39b086760919223"
+    "semantic_hash": "21df43358abe7cd64e4dd2b8e3def5bc"
   },
   "docs/scope/005-clean-session-reuse.md": {
     "mtime": 1794623130.2356443,
@@ -360,10 +360,10 @@
     "semantic_hash": "d894e0d3a8045f88571853f736396b49"
   },
   "docs/scope/index.md": {
-    "mtime": 1794730858.6858976,
-    "seen": 1794733251.7725701,
+    "mtime": 1794735411.0175629,
+    "seen": 1794736905.6090639,
     "ast_hash": "5aef3b02f87fb3e8058fdcd509457a4a",
-    "semantic_hash": "5479f716c0026d8489b50dcdd868601e"
+    "semantic_hash": "a1f814919cdf2b1a1d0f721f2c6d04e0"
   },
   "docs/security/security-requirements.md": {
     "mtime": 1794624116.17761,
@@ -408,10 +408,10 @@
     "semantic_hash": ""
   },
   "docs/glossary.md": {
-    "mtime": 1794658233.5353715,
-    "seen": 1794658537.156836,
+    "mtime": 1794735395.4715836,
+    "seen": 1794736905.609059,
     "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
-    "semantic_hash": ""
+    "semantic_hash": "28320dd7d86f30616f9b6e760f8abc04"
   },
   "docs/scope/coordination/001-stack-and-workspace.brief-umum.md": {
     "mtime": 1794631706.8664336,
@@ -774,16 +774,16 @@
     "semantic_hash": "4335e82e96832aab22d47de75859380d"
   },
   "docs/specs/0003-control-and-session-data-model/index.md": {
-    "mtime": 1794730858.7038603,
-    "seen": 1794733251.772576,
+    "mtime": 1794735395.4737449,
+    "seen": 1794736905.6090539,
     "ast_hash": "",
-    "semantic_hash": "8584efc4b9d2acd0ce657579a3b663ff"
+    "semantic_hash": "878d37bdb109fd924fb8b3e8e2915630"
   },
   "docs/specs/0003-control-and-session-data-model/rationale.md": {
-    "mtime": 1794727837.6257532,
-    "seen": 1794730362.739549,
+    "mtime": 1794735395.4745479,
+    "seen": 1794736905.609057,
     "ast_hash": "",
-    "semantic_hash": "46c9396bc145c10a3a84ce59d0a84190"
+    "semantic_hash": "1112262829e5c110dc79f3ab3bc45372"
   },
   "docs/adr/0003-control-and-session-data-model.md": {
     "mtime": 1794719595.380638,
@@ -874,5 +874,23 @@
     "seen": 1794730362.739545,
     "ast_hash": "",
     "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
+  },
+  "docs/specs/0004-one-real-primary-path/index.md": {
+    "mtime": 1794736695.9756413,
+    "seen": 1794736855.315587,
+    "ast_hash": "",
+    "semantic_hash": "f44df4d6ae2db5f67843aaf54d24b9cf"
+  },
+  "docs/specs/0004-one-real-primary-path/rationale.md": {
+    "mtime": 1794736695.976548,
+    "seen": 1794736879.5682602,
+    "ast_hash": "",
+    "semantic_hash": "ccf74ca35a3d0ec05b3a6a9a1e4779cd"
+  },
+  "docs/adr/0004-one-real-primary-path.md": {
+    "mtime": 1794735395.4709272,
+    "seen": 1794736879.568265,
+    "ast_hash": "",
+    "semantic_hash": "1420eab3cfd7fad5052cafe4a22fdc72"
   }
 }
