@@ -46,11 +46,6 @@ impl Message {
             .find(|(field, _)| *field == b'C')
             .map(|(_, value)| value)
     }
-
-    /// The fields of an `ErrorResponse`, as (code, value).
-    pub fn fields(&self) -> Vec<(u8, String)> {
-        error_fields(&self.body)
-    }
 }
 
 fn error_fields(body: &[u8]) -> Vec<(u8, String)> {
@@ -102,31 +97,6 @@ pub fn query(sql: &str) -> Vec<u8> {
     bytes.push(0);
     bytes
 }
-
-/// A first packet: its length (8 plus the body), a code and a body.
-pub fn first_packet(code: u32, body: &[u8]) -> Vec<u8> {
-    let length = u32::try_from(8 + body.len()).expect("small");
-    let mut bytes = length.to_be_bytes().to_vec();
-    bytes.extend_from_slice(&code.to_be_bytes());
-    bytes.extend_from_slice(body);
-    bytes
-}
-
-/// The parameters of a `StartupMessage`, ended by the extra zero byte.
-pub fn parameters(pairs: &[(&str, &str)]) -> Vec<u8> {
-    let mut body = Vec::new();
-    for (name, value) in pairs {
-        body.extend_from_slice(name.as_bytes());
-        body.push(0);
-        body.extend_from_slice(value.as_bytes());
-        body.push(0);
-    }
-    body.push(0);
-    body
-}
-
-/// The code of protocol 3.0 in a startup packet.
-pub const PROTOCOL_3_0: u32 = 196_608;
 
 /// Reads everything POOL sends until it closes, with a deadline. A reset
 /// also ends the read: POOL closes without reading what it does not need,
