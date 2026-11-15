@@ -775,6 +775,26 @@ On 2026-11-15 at 21:50 WIB, by the checker session, after the developer of step 
 
 **For the tester.** The new test accepts exit 0 or `state.locked` for eight `show-authority`. It has no bootstrap case, where one command holds the lock for a while, and it does not look at the files afterwards. The probe did both.
 
+### Checker run of the lock file fix on `main`, with links, owners and the umask
+
+On 2026-11-15 at 22:20 WIB, by the checker session, on the tree `d4fdb62` (the tip of `main`; `apps/pool/src/state.rs` is the one of `fd62cf4`). All of it ran in the pinned build image, against a release `pool` built there, with the probe of the run above and three new parts. Parts A to E ran as a user that is not root, part F as root.
+
+**Verdict: `0004 AC-9` is met, and milestone 3 PASSES.**
+
+| Probe | Expected | Observed | Result |
+|---|---|---|---|
+| A. 60 rounds of eight bootstraps on a new state directory with no `pool.lock`, 480 commands | one holder in each round, `state.locked` for the others, no `state.permissions` | 60 holders, 420 times `state.locked`, 0 rounds with two holders, 0 with none, 0 other results; the same with `pool.lock` there | pass |
+| B. 300 rounds of eight `show-authority` on a new state directory, 2400 commands | exit 0 or `state.locked` | 2162 times exit 0, 238 times `state.locked`, 0 other results | pass |
+| C. `pool.lock` with mode 0644, 0400 or 0660, as a directory, as a link to a good file, as a link to nothing, as a named pipe, with both commands | `state.permissions`, nothing changed | 14 of 14 | pass |
+| D. A link at `pool.lock` that points at a file on which the probe holds an exclusive lock. First still, then 3000 `show-authority`, one at a time, while a thread of the probe swapped `pool.lock` 360822 times between a good file and that link (with `rename`, so the swap falls before the open, between the open and the check, and after it) | `state.permissions` or exit 0, and never `state.locked`, which would mean that a command followed the link as far as the lock | still: `state.permissions`. In the swap: 735 times exit 0, 2265 times `state.permissions`, 0 times `state.locked`, 0 other results | pass |
+| E. The umask: 60 rounds of eight `show-authority` on a new state directory under each of the umasks 0000, 0022, 0077 and 0177, 1920 commands | exit 0 or `state.locked`; `pool.lock` has mode 0600 afterwards | 0 times `state.permissions`; mode 0600 in 240 of 240 directories | pass |
+| E. The same under a umask that takes a permission away from the owner: 0200, 0400, 0600 and 0777, 1920 commands | see the reading below | 43 commands got `state.permissions` (10, 4, 16 and 13); mode 0600 in 240 of 240 directories afterwards; one command alone exits 0 in 240 of 240 | a note, see below |
+| F. As root, with a state directory of root: `pool.lock` with mode 0600 owned by another user, with both commands; then each of the three journal files owned by another user | `state.permissions` | `state.permissions` in all five runs; exit 0 before and after, when every file is owned by root | pass |
+
+**The edge with the umask, and why it is a note.** The file is created with mode 0600 less the umask, and the mode is set to 0600 on the open file right after. A command that looks at the file between those two steps sees the mode before the second step. With a umask that leaves the owner bits alone, which is every umask a service runs with, that mode is already 0600, and the probe shows no wrong answer in 1920 commands. Only a umask that takes read or write away from the owner makes the file exist for a moment with another mode, and then a command that starts in that moment says `state.permissions`. I read this as within `0004 AC-9` as it is written: the criterion gives `state.permissions` for a journal file whose mode is not 0600, and in that moment the mode is not 0600. It fails closed, nothing is written, the file ends with mode 0600, and the next start passes. A sentence in the spec that names this case would be enough. The developer named this edge in the report of the fix.
+
+**Links.** The path is read without following a link before the open (`check_protected`) and again after it (`check_opened`, which also compares device and inode with the open file). Part D could not get a command past both.
+
 ## Milestone 4: The session path
 
 Build plan steps 9 to 11. Each step keeps its own part of this section.
