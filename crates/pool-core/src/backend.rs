@@ -32,8 +32,8 @@ use crate::wire::{WireError, read_message, write_all};
 
 /// The largest message body POOL reads from a node from authentication up to `ReadyForQuery`.
 pub const BACKEND_STARTUP_MESSAGE_MAX_BYTES: u32 = 16384;
-/// The largest message body POOL reads from a node during the one row query of the probe.
-pub const BACKEND_MESSAGE_MAX_BYTES: u32 = 65536;
+/// The most bytes of answer, message bodies together, that the one row query of the probe reads.
+pub const PROBE_ANSWER_MAX_BYTES: usize = 4096;
 /// The most parameter status messages kept from a node.
 pub const PARAMETER_STATUS_MAX_COUNT: usize = 64;
 /// The most bytes of parameter names and values kept from a node, together.
@@ -301,6 +301,8 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
     ///
     /// `None` when the query returned no row or more than one. A column is
     /// `None` when it is NULL. An `ErrorResponse` is [`BackendError::Server`].
+    /// An answer of more than 4096 bytes of message bodies is
+    /// [`BackendError::Protocol`], and the connection must then be closed.
     /// For the probe only.
     pub async fn query_one_row(
         &mut self,
@@ -310,9 +312,13 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
         let mut row = None;
         let mut rows = 0usize;
         let mut error = None;
+        let mut answer = 0usize;
         loop {
-            let Message { tag, body } =
-                read_message(&mut self.stream, BACKEND_MESSAGE_MAX_BYTES).await?;
+            // The answer stops at 4096 bytes: a longer one is never read on.
+            let left = PROBE_ANSWER_MAX_BYTES.saturating_sub(answer);
+            let limit = u32::try_from(left).unwrap_or(0);
+            let Message { tag, body } = read_message(&mut self.stream, limit).await?;
+            answer += body.len();
             match tag {
                 b'T' | b'C' | b'N' | b'S' | b'I' => {}
                 b'D' => {

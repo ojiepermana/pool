@@ -49,6 +49,8 @@ pub enum Refusal {
     CancelIgnored,
     /// An accept of the listener failed.
     AcceptFailed,
+    /// The operating system gave no random bytes for the login.
+    RandomFailed,
 }
 
 impl Refusal {
@@ -72,6 +74,7 @@ impl Refusal {
             Self::BackendUnavailable => "backend_unavailable",
             Self::CancelIgnored => "cancel_ignored",
             Self::AcceptFailed => "accept_failed",
+            Self::RandomFailed => "random_failed",
         }
     }
 }

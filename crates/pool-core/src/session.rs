@@ -574,7 +574,7 @@ impl<C: Connector> Server<C> {
         };
         let (exchange, server_first) = match ServerExchange::start(credential, &data) {
             Ok(started) => started,
-            Err(ScramFault::Random) => return Err(Refused::silent(Refusal::Protocol)),
+            Err(ScramFault::Random) => return Err(Refused::silent(Refusal::RandomFailed)),
             Err(_) => return Err(send_now(tls, violation()).await),
         };
         write_tls(
@@ -684,6 +684,8 @@ impl<C: Connector> Server<C> {
             .await
         {
             Ok(backend) => backend,
+            // No random bytes for the nonce: the login ends without a message.
+            Err(BackendError::Random) => return Err(Refused::silent(Refusal::RandomFailed)),
             Err(error) => {
                 self.counters.backend_failed(
                     &admitted.node,
