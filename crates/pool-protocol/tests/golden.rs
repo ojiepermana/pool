@@ -531,7 +531,7 @@ fn a_length_field_is_checked_before_anything_is_reserved() {
         [Err(FrameError::TooLarge)]
     );
     // Counts inside a body are compared, never reserved from.
-    assert!(auth::parse_negotiate_protocol_version(b"\0\0\0\0\x7f\xff\xff\xff").is_err());
+    assert!(auth::parse_negotiate_protocol_version(b"\0\x03\0\0\x7f\xff\xff\xff").is_err());
     assert!(auth::parse_sasl_initial_response(b"SCRAM-SHA-256\0\x7f\xff\xff\xff").is_err());
 }
 
@@ -548,5 +548,42 @@ fn terminate_has_no_body() {
     assert_eq!(
         classify_frontend(header, 1024),
         FrontendAction::Refuse(PoolError::ProtocolViolation)
+    );
+}
+
+#[test]
+fn negotiation_carries_the_whole_protocol_code_as_postgresql_18_7_sends_it() {
+    use pool_protocol::startup::{FirstPacket, FirstPacketReader};
+    let request = |packet: Vec<u8>| {
+        let mut reader = FirstPacketReader::new(STARTUP_MAX);
+        reader.feed(&encode_ssl_request());
+        let Some(Ok(FirstPacket::Startup(request))) = reader.feed(&packet).1 else {
+            panic!("a startup packet");
+        };
+        request
+    };
+    // PostgreSQL 18.7 answers a request for 3.0 with the option _pq_.foo with exactly these bytes.
+    let foo = request(encode_startup(&[("user", b"alice"), ("_pq_.foo", b"1")]));
+    assert_eq!(
+        foo.negotiation(),
+        Some(vec![
+            0x76, 0x00, 0x00, 0x00, 0x15, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x5f,
+            0x70, 0x71, 0x5f, 0x2e, 0x66, 0x6f, 0x6f, 0x00
+        ])
+    );
+    // For 3.3 PostgreSQL 18.7 sends 00 03 00 02 (it speaks 3.2); POOL speaks 3.0 and sends 00 03 00 00.
+    for minor in [2, 3, 9999] {
+        let newer = request(encode_startup_version(3, minor, &[("user", b"alice")]));
+        assert_eq!(
+            newer.negotiation(),
+            Some(vec![
+                0x76, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            ]),
+            "3.{minor}"
+        );
+    }
+    assert_eq!(
+        request(encode_startup(&[("user", b"alice")])).negotiation(),
+        None
     );
 }

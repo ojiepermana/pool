@@ -600,9 +600,9 @@
     "semantic_hash": ""
   },
   "scripts/check.sh": {
-    "mtime": 1794741896.427262,
-    "seen": 1794742006.438325,
-    "ast_hash": "e41758960b4667a339fcd8ac356ec307",
+    "mtime": 1794744423.1898737,
+    "seen": 1794744693.435831,
+    "ast_hash": "0d5e8f1c8c2add2874e0996196a0b7d2",
     "semantic_hash": ""
   },
   "scripts/linux-build.sh": {
@@ -654,9 +654,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/src/ci.rs": {
-    "mtime": 1794664358.674157,
-    "seen": 1794664390.115894,
-    "ast_hash": "0eaa65ad81aac0d7ba84dabfaccf5191",
+    "mtime": 1794744423.190945,
+    "seen": 1794744693.4358342,
+    "ast_hash": "2172451ba2e8fe1c536152b0ba6941fb",
     "semantic_hash": ""
   },
   "tools/repo-check/src/docs.rs": {
@@ -696,9 +696,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/src/workspace.rs": {
-    "mtime": 1794735937.113621,
-    "seen": 1794737031.147468,
-    "ast_hash": "fa72d58acab1bca36e065f187c5e6670",
+    "mtime": 1794744423.1913385,
+    "seen": 1794744693.435841,
+    "ast_hash": "8f9694b4eb8d72d1558ca9349dd5fdd7",
     "semantic_hash": ""
   },
   "scripts/prove-checks.sh": {
@@ -744,9 +744,9 @@
     "semantic_hash": ""
   },
   "tools/repo-check/tests/repo_check/workspace.rs": {
-    "mtime": 1794720694.6137877,
-    "seen": 1794721117.896124,
-    "ast_hash": "ed79904d53249b597824c4d442574fc3",
+    "mtime": 1794744423.1919131,
+    "seen": 1794744693.4358468,
+    "ast_hash": "b5f8944c952645ff4330961959f5fdbf",
     "semantic_hash": ""
   },
   "docs/reviews/2026-11-14-scope-002-standards-and-tooling.md": {
@@ -918,21 +918,21 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/startup.rs": {
-    "mtime": 1794742393.2850323,
-    "seen": 1794742439.252386,
-    "ast_hash": "ef8d337e067120f7cc723072f555c604",
+    "mtime": 1794744423.1879091,
+    "seen": 1794744693.4358232,
+    "ast_hash": "796632d60bb731a92712ae544782be97",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/message.rs": {
-    "mtime": 1794742393.2844727,
-    "seen": 1794742439.2523808,
-    "ast_hash": "2d249b274a2887ba57e3e41e516f6133",
+    "mtime": 1794744423.1875029,
+    "seen": 1794744693.435817,
+    "ast_hash": "8283e4614e9f4564c36090d17f7ee5e6",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/auth.rs": {
-    "mtime": 1794739082.5150266,
-    "seen": 1794739104.2789,
-    "ast_hash": "a11d21f3a279899c1aec88db74682bd7",
+    "mtime": 1794744423.1870296,
+    "seen": 1794744693.4358132,
+    "ast_hash": "b85dcf292a972d1b4faf2fe76c55700f",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/sqlstate.rs": {
@@ -942,9 +942,9 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/scram.rs": {
-    "mtime": 1794742393.2846847,
-    "seen": 1794742439.252384,
-    "ast_hash": "7e9ed6385777ac452b8fe1847111b00f",
+    "mtime": 1794744423.1876812,
+    "seen": 1794744693.43582,
+    "ast_hash": "1283edef46873010acd376cb9cb47ffc",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/base64.rs": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/tests/golden.rs": {
-    "mtime": 1794742393.2852736,
-    "seen": 1794742439.252387,
-    "ast_hash": "9b8e157e59ba26c0e9f29a3280fa21d6",
+    "mtime": 1794744423.188328,
+    "seen": 1794744693.4358258,
+    "ast_hash": "d188910eb7a4ef3eba21e124d2a65d0f",
     "semantic_hash": ""
   },
   "crates/pool-control/src/journal.rs": {
@@ -1131,6 +1131,30 @@
     "mtime": 1794743181.0209672,
     "seen": 1794743240.8025138,
     "ast_hash": "47ad311b2b6a8e7bcecb95e923957432",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/fuzz/fuzz_targets/frontend_message.rs": {
+    "mtime": 1794744423.1831558,
+    "seen": 1794744693.435792,
+    "ast_hash": "2313f6b17a6b29c1eca2bde62250a079",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/fuzz/fuzz_targets/scram.rs": {
+    "mtime": 1794744423.1832373,
+    "seen": 1794744693.435804,
+    "ast_hash": "01f865dd5413fb64a186e0720e3102e3",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/fuzz/fuzz_targets/startup.rs": {
+    "mtime": 1794744423.183322,
+    "seen": 1794744693.435808,
+    "ast_hash": "2a3c638eb050939d7dbe552ebc093ff1",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/tests/redaction.rs": {
+    "mtime": 1794744423.1884692,
+    "seen": 1794744693.435828,
+    "ast_hash": "9c1b0724b489d4255e79c0e1882e82b4",
     "semantic_hash": ""
   }
 }

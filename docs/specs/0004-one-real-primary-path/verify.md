@@ -673,3 +673,42 @@ The log of the walking fixture, as the daemon wrote it on that run (the authorit
 | `0004 AC-1`, completed | the build and the use check above | pass on the workstation |
 
 **Readings.** A runtime that cannot be built is `listener.failed`, since nothing can listen without it and the spec has no code for it. A `Server` that cannot be built names the key whose file is missing (`principal.verifier_file`, `identity.credential_file` or `node.tls_ca_file`); the serving view and step 4 make it unreachable. The two tests of spec 0001 that used `run` as the example of an unknown command now use `serve`, since `run` is a command. The walking fixture writes `principal.password` (mode 0600) for the client; POOL never reads it.
+
+## Milestone 5: Fuzzing, documents and evidence
+
+Build plan steps 12 to 14. Each step keeps its own part of this section.
+
+### Build plan step 12: fuzzing and the CI rule
+
+Build plan step 12, on 2026-11-15, on macOS (workstation, Docker Desktop running) and in the Linux builder image. Commit `87be008`, on top of `main` at `60086ae`, after commit `8f64f5a` (`Debug` by hand on the `pool-protocol` types that hold content). Tools: `rustc 1.100.0`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`, `cargo-deny 0.20.2`.
+
+#### UI / manual
+
+- **M2. CI jobs and the branch rule file** (`owner: user`, `BLOCKED` until you make it; `.github/` is not a file of any session). After Build plan step 12. Prerequisite: this commit on the scope branch. Add the two jobs `integration` and `fuzz` of spec 0004 "CI definition and manual steps" to `.github/workflows/ci.yml`, after the job `docs`, exactly as the spec writes them (`runs-on: ubuntu-24.04-arm`, `timeout-minutes: 30`, the pinned `actions/checkout` and `actions/cache`, the `run:` lines `rustup toolchain install`, `scripts/check.sh integration`, `scripts/check.sh fuzz-tools` and `scripts/check.sh fuzz`), and the two contexts `integration` and `fuzz` to `required_status_checks` in `.github/rulesets/main.json`, in one commit. Command to check it before the commit: `scripts/check.sh guards`. Expected: exit 0, `pool-repo-check ci: ok` (rule C3 now accepts `scripts/check.sh fuzz-tools`; rule C2 holds when the two contexts and the two jobs come together). Criteria: `0004 AC-27` on CI, and the CI half of the integration criteria.
+- **M3. Push, pull request and the rule on the remote** (`owner: user`, `BLOCKED`). Push the scope branch, open the pull request, and after the nine checks have run on it, apply `main.json` to the ruleset on the remote, as the remote proof of spec 0002 did for the first seven. Expected: the jobs `integration` and `fuzz` pass on the runner, and a merge needs all nine. Until then the two jobs run and do not block a merge.
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-protocol --locked` at `8f64f5a` | exit 0 | exit 0: 22 unit, 10 golden and 4 in the new `tests/redaction.rs` passed | pass |
+| `cargo test -p pool-core --locked` at `8f64f5a` | exit 0 | exit 0: 37 unit and 29 session tests passed; nothing depended on the old `Debug` text | pass |
+| `cargo test --manifest-path tools/repo-check/Cargo.toml --locked --target-dir target/repo-check` | exit 0 | exit 0: 108 unit and 110 integration tests passed, among them `w1_and_w6_know_the_lockfile_of_the_protocol_fuzz_package` and `c3_accepts_fuzz_tools_and_nothing_like_it` | pass |
+| `scripts/check.sh fuzz-tools` | exit 0 | exit 0: `cargo-fuzz 0.13.2 is already available`, `the toolchain nightly-2026-10-17 is already installed` | pass |
+| `scripts/check.sh fuzz` at `87be008` | every target of both packages runs on its committed inputs for the bounded time, no crash file | exit 0 in 130 s: `validate` 273996 runs, `startup` 2733111, `frontend_message` 660274, `scram` 3546499, each 31 s, no file under any `fuzz/artifacts/` | pass |
+| `scripts/check.sh all` at `87be008` | exit 0 | exit 0: fmt (now also the new fuzz manifest), clippy, test, deny (now also the new lockfile), guards, docs all `ok` | pass |
+| `scripts/check.sh linux-build` at `87be008` | exit 0 | exit 0 | pass |
+| `scripts/check.sh integration` at `87be008` | exit 0 | exit 0: 8 of 8 against PostgreSQL 18 in Docker | pass |
+
+**What the targets hold.** `startup` feeds the first packet reader before or after TLS (the first input byte says which) and asks the same results for the whole input, three pieces cut where the next two bytes say, and single bytes; it also runs the parameter parser on the rest. `frontend_message` does the same for the whole message reader (limit 1024) and for the header reader with the classification of client and backend headers. `scram` runs the four SCRAM parsers and checks that base64 decodes what it encodes and encodes back what it decodes. That closes the gaps the checker named: three pieces and random input on the first packets and the messages, from raw bytes. The regression inputs under `crates/pool-protocol/fuzz/regressions/<target>/` are the golden packets and messages of the tests (33 files); `crates/pool-config/fuzz/regressions/validate/` starts with the minimal fixture.
+
+**The `deny` command of the fuzz lockfiles.** `cargo deny check` on `crates/pool-protocol/fuzz/Cargo.lock` with the `deny.toml` of the repository failed only with `license-not-encountered` for `Unicode-3.0`: the lockfile holds the same ten third party packages as `crates/pool-config/fuzz/Cargo.lock`, at the same versions, and none of them is under that license. On the decision of the architect (spec 0004 "Dependency policy", commit `7b93379` of the spec branch), both fuzz lockfile commands of `scripts/check.sh deny` now run with `-A license-not-encountered` after `check`; the command of the product lockfile is unchanged, and so is `deny.toml`. With the flag both fuzz lockfiles give `advisories ok, bans ok, licenses ok, sources ok`.
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0004 AC-27` | `crates/pool-protocol/fuzz/` with the targets `startup`, `frontend_message` and `scram`, its lockfile and committed regression inputs; `scripts/check.sh fuzz` builds every target of both fuzz packages and runs each on its committed inputs for 30 s, and ends without a crash file | pass on the workstation; the CI job is manual step M2 |
+| `0004 AC-24`, the `pool-protocol` types | `tests/redaction.rs` puts `CANARY-9f2c7b1e` into every content field of `Message`, `MessageReader`, `Authentication`, `SaslInitialResponse`, `NegotiateProtocolVersion`, `ParameterStatus`, `ClientFirst`, `ServerFirst`, `ClientFinal`, `ServerFinal`, `Forwarded`, `FirstPacket` and `FirstPacketReader` and finds it in no `Debug` text | pass |
