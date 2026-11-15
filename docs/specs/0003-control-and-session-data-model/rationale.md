@@ -252,3 +252,4 @@ Not recorded in this spec, because another file or another session owns each one
 
 **Point n2** needed no change here. The range belongs to the configuration key, which spec 0004 defines, and `build_snapshot` reads the expiry from the configuration.
 
+**Decision 31, added on 2026-11-15, the name of the method.** `AC-19` as first written named the method `JournalRead::plan_bootstrap` and forbade the text `plan_bootstrap` to the crates that have to call it. The guard was built as written, and the first real caller, `pool bootstrap`, was refused by it. Taken: the method is named `bootstrap_plan`, and the guard does not change. Runner up: an `allow` line for the calling file, which would also have let that file call the free function with a journal value of its own. It is marked heavy, as every change to this accepted spec is. The criterion keeps its ID and its text, with a dated note that says which half holds.
