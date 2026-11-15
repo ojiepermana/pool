@@ -626,3 +626,50 @@ The verification of step 9 found that a relay waiting on a write toward a client
 | `a_positive_conflict_ends_a_session_whose_client_stopped_reading` | The same client; a positive conflict ends the session within 3 s and closes the backend | failed | pass |
 
 `cargo test -p pool-core --locked`: 37 unit and 29 session tests passed. `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6) at `da51f43`: exit 0.
+
+### Build plan step 10: the daemon
+
+On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commit `fef8023` (step 10), merged with `main` at `b8818f9` in `77c1817`, which holds the protocol fixes of step 9. Image `postgres:18.7-bookworm` by the digest of step 8; PostgreSQL 18.7 and `psql` 18.7 (Debian 18.7-1.pgdg12+2).
+
+#### UI / manual
+
+- [ ] The CI job `integration` on the hosted runner → `NOT_RUN`, owner: user (manual step M2).
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool --locked` on `77c1817` | exit 0 | exit 0: 13 unit, 84 in `tests/check_config.rs`, 12 in `tests/commands.rs`, 8 ignored in `tests/integration.rs`, 0 failed | pass |
+| `scripts/check.sh integration` on `77c1817` | exit 0, nothing left behind | exit 0, 8 of 8, among them `it_the_walking_fixture_gives_the_same_answers_through_pool`; no `pool-it-` container, no new volume or network, no temporary directory | pass |
+| `cargo build --workspace --locked` | no dependency warning | exit 0, no warning at all | pass |
+| The use check of [Adopted dependencies](index.md#adopted-dependencies) | no line | no line: `tracing` of `apps/pool` is named by `tracing::subscriber`, `tracing::field` and the event macros of `src/log.rs`, `src/probe.rs`, `src/control.rs` and `src/daemon.rs`, all in code | pass |
+| `scripts/check.sh all` | exit 0 | exit 0, all six `ok` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0, `linux build check passed` | pass |
+
+The log of the walking fixture, as the daemon wrote it on that run (the authority ID and the times are of that run):
+
+```text
+{"ts":"2026-11-15T11:39:20.296Z","level":"info","event":"daemon.started","start_sequence":1,"configuration_generation":1,"authority_id":"9497d54313baf4069d186bf77cbcd122"}
+{"ts":"2026-11-15T11:39:20.299Z","level":"info","event":"admission.changed","cluster_id":"main","state":"closed","reasons":"evidence.writer_missing","snapshot_generation":1}
+{"ts":"2026-11-15T11:39:20.381Z","level":"info","event":"admission.changed","cluster_id":"main","state":"open","node_id":"pg1","snapshot_generation":2}
+{"ts":"2026-11-15T11:39:20.834Z","level":"info","event":"session.started","session":"00000000000000010000000000000001","principal_id":"it-principal","identity_id":"it-identity","cluster_id":"main","node_id":"pg1","lease_generation":1,"topology_epoch":1}
+{"ts":"2026-11-15T11:39:20.849Z","level":"info","event":"session.ended","session":"00000000000000010000000000000001","reason":"client_terminate","status":"idle","duration_ms":15}
+{"ts":"2026-11-15T11:39:21.034Z","level":"info","event":"daemon.stopping","sessions":0}
+{"ts":"2026-11-15T11:39:21.034Z","level":"info","event":"daemon.stopped"}
+```
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0004 AC-13` | `prepare` in `apps/pool/src/daemon.rs` classifies once and returns before reading a file or binding; `ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds` (uninitialized, an empty journal file, missing, unreadable; the port is free after each) and `ac13_run_reports_the_configuration_the_view_and_the_state_directory_first` in `tests/commands.rs`; `it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds` (unconfirmed, mismatch; the journal bytes unchanged) in `tests/integration.rs` | pass on the workstation |
+| `0004 AC-18` | `it_the_walking_fixture_gives_the_same_answers_through_pool`: the same SQL file (TRUNCATE, a transaction of three inserts, a SELECT in key order, a division by zero) through `psql -X` of the image, once straight to PostgreSQL as `pz7_rw` on `pz7_appdb` and once through POOL as `pz7_principal` on `pz7_db`; exit status, stdout and stderr are equal byte for byte | pass on the workstation |
+| `0004 AC-19` | the same test: the PostgreSQL log shows `connection authorized: user=pz7_rw database=pz7_appdb` for the session through POOL, no role `pz7_principal` exists, and `pg_stat_activity` has no `pz7_rw` session within 2 seconds after the client left (asked every 50 ms); the log has `session.ended` with `client_terminate` | pass on the workstation |
+| `0004 AC-24` | the same test reads the whole log of the run: every line is one JSON object with `ts`, `level` and `event` first, no `log.unnamed`, and none of the paths of the test and of the fixture, `pz7`, the three passwords, `127.0.0.1`, `pg.pool.test`, `host.docker.internal`, `TRUNCATE`, `SELECT`, `INSERT` or a verifier; stdout is empty while serving; `src/log.rs` unit tests for the order, the escaping, `log.unnamed` and `log.dropped` | pass on the workstation |
+| `0004 AC-25` | the same test: SIGTERM gives exit 0, `daemon.stopping` and `daemon.stopped` as the last line; the start advanced the start sequence to 1 (`daemon.started` and the journal read afterwards) | pass on the workstation for an idle stop; the stop with sessions in flight is step 11 |
+| `0004 AC-14`, completed | the walking fixture admits only after `admission.changed` reports `open` for `pg1`; the first round is closed with `evidence.writer_missing` until a sample arrives; the wrong identity on the fixture is step 11 | pass on the workstation for the open path |
+| `0004 AC-1`, completed | the build and the use check above | pass on the workstation |
+
+**Readings.** A runtime that cannot be built is `listener.failed`, since nothing can listen without it and the spec has no code for it. A `Server` that cannot be built names the key whose file is missing (`principal.verifier_file`, `identity.credential_file` or `node.tls_ca_file`); the serving view and step 4 make it unreachable. The two tests of spec 0001 that used `run` as the example of an unknown command now use `serve`, since `run` is a command. The walking fixture writes `principal.password` (mode 0600) for the client; POOL never reads it.

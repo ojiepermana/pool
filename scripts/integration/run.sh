@@ -108,6 +108,8 @@ PORT_2=$(port_of "$CONTAINER_2")
 umask 077
 printf '%s\n' "$MONITOR_PASSWORD" > "$DIR/monitor.password"
 printf '%s\n' "$RW_PASSWORD" > "$DIR/rw.password"
+# The password the client of the walking fixture types. POOL never reads it.
+printf '%s\n' "$PRINCIPAL_PASSWORD" > "$DIR/principal.password"
 docker exec "$CONTAINER_1" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres \
   -c "CREATE ROLE pz7_verifier_source NOLOGIN PASSWORD '$PRINCIPAL_PASSWORD'" >/dev/null \
   || fail "the verifier role could not be made"
@@ -116,7 +118,7 @@ docker exec "$CONTAINER_1" psql -At -v ON_ERROR_STOP=1 -U postgres -d postgres \
   || fail "the verifier could not be read"
 docker exec "$CONTAINER_1" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres \
   -c "DROP ROLE pz7_verifier_source" >/dev/null || fail "the verifier role could not be dropped"
-chmod 600 "$DIR/monitor.password" "$DIR/rw.password" "$DIR/principal.verifier"
+chmod 600 "$DIR/monitor.password" "$DIR/rw.password" "$DIR/principal.password" "$DIR/principal.verifier"
 cp "$DIR/certs/host.docker.internal.key" "$DIR/pool.key"
 chmod 600 "$DIR/pool.key"
 umask 022
