@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `004-one-real-primary-path.brief-umum.md` · **Langkah manual:** `004-one-real-primary-path.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 16:59`
+- **Diperbarui:** `2026-11-15 17:01`
 
 ## Sub sesi wave `1`
 
@@ -54,6 +54,7 @@
 | 2026-11-15 | Gerbang langkah 5 di `main`: merge `6909651` tanpa konflik, 24 file semuanya ownership, worktree bersih; `scripts/check.sh all` lulus (enam check), `scripts/check.sh fuzz` lulus (1091368 run dalam 61 detik), `check-config` pada `valid-minimal.toml` exit 0 dan pada `invalid-unknown-key.toml` memberi `config.schema at line 3, column 2`; commit merge = `34af833`. Catatan developer untuk architect: `probe.period_ms = 60000` lolos rentangnya sendiri tetapi tidak ada expiry yang bisa menutupnya. | lead |
 | 2026-11-15 | Dua commit lanjutan architect (`41112e5`, `c789c15`) di-merge sebagai `d8797a5` sesudah gerbang dokumen (`scripts/check.sh docs` dan `guards` lulus, empat file ownership, 0 kata lama spec 0001 dan 0002 dihapus). Lead tidak menunggu batch graph selesai seperti rencana semula, supaya checker membaca teks `AC-5` yang berlaku; subagent graph diberi tahu diff dua file spec 0004 itu supaya yang distempel adalah teks sekarang. Keputusan 46 masuk tabel "Keputusan delegasi". | lead |
 | 2026-11-15 | Verify dimulai per langkah, sebelum milestone lengkap, supaya checker tidak menganggur selama langkah 3 menunggu `F4-2`: `chk-f4-verify` memverifikasi langkah 1, 2, dan 5 pada `d8797a5`. Kotak milestone dicentang hanya sesudah semua langkahnya di-merge dan diverifikasi. | lead |
+| 2026-11-15 | `F4-2` (spec 0004 langkah manual M1): user menjawab "Ya, izinkan". Lisensi `ISC` dan `BSD-3-Clause` boleh masuk, hanya untuk `aws-lc-rs 1.19.0`, `aws-lc-sys 0.47.0`, `rustls-webpki 0.103.17`, `untrusted 0.9.0`, dan `subtle 2.6.1`: lima `[[licenses.exceptions]]` per paket di `deny.toml` dan file `NOTICE`. Build plan langkah 3 dimulai di `dev-f4-m1` (lanjutan, tanpa pembersihan konteks); bila `cargo` mengunci versi lain atau `deny` meminta paket atau lisensi di luar lima itu, developer berhenti dengan `needs-decision`. | user |
 
 ## Keputusan delegasi
 
@@ -110,7 +111,6 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 
 ## Blocker terbuka
 
-- `F4-2` keputusan lisensi (spec 0004 langkah manual M1: `ISC` dan `BSD-3-Clause` untuk lima paket): menahan merge Build plan langkah 3 dan semua langkah sesudahnya kecuali 1, 2, dan 5; dibuka oleh user.
 - `F4-1` izin menulis ke GitHub untuk scope 004 (push branch scope, pull request, merge): belum dijawab; tidak menahan pekerjaan lokal, dibutuhkan paling lambat saat penutupan; dibuka oleh user.
 - `main` lokal berada di depan `origin/main` (`673f91e`) hanya dengan commit koordinasi scope 004; semuanya ikut pull request scope 004 (`F4-1`).
 - Keputusan user dari scope 003 yang tidak menahan scope 004: Follow-up 13 spec 0003 (`PRD-006 AC-2`), catatan review Copilot di pull request 4, butir scope 002 (`F2-N1` sampai `F2-N5`, `F2-4`, `F2-5`).
