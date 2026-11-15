@@ -18625,7 +18625,7 @@
       },
       "norm_label": "pool_it_client_host",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L273"
+      "source_location": "L278"
     },
     {
       "id": "scripts_integration_run_pool_it_container",
@@ -18640,7 +18640,7 @@
       },
       "norm_label": "pool_it_container",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L267"
+      "source_location": "L272"
     },
     {
       "id": "scripts_integration_run_pool_it_container_2",
@@ -18655,7 +18655,7 @@
       },
       "norm_label": "pool_it_container_2",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L268"
+      "source_location": "L273"
     },
     {
       "id": "scripts_integration_run_pool_it_dir",
@@ -18670,7 +18670,7 @@
       },
       "norm_label": "pool_it_dir",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L271"
+      "source_location": "L276"
     },
     {
       "id": "scripts_integration_run_pool_it_listen_host",
@@ -18685,7 +18685,7 @@
       },
       "norm_label": "pool_it_listen_host",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L272"
+      "source_location": "L277"
     },
     {
       "id": "scripts_integration_run_pool_it_pg_port",
@@ -18700,7 +18700,7 @@
       },
       "norm_label": "pool_it_pg_port",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L269"
+      "source_location": "L274"
     },
     {
       "id": "scripts_integration_run_pool_it_pg_port_2",
@@ -18715,7 +18715,7 @@
       },
       "norm_label": "pool_it_pg_port_2",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L270"
+      "source_location": "L275"
     },
     {
       "id": "scripts_integration_run_port_of",
@@ -18730,7 +18730,7 @@
       },
       "norm_label": "port_of()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L232"
+      "source_location": "L237"
     },
     {
       "id": "scripts_integration_run_process_table",
@@ -106933,7 +106933,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L294",
+      "source_location": "L299",
       "weight": 1.0
     },
     {
@@ -165132,7 +165132,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L232",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -165143,7 +165143,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L267",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -165154,7 +165154,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L268",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
@@ -165165,7 +165165,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L269",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -165176,7 +165176,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L270",
+      "source_location": "L275",
       "weight": 1.0
     },
     {
@@ -165187,7 +165187,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L271",
+      "source_location": "L276",
       "weight": 1.0
     },
     {
@@ -165198,7 +165198,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L272",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -165209,7 +165209,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L273",
+      "source_location": "L278",
       "weight": 1.0
     },
     {
@@ -281290,5 +281290,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "248df7d4a617fb7382c99b462bed846b399f4cac"
+  "built_at_commit": "47d06298e5b397cc0022917a032f3b4faf76a7e0"
 }

@@ -1104,9 +1104,9 @@
     "semantic_hash": ""
   },
   "scripts/integration/run.sh": {
-    "mtime": 1794778116.4030118,
-    "seen": 1794778328.113236,
-    "ast_hash": "78f34ea7e4fd069901e00d01d54df45b",
+    "mtime": 1794778744.365448,
+    "seen": 1794778845.443657,
+    "ast_hash": "c995810af7ef786febee5351670cbd49",
     "semantic_hash": ""
   },
   "scripts/integration/initdb/10-pool-fixture.sh": {

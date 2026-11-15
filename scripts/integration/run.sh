@@ -203,7 +203,9 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$DIR/certs:/certs" --entrypoint s
 # 2. Two servers from the same image, with the same certificate, roles and
 #    passwords. Only the system identifier differs, which initdb makes.
 for name in "$CONTAINER_1" "$CONTAINER_2"; do
-  id=$(docker run -d --name "$name" \
+  # A container that was made and could not start prints no ID, so it is
+  # removed by its name, which holds the process ID of this script.
+  if ! id=$(docker run -d --name "$name" \
     -p 127.0.0.1::5432 \
     --add-host=host.docker.internal:host-gateway \
     -e POSTGRES_PASSWORD="$SUPERUSER_PASSWORD" \
@@ -211,7 +213,10 @@ for name in "$CONTAINER_1" "$CONTAINER_2"; do
     -e POOL_IT_RW_PASSWORD="$RW_PASSWORD" \
     -v "$ROOT/scripts/integration/initdb:/docker-entrypoint-initdb.d:ro" \
     -v "$DIR/certs:/certs:ro" \
-    "$POOL_IT_IMAGE") || fail "container $name did not start"
+    "$POOL_IT_IMAGE"); then
+    docker rm -f -v "$name" >/dev/null 2>&1 || :
+    fail "container $name did not start"
+  fi
   IDS="$IDS $id"
 done
 
