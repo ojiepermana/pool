@@ -36,6 +36,7 @@ These criteria cover scope 003 only. Cite them as `0003 AC-n`. Fixture names ref
 - **AC-12** (authority is never derived from observation): Over the whole small domain described under [Tests and who owns them](#tests-and-who-owns-them), `writer_admission` returns `Open` only for the node that is at once the approved writer in the journal and the `expected_writer` in the configuration, and never when a listed conflict is present. Code outside `pool-control` cannot build an `Authority`, an `EligiblePrimary`, a `Closed` or a `BootstrapPlan` by itself: a struct literal of each does not compile.
 - **AC-13** (workspace and guards, `0002 AC-6`): `cargo metadata --no-deps --format-version 1` lists exactly three workspace members, `pool`, `pool-config` and `pool-control`. `pool-control` depends on `pool-config` and on nothing else. `Cargo.lock` holds the three workspace packages and the same sixteen third party packages as before. `scripts/check.sh all` and `scripts/prove-checks.sh` pass with the changed baseline files. The addition to rule W4 has one passing and one failing test.
 - **AC-14** (records and conventions): Every record that the table under [Records](#records) marks as built in this slice exists as a public type at the named place, and its documentation comment states its restart rule. This half is checked by reading; the verification record lists each type and the line of its comment. The row "Identifier and generation types" of the [shared conventions](../../engineering-standards.md#shared-conventions) names the rule and links to [Identifier and generation types](#identifier-and-generation-types).
+- **AC-15** (validation time at the file limit): Made inputs 1, 2 and 3 under [Validation time](#validation-time) have the listed number of entries and bytes, and `pool_config::validate` returns for each within 10 seconds in the debug build that `cargo test` makes. Inputs 1 and 2 are valid. Input 3 gives exactly one finding per entry, `config.invalid_value` at `node.port`, in file order, all on line 2, each at the column where the value of its entry starts in the text the test built; the first is column 60. The built `pool check-config` exits 1 for input 3 in each of the two formats, each run within 10 seconds from start to exit, and reports the same number of findings as there are entries. Made input 4 gives its two findings in the listed order, which is against file order, with the listed lines and columns.
 
 | Criterion | Text of scope 003 it answers |
 |---|---|
@@ -46,6 +47,8 @@ These criteria cover scope 003 only. Cite them as `0003 AC-n`. Fixture names ref
 | AC-1 to AC-5 | How the verified principal maps to the actual backend login, credential reference and routing profile |
 | AC-9, AC-11 | The walk through of conflicting role evidence |
 | AC-13 | Spec 0002 Follow-up 10 and "Rules for later slices" |
+
+`AC-15` answers no sentence of scope 003. It was added on 2026-11-15, after the verification of milestone 2 measured a valid file at the limit at 12 seconds in a release build and 241 seconds in a debug build. It makes the 1 MiB limit of spec 0001 a bound on time as well as on size.
 
 `SEC-14` (independent review) is met by the scope box "Review it (fresh model)". This slice changes authority rules, so the review needs the Control engineer role of the [reviewer roster](../../engineering-standards.md#reviewer-roster), which a fresh model may hold for code.
 
@@ -126,11 +129,18 @@ The configuration generation is not a part of the key. It is checked at handoff:
 
 ### What may appear in default telemetry
 
-| May appear in a log field, a metric label or default diagnostics | Never appears by default |
-|---|---|
-| Cluster ID, node ID, identity ID, routing profile, every generation, authority state, admission reason names | Principal, requested database, backend database, backend login, the path in `credential_file`, host, port, the content of any secret file, cancellation credentials, SQL |
+| May appear in a log field, a metric label or default diagnostics | May appear in a log field or default diagnostics, never as a metric label | Never appears by default |
+|---|---|---|
+| Cluster ID, node ID, identity ID, routing profile, authority state, admission reason names, observed role (in recovery or not) | System identifier, authority ID, timeline ID, every generation | Principal, requested database, backend database, backend login, the path in `credential_file`, host, port, the content of any secret file, cancellation credentials, SQL |
 
-The identity ID exists for this purpose: it is the name you choose for one mapping, so that a log line can say which mapping was used without naming a login. This table is the permission that the [log rules](../0001-initial-architecture/index.md#log-events-and-redaction) of spec 0001 ask for before text from a file may go into a named field. The authority ID is not a secret; the bootstrap command prints it and the status read of 009 may show it. The output of `pool check-config` stays as spec 0001 defines it and never prints any of these.
+The identity ID exists for this purpose: it is the name you choose for one mapping, so that a log line can say which mapping was used without naming a login. This table is the permission that the [log rules](../0001-initial-architecture/index.md#log-events-and-redaction) of spec 0001 ask for before text from a file may go into a named field. The output of `pool check-config` stays as spec 0001 defines it and never prints any of these.
+
+The middle column holds values that are safe to show and wrong as a label. Default diagnostics includes the `Debug` text of every type of `pool-config` and `pool-control` that holds one of them, and so the `Debug` text of `ValidatedConfig`.
+
+- **System identifier** (configured or observed) and **authority ID**. Neither is a secret, and knowing either gives access to nothing. PostgreSQL returns the system identifier from `pg_control_system()` and to a replication client that sends `IDENTIFY_SYSTEM`. The bootstrap command prints the authority ID, and the status read of 009 may show it. The system identifier does name one cluster for its whole life, and that is the reason it belongs in a log: when admission closes because a node reports another system identifier, you need both numbers to see which server you reached. As a label each would only be a second name for the cluster, which the cluster ID already labels. Both have a syntax that cannot carry other text from the file: digits only for the one, and 32 characters from `0` to `9` and `a` to `f` for the other.
+- **Timeline ID** and **every generation**. They are numbers that only grow, so as label values they have no bound (`T-12`). Show one as the value of a metric or as a log field.
+
+The observed role has two values and holds no text, so it may be a label.
 
 ## Identifier and generation types
 
@@ -243,7 +253,7 @@ All keys follow the [configuration rules](../0001-initial-architecture/index.md#
 - `expected_writer` is your statement of which node is the writer. It seeds the approved writer at bootstrap. After that it must keep agreeing with the journal, or writes stay closed ([Writer admission](#writer-admission)).
 - `authority_id` is the authority witness: the identity of the journal this configuration belongs to. You copy it from the output of the bootstrap command. Its presence says that a journal was created once.
 - Two nodes with the same host (compared without regard to ASCII letter case) and port are refused. Two names for one server would make that server look like a second primary and close writes for no reason. The check catches the honest mistake only: a name and an address for one server pass it, and the result is then a closed admission, never an open one.
-- The 1 MiB limit on the file is the bound on the number of entries. Uniqueness and reference checks must not take time that grows with the square of the number of entries; sort or use a map.
+- The 1 MiB limit on the file is the bound on the number of entries, and it has to bound the time as well. The rule for the whole of `validate`, for a valid file and for an invalid one, is under [Validation time](#validation-time), with the check of `AC-15`. For the uniqueness and reference checks it means: sort or use a map.
 
 ### Findings
 
@@ -272,7 +282,7 @@ pub enum Location {
 ```
 
 - The key is a constant path without an index: `cluster.id`, `cluster.system_identifier`, `cluster.expected_writer`, `node.id`, `node.cluster`, `node.host`, `node.port`, `identity.id`, `identity.principal`, `identity.database`, `identity.cluster`, `identity.backend_database`, `identity.backend_login`, `identity.credential_file`, `identity.routing_profile`.
-- The position is where the value starts. For a missing key it is where the entry starts: the first `[` of its `[[...]]` header, or the `{` of an inline table. Take both from the span that `toml::Spanned` gives, counted as the [validation order](../0001-initial-architecture/index.md#validation-order) of spec 0001 counts lines and columns.
+- The position is where the value starts. For a missing key it is where the entry starts: the first `[` of its `[[...]]` header, or the `{` of an inline table. Take both from the span that `toml::Spanned` gives, counted as the [validation order](../0001-initial-architecture/index.md#validation-order) of spec 0001 counts lines and columns. How often the text may be walked to get them is fixed under [Validation time](#validation-time).
 - A finding about `control.state_directory` or `control.authority_id` uses `Location::Key`, because there is only one `[control]` table.
 - Human finding line: `<code> at <key>, line <line>, column <column>: <message>`. The `Display` text of such a `Finding` is this line.
 - JSON finding object: the same five fields as before, with `key`, `line` and `column` all set. `output_version` stays `1`, because no field is removed or renamed.
@@ -299,7 +309,7 @@ Steps 1 to 4 of the [validation order](../0001-initial-architecture/index.md#val
 6. Cross checks, in this order. Each one walks its entries in file order and reads only values that passed steps 3 to 5.
    1. `config.duplicate_id` for clusters, then nodes, then identities, at the `id` of the second and each later entry.
    2. `config.unknown_reference` at `node.cluster`. Skipped as a whole when any cluster has a missing or invalid `id`.
-   3. `config.unknown_reference` at `cluster.expected_writer`. Skipped as a whole when any node has a missing or invalid `id` or `cluster`, or when check 2 found something.
+   3. `config.unknown_reference` at `cluster.expected_writer`. Skipped as a whole when any node has a missing or invalid `id` or `cluster`, or when check 2 found something. A cluster whose own `id` is missing or invalid is passed over alone, and the check still runs for every other cluster: the check compares the `cluster` of the named node with that `id`, and the first sentence of this step lets it read only values that passed.
    4. `config.unknown_reference` at `identity.cluster`. Skipped as a whole when any cluster has a missing or invalid `id`.
    5. `config.duplicate_endpoint` at `node.host` of the second and each later node.
    6. `config.duplicate_identity` at `identity.principal` of the second and each later identity.
@@ -573,6 +583,74 @@ credential_file = "CANARY-9f2c7b1e-not-a-real-secret"
 | `secret-topology-values.toml` | 1 | `config.invalid_value` at `node.host`, line 14, column 8; `config.invalid_value` at `identity.credential_file`, line 23, column 19 |
 
 These positions were read from `toml` 1.2.1 with the fixture texts above. Tests compare the line and the column exactly, because a value span starts at the value and an entry span starts at its header. The fixture names keep the pattern of spec 0001, so the [Linux build](../0001-initial-architecture/index.md#linux-build) command needs no change: it expects exit 0 for `valid-*`, exit 1 for the rest, and no canary text in any output. The canary is fake.
+
+### Validation time
+
+Spec 0001 says that parsing a file at the 1 MiB limit twice "costs nothing you would notice". This section makes the same true for everything `validate` does with the new tables.
+
+**The rule.** The work that the code of `pool-config` does in `validate` grows no faster than the size of the file times the logarithm of that size. So sorting is fine, and a loop over the text inside a loop over the entries is not. The rule holds for every file within the limit, valid or not, and it includes the work of turning a span into a line and a column. The `toml` parser and the standard maps are taken as they are: they were measured on the made inputs below and are not what this rule is about. Two things follow:
+
+- Never count from the top of the file, or from the start of a line, once for each entry, each value or each collected finding. The one position of a syntax or schema error is found once per run and is fine as it is.
+- A file may hold every entry on one line. So a table of line starts alone is not enough: the column of each finding on that line would still be counted from the start of the line.
+
+One way that meets the rule: while collecting, keep the byte offset of each finding in place of its line and column. After the cross checks (item 6 of step 5 in the [validation order](#validation-order)), sort the offsets, walk the text once from the top and note the line and column at each offset, then fill them into the findings without changing the order of the findings. A valid file then needs no line and no column at all. Any other way with the same bound is as good, for example one cursor that only moves forward through the text.
+
+The lines and columns themselves do not change. They are counted as the [validation order](../0001-initial-architecture/index.md#validation-order) of spec 0001 counts them, and every position under [Fixtures](#fixtures) stays as listed. The report of `pool check-config` is written in one pass over the findings.
+
+**The made inputs.** Four inputs are built by the tests at run time and are not committed, like the made inputs of spec 0001: in memory in the `pool-config` tests, and under `env!("CARGO_TARGET_TMPDIR")` with a file name of its own in the `apps/pool` test. Every line ends with a line feed, also the last. In inputs 1 to 3, `<i>` counts from 0 and each input takes as many entries as fit: stop before the entry that would make the whole file longer than 1048576 bytes.
+
+```text
+--- made input 1, many lines
+config_version = 1
+
+[control]
+state_directory = "/var/lib/pool"
+
+[[cluster]]
+id = "main"
+system_identifier = "7412345678901234567"
+expected_writer = "n0"
+(then, for each entry, an empty line and)
+[[node]]
+id = "n<i>"
+cluster = "main"
+host = "h<i>.db.internal"
+port = 5432
+
+--- made input 2, one line
+(line 1 is)
+config_version = 1
+(line 2 is the text "node = [", then the entries with one "," between two of them, then "]")
+(then lines 2 to 9 of made input 1)
+(each entry is this text, with no space in it)
+{id="n<i>",cluster="main",host="h<i>.db.internal",port=5432}
+
+--- made input 3, one line, every entry wrong
+(made input 2 with port=0 in place of port=5432 in every entry)
+
+--- made input 4, findings against file order
+(the base of the fixtures, an empty line, then)
+[[node]]
+id = "pg1"
+cluster = "main"
+host = "10.0.0.12"
+port = 0
+```
+
+| Made input | Entries | Bytes | Result of `validate` |
+|---|---|---|---|
+| 1 | 13217 | 1048511 | Valid |
+| 2 | 16471 | 1048558 | Valid |
+| 3 | 17268 | 1048559 | One `config.invalid_value` at `node.port` for each entry, in file order, all on line 2. Entry 0 is at column 60. There is no other finding: the hosts differ, and the endpoint check does not read a node whose port failed |
+| 4 | 2 nodes | not at the limit | `config.invalid_value` at `node.port`, line 21, column 8, then `config.duplicate_id` at `node.id`, line 18, column 6 |
+
+The counts and lengths were read from a program that builds inputs 1 to 3 by the rule above, and the result of input 4 from the code of Build plan step 3. The tests compare them. For input 3 the test finds where each `port=` value starts in the text it built and compares the column of every finding with it, not only the first and the last. Through the built binary, input 3 gives `configuration invalid`, then `findings: 17268`, then 17268 finding lines in the human format, and a `findings` array of 17268 objects in the JSON format, each with the code `config.invalid_value` and the key `node.port`. Input 4 is there because every other input and fixture reports its findings in file order, so code that hands out sorted positions in sorted order would pass them all.
+
+**The limit.** Each call of `validate` on input 1, 2 or 3 returns within 10 seconds, and so does each run of the built binary on input 3, measured from the start of the command to its exit. The test measures with `std::time::Instant`. A test may read a clock; `validate` never does. It is a plain `cargo test` test, so it runs the debug build, and it fails only above the limit. It does not compare two timings with each other, because the ratio of two short timings is noise on a busy machine. A test cannot stop a call that runs long (rule W3 allows no thread), so with slow code the test first runs for minutes and then fails. Check the time after each input, so that the first miss ends the test.
+
+**Why 10 seconds.** Measured on the workstation on 2026-11-15 (Apple M1 Max, debug build): with the position counting taken out of the code, inputs 1 to 3 take 0.34 to 0.39 seconds each. With the code of Build plan step 3, which counted from the top of the file for every value, a valid file of 16000 nodes on many lines took 241 seconds ([verification record](verify.md#milestone-2-identifiers-configuration-keys-and-the-finding-line), milestone 2), which is about 165 seconds for the 13217 entries of input 1. 10 seconds lies about 25 times above the first number and about 16 times below the second. A machine several times slower still passes with correct code, and code that counts once per entry again still fails. In a release build the same work takes a few hundredths of a second. If the limit is missed, report it as a finding with the measured time. Do not raise the number in the test to make it pass.
+
+**What the test does not catch.** It catches code that walks the text once per entry, per value or per finding. A slower search that stays under 10 seconds at this size, such as a linear search through a table of line starts for each finding, passes. Review against the rule covers that.
 
 ## The authority model in pool-control
 
@@ -867,6 +945,8 @@ The full record and its API belong to scope 009; the phases of a promotion belon
 | Value | Source |
 |---|---|
 | Finding code, key, line, column | `pool-config`: constants, and the span of `toml::Spanned` |
+| The made inputs of `AC-15` | Built by the test at run time from the texts under [Validation time](#validation-time). Not committed. The expected columns of input 3 are read by the test from the text it built |
+| The time limit of `AC-15`, and the time it is compared with | The constant 10 seconds in the test. The elapsed time is read by the test with `std::time::Instant`, never by `validate` |
 | Cluster, node and identity fields | The configuration file, through `ValidatedConfig` |
 | `system_identifier` in the configuration | You read it from the primary, for example with `SELECT system_identifier FROM pg_control_system()`, and write it into the file. It is the identity check that bootstrap and admission compare against |
 | `expected_writer` | Your statement in the configuration |
@@ -905,8 +985,8 @@ Tests use the built in `cargo test` harness only. No package gets a dependency f
 
 | Package | File | Covers |
 |---|---|---|
-| `pool-config` | `crates/pool-config/tests/validate.rs`, and unit tests beside the code | Every new fixture through `validate`. Each row of "Which code a bad value gets", from memory. Canary absent from `Debug` and `Display` (AC-4). `resolve_identity` (AC-5). Identifier and generation types (AC-6) |
-| `pool` | `apps/pool/tests/check_config.rs` | The built binary with every new fixture, both formats, byte for byte (AC-1 to AC-4) |
+| `pool-config` | `crates/pool-config/tests/validate.rs`, and unit tests beside the code | Every new fixture through `validate`. Each row of "Which code a bad value gets", from memory. Canary absent from `Debug` and `Display` (AC-4). `resolve_identity` (AC-5). Identifier and generation types (AC-6). Made inputs 1 to 4 through `validate`, the first three within the limit (AC-15) |
+| `pool` | `apps/pool/tests/check_config.rs` | The built binary with every new fixture, both formats, byte for byte (AC-1 to AC-4). Made input 3 through the built binary, both formats, within the limit (AC-15) |
 | `pool-control` | `crates/pool-control/tests/walkthroughs.rs` | The four walks, one test each, every row (AC-7 to AC-11) |
 | `pool-control` | `crates/pool-control/tests/admission_model.rs` | The small domain of AC-12 |
 | `pool-config`, `pool-control` | `compile_fail` documentation tests beside the types, as `pool-config` already has for `ValidatedConfig` | Comparing a `NodeId` with a `ClusterId` and a `TopologyEpoch` with an `AuthorityRevision` (AC-6). A struct literal of `Authority`, `EligiblePrimary`, `Closed` and `BootstrapPlan` written outside the crate (AC-12) |
@@ -941,8 +1021,9 @@ The order is a tracer bullet (one thin real path first): a workspace that still 
 5. **Authority model in `pool-control`.** Implement the section [The authority model in pool-control](#the-authority-model-in-pool-control): the types, `classify_startup`, `plan_bootstrap` and `writer_admission`. Write `tests/walkthroughs.rs` and `tests/admission_model.rs`. Give every public record type a documentation comment that states its restart rule. Needs steps 1, 2 and 3. Evidence: `cargo test -p pool-control --locked walk_`, `cargo test -p pool-control --locked open_only_on_full_agreement`, `cargo test -p pool-control --locked --doc`, and the `grep` of **AC-11**. Satisfies **AC-7** to **AC-12**, and the code half of **AC-14**.
 6. **Document corrections.** Apply items 1 to 4 of [Document corrections](#document-corrections). Evidence: `scripts/check.sh docs`. Completes **AC-14**.
 7. **Evidence.** On the final tree run `scripts/check.sh all`, `scripts/prove-checks.sh` (with `--with-linux-build` when `docker info` succeeds), `scripts/check.sh fuzz`, and the `cargo metadata` command of **AC-13**. Record commands, results and the revision in `docs/specs/0003-control-and-session-data-model/verify.md`, and add that file to `docs/index.md`. If `docker info` fails, record the Linux build as `BLOCKED` with `owner: user`. Evidence for **AC-1** to **AC-14**.
+8. **Validation time.** Added on 2026-11-15, after the verification of milestone 2. Change `crates/pool-config/src/` so that lines and columns are worked out as [Validation time](#validation-time) says. No position, no finding and nothing of the public boundary changes. Add the tests of the four made inputs to `crates/pool-config/tests/validate.rs`, and the test of made input 3 through the built binary to `apps/pool/tests/check_config.rs`. Their names start with `ac15_`. Needs steps 3 and 4. Evidence: `cargo test -p pool-config --locked ac15_`, `cargo test -p pool --locked ac15_`, then `scripts/check.sh all`, recorded in `verify.md` under a milestone of its own. Satisfies **AC-15**.
 
-**Parallel sessions.** Step 1 touches the root manifest, the lockfile, `tools/` and `scripts/`. Steps 2, 3 and 4 touch `crates/pool-config/` and `apps/pool/` and run one after the other in one session. The two groups share no file and can run at the same time. Step 5 needs both. Steps 6 and 7 come last.
+**Parallel sessions.** Step 1 touches the root manifest, the lockfile, `tools/` and `scripts/`. Steps 2, 3 and 4 touch `crates/pool-config/` and `apps/pool/` and run one after the other in one session. The two groups share no file and can run at the same time. Step 5 needs both. Steps 6 and 7 come last. Step 8 was added after them and touches only `crates/pool-config/` and `apps/pool/`.
 
 ## Consequences
 
@@ -954,6 +1035,7 @@ The order is a tracer bullet (one thin real path first): a workspace that still 
 - An operator sees a wrong reference, a duplicate or a missing key with its key and its place in the file, at the desk.
 - Default telemetry has names it may use (identifiers) and a list of names it may not, before the first log event is written.
 - No third party package is added. The product still has sixteen.
+- A file at the limit is checked in a fraction of a second by a release build, valid or not, and a test fails when that stops being true.
 
 **Negative / tradeoffs**:
 
@@ -969,6 +1051,7 @@ The order is a tracer bullet (one thin real path first): a workspace that still 
 - Findings inside entries name the key and the place but still not the text, so you look at the position yourself, as with the findings of spec 0001.
 - The identity map is exact. Ten databases for one principal are ten entries.
 - The journal schema is fixed here and first run by scope 004. A flaw found then is a change to this spec.
+- `AC-15` is a limit on wall clock time. It is set far from both sides, but a machine that stands still for seconds in the middle of a test can still miss it. The tests also take a second or two longer, because inputs of 1 MiB run through a debug build. When the counting goes wrong again, the test cannot cut the call short: it runs for minutes before it fails, and on CI the job limit of 15 minutes may end it first. Either way the check is red.
 
 **Neutral**:
 
@@ -976,6 +1059,7 @@ The order is a tracer bullet (one thin real path first): a workspace that still 
 - The word node now means a configured PostgreSQL server everywhere. Backend keeps its glossary meaning, a connection.
 - `0001 AC-1`, `0001 AC-12` and `0001 AC-13` describe the first build. `0003 AC-13` is the current statement of the workspace shape.
 - The rule that the first secret reference key arrives in scope 004 changes: the key arrives here, and reading it arrives in 004.
+- The system identifier, the authority ID, the timeline ID and the observed role may appear in log fields and default diagnostics. Of these only the observed role may be a metric label. A generation may no longer be a label either, only a value.
 
 ## Follow-up
 
