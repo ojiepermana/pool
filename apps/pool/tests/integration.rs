@@ -2123,6 +2123,8 @@ fn allowed_fields(event: &str) -> Option<&'static [&'static str]> {
         "daemon.started" => &["start_sequence", "configuration_generation", "authority_id"],
         "daemon.stopping" => &["sessions"],
         "daemon.stopped" => &[],
+        "daemon.failed" => &["task"],
+        "daemon.panicked" => &[],
         "log.dropped" => &["count"],
         "admission.changed" => &[
             "cluster_id",
@@ -2135,6 +2137,7 @@ fn allowed_fields(event: &str) -> Option<&'static [&'static str]> {
         "journal.write_failed" => &["class"],
         "probe.failed" => &["node_id", "class"],
         "probe.recovered" => &["node_id"],
+        "node.lost" => &["node_id", "cluster_id"],
         "session.started" => &[
             "session",
             "principal_id",
@@ -2430,4 +2433,205 @@ fn it_ac19_a_client_that_vanishes_inside_a_transaction_leaves_no_row_and_gives_t
     assert_eq!(stdout.trim(), "0", "the row was rolled back");
     select_one_works(port);
     assert_eq!(daemon.stop(), 0);
+}
+
+// ---- added by Build plan step 15 (`0004 AC-29`, `0004 AC-30`) ----
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac29_a_login_to_an_address_that_moved_to_another_server_gets_08006() {
+    // covers: 0004 AC-29, M2 of the independent review. The probe keeps its
+    // connection to container 1 through the relay, so the cluster stays
+    // open, while every new connection to the address of the node reaches
+    // container 2, which has another system identifier. A login is refused
+    // with 08006 before any SQL of the client, `backend.failed` has the class
+    // `identity`, and container 2 saw no statement but the identity question.
+    let runtime = support::runtime();
+    let relay = support::Relay::start(&runtime, var("POOL_IT_PG_PORT").parse().expect("port"));
+    let (_case, port, daemon) = serving_case(
+        "address-moved",
+        NodeAt {
+            id: "pg1",
+            port: relay.port,
+        },
+        None,
+        "",
+        true,
+    );
+    let second = var("POOL_IT_CONTAINER_2");
+    let before = logs(&second).len();
+    relay.retarget(var("POOL_IT_PG_PORT_2").parse().expect("port"));
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        "SELECT 'pz7-ac29-marker';\n",
+    );
+    assert_ne!(code, 0, "the login was refused: {stderr}");
+    assert_eq!(fatal(&stderr), [NOT_OPENED.to_owned()], "{stderr}");
+    daemon.wait_for(
+        &[
+            "\"event\":\"backend.failed\"",
+            "\"node_id\":\"pg1\"",
+            "\"class\":\"identity\"",
+        ],
+        10,
+    );
+    let pg_log = pg_log_since(&second, before);
+    assert!(!pg_log.contains("pz7-ac29-marker"), "{pg_log}");
+    assert!(
+        pg_log.contains("connection authorized: user=pz7_rw"),
+        "the session reached container 2: {pg_log}"
+    );
+    // PostgreSQL writes a statement of several lines with a tab after each
+    // line feed, so the first line of the question stands for it.
+    let first_line = pool_control::PROBE_QUERY
+        .lines()
+        .next()
+        .expect("a first line");
+    let statements = pg_log.matches("statement: ").count();
+    let identity = pg_log
+        .matches(&format!("statement: {first_line}\n"))
+        .count();
+    assert!(identity >= 1, "the identity question was asked: {pg_log}");
+    assert_eq!(statements, identity, "no other statement: {pg_log}");
+    // Back to container 1: the same login works again.
+    relay.retarget(var("POOL_IT_PG_PORT").parse().expect("port"));
+    select_one_works(port);
+    assert_eq!(daemon.stop_within(20), 0);
+    drop(relay);
+}
+
+/// A paused container, unpaused when this value is dropped, also when the
+/// test fails. The backends of `pg_sleep` that the test left behind are then
+/// ended, so that the tests after it find the container as it was.
+struct Paused(String);
+
+impl Paused {
+    fn new(container: &str) -> Paused {
+        let status = Command::new("docker")
+            .args(["pause", container])
+            .stdout(Stdio::null())
+            .status()
+            .expect("docker pause");
+        assert!(status.success(), "docker pause {container}");
+        Paused(container.to_owned())
+    }
+}
+
+impl Drop for Paused {
+    fn drop(&mut self) {
+        let _ = Command::new("docker")
+            .args(["unpause", &self.0])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+        let _ = Command::new("docker")
+            .args([
+                "exec",
+                &self.0,
+                "psql",
+                "-X",
+                "-q",
+                "-U",
+                "postgres",
+                "-d",
+                "postgres",
+                "-c",
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity \
+                 WHERE usename = 'pz7_rw' AND query LIKE 'SELECT pg_sleep%'",
+            ])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac30_a_paused_writer_is_marked_lost_and_its_sessions_end() {
+    // covers: 0004 AC-30, M1 of the independent review. Container 1 is
+    // paused, so it closes nothing and answers nothing. With
+    // `probe.node_loss_timeout_ms = 2000` the control loop marks pg1 lost
+    // and writes `node.lost`; the session with a query in flight gets 08007
+    // and the idle one 08006, and both end with the reason `node_lost`.
+    let case = Case::new("paused-writer");
+    let port = free_port(&var("POOL_IT_LISTEN_HOST"));
+    case.write_serving(None, port);
+    let id = bootstrap(&case).to_string();
+    case.write_serving(Some(&id), port);
+    let text = fs::read_to_string(&case.config).expect("read");
+    let text = text.replacen(
+        "observation_expiry_ms = 8000\n",
+        "observation_expiry_ms = 8000\nnode_loss_timeout_ms = 2000\n",
+        1,
+    );
+    assert!(text.contains("node_loss_timeout_ms = 2000"));
+    fs::write(&case.config, text).expect("write");
+    let daemon = Daemon::start(&case);
+    daemon.wait_for(
+        &["\"event\":\"admission.changed\"", "\"state\":\"open\""],
+        20,
+    );
+    let runtime = support::runtime();
+    let mut idle = session_login(&runtime, port);
+    let mut busy = session_login(&runtime, port);
+    runtime
+        .block_on(support::send(
+            busy.stream_mut(),
+            &support::query("SELECT pg_sleep(60)"),
+        ))
+        .expect("send the query");
+    eventually(10, "the query runs on PostgreSQL", || {
+        sessions_of_rw("active") == "1"
+    });
+    let paused = Paused::new(&var("POOL_IT_CONTAINER"));
+    daemon.wait_for(
+        &[
+            "\"event\":\"node.lost\"",
+            "\"node_id\":\"pg1\"",
+            "\"cluster_id\":\"main\"",
+        ],
+        30,
+    );
+    let error_within =
+        |connection: &mut pool_core::backend::BackendConnection<tokio::net::TcpStream>,
+         what: &str| {
+            runtime
+                .block_on(async {
+                    tokio::time::timeout(
+                        std::time::Duration::from_secs(10),
+                        support::next_error(connection.stream_mut()),
+                    )
+                    .await
+                })
+                .unwrap_or_else(|_| panic!("the {what} session was not ended within 10 s"))
+        };
+    assert_eq!(error_within(&mut busy, "busy").as_deref(), Some("08007"));
+    assert_eq!(error_within(&mut idle, "idle").as_deref(), Some("08006"));
+    for status in ["in_flight", "idle"] {
+        daemon.wait_for(
+            &[
+                "\"event\":\"session.ended\"",
+                "\"reason\":\"node_lost\"",
+                &format!("\"status\":\"{status}\""),
+            ],
+            10,
+        );
+    }
+    assert_eq!(lines_with(&daemon, &["\"event\":\"node.lost\""]), 1);
+    drop(paused);
+    // The first good sample removes the mark, and logins work again.
+    daemon.wait_for(
+        &["\"event\":\"probe.recovered\"", "\"node_id\":\"pg1\""],
+        30,
+    );
+    eventually(20, "a login works again", || {
+        client(
+            &pool_conninfo(port),
+            &password("principal.password"),
+            "SELECT 1;",
+        )
+        .0 == 0
+    });
+    assert_eq!(daemon.stop_within(20), 0);
 }
