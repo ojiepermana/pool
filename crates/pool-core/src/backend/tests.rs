@@ -628,3 +628,32 @@ async fn a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt() {
         }
     }
 }
+
+#[tokio::test]
+async fn the_last_report_of_in_hot_standby_decides() {
+    for (params, ok) in [
+        (
+            vec![("in_hot_standby", "off"), ("in_hot_standby", "on")],
+            false,
+        ),
+        (
+            vec![("in_hot_standby", "on"), ("in_hot_standby", "off")],
+            true,
+        ),
+    ] {
+        let mut script = Script::primary();
+        script.params = params;
+        let run = run(
+            script,
+            good_tls(),
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        if ok {
+            assert!(run.result.is_ok());
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::NotPrimary));
+        }
+    }
+}

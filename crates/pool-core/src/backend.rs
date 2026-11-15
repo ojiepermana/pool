@@ -515,11 +515,13 @@ async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(
         return Err(BackendError::NotIdle);
     }
     // Step 7: a session needs a node that reports it is not in recovery.
-    if purpose == Purpose::Session
-        && !parameters
-            .iter()
-            .any(|p| p.name == b"in_hot_standby" && p.value == b"off")
-    {
+    // The last report of the parameter before ReadyForQuery decides.
+    let in_hot_standby = parameters
+        .iter()
+        .rev()
+        .find(|p| p.name == b"in_hot_standby")
+        .map(|p| p.value.as_slice());
+    if purpose == Purpose::Session && in_hot_standby != Some(b"off".as_slice()) {
         return Err(BackendError::NotPrimary);
     }
     Ok(BackendConnection {
