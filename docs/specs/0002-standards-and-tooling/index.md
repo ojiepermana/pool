@@ -859,6 +859,8 @@ Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/inde
 
 Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#proof-script-and-lockfile-check): from Build plan step 1 of spec 0004 on, case 17 no longer edits a real scope file. The script adds a feature of its own to its copy of the tree, with a row that says `planned` and a file that says `done`, and expects `D3`. So the case holds whatever state the real features are in, and it needs no new target with each scope. The same step adds a case that puts a local package into `Cargo.lock` and expects `W4`. Step 2 of that spec adds six cases for the new format of rule W3. The numbers of the new cases are in the script.
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#proof-script-and-lockfile-check), on case 9: from Build plan step 3 of spec 0004 on, `crates/pool-core` exists and rule W2 no longer forbids it. Case 9 then creates the file `apps/pool-cli/.keep` and expects `W2` and `apps/pool-cli`, the one path that `forbidden-paths.txt` still holds. The row for case 9 in the table above shows the case of the first build. The message rule for W2 under [What each message must name](#what-each-message-must-name) does not change: its example path is one the baseline no longer holds, and the rule still names the path as written in the baseline.
+
 ```text
 A  fn  prove_fmt( ){}
 B  pub fn prove_clippy(v: &Vec<u8>) -> usize { v.len() }
