@@ -528,3 +528,49 @@ fn authority_state_names_are_stable() {
         assert_eq!(state.name(), name);
     }
 }
+
+#[test]
+fn ac17_receipts_handed_over_in_reverse_keep_the_higher_revision() {
+    // covers: 0003 AC-17 (decision 61). `main` is written first (revision
+    // 2), `side` second (revision 3); the receipts reach the state the
+    // other way round.
+    let config = config(Some(X));
+    let (_path, state, mut journal) = ready_journal("reverse-receipts");
+    let mut controller = Controller::new(state);
+    for observation in healthy(98) {
+        controller.record(observation);
+    }
+    controller.record(reached("pg2", 99, 1, false));
+    controller.record(reached("sd2", 99, 1, false));
+    let snapshot = controller.round(&config, at(100));
+    for name in ["main", "side"] {
+        assert_eq!(
+            reasons(&snapshot, name),
+            ["authority.conflict_latched", "evidence.second_primary"]
+        );
+    }
+    assert_eq!(
+        controller.unrecorded_latches(),
+        [cluster("main"), cluster("side")]
+    );
+    let main = journal
+        .set_conflict_latch(&cluster("main"), 0)
+        .expect("main");
+    let side = journal
+        .set_conflict_latch(&cluster("side"), 0)
+        .expect("side");
+    assert_eq!(
+        (
+            main.authority_revision().get(),
+            side.authority_revision().get()
+        ),
+        (2, 3)
+    );
+    controller.latch_recorded(&side);
+    controller.latch_recorded(&main);
+    assert!(controller.unrecorded_latches().is_empty());
+    match controller.state() {
+        AuthorityState::Ready(authority) => assert_eq!(authority.authority_revision().get(), 3),
+        other => panic!("{}", other.name()),
+    }
+}
