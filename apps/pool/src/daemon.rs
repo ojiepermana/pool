@@ -396,3 +396,30 @@ async fn bind(host: &str, port: u16) -> Option<TcpListener> {
 fn runtime_failed() -> Report {
     Report::Error(Item::plain(RUNTIME_FAILED, RUNTIME_FAILED_MESSAGE))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_state_that_is_not_ready_gives_its_own_finding() {
+        // covers: 0004 AC-13 (decision 101 of spec 0004): the six states
+        // that are not `Ready` each give the code of their own name, and no
+        // two share one.
+        let cases = [
+            (AuthorityState::Uninitialized, "authority.uninitialized"),
+            (AuthorityState::Unconfirmed, "authority.unconfirmed"),
+            (AuthorityState::Missing, "authority.missing"),
+            (AuthorityState::Unreadable, "authority.unreadable"),
+            (AuthorityState::Mismatch, "authority.mismatch"),
+            (AuthorityState::Held, "authority.restore_pending"),
+        ];
+        for (state, code) in &cases {
+            assert_eq!(not_ready(state), *code, "{}", state.name());
+        }
+        let mut codes: Vec<&str> = cases.iter().map(|(state, _)| not_ready(state)).collect();
+        codes.sort_unstable();
+        codes.dedup();
+        assert_eq!(codes.len(), cases.len());
+    }
+}
