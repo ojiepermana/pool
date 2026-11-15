@@ -615,3 +615,14 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 - Refusals and backend failures are counted in `Counters` and written by `Counters::flush`, which the daemon calls once a second (step 10).
 
 **Also in this item, from the spec text of 2026-11-15.** Commit `ca122c2` adds `crates/pool-core/src/random.rs` with `fill_random` and `RandomError` (unit test `two_fills_differ_and_the_error_prints_its_name`), makes it the one source of random bytes of the crate (`MockKey::generate` returns `RandomError`, for `random.failed`), ends a login without a message under `random_failed` when no nonce can be made, and stops the one row query of the probe at 4096 bytes of answer (`a_probe_answer_over_4096_bytes_is_not_read_on`). The limit of 16384 bytes per node message during startup has its test too (`a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt`). `cargo test -p pool-core --locked`: 32 unit and 27 session tests passed. `scripts/check.sh all` and `scripts/check.sh linux-build` at `ca122c2`: exit 0.
+
+#### Fix: a client that stops reading (from the verification of step 9)
+
+The verification of step 9 found that a relay waiting on a write toward a client that no longer read was never ended by the shutdown deadline or by a positive conflict (`0004 AC-25`, `0004 AC-14`). Commit `da51f43` races every write of the relay, toward the client and toward the backend, against the cut: a write that fits still completes, a write that waits is abandoned when the cut comes, and mid message the connection is closed without a message. The close of the client stream at the end of a session is bounded by one second (`CLOSE_TIMEOUT`).
+
+| Test in `tests/session.rs` | What it holds | Old code | Now |
+|---|---|---|---|
+| `the_shutdown_deadline_ends_a_session_whose_client_stopped_reading` | A client asks for 8 MB of rows and reads nothing more; with `shutdown_timeout_ms = 300`, `shutdown()` returns within 5 s, after the deadline, with no session and no connection left, and the backend closed | failed | pass |
+| `a_positive_conflict_ends_a_session_whose_client_stopped_reading` | The same client; a positive conflict ends the session within 3 s and closes the backend | failed | pass |
+
+`cargo test -p pool-core --locked`: 37 unit and 29 session tests passed. `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6) at `da51f43`: exit 0.
