@@ -50,8 +50,11 @@ fn pool(name: &str, config: &Path, format: &str) -> Run {
             format,
         ])
         .stdin(Stdio::null())
-        .output()
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .expect("run pool");
+    let output = output_within(output, 60, &format!("pool {name}"));
     Run {
         code: output.status.code().expect("exit status, not a signal"),
         stdout: String::from_utf8(output.stdout).expect("utf-8"),
@@ -77,8 +80,11 @@ fn psql(container: &str, sql: &str) -> String {
             "-c",
             sql,
         ])
-        .output()
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .expect("docker exec");
+    let output = output_within(output, 60, "psql as the superuser");
     assert!(
         output.status.success(),
         "{}",
@@ -113,6 +119,24 @@ fn logs(container: &str) -> String {
 fn closed_port() -> u16 {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
     listener.local_addr().expect("address").port()
+}
+
+/// Waits at most `seconds` for a child and returns its output (round four,
+/// review finding t4). A child that still runs then is killed and the test
+/// fails with a message that names `what`. The children of these tests write
+/// a few lines, far below what a pipe holds, so polling before reading the
+/// pipes cannot block the child.
+fn output_within(mut child: std::process::Child, seconds: u64, what: &str) -> std::process::Output {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+    while child.try_wait().expect("try_wait").is_none() {
+        if std::time::Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("{what} did not end within {seconds} s and was killed");
+        }
+        pause();
+    }
+    child.wait_with_output().expect("the output of a child")
 }
 
 /// One node of the configuration.
@@ -455,7 +479,8 @@ fn it_the_second_server_is_another_identity() {
 // principal, a login, a database, a host, a path, a password or SQL.
 
 /// The SQL of AC-18: the same file, straight to PostgreSQL and through POOL.
-const WALKING_SQL: &str = "TRUNCATE pz7_items;
+const WALKING_SQL: &str = "\\set VERBOSITY verbose
+TRUNCATE pz7_items;
 BEGIN;
 INSERT INTO pz7_items (key, value) VALUES (1, 'one'), (2, 'two'), (3, 'three');
 COMMIT;
@@ -678,7 +703,7 @@ fn client(conninfo: &str, password: &str, sql: &str) -> (i32, String, String) {
         .expect("stdin")
         .write_all(sql.as_bytes())
         .expect("send the SQL");
-    let output = child.wait_with_output().expect("psql");
+    let output = output_within(child, 60, "psql");
     (
         output.status.code().unwrap_or(-1),
         String::from_utf8(output.stdout).expect("utf-8"),
@@ -688,13 +713,13 @@ fn client(conninfo: &str, password: &str, sql: &str) -> (i32, String, String) {
 
 fn direct_conninfo() -> String {
     "host=pg.pool.test hostaddr=127.0.0.1 port=5432 dbname=pz7_appdb user=pz7_rw \
-     sslmode=verify-full sslrootcert=/certs/ca.pem"
+     sslmode=verify-full sslrootcert=/certs/ca.pem connect_timeout=10"
         .to_owned()
 }
 
 fn pool_conninfo(port: u16) -> String {
     format!(
-        "host={} port={port} dbname=pz7_db user=pz7_principal sslmode=verify-full sslrootcert=/certs/ca.pem",
+        "host={} port={port} dbname=pz7_db user=pz7_principal sslmode=verify-full sslrootcert=/certs/ca.pem connect_timeout=10",
         var("POOL_IT_CLIENT_HOST")
     )
 }
@@ -729,6 +754,8 @@ fn assert_log_text_is_clean(root: &Path, log: &str) {
     }
     let root = root.to_str().expect("utf-8").to_owned();
     let dir = fixture_dir().to_str().expect("utf-8").to_owned();
+    // Round four (review finding t2): the address the listener binds.
+    let listen_host = var("POOL_IT_LISTEN_HOST");
     let secrets = [
         password("principal.password"),
         password("rw.password"),
@@ -741,6 +768,7 @@ fn assert_log_text_is_clean(root: &Path, log: &str) {
         "127.0.0.1",
         "pg.pool.test",
         "host.docker.internal",
+        listen_host.as_str(),
         "TRUNCATE",
         "SELECT",
         "INSERT",
@@ -850,7 +878,11 @@ fn it_the_walking_fixture_gives_the_same_answers_through_pool() {
 fn it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds() {
     // covers: 0004 AC-13, AC-10 (the content does not change).
     let case = Case::new("run-not-ready");
-    let port = free_port(&var("POOL_IT_LISTEN_HOST"));
+    // Round four (review finding t5): the test holds the port for the whole
+    // run, so a `pool run` that tried to bind would exit 3 with
+    // `listener.failed`; a bind after the run could not have failed.
+    let holder = TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), 0)).expect("bind");
+    let port = holder.local_addr().expect("address").port();
     case.write_serving(None, port);
     bootstrap(&case);
     let before = fs::read(case.journal()).expect("read");
@@ -865,16 +897,18 @@ fn it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds() {
         let run = Command::new(env!("CARGO_BIN_EXE_pool"))
             .args(["run", "--config", case.config.to_str().expect("utf-8")])
             .stdin(Stdio::null())
-            .output()
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
             .expect("run");
+        let run = output_within(run, 30, "pool run");
         assert_eq!(run.status.code(), Some(1));
         assert_eq!(
             String::from_utf8_lossy(&run.stdout),
             format!("run refused\nfindings: 1\n{code}: the journal state does not allow serving\n")
         );
         assert_eq!(fs::read(case.journal()).expect("read"), before, "{code}");
-        TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
-            .expect("the listener was never bound");
+        holder.local_addr().expect("the test still holds the port");
     }
 }
 
@@ -974,7 +1008,7 @@ fn write_stdin(child: &mut std::process::Child, text: &str) {
 
 fn finish(mut child: std::process::Child) -> (i32, String, String) {
     drop(child.stdin.take());
-    let output = child.wait_with_output().expect("psql");
+    let output = output_within(child, 60, "psql in the background");
     (
         output.status.code().unwrap_or(-1),
         String::from_utf8(output.stdout).expect("utf-8"),
@@ -1201,12 +1235,14 @@ fn it_the_session_limit_and_teardown_give_the_permit_back() {
     select_one_works(port);
     // A client that leaves inside an open transaction leaves no row, its
     // backend is gone, and the one permit came back.
-    let (code, _, stderr) = client(
+    let (code, stdout, stderr) = client(
         &pool_conninfo(port),
         &right,
         "BEGIN;\nINSERT INTO pz7_items (key, value) VALUES (77, 'left open');\n",
     );
     assert_eq!(code, 0, "{stderr}");
+    // Round four (review finding t9): the INSERT ran before the client left.
+    assert!(stdout.contains("INSERT 0 1"), "{stdout}");
     eventually(2, "the backend of the open transaction is gone", || {
         sessions_of_rw("idle in transaction") == "0" && sessions_of_rw("idle") == "0"
     });
@@ -2043,6 +2079,8 @@ fn it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds() {
     // finding. No command of this slice sets the hold, so the test sets it
     // with the `sqlite3` tool of the host.
     let (case, port, _id) = ready_case("restore-pending");
+    let holder = TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
+        .expect("the test holds the port of the listener");
     let set = Command::new("sqlite3")
         .arg(case.journal())
         .arg("UPDATE store SET hold = 'restore_pending' WHERE singleton = 1;")
@@ -2064,16 +2102,18 @@ fn it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds() {
     let run = Command::new(env!("CARGO_BIN_EXE_pool"))
         .args(["run", "--config", case.config.to_str().expect("utf-8")])
         .stdin(Stdio::null())
-        .output()
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .expect("run");
+    let run = output_within(run, 30, "pool run");
     assert_eq!(run.status.code(), Some(1));
     assert_eq!(
         String::from_utf8_lossy(&run.stdout),
         "run refused\nfindings: 1\nauthority.restore_pending: the journal state does not allow serving\n"
     );
     assert_eq!(fs::read(case.journal()).expect("read"), before);
-    TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
-        .expect("the listener was never bound");
+    holder.local_addr().expect("the test still holds the port");
 }
 
 /// The fields that each event may carry after `ts`, `level` and `event`
@@ -2310,4 +2350,84 @@ fn it_ac14_a_second_primary_beside_a_silent_writer_ends_sessions_and_latches_the
     assert_eq!(fatal(&stderr), [NOT_ADMITTED.to_owned()], "{stderr}");
     assert_eq!(daemon.stop_within(20), 0);
     drop((writer, second));
+}
+
+// ---- added by the tests of scope 004, round four (review findings t7, t9) ----
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac9_ac25_a_serving_daemon_holds_its_state_directory_and_stops_on_sigint() {
+    // covers: 0004 AC-9 (review finding t7): while the daemon serves, a
+    // second command on its state directory gets `state.locked`; and
+    // 0004 AC-25: SIGINT stops it as SIGTERM does.
+    let (case, _port, daemon) = serving_case("served-lock", primary_node(), None, "", true);
+    let locked = "error: state.locked: another process is using the state directory\n";
+    let show = pool("show-authority", &case.config, "human");
+    assert_eq!(
+        (show.code, show.stderr.as_str()),
+        (3, locked),
+        "{}",
+        show.stdout
+    );
+    let second = Command::new(env!("CARGO_BIN_EXE_pool"))
+        .args(["run", "--config", case.config.to_str().expect("utf-8")])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("a second pool run");
+    let second = output_within(second, 30, "a second pool run");
+    assert_eq!(second.status.code(), Some(3));
+    assert_eq!(String::from_utf8_lossy(&second.stderr), locked);
+    let status = Command::new("kill")
+        .args(["-INT", &daemon.child.id().to_string()])
+        .status()
+        .expect("kill");
+    assert!(status.success());
+    let log_path = case.log_file();
+    assert_eq!(
+        daemon.stop_after_signal(),
+        0,
+        "SIGINT stops the daemon cleanly"
+    );
+    let log = fs::read_to_string(log_path).expect("log");
+    assert!(log.contains("\"event\":\"daemon.stopping\""), "{log}");
+    assert!(log.contains("\"event\":\"daemon.stopped\""), "{log}");
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac19_a_client_that_vanishes_inside_a_transaction_leaves_no_row_and_gives_the_permit_back() {
+    // covers: 0004 AC-19 (review finding t9): the socket is dropped inside an
+    // open transaction, with no Terminate, as a client that crashes would.
+    let extra = "\n[limits]\nsession_max_count = 1\n";
+    let (_case, port, daemon) = serving_case("vanished", primary_node(), None, extra, true);
+    let runtime = support::runtime();
+    let mut session = session_login(&runtime, port);
+    for sql in [
+        "BEGIN",
+        "INSERT INTO pz7_items (key, value) VALUES (78, 'vanished')",
+    ] {
+        assert_eq!(
+            runtime.block_on(session.query_one_row(sql)),
+            Ok(None),
+            "{sql}"
+        );
+    }
+    eventually(5, "the transaction is open", || {
+        sessions_of_rw("idle in transaction") == "1"
+    });
+    drop(session);
+    eventually(2, "the backend of the open transaction is gone", || {
+        sessions_of_rw("idle in transaction") == "0" && sessions_of_rw("idle") == "0"
+    });
+    let (code, stdout, stderr) = client(
+        &direct_conninfo(),
+        &password("rw.password"),
+        "\\pset tuples_only on\nSELECT count(*) FROM pz7_items WHERE key = 78;\n",
+    );
+    assert_eq!(code, 0, "{stderr}");
+    assert_eq!(stdout.trim(), "0", "the row was rolled back");
+    select_one_works(port);
+    assert_eq!(daemon.stop(), 0);
 }

@@ -767,3 +767,88 @@ fn ac15_negotiation_bytes_for_a_request_with_a_pq_option_match_a_real_server() {
         ]
     );
 }
+
+// ---- added by the tests of scope 004, round four (review finding t10) ----
+
+#[test]
+fn ac28_the_short_messages_have_the_literal_bytes_of_the_postgresql_documentation() {
+    // covers: 0004 AC-28. Written byte by byte from "Message Formats" of the
+    // PostgreSQL 18 documentation, not by the encoders of this crate, so a
+    // mistake shared by an encoder and its parser shows here.
+    use pool_protocol::auth::TransactionStatus;
+    let cases: [(&str, Vec<u8>, Vec<u8>); 10] = [
+        (
+            "SSLRequest",
+            encode_ssl_request().to_vec(),
+            vec![0, 0, 0, 8, 0x04, 0xd2, 0x16, 0x2f],
+        ),
+        (
+            "GSSENCRequest code",
+            GSSENC_REQUEST_CODE.to_be_bytes().to_vec(),
+            vec![0x04, 0xd2, 0x16, 0x30],
+        ),
+        (
+            "CancelRequest code",
+            CANCEL_REQUEST_CODE.to_be_bytes().to_vec(),
+            vec![0x04, 0xd2, 0x16, 0x2e],
+        ),
+        (
+            "AuthenticationOk",
+            auth::encode_authentication_ok(),
+            vec![b'R', 0, 0, 0, 8, 0, 0, 0, 0],
+        ),
+        (
+            "AuthenticationSASL",
+            auth::encode_authentication_sasl(&[auth::SCRAM_SHA_256]),
+            [&[b'R', 0, 0, 0, 23, 0, 0, 0, 10][..], b"SCRAM-SHA-256\0\0"].concat(),
+        ),
+        (
+            "ReadyForQuery idle",
+            auth::encode_ready_for_query(TransactionStatus::Idle),
+            vec![b'Z', 0, 0, 0, 5, b'I'],
+        ),
+        (
+            "ReadyForQuery in a transaction",
+            auth::encode_ready_for_query(TransactionStatus::InTransaction),
+            vec![b'Z', 0, 0, 0, 5, b'T'],
+        ),
+        (
+            "ReadyForQuery failed",
+            auth::encode_ready_for_query(TransactionStatus::Failed),
+            vec![b'Z', 0, 0, 0, 5, b'E'],
+        ),
+        (
+            "Terminate",
+            message::encode_terminate(),
+            vec![b'X', 0, 0, 0, 4],
+        ),
+        (
+            "Query",
+            message::encode_query("select 1"),
+            [&[b'Q', 0, 0, 0, 13][..], b"select 1\0"].concat(),
+        ),
+    ];
+    for (name, encoded, literal) in cases {
+        assert_eq!(encoded, literal, "{name}");
+    }
+    // The parsers read the literal bytes.
+    assert_eq!(
+        auth::parse_authentication(&[0, 0, 0, 0]),
+        Ok(Authentication::Ok)
+    );
+    assert_eq!(
+        auth::parse_ready_for_query(b"I"),
+        Ok(TransactionStatus::Idle)
+    );
+    let key =
+        auth::parse_backend_key_data(&[0, 0, 0x30, 0x39, 0xde, 0xad, 0xbe, 0xef]).expect("valid");
+    assert_eq!(key.process_id, 12345);
+    assert_eq!(
+        auth::encode_backend_key_data(12345, &[0xde, 0xad, 0xbe, 0xef]),
+        vec![b'K', 0, 0, 0, 12, 0, 0, 0x30, 0x39, 0xde, 0xad, 0xbe, 0xef]
+    );
+    assert_eq!(
+        auth::encode_parameter_status("a", "b"),
+        vec![b'S', 0, 0, 0, 8, b'a', 0, b'b', 0]
+    );
+}
