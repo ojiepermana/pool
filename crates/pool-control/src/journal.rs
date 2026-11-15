@@ -166,7 +166,7 @@ impl LatchReceipt {
 /// Only [`Journal::read`] makes one, and it shows nothing of what it holds.
 /// Code outside this crate gets an [`AuthorityState`] from
 /// [`JournalRead::classify`] and a [`BootstrapPlan`] from
-/// [`JournalRead::plan_bootstrap`], and in no other way. So no other crate
+/// [`JournalRead::bootstrap_plan`], and in no other way. So no other crate
 /// can build a journal value or change one that was read. Code outside this
 /// crate cannot build one:
 ///
@@ -200,7 +200,7 @@ impl JournalRead {
     /// Decides whether `pool bootstrap` may write a journal, from what was
     /// read, the samples of `board`, the expiry of `config.probe()` and the
     /// later of `now` and the latest sample time on the board.
-    pub fn plan_bootstrap(
+    pub fn bootstrap_plan(
         &self,
         config: &ValidatedConfig,
         board: &ObservationBoard,
@@ -248,9 +248,9 @@ impl Journal {
     /// Reads the journal at `path` without writing to it: the journal reader
     /// of spec 0003.
     ///
-    /// No file, and a file that SQLite reports as an empty database, give
-    /// `Absent`: an empty file is what a bootstrap leaves when it stops
-    /// between creating the file and writing it. A file that cannot be
+    /// No file, and an empty database (a file of 0 bytes, or a database with
+    /// no mark and no table), give `Absent`: that is what a bootstrap leaves
+    /// when it stops between creating the file and writing it. A file that cannot be
     /// opened, a wrong application ID, another schema version, a failed
     /// `PRAGMA quick_check`, a missing `store` row, a cluster with no member
     /// row for its approved writer, or a stored value outside the range of
@@ -269,8 +269,12 @@ impl Journal {
     /// revision 1, start sequence 0 and hold `none`, and one approved
     /// topology with its members per cluster of `plan`, at epoch 1.
     ///
-    /// The caller creates the empty file with mode `0600` first. Any other
-    /// file, also a missing one, fails with `Open`, and nothing is written.
+    /// The caller creates the empty file with mode `0600` first. It must be
+    /// an empty database: a file of 0 bytes, or a database with no mark and
+    /// no table, which is what a create that stopped after setting the WAL
+    /// mode leaves. Any other file, also a missing one, fails with `Open`,
+    /// and nothing is written. After the commit, the WAL is checkpointed
+    /// into the main file; a checkpoint that fails does not fail the create.
     pub fn create(
         path: &Path,
         plan: &BootstrapPlan,
@@ -279,10 +283,7 @@ impl Journal {
     ) -> Result<(), JournalError> {
         let created = i64::try_from(created_unix_ms).map_err(|_| JournalError::Write)?;
         let mut connection = open_for_writing(path)?;
-        let pages: i64 = connection
-            .pragma_query_value(None, "page_count", |row| row.get(0))
-            .map_err(|error| map_error(&error, JournalError::Open))?;
-        if pages != 0 {
+        if is_empty_database(&connection) != Ok(true) {
             return Err(JournalError::Open);
         }
         set_write_pragmas(&connection)?;
@@ -336,7 +337,12 @@ impl Journal {
                     .map_err(write)?;
             }
         }
-        transaction.commit().map_err(write)
+        transaction.commit().map_err(write)?;
+        // Move the transaction into the main file, so that a copy of that
+        // file alone is the journal. The transaction is durable in the WAL
+        // already, so a failed checkpoint does not fail the create.
+        let _ = connection.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()));
+        Ok(())
     }
 
     /// Opens the journal of a `Ready` start for writing and advances its
@@ -548,6 +554,29 @@ fn from_sql(value: i64) -> Option<u64> {
     u64::try_from(value).ok()
 }
 
+/// The rule for an empty database (spec 0004, "The journal on disk"):
+/// SQLite opens the file, `application_id` and `user_version` are 0, the
+/// schema has no row, and `quick_check` says `ok`. A file of 0 bytes meets it,
+/// and so does one page after `journal_mode = WAL`. A damaged journal never
+/// does: SQLite refuses it, or its marks or its tables are there. `Err` when
+/// a query failed.
+fn is_empty_database(connection: &Connection) -> Result<bool, ()> {
+    let pragma = |name: &str| -> Result<i64, ()> {
+        connection
+            .pragma_query_value(None, name, |row| row.get(0))
+            .map_err(|_| ())
+    };
+    let application_id = pragma("application_id")?;
+    let user_version = pragma("user_version")?;
+    let schema_rows: i64 = connection
+        .query_row("SELECT count(*) FROM sqlite_schema", [], |row| row.get(0))
+        .map_err(|_| ())?;
+    let check: String = connection
+        .query_row("PRAGMA quick_check", [], |row| row.get(0))
+        .map_err(|_| ())?;
+    Ok(application_id == 0 && user_version == 0 && schema_rows == 0 && check == "ok")
+}
+
 /// The reader proper, for a file that exists.
 fn read_file(path: &Path) -> StoreProbe {
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
@@ -557,11 +586,10 @@ fn read_file(path: &Path) -> StoreProbe {
     if connection.busy_timeout(std::time::Duration::ZERO).is_err() {
         return StoreProbe::Unreadable;
     }
-    let pages: Result<i64, _> = connection.pragma_query_value(None, "page_count", |row| row.get(0));
-    match pages {
-        Ok(0) => return StoreProbe::Absent,
-        Ok(_) => {}
-        Err(_) => return StoreProbe::Unreadable,
+    match is_empty_database(&connection) {
+        Ok(true) => return StoreProbe::Absent,
+        Ok(false) => {}
+        Err(()) => return StoreProbe::Unreadable,
     }
     match read_stored(&connection) {
         Ok(stored) => StoreProbe::Present(stored),

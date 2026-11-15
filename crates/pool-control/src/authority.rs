@@ -180,9 +180,10 @@ impl AuthorityState {
     /// Takes the authority revision of `receipt`, the proof that the journal
     /// holds the latch of its cluster (`0003 AC-17`).
     ///
-    /// It changes the state only when it is `Ready` and the latch of the
-    /// receipt's cluster is set in it. From then on an open answer for
-    /// another cluster carries the revision of the receipt.
+    /// It changes the state only when it is `Ready`, the latch of the
+    /// receipt's cluster is set in it, and the revision of the receipt is
+    /// higher than the one the state holds. From then on an open answer for
+    /// another cluster carries that revision.
     pub fn latch_recorded(&mut self, receipt: &LatchReceipt) {
         let AuthorityState::Ready(authority) = self else {
             return;
@@ -191,7 +192,9 @@ impl AuthorityState {
             authority.stored.clusters.iter().any(|topology| {
                 &topology.cluster == receipt.cluster() && topology.conflict_latched
             });
-        if latched {
+        // Receipts can be handed over in another order than they were
+        // written; the state keeps the highest revision it has seen.
+        if latched && receipt.authority_revision() > authority.stored.authority_revision {
             authority.stored.authority_revision = receipt.authority_revision();
         }
     }

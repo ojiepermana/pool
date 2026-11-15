@@ -2,7 +2,29 @@
 
 use std::ffi::OsString;
 
-/// The output format of `check-config`.
+/// A command that reads one configuration file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Command {
+    /// `check-config`: validate the file offline.
+    CheckConfig,
+    /// `bootstrap`: probe every node and create the journal.
+    Bootstrap,
+    /// `show-authority`: read the journal and print its state.
+    ShowAuthority,
+}
+
+impl Command {
+    /// The name of the command, as typed and as reports print it.
+    pub fn name(self) -> &'static str {
+        match self {
+            Command::CheckConfig => "check-config",
+            Command::Bootstrap => "bootstrap",
+            Command::ShowAuthority => "show-authority",
+        }
+    }
+}
+
+/// The output format of a command.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
     /// Plain text lines.
@@ -18,8 +40,10 @@ pub enum Invocation {
     Help,
     /// Print the version and exit 0.
     Version,
-    /// Validate one configuration file.
-    CheckConfig {
+    /// Run one command on one configuration file.
+    Command {
+        /// Which command.
+        command: Command,
         /// The path exactly as given.
         config: OsString,
         /// The chosen output format.
@@ -48,7 +72,9 @@ pub fn parse(args: impl IntoIterator<Item = OsString>) -> Invocation {
     match first.to_str() {
         Some("--help" | "-h") => Invocation::Help,
         Some("--version" | "-V") => Invocation::Version,
-        Some("check-config") => parse_check_config(args),
+        Some("check-config") => parse_command(Command::CheckConfig, args),
+        Some("bootstrap") => parse_command(Command::Bootstrap, args),
+        Some("show-authority") => parse_command(Command::ShowAuthority, args),
         _ => Invocation::Usage(UNKNOWN_COMMAND),
     }
 }
@@ -63,7 +89,8 @@ fn take_value(inline: Option<&str>, args: &mut impl Iterator<Item = OsString>) -
     (!value.is_empty()).then_some(value)
 }
 
-fn parse_check_config(mut args: impl Iterator<Item = OsString>) -> Invocation {
+/// The options of a command: `--config <PATH>` and `--format <human|json>`.
+fn parse_command(command: Command, mut args: impl Iterator<Item = OsString>) -> Invocation {
     let mut config: Option<OsString> = None;
     let mut format: Option<Format> = None;
 
@@ -105,7 +132,8 @@ fn parse_check_config(mut args: impl Iterator<Item = OsString>) -> Invocation {
     }
 
     match config {
-        Some(config) => Invocation::CheckConfig {
+        Some(config) => Invocation::Command {
+            command,
             config,
             format: format.unwrap_or(Format::Human),
         },
@@ -125,7 +153,8 @@ mod tests {
     fn equals_sign_splits_only_once() {
         assert_eq!(
             run(&["check-config", "--config=a=b", "--format=json"]),
-            Invocation::CheckConfig {
+            Invocation::Command {
+                command: Command::CheckConfig,
                 config: OsString::from("a=b"),
                 format: Format::Json,
             }
@@ -136,10 +165,38 @@ mod tests {
     fn value_may_start_with_a_dash() {
         assert_eq!(
             run(&["check-config", "--config", "--help"]),
-            Invocation::CheckConfig {
+            Invocation::Command {
+                command: Command::CheckConfig,
                 config: OsString::from("--help"),
                 format: Format::Human,
             }
+        );
+    }
+
+    #[test]
+    fn the_two_new_commands_take_the_same_options() {
+        for (name, command) in [
+            ("bootstrap", Command::Bootstrap),
+            ("show-authority", Command::ShowAuthority),
+        ] {
+            assert_eq!(
+                run(&[name, "--format", "json", "--config", "p"]),
+                Invocation::Command {
+                    command,
+                    config: OsString::from("p"),
+                    format: Format::Json,
+                }
+            );
+            assert_eq!(run(&[name]), Invocation::Usage(CONFIG_REQUIRED));
+            assert_eq!(
+                run(&[name, "--config", "p", "x"]),
+                Invocation::Usage(UNEXPECTED_ARGUMENT)
+            );
+            assert_eq!(command.name(), name);
+        }
+        assert_eq!(
+            run(&["run", "--config", "p"]),
+            Invocation::Usage(UNKNOWN_COMMAND)
         );
     }
 
