@@ -707,3 +707,101 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod line_index_tests {
+    //! `LineIndex` against `line_column` at every byte offset, added by /test
+    //! (0003 AC-3, AC-15; review t5). Both must give the same line and
+    //! column, or two findings of one file would count columns two ways.
+
+    use super::*;
+
+    /// The line and column of a char boundary, counted from the text with
+    /// `str` methods only, as an oracle independent of both functions.
+    fn by_chars(text: &str, offset: usize) -> (u32, u32) {
+        let before = &text[..offset];
+        let line = 1 + before.matches('\n').count();
+        let start = before.rfind('\n').map_or(0, |index| index + 1);
+        let column = 1 + before[start..].chars().count();
+        (to_u32(line), to_u32(column))
+    }
+
+    fn texts() -> Vec<String> {
+        let long = |fill: char, bytes: usize| fill.to_string().repeat(bytes / fill.len_utf8());
+        vec![
+            String::new(),
+            "\n".to_owned(),
+            "\n\n\n".to_owned(),
+            "a\r\nb\r\n\r\nc".to_owned(),
+            "\tkey = 1\n\t\tx\t\n".to_owned(),
+            "\u{e9}\u{20ac}\u{1f600}ab\n\n\u{1f600}".to_owned(),
+            // A line of more than 256 and one of more than 512 bytes.
+            format!("{}\n{}\nend", long('a', 300), long('b', 600)),
+            // Exactly 256 and 512 bytes, so the text ends on a stride.
+            long('x', 256),
+            long('\u{e9}', 512),
+            // Multi byte characters across the stride boundaries 256, 512
+            // and 768: two, three and four byte ones.
+            format!(
+                "{}\u{e9}{}\u{20ac}{}\u{1f600}\r\n\t\u{1f600}",
+                long('a', 255),
+                long('b', 254),
+                long('c', 253)
+            ),
+            // The same with a line feed just before and after each boundary.
+            format!(
+                "{}\n\u{1f600}{}\u{20ac}\n{}",
+                long('a', 255),
+                long('\u{e9}', 254),
+                long('\u{20ac}', 300)
+            ),
+        ]
+    }
+
+    #[test]
+    fn line_index_equals_line_column_at_every_offset() {
+        for text in texts() {
+            let index = LineIndex::new(&text);
+            for offset in 0..=text.len() + 2 {
+                assert_eq!(
+                    index.line_column(offset),
+                    line_column(&text, offset),
+                    "offset {offset} of {} bytes",
+                    text.len()
+                );
+                if text.is_char_boundary(offset) {
+                    assert_eq!(
+                        line_column(&text, offset),
+                        by_chars(&text, offset),
+                        "offset {offset} of {} bytes",
+                        text.len()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn line_index_clamps_offsets_at_and_past_the_end() {
+        let text = "ab\r\n\u{1f600}";
+        let index = LineIndex::new(text);
+        let end = (2, 2);
+        assert_eq!(index.line_column(text.len()), end);
+        assert_eq!(index.line_column(text.len() + 1), end);
+        assert_eq!(index.line_column(usize::MAX), end);
+        assert_eq!(line_column(text, usize::MAX), end);
+        let empty = LineIndex::new("");
+        assert_eq!(empty.line_column(0), (1, 1));
+        assert_eq!(empty.line_column(usize::MAX), (1, 1));
+    }
+
+    #[test]
+    fn line_index_counts_a_carriage_return_and_a_tab_as_one_column_each() {
+        let text = "a\r\n\t\tb";
+        let index = LineIndex::new(text);
+        // The CR is a scalar of line 1; the tab is one column, not a stop.
+        assert_eq!(index.line_column(1), (1, 2));
+        assert_eq!(index.line_column(2), (1, 3));
+        assert_eq!(index.line_column(5), (2, 3));
+    }
+}

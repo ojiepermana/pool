@@ -2348,7 +2348,7 @@ fn ac1_made_topology_files_at_the_edges_report_exactly_the_valid_report() {
     }
 }
 
-/// Made input 3 of the text proposed for `0003 AC-15`: every entry inline on
+/// Made input 3 of the text of `0003 AC-15`: every entry inline on
 /// line 2 with port 0, as many as fit in 1 MiB.
 fn ac15_input_3() -> (String, usize) {
     let tail = "]\n\n[control]\nstate_directory = \"/var/lib/pool\"\n\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"7412345678901234567\"\nexpected_writer = \"n0\"\n";
@@ -2370,7 +2370,7 @@ fn ac15_input_3() -> (String, usize) {
 
 #[test]
 fn ac15_the_binary_reports_every_finding_of_input_3_within_ten_seconds() {
-    // covers: 0003 AC-15 (proposed), 0003 AC-2. Each run is timed from
+    // covers: 0003 AC-15, 0003 AC-2. Each run is timed from
     // start to exit and checked before the next one starts.
     let (text, count) = ac15_input_3();
     assert_eq!((count, text.len()), (17_268, 1_048_559));
@@ -2412,4 +2412,119 @@ fn ac15_the_binary_reports_every_finding_of_input_3_within_ten_seconds() {
     );
     assert!(json.stdout.ends_with("}]}\n"));
     assert_eq!(json.stdout.lines().count(), 1);
+}
+
+#[test]
+fn ac4_a_canary_outside_a_value_never_reaches_the_output() {
+    // covers: 0003 AC-4 (review t4, added by /test). The canary sits in a key
+    // that is not in the schema inside each new table, in table names, in a
+    // comment, in an array entry, in values of the wrong type and in a string
+    // that does not end. Each file is refused with exit 1, and neither format
+    // prints any part of the canary.
+    let c = CANARY;
+    let control = "[control]\nstate_directory = \"/var/lib/pool\"\n";
+    let cluster =
+        "[[cluster]]\nid = \"main\"\nsystem_identifier = \"1\"\nexpected_writer = \"pg1\"\n";
+    let node = "[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = 5432\n";
+    let identity = "[[identity]]\nid = \"a\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"/c\"\n";
+    let file = |control: &str, cluster: &str, node: &str, identity: &str, tail: &str| {
+        format!("config_version = 1\n{control}\n{cluster}\n{node}\n{identity}\n{tail}")
+    };
+    let texts = [
+        file(&format!("{control}{c} = 1\n"), cluster, node, identity, ""),
+        file(
+            control,
+            &format!("{cluster}{c} = \"x\"\n"),
+            node,
+            identity,
+            "",
+        ),
+        file(
+            control,
+            cluster,
+            &format!("{node}\"{c}\" = true\n"),
+            identity,
+            "",
+        ),
+        file(
+            control,
+            cluster,
+            node,
+            &format!("{identity}{c}.x = 1\n"),
+            "",
+        ),
+        file(control, cluster, node, identity, &format!("[{c}]\nx = 1\n")),
+        file(
+            control,
+            cluster,
+            node,
+            identity,
+            &format!("[[{c}]]\nx = 1\n"),
+        ),
+        file(
+            control,
+            cluster,
+            node,
+            identity,
+            &format!("[control.{c}]\n"),
+        ),
+        file(
+            &format!("# {c}\n{control}"),
+            cluster,
+            &node.replace("port = 5432", &format!("port = 0 # {c}")),
+            identity,
+            "",
+        ),
+        file(
+            control,
+            cluster,
+            &node.replace("5432", &format!("[\"{c}\"]")),
+            identity,
+            "",
+        ),
+        file(
+            control,
+            cluster,
+            &node.replace("5432", &format!("\"{c}\"")),
+            identity,
+            "",
+        ),
+        file(
+            control,
+            &cluster.replace("\"1\"", &format!("{{ {c} = 1 }}")),
+            node,
+            identity,
+            "",
+        ),
+        file(
+            control,
+            cluster,
+            node,
+            &format!("{identity}routing_profile = [\"{c}\"]\n"),
+            "",
+        ),
+        file(
+            control,
+            cluster,
+            &node.replace("\"10.0.0.11\"", &format!("\"{c}")),
+            identity,
+            "",
+        ),
+    ];
+    for (index, text) in texts.iter().enumerate() {
+        let made = made_file(
+            &format!("topology-canary-position-{index}.toml"),
+            text.as_bytes(),
+        );
+        let path = made.to_str().expect("utf-8 path");
+        for format in ["human", "json"] {
+            let run = check(path, format);
+            assert_eq!(run.code, 1, "{text}\n{format}: {}", run.stdout);
+            assert!(!run.stdout.is_empty(), "{text}");
+            for output in [&run.stdout, &run.stderr] {
+                assert!(!output.contains(CANARY), "{text}\n{output}");
+                assert!(!output.contains("9f2c7b1e"), "{text}\n{output}");
+            }
+        }
+    }
 }
