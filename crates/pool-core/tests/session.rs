@@ -121,6 +121,8 @@ fn answer(sql: &str) -> Answer {
         "a flood" => Answer::Flood,
         "half a row" => Answer::Half { cut: false },
         "half a row, then the connection is cut" => Answer::Half { cut: true },
+        "stop in a header" => Answer::Stop(stop_in_a_header().concat()),
+        "stop in the status byte" => Answer::Stop(stop_in_the_status_byte().concat()),
         _ => Answer::Hang,
     }
 }
@@ -137,6 +139,18 @@ enum Answer {
         cut: bool,
     },
     Hang,
+    /// These bytes, then silence: the node stops in the middle of a message.
+    Stop(Vec<u8>),
+}
+
+/// A whole `RowDescription`, then three of the five header bytes of a `DataRow`.
+fn stop_in_a_header() -> [Vec<u8>; 2] {
+    [encode_message(b'T', &[0, 1]), vec![b'D', 0, 0]]
+}
+
+/// A whole `CommandComplete`, then the five header bytes of `ReadyForQuery` without its status byte.
+fn stop_in_the_status_byte() -> [Vec<u8>; 2] {
+    [encode_message(b'C', b"OK\0"), vec![b'Z', 0, 0, 0, 5]]
 }
 
 /// The `RowDescription` of a half answer, then the first bytes of a `DataRow` that claims 100 bytes of body.
@@ -372,6 +386,9 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
                 if cut {
                     return;
                 }
+            }
+            Answer::Stop(bytes) => {
+                let _ = tls.write_all(&bytes).await;
             }
             Answer::Hang => {}
         }
@@ -1809,4 +1826,144 @@ async fn ac24_no_event_of_a_whole_run_holds_a_name_a_password_a_host_a_path_or_s
     assert_eq!(failed.len(), 1);
     assert_eq!(keys(&failed[0]), ["event", "node_id", "class", "count"]);
     assert_eq!(value(&failed[0], "class"), "not_primary");
+}
+
+// ---- a node that stops in the middle of a message (review finding c1) ----
+
+/// The longest one of these tests may take: a session that cannot be cut fails the test instead of hanging the run.
+const TEST_LIMIT: Duration = Duration::from_secs(15);
+
+/// How the session is cut while the node is silent.
+#[derive(Clone, Copy)]
+enum Cut {
+    Conflict,
+    Shutdown,
+}
+
+/// Sends `sql`, lets the node stop in the middle of a message, cuts the session, and checks the end:
+/// the client gets the whole messages, then `08007` (a query is in flight and nothing partial was
+/// forwarded), then the end; the session ends, the backend is closed, and shutdown returns.
+async fn a_node_that_stops_in_the_middle(sql: &str, [whole, _]: [Vec<u8>; 2], cut: Cut) {
+    let h = Harness::new("shutdown_timeout_ms = 200");
+    let (mut tls, _) = login(&h).await.ready();
+    tls.write_all(&encode_query(sql)).await.expect("write");
+    settle().await;
+    assert_eq!(h.server.sessions(), 1);
+    match cut {
+        Cut::Conflict => h.close(true),
+        Cut::Shutdown => tokio::time::timeout(Duration::from_secs(5), h.server.shutdown())
+            .await
+            .expect("shutdown returns while the node is silent"),
+    }
+    let rest = read_rest(&mut tls).await;
+    assert!(
+        rest.starts_with(&whole),
+        "the whole messages come first, unchanged"
+    );
+    let error = &rest[whole.len()..];
+    assert_eq!(
+        error.first(),
+        Some(&b'E'),
+        "then one error and nothing else"
+    );
+    assert!(
+        error.windows(7).any(|w| w == b"C08007\0"),
+        "the error is 08007"
+    );
+    assert!(
+        eventually(|| h.server.sessions() == 0).await,
+        "the session ends"
+    );
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 1).await,
+        "the backend is closed"
+    );
+    assert_eq!(h.opened(), 1, "no second backend");
+    if let Cut::Conflict = cut {
+        tokio::time::timeout(Duration::from_secs(5), h.server.shutdown())
+            .await
+            .expect("shutdown returns");
+    }
+}
+
+#[tokio::test]
+async fn c1_a_positive_conflict_ends_a_session_whose_node_stopped_before_the_status_byte() {
+    let run = a_node_that_stops_in_the_middle(
+        "stop in the status byte",
+        stop_in_the_status_byte(),
+        Cut::Conflict,
+    );
+    tokio::time::timeout(TEST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_before_the_status_byte() {
+    let run = a_node_that_stops_in_the_middle(
+        "stop in the status byte",
+        stop_in_the_status_byte(),
+        Cut::Shutdown,
+    );
+    tokio::time::timeout(TEST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn c1_a_positive_conflict_ends_a_session_whose_node_stopped_in_a_header() {
+    let run =
+        a_node_that_stops_in_the_middle("stop in a header", stop_in_a_header(), Cut::Conflict);
+    tokio::time::timeout(TEST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_in_a_header() {
+    let run =
+        a_node_that_stops_in_the_middle("stop in a header", stop_in_a_header(), Cut::Shutdown);
+    tokio::time::timeout(TEST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+/// The node stops in the body of a `DataRow`. Part of the message reached the client, so the cut
+/// sends no error: the client gets exactly the bytes of the node, then the end.
+async fn a_node_that_stops_in_a_body(cut: Cut) {
+    let h = Harness::new("shutdown_timeout_ms = 200");
+    let (mut tls, _) = login(&h).await.ready();
+    tls.write_all(&encode_query("half a row"))
+        .await
+        .expect("write");
+    settle().await;
+    match cut {
+        Cut::Conflict => h.close(true),
+        Cut::Shutdown => tokio::time::timeout(Duration::from_secs(5), h.server.shutdown())
+            .await
+            .expect("shutdown returns while the node is silent"),
+    }
+    assert_eq!(read_rest(&mut tls).await, half_answer());
+    assert!(
+        eventually(|| h.server.sessions() == 0).await,
+        "the session ends"
+    );
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 1).await,
+        "the backend is closed"
+    );
+}
+
+#[tokio::test]
+async fn c1_a_positive_conflict_ends_a_session_whose_node_stopped_in_a_body() {
+    tokio::time::timeout(TEST_LIMIT, a_node_that_stops_in_a_body(Cut::Conflict))
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_in_a_body() {
+    tokio::time::timeout(TEST_LIMIT, a_node_that_stops_in_a_body(Cut::Shutdown))
+        .await
+        .expect("within the test limit");
 }
