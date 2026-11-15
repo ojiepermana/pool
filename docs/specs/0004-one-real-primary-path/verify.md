@@ -1942,6 +1942,15 @@ Built on 2026-11-16 on macOS (workstation, Docker running, not Linux and not CI)
 
 For AWS-LC, with the file and `AWS_LC_SYS_USE_SYSTEM=1` the build is from source. **With the file and `AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin=1` the build script of `aws-lc-sys` 0.47.0 still looks for an installed AWS-LC**, because it reads the name with the target before the plain one (`optional_env_crate_target`), and `force` covers only the plain name. On this host it found none and the build failed; on a host that has one it would link it. This is a gap in the two lines of [Native code](index.md#native-code), for the architect. `libsqlite3-sys` 0.40.0 reads only the one name and then builds the bundled source, so SQLite is covered.
 
+**The names with the target, after decision 99.** `.cargo/config.toml` now holds the block of [Native code](index.md#native-code): the plain line and one line for each of `aarch64_unknown_linux_gnu`, `x86_64_unknown_linux_gnu`, `aarch64_apple_darwin` and `x86_64_apple_darwin`. Run again on this host (`aarch64-apple-darwin`), with `cargo build -vv -p pool-core --locked`:
+
+| `.cargo/config.toml` | Shell | Exit | What the build script of `aws-lc-sys` 0.47.0 saw |
+|---|---|---|---|
+| The block of decision 99 | `AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin=1` | 0 | `AWS_LC_SYS_USE_SYSTEM` `0` and `AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin` `0`; "Building with: CC" and `rustc-link-lib=static=aws_lc_0_47_0_crypto` from its own build folder, so the library was built from the source in the crate |
+| The two lines of decision 87, for comparison | the same | 101 | `AWS_LC_SYS_USE_SYSTEM` `0` and `AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin` `1`: "AWS_LC_SYS_USE_SYSTEM=1 requires a system-installed AWS-LC, but none was found" |
+
+The other three names with a target were not run: this host builds only for `aarch64-apple-darwin`. `scripts/check.sh all` with the block: exit 0.
+
 **`cargo fuzz run` has no `--locked`** in `cargo-fuzz` 0.13.2. The check runs `cargo metadata --locked --manifest-path <crate>/fuzz/Cargo.toml` first, which refuses a lockfile that would have to change.
 
 #### Checks on the final tree
