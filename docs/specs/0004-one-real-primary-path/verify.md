@@ -160,6 +160,32 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 
 **Two readings.** First, the spec puts the monitor keys "after `expected_writer`" and the TLS keys "after `port`" inside the sentence that adds every new check after item 5. The build reads it as one new pass after item 5: listener, limits, probe, then the monitor keys of each cluster, the TLS keys of each node, then each principal. The test `ac5_new_checks_come_after_item_5_and_before_the_cross_checks` locks that order. Second, the first version of the key table let `probe.period_ms` go up to 60000, and above 59900 no expiry could meet the cross rule. That reading went to the architect, and decision 49 lowered the upper bound to 30000, like the timeout. The follow up commit on this branch applies it: 30000 is valid, 30001 to 60000 give `config.invalid_value` at `probe.period_ms`, and a value the type cannot hold is still `config.schema` (tests `ac5_number_keys_accept_their_range_and_refuse_what_is_outside` and `ac5_a_period_above_thirty_thousand_is_refused_at_the_period`). No fixture holds a period above 5000.
 
+### Step 4: the wire format
+
+Build plan step 4, on 2026-11-15, on macOS (workstation, not Linux and not CI). Commit `48775c2`, on top of `main` at `486b90e`. Tools: `rustc 1.100.0`. No manual step, no container, no network: every test is hermetic. Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-protocol --locked` | exit 0 | exit 0: 21 unit tests beside the code and 9 in `tests/golden.rs` passed, 0 failed | pass |
+| `cargo clippy -p pool-protocol --all-targets --locked -- -D warnings` | exit 0 | exit 0 | pass |
+| `scripts/check.sh all` at `48775c2` | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok`; rule W3 finds no socket or runtime text in `crates/pool-protocol` | pass |
+
+What the tests hold:
+
+- `first_packets_split_at_every_byte_give_the_same_result` and `messages_split_at_every_byte_give_the_same_result`: 15 golden first packets (`SSLRequest`, `GSSENCRequest`, `CancelRequest`, the startup packet of `psql`, a startup packet for 3.2 with a `_pq_.` option, and the refused ones) and 29 golden messages (`Query`, `Terminate`, every authentication and SASL message, `NegotiateProtocolVersion`, `ReadyForQuery`, `ParameterStatus`, `BackendKeyData`, an error from PostgreSQL and the twelve errors of POOL), each fed whole, in two pieces split at every position, and one byte at a time, with the same result each time. `a_stream_of_all_golden_messages_splits_anywhere` does the same for all messages in one stream, and `headers_split_at_every_byte_classify_the_same` for the five byte header reader.
+- `a_length_field_is_checked_before_anything_is_reserved`: a first packet and messages that claim 4 GiB are refused after their header bytes, the body of a `CancelRequest` is counted and not stored, the authentication limit is 1024 bytes of body, and counts inside a body are compared and never reserved from. In the code, `FirstPacketReader` and `MessageReader` call `Vec::with_capacity` only after `decode_first_header` or the limit check passed.
+- `first_packets_give_their_rows`, `header_rows`, `handshake_order` and `parameter_rows`: every row of the tables under [Startup](index.md#startup) that needs no socket: `28000` for a startup packet before TLS, `N` then a new packet after `GSSENCRequest`, `0A000` for major 2 and 4, `replication`, `options` and every unlisted name, `08P01` for a short length, a wrong order, a duplicate or empty name, a missing `user` and bytes after the end, `54000` above `limits.startup_packet_max_bytes`, and `NegotiateProtocolVersion` for 3.0 only for a minor version above 0 or a `_pq_.` name.
+- `frontend_rows` and `backend_rows`: every row of the tables under [Messages after login](index.md#messages-after-login).
+- `every_pool_error_has_its_exact_bytes`: the bytes of the twelve errors, fields `S`, `V`, `C`, `M` only, against the table under [SQLSTATEs that POOL generates](index.md#sqlstates-that-pool-generates).
+- `rfc_7677_exchange_parses` and the refusal tests of `scram.rs`, the RFC 4648 vectors and the strict form tests of `base64.rs`, and the length checks of `SASLInitialResponse` in `auth.rs`.
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0004 AC-28` | the split tests and the length test above | pass on the workstation; CI evidence waits for the pull request |
+| `0004 AC-15`, byte level half | the startup rows above; the TLS handshake, the node side and `psql` are steps 7, 9 and 10 | pass for the byte level half; the rest not run |
+| `0004 AC-16`, byte level half | `AuthenticationSASL` offers `SCRAM-SHA-256` only in the golden message; the client-first parser refuses `p=`, an authorization identity and extensions; the 1024 byte limit; the SCRAM crypto and the full exchange are step 7 | pass for the byte level half; the rest not run |
+| `0004 AC-23`, byte level half | `classify_frontend` and `classify_backend` with every tag of the tables; `BackendKeyData` prints `[REDACTED]`; the session that uses them is step 9 | pass for the byte level half; the rest not run |
+
 ### Checker run
 
 Build plan step 5 only, on 2026-11-15 at 17:14 WIB, by the checker session, on the merged tree `d8797a5` (macOS 27.0.1, arm64; a workstation, not Linux and not CI). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2` with `nightly-2026-10-17`. "The old binary" is `pool` built from `6ad02c0`, the tree before step 5, in a folder of its own. "The new binary" is `pool` built from `d8797a5`. Every command below was run in this session. The probes wrote their inputs outside the repository.
