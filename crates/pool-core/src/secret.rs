@@ -675,4 +675,123 @@ mod tests {
             "secret.permissions: a secret file has the wrong type, mode or owner"
         );
     }
+
+    // Added by the tests of scope 004: the type of a secret path, a file that cannot be opened,
+    // and each size limit at the limit and one byte above it.
+
+    /// `content` with plain text lines in front of it, so that the file is exactly `len` bytes.
+    fn padded(content: &[u8], len: usize) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        while len - bytes.len() - content.len() > 80 {
+            bytes.extend_from_slice(&[b'#'; 79]);
+            bytes.push(b'\n');
+        }
+        let rest = len - bytes.len() - content.len();
+        bytes.extend(std::iter::repeat_n(b'#', rest - 1));
+        bytes.push(b'\n');
+        bytes.extend_from_slice(content);
+        assert_eq!(bytes.len(), len);
+        bytes
+    }
+
+    #[test]
+    fn a_directory_with_mode_0700_is_not_a_secret_file() {
+        let dir = TempDir::new("dir-0700");
+        let owner = dir.owner();
+        let inner = dir.0.join("inner");
+        std::fs::create_dir(&inner).expect("dir");
+        std::fs::set_permissions(&inner, std::fs::Permissions::from_mode(0o700)).expect("chmod");
+        assert_eq!(
+            check_secret_file(&inner, owner),
+            Err(SecretError::Permissions)
+        );
+        assert_eq!(
+            read_credential(&inner, owner),
+            Err(SecretError::Permissions)
+        );
+        assert_eq!(
+            read_verifier(&inner, owner).map(|_| ()),
+            Err(SecretError::Permissions)
+        );
+        assert_eq!(
+            read_private_key(&inner, owner).map(|_| ()),
+            Err(SecretError::Permissions)
+        );
+        assert_eq!(
+            read_certificate_chain(&inner).map(|_| ()),
+            Err(SecretError::Invalid)
+        );
+    }
+
+    #[test]
+    fn a_secret_file_that_its_owner_may_not_read_is_secret_permissions() {
+        let dir = TempDir::new("mode-0200");
+        let owner = dir.owner();
+        if owner == 0 {
+            // root opens a file of mode 0200 anyway; the case does not exist for root.
+            return;
+        }
+        let path = dir.file("write-only", b"pencil\n", 0o200);
+        assert_eq!(read_credential(&path, owner), Err(SecretError::Permissions));
+        assert_eq!(
+            check_secret_file(&path, owner),
+            Err(SecretError::Permissions)
+        );
+    }
+
+    #[test]
+    fn a_password_of_1024_characters_passes_and_1025_do_not() {
+        assert!(Password::parse(&[b'p'; PASSWORD_MAX_BYTES]).is_ok());
+        assert!(Password::parse(&[[b'p'; PASSWORD_MAX_BYTES].as_slice(), b"\n"].concat()).is_ok());
+        assert_eq!(
+            Password::parse(&[b'p'; PASSWORD_MAX_BYTES + 1]),
+            Err(SecretError::Invalid)
+        );
+    }
+
+    #[test]
+    fn the_key_and_certificate_files_are_read_up_to_their_limit_and_not_one_byte_more() {
+        let dir = TempDir::new("exact-limits");
+        let owner = dir.owner();
+        let fixtures = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
+        let key = std::fs::read(format!("{fixtures}/node.key")).expect("key");
+        let limit = PRIVATE_KEY_MAX_BYTES as usize;
+        let at = dir.file("key-at", &padded(&key, limit), 0o600);
+        let over = dir.file("key-over", &padded(&key, limit + 1), 0o600);
+        assert!(read_private_key(&at, owner).is_ok());
+        assert_eq!(
+            read_private_key(&over, owner).map(|_| ()),
+            Err(SecretError::Invalid)
+        );
+        let pem = std::fs::read(format!("{fixtures}/node.pem")).expect("pem");
+        let limit = CERTIFICATE_MAX_BYTES as usize;
+        let at = dir.file("pem-at", &padded(&pem, limit), 0o644);
+        let over = dir.file("pem-over", &padded(&pem, limit + 1), 0o644);
+        assert!(read_certificate_chain(&at).is_ok());
+        assert!(read_trust_roots(&at).is_ok());
+        assert_eq!(
+            read_certificate_chain(&over).map(|_| ()),
+            Err(SecretError::Invalid)
+        );
+        assert_eq!(
+            read_trust_roots(&over).map(|_| ()),
+            Err(SecretError::Invalid)
+        );
+        // A credential file stops at 4096 bytes: a line end may follow a password of 1024.
+        let long = dir.file(
+            "credential-over",
+            &[b'p'; CREDENTIAL_MAX_BYTES as usize + 1],
+            0o600,
+        );
+        assert_eq!(read_credential(&long, owner), Err(SecretError::Invalid));
+        let verifier = dir.file(
+            "verifier-over",
+            &padded(VERIFIER.as_bytes(), CREDENTIAL_MAX_BYTES as usize + 1),
+            0o600,
+        );
+        assert_eq!(
+            read_verifier(&verifier, owner).map(|_| ()),
+            Err(SecretError::Invalid)
+        );
+    }
 }

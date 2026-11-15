@@ -548,4 +548,22 @@ mod tests {
         }
         assert!(text.contains("[REDACTED]"));
     }
+
+    // Added by the tests of scope 004: the made up salt of a name that is no principal.
+    #[test]
+    fn the_salt_of_an_unknown_name_depends_on_the_mock_key_and_the_name_and_is_stable() {
+        let salt = |key: &MockKey, name: &[u8]| match ServerCredential::unknown(key, name, 4096) {
+            ServerCredential::Unknown { salt, iterations } => {
+                assert_eq!(iterations, 4096);
+                salt
+            }
+            ServerCredential::Known(_) => panic!("an unknown name"),
+        };
+        let one = MockKey([1; 32]);
+        let two = MockKey([2; 32]);
+        assert_eq!(salt(&one, b"mallory").len(), MOCK_SALT_BYTES);
+        assert_eq!(salt(&one, b"mallory"), salt(&one, b"mallory"), "stable");
+        assert_ne!(salt(&one, b"mallory"), salt(&two, b"mallory"), "keyed");
+        assert_ne!(salt(&one, b"mallory"), salt(&one, b"eve"), "per name");
+    }
 }

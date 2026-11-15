@@ -52,6 +52,8 @@ enum Tamper {
     Count(u32),
     ErrorFinal,
     WrongSignature,
+    /// After `AuthenticationSASLFinal`, another `Authentication` message in place of `AuthenticationOk`.
+    NotOkAfterFinal(i32),
 }
 
 #[derive(Clone)]
@@ -64,6 +66,10 @@ struct Script {
     status: TransactionStatus,
     error_after_auth: bool,
     rows: Vec<Vec<Option<&'static str>>>,
+    /// Raw messages written after `BackendKeyData` and before `ReadyForQuery`.
+    extra: Vec<Vec<u8>>,
+    /// The one row query is answered with an `ErrorResponse` before its row.
+    query_error: bool,
 }
 
 impl Script {
@@ -81,6 +87,8 @@ impl Script {
             status: TransactionStatus::Idle,
             error_after_auth: false,
             rows: vec![vec![Some("7613"), Some("primary"), None]],
+            extra: Vec::new(),
+            query_error: false,
         }
     }
 }
@@ -226,9 +234,18 @@ async fn run_node(
             ))
             .await
             .ok()?;
-            tls.write_all(&auth::encode_authentication_ok())
-                .await
-                .ok()?;
+            match tamper {
+                Tamper::NotOkAfterFinal(code) => {
+                    tls.write_all(&auth::encode_authentication_other(code, &[]))
+                        .await
+                        .ok()?;
+                }
+                _ => {
+                    tls.write_all(&auth::encode_authentication_ok())
+                        .await
+                        .ok()?;
+                }
+            }
         }
     }
     if script.error_after_auth {
@@ -243,6 +260,9 @@ async fn run_node(
     tls.write_all(&auth::encode_backend_key_data(4242, &[1, 2, 3, 4]))
         .await
         .ok()?;
+    for message in &script.extra {
+        tls.write_all(message).await.ok()?;
+    }
     tls.write_all(&encode_message(b'N', b"SNOTICE\0Mhello\0\0"))
         .await
         .ok()?;
@@ -254,6 +274,9 @@ async fn run_node(
         match message.tag {
             b'Q' => {
                 tls.write_all(&encode_message(b'T', &[0, 0])).await.ok()?;
+                if script.query_error {
+                    tls.write_all(&backend_error("42P01")).await.ok()?;
+                }
                 for row in &script.rows {
                     tls.write_all(&data_row_message(row)).await.ok()?;
                 }
@@ -705,4 +728,168 @@ async fn a_waiter_goes_on_when_the_login_that_derives_is_cancelled() {
         .expect("the waiter is not stuck")
         .expect("join");
     assert!(keys.is_ok());
+}
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+/// A notice whose body is exactly `len` bytes.
+fn notice(len: usize) -> Vec<u8> {
+    let mut body = b"SNOTICE\0M".to_vec();
+    body.resize(len - 2, b'n');
+    body.extend_from_slice(b"\0\0");
+    assert_eq!(body.len(), len);
+    encode_message(b'N', &body)
+}
+
+#[tokio::test]
+async fn a_startup_message_of_the_node_of_exactly_16384_bytes_passes_and_one_byte_more_does_not() {
+    for (len, ok) in [(16384usize, true), (16385, false)] {
+        let mut script = Script::primary();
+        script.extra = vec![notice(len)];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        if ok {
+            assert!(run.result.is_ok(), "{len}");
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::Protocol), "{len}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn the_parameters_of_the_node_stop_at_16384_bytes_of_names_and_values_together() {
+    // in_hot_standby and off are 17 bytes; two more parameters bring the sum to 16384, then to 16385.
+    for (second, ok) in [(8365usize, true), (8366, false)] {
+        let mut script = Script::primary();
+        let a: &'static str = Box::leak("a".repeat(8000).into_boxed_str());
+        let b: &'static str = Box::leak("b".repeat(second).into_boxed_str());
+        script.params = vec![("in_hot_standby", "off"), ("a", a), ("b", b)];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        if ok {
+            assert_eq!(run.result.expect("open").parameters().len(), 3);
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::Protocol), "{second}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_probe_answer_of_exactly_4096_bytes_of_bodies_is_read_and_one_byte_more_is_not() {
+    // The bodies of RowDescription (2), DataRow (6 + the column), CommandComplete (9) and
+    // ReadyForQuery (1) are counted together, across the messages.
+    for (len, ok) in [(4078usize, true), (4079, false)] {
+        let mut script = Script::primary();
+        let value: &'static str = Box::leak("x".repeat(len).into_boxed_str());
+        script.rows = vec![vec![Some(value)]];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        let mut conn = run.result.expect("open");
+        let answer = conn.query_one_row("select 1").await;
+        if ok {
+            assert_eq!(answer, Ok(Some(vec![Some(value.to_string())])), "{len}");
+        } else {
+            assert_eq!(answer, Err(BackendError::Protocol), "{len}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_second_backend_key_data_ends_the_attempt() {
+    let mut script = Script::primary();
+    script.extra = vec![auth::encode_backend_key_data(9999, &[9, 9, 9, 9])];
+    let run = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    assert_eq!(run.result.err(), Some(BackendError::Protocol));
+}
+
+#[tokio::test]
+async fn an_authentication_message_after_the_final_one_that_is_not_ok_ends_the_attempt() {
+    // Cleartext (3), MD5 (5), SASL (10) and SASLContinue (11) where AuthenticationOk belongs.
+    for code in [3, 5, 10, 11] {
+        let mut script = Script::primary();
+        script.auth = Auth::Scram(Tamper::NotOkAfterFinal(code));
+        let run = run(
+            script,
+            good_tls(),
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        assert!(
+            matches!(
+                run.result.err(),
+                Some(BackendError::Protocol | BackendError::AuthenticationMethod)
+            ),
+            "code {code}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn an_error_inside_the_one_row_query_is_a_server_error_with_its_sqlstate() {
+    let mut script = Script::primary();
+    script.query_error = true;
+    let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+    let mut conn = run.result.expect("open");
+    assert_eq!(
+        conn.query_one_row("select 1").await,
+        Err(BackendError::Server {
+            sqlstate: Some(*b"42P01")
+        })
+    );
+}
+
+#[tokio::test]
+async fn kept_keys_are_used_only_for_their_own_salt_and_count() {
+    let credential = Credential::new(password("backend-secret"));
+    let a = credential.keys(b"salt a", 4096).await.expect("keys");
+    let b = credential.keys(b"salt b", 4096).await.expect("keys");
+    let c = credential.keys(b"salt b", 4097).await.expect("keys");
+    assert!(
+        a != b && b != c && a != c,
+        "each salt and count has its own keys"
+    );
+    assert_eq!(credential.derivations(), 3);
+    assert!(credential.keys(b"salt b", 4097).await.expect("keys") == c);
+    assert_eq!(
+        credential.derivations(),
+        3,
+        "the same salt and count again derives nothing"
+    );
+}
+
+#[test]
+fn display_of_a_backend_error_is_its_constant_kind_and_no_debug_form() {
+    let all = [
+        BackendError::Connect,
+        BackendError::Timeout,
+        BackendError::TlsRefused,
+        BackendError::Tls,
+        BackendError::AuthenticationMethod,
+        BackendError::Authentication,
+        BackendError::Server {
+            sqlstate: Some(*b"28P01"),
+        },
+        BackendError::Protocol,
+        BackendError::NotPrimary,
+        BackendError::NotIdle,
+        BackendError::Closed,
+        BackendError::Random,
+    ];
+    for error in all {
+        assert_eq!(
+            error.to_string(),
+            format!("backend attempt failed: {}", error.kind())
+        );
+    }
+    assert_eq!(
+        BackendError::Server {
+            sqlstate: Some(*b"28P01")
+        }
+        .to_string(),
+        "backend attempt failed: server_error"
+    );
 }
