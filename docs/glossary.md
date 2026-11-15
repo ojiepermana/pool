@@ -33,10 +33,10 @@ The word profile always takes a qualifier.
 
 | Term | Meaning | Owner |
 |---|---|---|
-| Observation | One probe sample of a backend: role, identity, timeline, positions and error class, with its monotonic sample time. | [Control plane](architecture/control-plane.md#proposed-records) |
+| Observation | One probe sample of a node: role, identity, timeline, positions and error class, with its monotonic sample time. | [Control plane](architecture/control-plane.md#proposed-records) |
 | Fresh | An observation younger than its expiry on the local monotonic clock at the moment of admission. | [Cluster management](architecture/cluster-management.md#health-and-topology) |
 | Observed role | What a fresh observation reports. It is evidence, never authorization. | [Control plane](architecture/control-plane.md) |
-| Approved writer | The backend durably authorized to accept writes. Avoid authorized writer and authorized primary. | [Spec 0001](specs/0001-initial-architecture/index.md#safety-contracts), contract 8 |
+| Approved writer | The node durably authorized to accept writes. Avoid authorized writer and authorized primary. | [Spec 0001](specs/0001-initial-architecture/index.md#safety-contracts), contract 8 |
 | Eligible primary | The approved writer while a fresh observation agrees with it. Only this node receives writes. Avoid verified primary. | [Control plane](architecture/control-plane.md) |
 | Eligible replica | A replica that passes role, identity, freshness, lag, maintenance and weight checks at admission. | [Load balancing PRD](prd/004-load-balancing.md) |
 | Topology snapshot | The immutable, versioned view of eligibility that the data plane reads. | [Spec 0001](specs/0001-initial-architecture/index.md#boundaries) |

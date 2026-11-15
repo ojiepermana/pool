@@ -1,6 +1,6 @@
 # Repository proposal
 
-This is a proposed target layout. The paths that exist today are the scope 001 workspace (`apps/pool`, `crates/pool-config`) and the tooling of [spec 0002](specs/0002-standards-and-tooling/index.md). The initial architecture defines boundaries for two applications and four internal crates. Create the directories only as a slice uses them; the first build is the [workspace handoff](implementation-order.md#first-handoff-the-workspace).
+This is a proposed target layout. The paths that exist today are the workspace (`apps/pool`, `crates/pool-config`, `crates/pool-control`) and the tooling of [spec 0002](specs/0002-standards-and-tooling/index.md). The initial architecture defines boundaries for two applications and four internal crates. Create the directories only as a slice uses them; the first build is the [workspace handoff](implementation-order.md#first-handoff-the-workspace).
 
 ```text
 pool/
