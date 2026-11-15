@@ -55,9 +55,14 @@ impl LogHandle {
     }
 }
 
-/// Installs the writer as the global subscriber and starts the task that
-/// writes the queue to stderr. Must be called inside the runtime. Returns
-/// `None` when a subscriber was installed already.
+/// Installs the writer as the global subscriber, starts the task that
+/// writes the queue to stderr, and installs the panic hook. Must be called
+/// inside the runtime. Returns `None` when a subscriber was installed
+/// already; the panic hook is then left as it was.
+///
+/// The hook writes the event `daemon.panicked` through the queue and
+/// nothing else: the message and the place of a panic can hold a value, and
+/// every line on stderr stays one JSON object (spec 0004, decision 86).
 pub fn install() -> Option<LogHandle> {
     let (queue, mut lines) = mpsc::channel(QUEUE_LINES);
     let subscriber = JsonLog {
@@ -66,6 +71,9 @@ pub fn install() -> Option<LogHandle> {
         next_span: AtomicUsize::new(1),
     };
     tracing::subscriber::set_global_default(subscriber).ok()?;
+    std::panic::set_hook(Box::new(|_| {
+        tracing::error!(event = "daemon.panicked");
+    }));
     tokio::spawn(async move {
         let mut stderr = tokio::io::stderr();
         while let Some(item) = lines.recv().await {
