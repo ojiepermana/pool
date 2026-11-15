@@ -1731,6 +1731,55 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `scripts/check.sh linux-build` | exit 0 | exit 0, no test failed, `linux build check passed` | pass |
 | `git diff --stat main...HEAD` | test files and this record only | the files named at the top of this round and this record; 0 lines of production code | pass |
 
+### Round five
+
+On 2026-11-16 from 02:20 to 02:55 WIB, by the tester session: the findings of [the review](../../reviews/2026-11-16-scope-004-one-real-primary-path.md) that round four left for `crates/pool-core/tests/session.rs` (t1, t3, and the parts of t4 and t8 in that file), and decision 94 of [Fuzzing](index.md#fuzzing). On `main` at `ce67e27`, commit `9818739` of the branch. macOS 27.0.1, arm64.
+
+#### The tests
+
+| Finding | Tests in `crates/pool-core/tests/session.rs` | What they hold |
+|---|---|---|
+| t1 | `ac15_a_request_for_3_2_gets_negotiate_protocol_version_first_with_its_exact_body` | A new helper, `login_recorded`, keeps every message of a login in order with its authentication code and checks the server signature when it comes. For 3.2: `v`, then `R` 10, 11, 12 and 0, three `S`, `Z`; the body of `v` is `00 03 00 00 00 00 00 00` (3.0, no option). With `_pq_.zq9`: the body PostgreSQL 18.7 sent for that request |
+| t1 | `ac16_a_login_for_3_0_gets_the_server_signature_and_then_authentication_ok_and_no_negotiation` | `R` 10, 11, 12, 0, three `S`, `Z`, and no `v` |
+| t1 | `ac14_no_authentication_ok_comes_before_a_refusal_after_the_proof` | After a right proof, a closed route (`57P03`), a route that changed at the second look (`57P03`), a database without an identity entry (`28000`) and a node in recovery (`08006`) each give exactly `R` 10, 11, 12 and the error, and no `AuthenticationOk` |
+| t3 | `ac20_no_byte_of_an_oversized_query_reaches_the_node` | The scripted node keeps every byte it gets after its `ReadyForQuery` (`after_ready`, read with `read`, so also the bytes of a message that never ends). After a `Query` of 1100 bytes with a limit of 1024, `54000`, and the node got only the `Terminate` of POOL |
+| t4 | every test of the file | `read_msg` and the new `read_msg_kept` wait at most 30 seconds and then fail with `a message or the end of the stream within 30 s`; the two bare `shutdown()` calls wait at most 10 seconds |
+| t8 | `a_positive_conflict_ends_running_sessions_and_silence_does_not`, `at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01`, `waiters_and_the_acquire_deadline` | The first two wait until the node has the `Query` (then it is in flight) in place of a fixed 50 ms. The waiter test has a deadline of 1 second in place of 300 ms: "at once" is under 700 ms, the waiter ends at 1 to 3 seconds |
+
+The other fixed waits of the file stay. They come before an assertion that something did not happen (no query reached the node, no second backend), where the wait is the window in which a wrong byte would have arrived.
+
+| Wrong change (`crates/pool-core/src/session.rs`) | Before (`ce67e27`) | After, caught by |
+|---|---|---|
+| N1. `NegotiateProtocolVersion` is never sent | not caught (review) | `ac15_a_request_for_3_2_gets_negotiate_protocol_version_first_with_its_exact_body` |
+| N2. The server signature is never sent to the client | not caught (review) | `ac16_a_login_for_3_0_gets_the_server_signature_...`, `ac15_...`, `ac14_no_authentication_ok_...` |
+| N3. `AuthenticationOk` is sent right after the proof, before the route checks and the backend | not caught (review) | `ac14_no_authentication_ok_comes_before_a_refusal_after_the_proof` |
+| N4. The header of an oversized `Query` is written to the node before the refusal (for `MessageTooLarge` only, as the review made it) | not caught | `ac20_no_byte_of_an_oversized_query_reaches_the_node`. (A first version wrote the header for every refused message; the old `unsupported_and_broken_frontend_messages_end_the_session` caught that one through the other tags) |
+| N5. The cut check at the top of the relay loop is removed (t4) | the test binary hung (review: ten minutes) | 12 tests fail, among them `a_positive_conflict_ends_running_sessions_and_silence_does_not` and `at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01`; the whole run of the five mutations took under two minutes |
+
+"Before" was run again here, with the tests of `ce67e27` in a copy of the tree: N1, N2, N3 and N4 passed every test of `pool-core`, as the review found; N5 made the session tests hang until the limit of 600 seconds of the mutation runner ended the run.
+
+`cargo test -p pool-core --locked --test session`: 71 of 71, five runs in a row.
+
+#### Fuzzing (decision 94)
+
+- `crates/pool-protocol/fuzz/fuzz_targets/auth.rs`, a new target, with its `[[bin]]` entry in `crates/pool-protocol/fuzz/Cargo.toml`. It feeds the whole input to `parse_sasl_initial_response` first, then `parse_authentication`, `parse_negotiate_protocol_version`, `parse_ready_for_query`, `parse_parameter_status`, `parse_backend_key_data` and `error_sqlstate`. Nothing may panic, and what a parser accepts, its encoder writes back to the same bytes. 13 regression inputs under `fuzz/regressions/auth/`, made from the golden messages. `cargo metadata --locked` on the fuzz manifest passes: the lockfile of the package does not change. `max_len` for the line of `scripts/check.sh`: **4096** (a SASL message of a client is at most 1024 bytes; 4096 also covers the node messages these parsers read).
+- `data_row`, which decision 94 names too, is a private function of `pool-core` and is not reachable from this package: `pool-core` is not a dependency of the fuzz package, and adding it would change its lockfile. Not done; a question for the architect.
+- `scram` now takes the length of a nonce from its first byte (0 to 63) and the nonce from the next bytes; the rest is the message. Shown on a copy: with a `panic!` put right after the decoding of the proof in `parse_client_final`, an input that holds a nonce and a client-final message with that nonce reaches it (`REACHED: the proof of a client-final message was decoded`, `deadly signal`), and the old target with the same input does not. The committed regression inputs of `scram` were not changed; their first byte is now read as the length of a nonce.
+- The literal bytes of the short messages are in `golden.rs` since round four. The verifier of RFC 7677 as a literal is not added: `golden.rs` was not a file of this round.
+
+| Command, from `crates/pool-protocol` | Observed | Result |
+|---|---|---|
+| `CARGO_TARGET_DIR=<root>/target/fuzz cargo +nightly-2026-10-17 fuzz run auth fuzz/corpus/auth fuzz/regressions/auth -- -max_total_time=30 -max_len=4096` | exit 0, 3057871 runs in 31 s, no file under `fuzz/artifacts/` | pass |
+| the same for `scram` with `-max_len=4096` | exit 0, 3223829 runs in 31 s, no file under `fuzz/artifacts/` | pass |
+
+#### Gates
+
+| Command | Observed | Result |
+|---|---|---|
+| `scripts/check.sh all > <file> 2>&1; echo $?` on the tree of `9818739` before its commit | exit status 0: fmt, clippy, test, deny, guards and docs `ok` | pass |
+| `scripts/check.sh linux-build` on `9818739` | exit status 1: in the pinned image, 4 of the 18 tests of `apps/pool/tests/commands.rs` failed, each because `pool bootstrap` stops at `secret.permissions at node.tls_ca_file` before it reaches the node of the test (`ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal`, `ac10_a_journal_that_was_cut_or_whose_marks_changed_...`, `ac9_a_lock_held_by_another_pool_process_...`, `ac9_bootstraps_started_together_...`). These are the four that are red on `main` there, whose fix the developer of `apps/pool` is making; this round changed nothing in `apps/pool`. `cargo test` stops at the first test binary that fails, so the other packages did not run in that check | fail, the known four only |
+| `cargo test --locked --no-fail-fast -p pool-core -p pool-protocol -p pool-control -p pool-config` in the same pinned image, from `git archive` of `9818739` | exit 0, every test result `ok`, among them `session` 71 of 71 and `golden` 17 | pass |
+
 ## Full verification
 
 The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.
