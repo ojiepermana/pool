@@ -534,6 +534,7 @@ All in `crates/pool-config/tests/fixtures/`. "The serving base" is `valid-topolo
 | `invalid-serving-listener-key.toml` | `[listener]` without `tls_private_key_file` | `config.missing_key` at `listener.tls_private_key_file` |
 | `invalid-serving-limit.toml` | `limits.session_max_count = 0` | `config.invalid_value` at `limits.session_max_count` |
 | `invalid-serving-expiry.toml` | `probe.period_ms = 5000`, `probe.timeout_ms = 2000`, expiry left at its default | `config.invalid_value` at `probe.observation_expiry_ms` |
+| `invalid-serving-node-loss.toml` (added on 2026-11-16, decision 109) | The serving base with `probe.period_ms = 20000`, `probe.timeout_ms = 5000`, `probe.observation_expiry_ms = 30000` and `probe.node_loss_timeout_ms = 44999`, which is one below twice the period plus the timeout | `config.invalid_value` at `probe.node_loss_timeout_ms`, and no other finding |
 | `invalid-serving-duplicate-principal.toml` | Two principals with the same `name` and different `id` | `config.duplicate_principal` at `principal.name`, at the position of the second |
 | `invalid-serving-unknown-key.toml` | `limits.idle_timeout_ms = 1` | `config.schema` |
 | `invalid-name-c1.toml` | The base of spec 0003 and an identity whose `backend_login` holds U+009B and `CANARY-9f2c7b1e` | `config.invalid_value` at `identity.backend_login` |
