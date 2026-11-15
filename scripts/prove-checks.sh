@@ -285,7 +285,7 @@ append "$C/README.md" '[broken](docs/glossary.md#no-such-heading)'
 expect 16 docs 'D2' 'no-such-heading'
 restore
 
-rewrite "$C/docs/scope/003-control-and-session-data-model.md" awk 'NR == 1 { sub(/planned/, "done") } { print }'
+rewrite "$C/docs/scope/004-one-real-primary-path.md" awk 'NR == 1 { sub(/planned/, "done") } { print }'
 expect 17 docs 'D3'
 restore
 

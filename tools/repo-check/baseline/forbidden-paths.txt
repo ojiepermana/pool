@@ -2,4 +2,3 @@
 apps/pool-cli
 crates/pool-protocol
 crates/pool-core
-crates/pool-control
