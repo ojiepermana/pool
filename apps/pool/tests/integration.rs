@@ -2185,3 +2185,129 @@ fn it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresq
     }
     assert_log_is_clean(&case, &log);
 }
+
+// ---- added by the tests of scope 004, round four (review finding M3) ----
+
+impl Case {
+    /// The serving configuration with several node entries in the one cluster.
+    fn write_serving_nodes(&self, witness: Option<&str>, listen_port: u16, nodes: &[NodeAt]) {
+        let dir = fixture_dir();
+        let mut settings = self.settings();
+        settings.witness = witness;
+        self.write(&settings, nodes);
+        let mut text = fs::read_to_string(&self.config).expect("read");
+        text.push_str(&format!(
+            "\n[listener]\nhost = \"{host}\"\nport = {listen_port}\n\
+             tls_certificate_file = \"{certs}/host.docker.internal.pem\"\ntls_private_key_file = \"{dir}/pool.key\"\n\n\
+             [probe]\nperiod_ms = 200\ntimeout_ms = 5000\nobservation_expiry_ms = 8000\n\n\
+             [[principal]]\nid = \"it-principal\"\nname = \"pz7_principal\"\nverifier_file = \"{dir}/principal.verifier\"\n\n\
+             [[identity]]\nid = \"it-identity\"\nprincipal = \"pz7_principal\"\ndatabase = \"pz7_db\"\ncluster = \"main\"\n\
+             backend_database = \"pz7_appdb\"\nbackend_login = \"pz7_rw\"\ncredential_file = \"{dir}/rw.password\"\n",
+            host = var("POOL_IT_LISTEN_HOST"),
+            certs = dir.join("certs").display(),
+            dir = dir.display(),
+        ));
+        fs::write(&self.config, text).expect("write");
+    }
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac14_a_second_primary_beside_a_silent_writer_ends_sessions_and_latches_the_journal() {
+    // covers: 0004 AC-14, 0003 AC-17 (review finding M3). Two node entries of
+    // one cluster point at container 1 through two relays, so both report the
+    // same system identifier and both are primaries. `pg2` is silent at first.
+    // Then the writer `pg1` falls silent and `pg2` answers: the reasons mix
+    // `evidence.writer_missing` with `evidence.second_primary`, the running
+    // session is ended, and the latch reaches the journal: a restart with a
+    // healthy writer and a silent `pg2` stays closed.
+    let runtime = support::runtime();
+    let pg_port: u16 = var("POOL_IT_PG_PORT").parse().expect("port");
+    let writer = support::Relay::start(&runtime, pg_port);
+    let second = support::Relay::start(&runtime, pg_port);
+    second.refuse_tls_from(1);
+    let case = Case::new("second-primary");
+    let port = free_port(&var("POOL_IT_LISTEN_HOST"));
+    case.write_serving(None, port);
+    let id = bootstrap(&case).to_string();
+    let nodes = [
+        NodeAt {
+            id: "pg1",
+            port: writer.port,
+        },
+        NodeAt {
+            id: "pg2",
+            port: second.port,
+        },
+    ];
+    case.write_serving_nodes(Some(&id), port, &nodes);
+    let daemon = Daemon::start(&case);
+    daemon.wait_for(
+        &[
+            "\"event\":\"admission.changed\"",
+            "\"state\":\"open\"",
+            "\"node_id\":\"pg1\"",
+        ],
+        20,
+    );
+    let mut running = session_login(&runtime, port);
+    assert!(
+        runtime
+            .block_on(running.query_one_row("SELECT 1"))
+            .expect("a row")
+            .is_some()
+    );
+
+    writer.refuse_tls_from(writer.connections() + 1);
+    second.accept_tls_again();
+    assert_eq!(
+        end_monitor_connections(),
+        1,
+        "the monitor connection of pg1"
+    );
+    daemon.wait_for(
+        &[
+            "\"event\":\"admission.changed\"",
+            "\"state\":\"closed\"",
+            "evidence.writer_missing",
+            "evidence.second_primary",
+        ],
+        20,
+    );
+    let ended = runtime.block_on(support::next_error(running.stream_mut()));
+    assert_eq!(
+        ended.as_deref(),
+        Some("57P01"),
+        "the running session is ended"
+    );
+    daemon.wait_for(
+        &[
+            "\"event\":\"authority.conflict_latched\"",
+            "\"recorded\":true",
+        ],
+        20,
+    );
+    assert_eq!(daemon.stop_within(20), 0);
+
+    // A new start: the writer answers again, pg2 is silent, and the latch holds.
+    writer.accept_tls_again();
+    second.refuse_tls_from(second.connections() + 1);
+    let daemon = Daemon::start(&case);
+    daemon.wait_for(
+        &[
+            "\"event\":\"admission.changed\"",
+            "\"state\":\"closed\"",
+            "\"reasons\":\"authority.conflict_latched\"",
+        ],
+        20,
+    );
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        "SELECT 1;",
+    );
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [NOT_ADMITTED.to_owned()], "{stderr}");
+    assert_eq!(daemon.stop_within(20), 0);
+    drop((writer, second));
+}
