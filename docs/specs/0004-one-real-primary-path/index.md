@@ -27,7 +27,7 @@ These criteria cover scope 004 only. Cite them as `0004 AC-n`. Names in code fon
 
 Workspace and checks
 
-- **AC-1** (workspace shape, `0002 AC-6`): `cargo metadata --no-deps --format-version 1` lists exactly five workspace members: `pool`, `pool-config`, `pool-control`, `pool-core` and `pool-protocol`. The dependencies between them are exactly the six pairs under [Workspace](#workspace). `pool-protocol` has no dependency at all. `Cargo.lock` holds the five members and the 70 third party entries listed in the [rationale](rationale.md#locked-packages). `apps/pool-cli` does not exist. No package has `dev-dependencies` or a build script. `cargo build --workspace --locked` no longer prints `unused workspace dependency`.
+- **AC-1** (workspace shape, `0002 AC-6`): `cargo metadata --no-deps --format-version 1` lists exactly five workspace members: `pool`, `pool-config`, `pool-control`, `pool-core` and `pool-protocol`. The dependencies between them are exactly the six pairs under [Workspace](#workspace). `pool-protocol` has no dependency at all. `Cargo.lock` holds the five members and the 70 third party entries listed in the [rationale](rationale.md#locked-packages). `apps/pool-cli` does not exist. No package has `dev-dependencies` or a build script. Every direct dependency of every member is named in the code of that member: the command under [Adopted dependencies](#adopted-dependencies) prints nothing, and `cargo build --workspace --locked` prints no warning about an unused dependency.
 - **AC-2** (source guard): Rule W3 reads the new file format under [Source guard](#source-guard). With the baseline of this spec, a line that names `tokio`, `TcpStream`, `TcpListener` or `std::net` is accepted in `crates/pool-core` and `apps/pool` and rejected in `crates/pool-config`, `crates/pool-control` and `crates/pool-protocol`. `std::thread`, `UdpSocket`, `UnixListener` and `UnixStream` are rejected everywhere. `Instant::now`, `SystemTime`, `std::fs` and `std::env` are rejected anywhere under `crates/pool-control/src`. `rusqlite` is rejected under `crates/pool-control/src` except in `journal.rs`. The names `StoredAuthority`, `StoreProbe`, `classify_startup`, `plan_bootstrap` and `writer_admission` are rejected in every `.rs` file outside `crates/pool-control`. Each of these six groups has a case in `scripts/prove-checks.sh` that fails without the rule.
 - **AC-3** (dependency policy and notices, `SEC-13`, `R-17`): `scripts/check.sh deny` passes on the product lockfile and on both fuzz lockfiles with the `deny.toml` under [Dependency policy](#dependency-policy), which adds five license exceptions by crate and no license to the general list. A file `NOTICE` exists at the root and names SQLite and AWS-LC with their versions and license terms. `scripts/check.sh linux-build` passes with the native code compiled by the C compiler of the pinned image and no other tool.
 - **AC-4** (proof script and lockfile check): Case 17 of `scripts/prove-checks.sh` rejects a wrong status whatever status scope 004 has. A lockfile entry ends at the next line that starts with `[`, and one new case adds a local package to `Cargo.lock` and expects rule W4. `scripts/prove-checks.sh` passes on a committed tree.
@@ -185,31 +185,51 @@ Not adopted, on purpose: `tokio-postgres` (the probe uses the wire code of this 
 
 The step that adds the dependencies comes before the steps that use them, so Cargo prints `unused dependency` warnings for a short time. That is a known exception, limited in time, to the rule that a dependency is declared only when the current path uses it. It ends with Build plan step 10, and `0004 AC-1` checks that it ended. If a required check fails because of such a warning, stop and report it. Do not silence it.
 
+A build without that warning does not show that the exception ended. The verification of milestone 1 found that Cargo 1.100.0 warns about some unused dependencies and stays silent about others: after step 3 it named seven entries and said nothing about `tokio`, `rustls` and `aws-lc-rs` in `pool-core` or about `tokio` and `tracing` in `apps/pool`, which no code used yet. So `0004 AC-1` is checked with this command, run from the repository root. It reads the keys under `[dependencies]` of each member and looks for each name, with `-` written as `_` and followed by `::`, in the `.rs` files under the `src` folder of that member. It prints one line for each dependency that no code names, and nothing when every dependency is used.
+
+```sh
+for m in apps/pool crates/pool-config crates/pool-control crates/pool-core crates/pool-protocol; do
+  awk '/^\[dependencies\]/{d=1;next} /^\[/{d=0} d && /^[a-z]/{sub(/[ .=].*/,""); print}' "$m/Cargo.toml" |
+  while read -r dep; do
+    name=$(printf %s "$dep" | tr - _)
+    grep -rqE "(^|[^A-Za-z0-9_])${name}::" "$m/src" || echo "unused: $m $dep"
+  done
+done
+```
+
+On the tree after step 3 it printed twelve lines, the seven that Cargo named and the five it did not. It is run by hand at steps 10 and 14 and its output goes into the verification record. It is not a required check: it proves that a temporary state ended, and after that the next unused dependency is a matter for review, as before. A name that appears only in a comment would satisfy it, which a reviewer of step 10 looks for.
+
 ### Dependency policy
 
 `deny.toml` keeps its general list as it is: `Apache-2.0`, `MIT`, `Unicode-3.0`. It gains five exceptions by crate, placed after the existing one for `libfuzzer-sys`:
 
 ```toml
 [[licenses.exceptions]]
-crate = "aws-lc-rs"
+crate = "aws-lc-rs@=1.19.0"
 allow = ["ISC"]
 
 [[licenses.exceptions]]
-crate = "aws-lc-sys"
+crate = "aws-lc-sys@=0.47.0"
 allow = ["ISC", "BSD-3-Clause"]
 
 [[licenses.exceptions]]
-crate = "rustls-webpki"
+crate = "rustls-webpki@=0.103.17"
 allow = ["ISC"]
 
 [[licenses.exceptions]]
-crate = "untrusted"
+crate = "untrusted@=0.9.0"
 allow = ["ISC"]
 
 [[licenses.exceptions]]
-crate = "subtle"
+crate = "subtle@=2.6.1"
 allow = ["BSD-3-Clause"]
 ```
+
+**Each exception names one exact version** (changed on 2026-11-15, after the verification of milestone 1; the first version of this block named the packages without a version). The permission of manual step M1 was given for these packages at these versions. `name@=version` is how `cargo-deny` 0.20.2 writes an exception for one version, and it was run on 2026-11-15 on the product lockfile and on `crates/pool-config/fuzz/Cargo.lock`: both give `advisories ok, bans ok, licenses ok, sources ok`. With `aws-lc-rs@=1.19.1` in the file and 1.19.0 in the lockfile, the check fails with `license is not explicitly allowed` for `aws-lc-rs v1.19.0`. So this is what happens when one of the five gets a new version:
+
+- The exception no longer fits, and `scripts/check.sh deny` fails on the pull request that changes `Cargo.lock`. That holds for every new version, also one that changes only the last number, and also one whose declared license is different. Nothing new can pass without someone looking.
+- The pull request that updates the package changes the version in its exception line too. The Release maintainer, a person, compares the declared license of the new version with the one in the table of manual step M1. When the text is the same, changing the number is all there is to do. When it differs, it is a new license decision, recorded in the technology evaluation, as the [rules of spec 0002](../0002-standards-and-tooling/index.md#dependency-policy) ask.
+- The price: a security update of one of these five waits for that look. Every change reaches `main` through a pull request that a person merges, so the look costs a line in a review that happens anyway.
 
 Exceptions by crate are used, and not two more lines in the general list, for two reasons. The general list is also applied to the fuzz lockfiles, where no package needs `ISC`, and a license in the list that nothing needs fails the check. And a later package under `ISC` or `BSD-3-Clause` then needs its own decision. With this file, `cargo deny check` printed `advisories ok, bans ok, licenses ok, sources ok` for the scratch lockfile and for `crates/pool-config/fuzz/Cargo.lock` on 2026-11-15. An exception that a lockfile does not meet is a warning, as the `NCSA` one already is.
 
@@ -1165,7 +1185,7 @@ How the hard cases are made:
 
 | Criterion | Command | Where it runs |
 |---|---|---|
-| AC-1 | `cargo metadata --no-deps --format-version 1`, `scripts/check.sh guards`, `cargo build --workspace --locked` | Workstation and CI |
+| AC-1 | `cargo metadata --no-deps --format-version 1`, `scripts/check.sh guards`, `cargo build --workspace --locked`, and the use check under [Adopted dependencies](#adopted-dependencies), run by hand | Workstation. The first three also in CI |
 | AC-2, AC-4 | `cargo test --manifest-path tools/repo-check/Cargo.toml --locked --target-dir target/repo-check`, `scripts/prove-checks.sh` | Workstation |
 | AC-3 | `scripts/check.sh deny`, `scripts/check.sh linux-build` | Workstation with Docker, and CI |
 | AC-5 to AC-8 | `cargo test -p pool-config --locked`, `cargo test -p pool --locked --test check_config` | Workstation and CI |
@@ -1195,6 +1215,8 @@ No session edits `.github/` or writes to GitHub. These steps are yours, or the l
 | `rustls-webpki` | 0.103.17 | `ISC` | Certificate checks of `rustls` |
 | `untrusted` | 0.9.0 | `ISC` | Used by `rustls-webpki` |
 | `subtle` | 2.6.1 | `BSD-3-Clause` | Constant time helpers of `rustls` |
+
+The exceptions in `deny.toml` name exactly the versions of this table. A later version of one of these packages needs the look described under [Dependency policy](#dependency-policy) before it can be merged.
 
 Two licenses are new: `ISC` and `BSD-3-Clause`. Both are permissive and are compatible with Apache 2.0. SQLite itself is in the public domain and comes in through `libsqlite3-sys`, whose own license is MIT. A yes means the five exceptions under [Dependency policy](#dependency-policy) and the `NOTICE` file. A no for AWS-LC means the runner up, `ring`, which needs the same two licenses and one more exception for a duplicate package, so a no to `ISC` itself stops the TLS decision of spec 0001 and comes back to you.
 
@@ -1254,14 +1276,14 @@ The order is a tracer bullet (one thin real path first, then thicker). The first
 
 1. **Proof script and lockfile check.** Change case 17 and the lockfile entry end as [Proof script and lockfile check](#proof-script-and-lockfile-check) says, with the changed test and the new case. This step comes first because case 17 fails on `main` from the moment scope 004 is `in-progress`. Files: `scripts/prove-checks.sh`, `tools/repo-check/src/`. Evidence: the tests of `tools/repo-check`, and `scripts/prove-checks.sh` after the commit. Satisfies **AC-4**.
 2. **Source guard.** Teach rule W3 the three kinds of line, replace `forbidden-source-patterns.txt` with the file under [Source guard](#source-guard), and add the six proof cases. Files: `tools/repo-check/src/`, `tools/repo-check/baseline/forbidden-source-patterns.txt`, `scripts/prove-checks.sh`. Evidence: as step 1, and `scripts/check.sh guards`. Satisfies **AC-2**, `0003 AC-19` and the guard half of `0003 AC-18`.
-3. **Workspace shape and dependencies.** Needs manual step M1. Create `crates/pool-protocol` and `crates/pool-core` with a manifest and a `src/lib.rs` that holds only the crate documentation. Add the six dependencies and the two members to the root `Cargo.toml`, and the dependencies of each member as the table under [Workspace](#workspace) says. Run `cargo build --workspace` once so that `Cargo.lock` gains the packages, and compare the names with the [rationale](rationale.md#locked-packages). Change `lock-packages.txt`, `forbidden-paths.txt` and `internal-dependencies.txt`, and point case 9 of `scripts/prove-checks.sh` at `apps/pool-cli`. Add the five exceptions to `deny.toml`. Write `NOTICE`. Record the adoption in the technology evaluation. Set this spec's `**Status**` line to `In Progress`. Files: `Cargo.toml`, `Cargo.lock`, the five manifests, the two new `src/lib.rs`, `tools/repo-check/baseline/`, `scripts/prove-checks.sh`, `deny.toml`, `NOTICE`, `docs/research/technology-evaluation.md`. Evidence: `scripts/check.sh all`, `scripts/check.sh linux-build`, and `scripts/prove-checks.sh` after the commit. Satisfies **AC-3** and the shape of **AC-1**.
+3. **Workspace shape and dependencies.** Needs manual step M1. Create `crates/pool-protocol` and `crates/pool-core` with a manifest and a `src/lib.rs` that holds only the crate documentation. Add the six dependencies and the two members to the root `Cargo.toml`, and the dependencies of each member as the table under [Workspace](#workspace) says. Run `cargo build --workspace` once so that `Cargo.lock` gains the packages, and compare the names with the [rationale](rationale.md#locked-packages). Change `lock-packages.txt`, `forbidden-paths.txt` and `internal-dependencies.txt`, and point case 9 of `scripts/prove-checks.sh` at `apps/pool-cli`. Add the five exceptions to `deny.toml`, each with its exact version. (The versions were added to this spec on 2026-11-15, after step 3 was built and verified. The tree of that time names the packages without a version, and gets the five changed lines as a commit of its own, named for this step, before step 12.) Write `NOTICE`. Record the adoption in the technology evaluation. Set this spec's `**Status**` line to `In Progress`. Files: `Cargo.toml`, `Cargo.lock`, the five manifests, the two new `src/lib.rs`, `tools/repo-check/baseline/`, `scripts/prove-checks.sh`, `deny.toml`, `NOTICE`, `docs/research/technology-evaluation.md`. Evidence: `scripts/check.sh all`, `scripts/check.sh linux-build`, and `scripts/prove-checks.sh` after the commit. Satisfies **AC-3** and the shape of **AC-1**.
 4. **The wire format.** Build `pool-protocol` as [The wire subset](#the-wire-subset) says: first packets, parameters, message headers, the error message, the authentication messages, `NegotiateProtocolVersion`, the SCRAM text messages and base64, each as a function over bytes. Write the golden tests. Needs step 3. Files: `crates/pool-protocol/`. Evidence: `cargo test -p pool-protocol --locked`. Satisfies **AC-28**, and the byte level half of **AC-15**, **AC-16** and **AC-23**.
 5. **Configuration.** Implement [Configuration](#configuration) in `pool-config`: the keys, the two codes, the name rule, the finding limit, the two views, the two generation types and the fixtures, with the one changed line in `invalid-unknown-key.toml` and in the two tests that [Fixtures](#fixtures) names. Wrap the output of the binary in a `BufWriter` and add the omitted line and field to `apps/pool/src/report.rs`. Files: `crates/pool-config/`, `apps/pool/src/report.rs`, `apps/pool/src/main.rs`, `apps/pool/tests/check_config.rs`. Evidence: `cargo test -p pool-config --locked`, `cargo test -p pool --locked`. Satisfies **AC-5** to **AC-8**.
 6. **Authority on disk and the control loop.** In `pool-control`: `journal.rs` with `JournalRead`, `AuthorityState::latch_conflict`, `latch_recorded` and `name`, `ObservationBoard`, `SnapshotGeneration`, `build_snapshot`, `Controller`, `PROBE_QUERY` and `observation_from_row`. Bring the interface block and the comments in line with the notes of 2026-11-15 in spec 0003. Needs steps 3 and 5. Files: `crates/pool-control/`. Evidence: `cargo test -p pool-control --locked`. Satisfies `0003 AC-17`, `0003 AC-18`, the library half of **AC-10** and **AC-12**.
 7. **Secrets, TLS and the backend connection.** In `pool-core`: the secret types and the reading of protected files, the TLS server and client setup, SCRAM as server and as client, the backend connection of [Backend connection](#backend-connection) and the one row query. Needs steps 4 and 5. Files: `crates/pool-core/`. Evidence: `cargo test -p pool-core --locked`. Satisfies the secret half of **AC-9**, and the library half of **AC-15** and **AC-16**.
 8. **Bootstrap, the authority command and the first run against PostgreSQL.** In `apps/pool`: the state directory checks and the lock, `pool bootstrap`, `pool show-authority`, and the help text. Add `integration` to `scripts/check.sh` with `scripts/integration/`, and write the first tests of `apps/pool/tests/integration.rs`: bootstrap, a second bootstrap, `show-authority`, a node that does not answer, the monitor login. Write `apps/pool/tests/commands.rs` for the two commands. Record the image in the technology evaluation. Needs steps 6 and 7. Files: `apps/pool/`, `scripts/check.sh`, `scripts/integration/`, `docs/research/technology-evaluation.md`. Evidence: `cargo test -p pool --locked`, `scripts/check.sh integration`. Satisfies **AC-9**, **AC-11**, **AC-12**, **AC-26**, and completes **AC-10**.
 9. **The session.** In `pool-core`: the listener loop, steps 1 to 12 of [Session lifecycle](#session-lifecycle), the limits, the relay, backend loss, the conflict ending, shutdown, the route view, the lease and the pool key, and the log events of the data plane. Write `crates/pool-core/tests/session.rs`. Needs step 7. Files: `crates/pool-core/`. Evidence: `cargo test -p pool-core --locked`. Satisfies the hermetic half of **AC-14** to **AC-17**, **AC-19**, **AC-20**, **AC-22**, **AC-23** and **AC-25**.
-10. **The daemon.** In `apps/pool`: `pool run` with its ten steps, the log writer, the probe tasks, the control loop, the mapping into the route view, and signals. Extend `integration.rs` with the walking fixture: the same SQL file direct and through POOL, the mapped login, teardown, the states that are not ready (in `commands.rs`), redaction over the whole run. Needs steps 8 and 9. Files: `apps/pool/`. Evidence: `scripts/check.sh integration`, `cargo build --workspace --locked` without a dependency warning. Satisfies **AC-13**, **AC-18**, **AC-19**, **AC-24**, **AC-25**, and completes **AC-1** and **AC-14**.
+10. **The daemon.** In `apps/pool`: `pool run` with its ten steps, the log writer, the probe tasks, the control loop, the mapping into the route view, and signals. Extend `integration.rs` with the walking fixture: the same SQL file direct and through POOL, the mapped login, teardown, the states that are not ready (in `commands.rs`), redaction over the whole run. Needs steps 8 and 9. Files: `apps/pool/`. Evidence: `scripts/check.sh integration`, `cargo build --workspace --locked` without a dependency warning, and the use check of **AC-1** with no output. Satisfies **AC-13**, **AC-18**, **AC-19**, **AC-24**, **AC-25**, and completes **AC-1** and **AC-14**.
 11. **Limits, loss and denial on the fixture.** Extend `integration.rs` and its helpers with the relay and the cases of [The integration check](#the-integration-check): every limit, the memory budget, the lost COMMIT, plain text, a wrong CA, a wrong password, an unknown user, an unmapped database, the wrong identity. Needs step 10. Files: `apps/pool/tests/`. Evidence: `scripts/check.sh integration`. Completes **AC-15**, **AC-16**, **AC-17**, **AC-20**, **AC-21** and **AC-22**.
 12. **Fuzzing and the CI rule.** Create `crates/pool-protocol/fuzz/` with its three targets, lockfile and regression inputs. Extend `fuzz` and add `fuzz-tools` in `scripts/check.sh`, the new baseline file, rule W6, and `fuzz-tools` in rule C3, each with a test. Needs steps 4 and 8. Files: `crates/pool-protocol/fuzz/`, `crates/pool-config/fuzz/regressions/`, `scripts/check.sh`, `tools/repo-check/`. Evidence: `scripts/check.sh fuzz`, `scripts/check.sh all`, `scripts/prove-checks.sh`. Satisfies **AC-27**. Manual step M2 follows it.
 13. **Document corrections.** Apply items 1 and 2 of [Document corrections](#document-corrections). Evidence: `scripts/check.sh docs`.
