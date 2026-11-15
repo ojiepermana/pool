@@ -328,6 +328,9 @@ async fn serve(prepared: Prepared) -> Outcome {
         Ended::Task("log") => log::write_log_failed(),
         Ended::Task(task) => tracing::error!(event = "daemon.failed", task),
     }
+    // After a failed task the spec ends the sessions as if the deadline had
+    // passed (step 4 of Shutdown). `pool-core` has no way to do that yet, so
+    // the whole shutdown runs here; step 15 replaces it with that call.
     server.shutdown().await;
     if !serving_done {
         let _ = serving.await;
