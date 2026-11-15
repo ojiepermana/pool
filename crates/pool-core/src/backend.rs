@@ -11,6 +11,7 @@
 use std::fmt;
 use std::sync::Arc;
 
+use pool_config::SystemIdentifier;
 use pool_protocol::auth::{
     self, Authentication, BackendKeyData, ParameterStatus, TransactionStatus,
 };
@@ -63,6 +64,9 @@ pub enum BackendError {
     Protocol,
     /// `in_hot_standby` was not reported as `off`, for a session.
     NotPrimary,
+    /// Step 8, for a session: the node did not name the system identifier and the timeline of
+    /// the route, or said it is in recovery, or answered the question in any other way.
+    Identity,
     /// The first `ReadyForQuery` did not report `I`.
     NotIdle,
     /// The stream ended or failed after the TLS handshake.
@@ -84,6 +88,7 @@ impl BackendError {
             Self::Server { .. } => "server_error",
             Self::Protocol => "protocol",
             Self::NotPrimary => "not_primary",
+            Self::Identity => "identity",
             Self::NotIdle => "not_idle",
             Self::Closed => "closed",
             Self::Random => "random",
@@ -342,6 +347,44 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
                 }
                 _ => return Err(BackendError::Protocol),
             }
+        }
+    }
+}
+
+impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
+    /// Step 8 of the backend connection, for a session (spec 0004, decision 85, `0004 AC-29`):
+    /// sends `query`, the question of the probe, and checks its answer by the rules of the probe.
+    ///
+    /// Exactly one row of three columns with no null and at most 4096 bytes; the first is the
+    /// system identifier of the route, the second is exactly `false`, the third is the timeline of
+    /// the route in decimal digits; the status after it is `I`. Any other answer, an error or a
+    /// broken message is [`BackendError::Identity`], and the connection must then be closed.
+    pub async fn verify_identity(
+        &mut self,
+        query: &str,
+        system_identifier: SystemIdentifier,
+        timeline: u32,
+    ) -> Result<(), BackendError> {
+        let row = self
+            .query_one_row(query)
+            .await
+            .map_err(|_| BackendError::Identity)?
+            .ok_or(BackendError::Identity)?;
+        let [Some(named), Some(in_recovery), Some(named_timeline)] = row.as_slice() else {
+            return Err(BackendError::Identity);
+        };
+        let same_system = SystemIdentifier::parse(named) == Some(system_identifier);
+        let same_timeline = !named_timeline.is_empty()
+            && named_timeline.bytes().all(|b| b.is_ascii_digit())
+            && named_timeline.parse::<u32>() == Ok(timeline);
+        if same_system
+            && in_recovery == "false"
+            && same_timeline
+            && self.status == TransactionStatus::Idle
+        {
+            Ok(())
+        } else {
+            Err(BackendError::Identity)
         }
     }
 }

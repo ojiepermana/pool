@@ -848,6 +848,7 @@ fn backend_class(error: BackendError) -> &'static str {
         BackendError::AuthenticationMethod => "auth_method",
         BackendError::Authentication | BackendError::Server { .. } => "login",
         BackendError::NotPrimary => "not_primary",
+        BackendError::Identity => "identity",
         BackendError::Timeout => "timeout",
         _ => "protocol",
     }

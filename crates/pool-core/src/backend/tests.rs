@@ -914,3 +914,93 @@ async fn a_node_that_no_address_answers_is_connect() {
         Err(BackendError::Connect)
     );
 }
+
+/// The rows a scripted node gives for the question of step 8.
+type Rows = Vec<Vec<Option<&'static str>>>;
+
+/// The answer of the node to the question of step 8, and whether the session may go on.
+async fn identity_answer(rows: Rows, query_error: bool) -> Result<(), BackendError> {
+    let mut script = Script::primary();
+    script.rows = rows;
+    script.query_error = query_error;
+    let run = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    let mut conn = run.result.expect("open");
+    let system = SystemIdentifier::parse("7613").expect("system identifier");
+    conn.verify_identity("the question", system, 3).await
+}
+
+#[tokio::test]
+async fn ac29_the_node_must_name_the_system_identifier_and_timeline_of_the_route_and_not_be_in_recovery()
+ {
+    // covers: 0004 AC-29, step 8 of the backend connection.
+    assert_eq!(
+        identity_answer(vec![vec![Some("7613"), Some("false"), Some("3")]], false).await,
+        Ok(())
+    );
+    let refused: Vec<(&str, Rows, bool)> = vec![
+        (
+            "another system identifier",
+            vec![vec![Some("7614"), Some("false"), Some("3")]],
+            false,
+        ),
+        (
+            "another timeline",
+            vec![vec![Some("7613"), Some("false"), Some("4")]],
+            false,
+        ),
+        (
+            "in recovery",
+            vec![vec![Some("7613"), Some("true"), Some("3")]],
+            false,
+        ),
+        (
+            "an error",
+            vec![vec![Some("7613"), Some("false"), Some("3")]],
+            true,
+        ),
+        (
+            "two rows",
+            vec![vec![Some("7613"), Some("false"), Some("3")]; 2],
+            false,
+        ),
+        ("no row", vec![], false),
+        (
+            "a null",
+            vec![vec![Some("7613"), Some("false"), None]],
+            false,
+        ),
+        (
+            "four columns",
+            vec![vec![Some("7613"), Some("false"), Some("3"), Some("x")]],
+            false,
+        ),
+        (
+            "a timeline with a sign",
+            vec![vec![Some("7613"), Some("false"), Some("+3")]],
+            false,
+        ),
+        (
+            "a system identifier with a leading zero",
+            vec![vec![Some("07613"), Some("false"), Some("3")]],
+            false,
+        ),
+        (
+            "recovery spelled otherwise",
+            vec![vec![Some("7613"), Some("f"), Some("3")]],
+            false,
+        ),
+    ];
+    for (case, rows, error) in refused {
+        assert_eq!(
+            identity_answer(rows, error).await,
+            Err(BackendError::Identity),
+            "{case}"
+        );
+    }
+}
