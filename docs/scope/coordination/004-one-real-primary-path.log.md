@@ -5,19 +5,19 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `004-one-real-primary-path.brief-umum.md` · **Langkah manual:** `004-one-real-primary-path.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 15:40`
+- **Diperbarui:** `2026-11-15 15:47`
 
 ## Sub sesi wave `1`
 
 | Nama | Peran | Item | Scope | Ownership | Branch | Model | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `arc-f4-spec` | architect | F4 · `Design it (spec)`: spec baru `0004-one-real-primary-path`, plus pembaruan spec 0003 yang Follow-up 4 dan 14-nya minta (m1, m2, m3, n2, teks yang tertinggal) | `004-one-real-primary-path.md` | `docs/specs/0004-one-real-primary-path/`; `docs/adr/0004-one-real-primary-path.md`; `docs/specs/0003-control-and-session-data-model/{index,rationale}.md` (hanya pembaruan bertanggal yang Follow-up 4 dan 14 minta); `docs/index.md` (baris dokumen baru); `docs/glossary.md` (istilah baru saja); `docs/plan/decision-ledger.md` (disposisi baris yang spec ini putuskan) | dicatat sesudah sesi dimulai | `fable-5-2 · high` | `aktif` (giliran pertama `langsung`) |
-| `dev-f4-m1` | developer | F4 · milestone pertama sesudah spec diterima | `004-one-real-primary-path.md` | ditetapkan dari Build plan spec 0004 | dicatat sesudah sesi dimulai | `opus-5-5 · medium` | `standby` |
-| `dev-f4-m2` | developer | F4 · milestone yang Build plan sebut bisa paralel | `004-one-real-primary-path.md` | ditetapkan dari Build plan spec 0004 | dicatat sesudah sesi dimulai | `opus-5-5 · medium` | `standby` |
-| `chk-f4-verify` | checker (verify) | F4 · verify per milestone, lalu verify penuh | `004-one-real-primary-path.md` | `docs/specs/0004-one-real-primary-path/verify.md` (bagian checker) | dicatat sesudah sesi dimulai | `fable-5-2 · high` | `standby` |
-| `tst-f4-test` | tester | F4 · `Test it` | `004-one-real-primary-path.md` | file test yang spec 0004 tetapkan | dicatat sesudah sesi dimulai | `opus-5-5 · high` | `standby` |
-| `chk-f4-review` | checker (review) | F4 · `Review it (fresh model)` (cadangan, belum melihat implementasi) | `004-one-real-primary-path.md` | `docs/reviews/`; satu baris `docs/index.md` | dicatat sesudah sesi dimulai | `fable-5-2 · high` | `standby` |
-| `dbg-f4-fix` | debugger | F4 · cadangan untuk gerbang yang merah karena test atau langkah verify | `004-one-real-primary-path.md` | tidak ada (usulan ke pemilik file) | dicatat sesudah sesi dimulai | `fable-5-2 · medium` | `standby` |
+| `arc-f4-spec` | architect | F4 · `Design it (spec)`: spec baru `0004-one-real-primary-path`, plus pembaruan spec 0003 yang Follow-up 4 dan 14-nya minta (m1, m2, m3, n2, teks yang tertinggal) | `004-one-real-primary-path.md` | `docs/specs/0004-one-real-primary-path/`; `docs/adr/0004-one-real-primary-path.md`; `docs/specs/0003-control-and-session-data-model/{index,rationale}.md` (hanya pembaruan bertanggal yang Follow-up 4 dan 14 minta); `docs/index.md` (baris dokumen baru); `docs/glossary.md` (istilah baru saja); `docs/plan/decision-ledger.md` (disposisi baris yang spec ini putuskan) | `claude/arc-f4-spec-4c475a` (`local_f152c86a`), worktree `arc-f3-spec-679ffe` | `fable-5-2 · high` | `aktif` (giliran pertama `langsung`) |
+| `dev-f4-m1` | developer | F4 · milestone pertama sesudah spec diterima | `004-one-real-primary-path.md` | ditetapkan dari Build plan spec 0004 | `claude/dev-f4-m1-03375c` (`local_c4a57c7d`), worktree `dev-f3-build-c8a9c8` | `opus-5-5 · medium` | `standby` |
+| `dev-f4-m2` | developer | F4 · milestone yang Build plan sebut bisa paralel | `004-one-real-primary-path.md` | ditetapkan dari Build plan spec 0004 | `claude/dev-f4-m2-6350ef` (`local_cf22751f`), worktree `chk-f3-verify-edf0ea` | `opus-5-5 · medium` | `standby` |
+| `chk-f4-verify` | checker (verify) | F4 · verify per milestone, lalu verify penuh | `004-one-real-primary-path.md` | `docs/specs/0004-one-real-primary-path/verify.md` (bagian checker) | `claude/chk-f4-verify-907801` (`local_21e76da7`), worktree `tst-f3-test-465bc4` | `fable-5-2 · high` | `standby` |
+| `tst-f4-test` | tester | F4 · `Test it` | `004-one-real-primary-path.md` | file test yang spec 0004 tetapkan | `claude/tst-f4-test-4c59c4` (`local_4ec30a65`), worktree `chk-f3-review-2f8cdc` | `opus-5-5 · high` | `standby` |
+| `chk-f4-review` | checker (review) | F4 · `Review it (fresh model)` (cadangan, belum melihat implementasi) | `004-one-real-primary-path.md` | `docs/reviews/`; satu baris `docs/index.md` | `claude/chk-f4-review-b613d0` (`local_84ec2d75`), worktree `chk-f4-review-b613d0` | `fable-5-2 · high` | `standby` |
+| `dbg-f4-fix` | debugger | F4 · cadangan untuk gerbang yang merah karena test atau langkah verify | `004-one-real-primary-path.md` | tidak ada (usulan ke pemilik file) | `claude/dbg-f4-fix-f9491e` (`local_90b9795f`), worktree `dbg-f4-fix-f9491e` | `fable-5-2 · medium` | `standby` |
 
 ## Keputusan
 
@@ -38,6 +38,7 @@
 | 2026-11-15 | Unduhan dan PostgreSQL: sesi boleh `docker pull` hanya image resmi `postgres` `18.<minor>-bookworm` yang di-pin lewat digest, karena spec 0002 ("Rules for later slices") sudah memutuskan image itu untuk check `integration`; database yang dihubungi hanya container sekali pakai yang dijalankan check itu, dengan kredensial fixture. Crate baru hanya yang spec 0004 adopsi. Keputusan orang atas lisensi baru (spec 0003 Follow-up 3) masuk file manual saat architect menyebut lisensinya. | lead (tafsiran) |
 | 2026-11-15 | Disk: 24 GiB bebas (95% terpakai). Maksimal 2 build Rust penuh bersamaan; dua sesi developer saja. Sesi berhenti membangun di bawah 8 GiB bebas. | lead |
 | 2026-11-15 | Sesi dimulai pada giliran user ini: `arc-f4-spec` `langsung`; `dev-f4-m1`, `dev-f4-m2`, `chk-f4-verify`, `tst-f4-test`, `chk-f4-review`, dan `dbg-f4-fix` `standby`. Dua developer dan satu debugger dimulai sekarang karena `start_session` ditolak pada giliran yang dipicu sesi lain (log 003 keputusan 57). Effort lead `high`, jadi tidak ada sesi yang perlu `standby` karena effort. | lead |
+| 2026-11-15 | Tujuh sesi dimulai dari `619da9f`. Aplikasi memakai ulang lima folder worktree scope 003 di `/Users/ojiepermana/worktrees/pool/` untuk lima sesi baru (nama folder lama, branch baru; kolom Branch menyebut foldernya), jadi lima branch `claude/*-f3-*` kini tanpa worktree. Branch itu tetap ada dan tidak disentuh. | lead |
 
 ## Keputusan delegasi
 
