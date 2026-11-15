@@ -143,6 +143,7 @@ The session ran in the `auto` decision mode: each choice below is the recommende
 | 43 | Is the salted password derived at every backend login? | No. The two keys are kept per credential, salt and count | Derive every time | no | A burst of logins fills the four blocking threads, the probe times out, and the cluster closes by itself |
 | 44 | Does a log line wait for stderr? | No. A bounded queue and one writing task. A full queue drops and counts | Write in place | no | A slow reader of stderr can stop every worker of the runtime |
 | 45 | Which code does a client get when POOL ends its session? | `08007` with a query in flight, `57P01` without | Always `57P01` | no | A client whose COMMIT may have been applied is told only that it was ended |
+| 46 | `invalid-unknown-key.toml` of spec 0001 uses `[listener]` as its unknown table, and this slice makes that table known. What gives? (added on 2026-11-15, after acceptance, from a finding of the developer of step 5) | The fixture and two in memory tests name the table `no_table`. Finding, line, column and output stay the same bytes | Keep the fixture text and let its result change to three `config.missing_key` findings, with an exception in `0004 AC-5` | yes | The row of that fixture in spec 0001 and the byte for byte tests of `0001 AC-7` change, and spec 0001 loses its only fixture for an unknown table |
 
 ### Notes on the heavy ones
 
@@ -167,6 +168,8 @@ The session ran in the `auto` decision mode: each choice below is the recommende
 **Decision 15, the guard.** The rule protects two things: that no crate grows a socket by accident, and that control never gets the means to do the work of core. A list of exceptions by path, on top of a list that covers everything, keeps both, and a new crate is covered before anyone thinks about it.
 
 **Decision 16, the crypto library.** Both candidates were resolved and built in the pinned Linux image on 2026-11-15. Both need the same two licenses. `ring` is smaller. `aws-lc-rs` is what the security requirements name, what `rustls` selects by default and tests most, and it brings no duplicate package. With `multiple-versions = "deny"`, `ring` would need the first `skip` entry in `deny.toml`. Either can be swapped for the other later: the calls this slice makes have the same shape in both.
+
+**Decision 46, the fixture.** It is marked heavy because it changes the text of a fixture that an accepted spec quotes. It changes nothing a user can see. The fixture exists to show what an unknown table does, and `listener` was only ever a stand in for "a table this build does not know". Keeping that meaning needs another name. Keeping the name would have changed the meaning, the result and the evidence of `0001 AC-7`. A name of the same length was chosen so that no position can move, and it was checked by running the binary: the report has the same bytes in both formats. The developer had proposed `frontend`. That is a glossary term, so a later slice could make it a table and the same finding would come back. `no_table` cannot.
 
 ## Locked packages
 
