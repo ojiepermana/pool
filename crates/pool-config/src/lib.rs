@@ -7,6 +7,12 @@
 
 use std::fmt;
 
+mod generation;
+mod identifier;
+
+pub use generation::{AuthorityRevision, StartSequence, TopologyEpoch};
+pub use identifier::{AuthorityId, ClusterId, IdentityId, NodeId, SystemIdentifier};
+
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 
 /// The largest configuration file accepted, in bytes. A file of exactly this
