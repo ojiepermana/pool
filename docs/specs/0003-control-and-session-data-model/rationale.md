@@ -198,3 +198,36 @@ The addition of `AC-16` (decision 26) was read the same way, by the same kind of
 | Follow-up 6 named only a changed or removed witness | It now names adding one, and `control.state_directory` |
 | Classifying again at a reload was not tied to the start sequence | Follow-up 6 leaves the reading of the journal at a reload to 009 and says the start sequence does not advance |
 | Two wordings were loose | "With the same journal", and "identifier and generation types" |
+
+## Review of 2026-11-15
+
+The independent [review](../../reviews/2026-11-15-scope-003-control-and-session-data-model.md) of the range `ca9a897..be06393` ended with approve with nits: no blocker, no major finding, 15 minor findings and 18 nits. Scope 003 closes on the tree that was verified. This update of the spec, written on the same day, records what the review found in the places that scope 004 and scope 009 read. It adds no criterion, no Build plan step and no decision, and it changes no code. There was no cross check of this update, because nothing was decided in it.
+
+**Why nothing changes now.** The three findings about `writer_admission` (m1, m2, m3) are limits of what the caller passes in, and no caller exists yet. Closing them in code now would mean guessing the shape of the journal reader and of the probe list before scope 004 designs either. The spec already says that the interface of `pool-control` may change when real inputs arrive and that the rules should not. What scope 004 must not do is call the function before it has read the three points, so each one is named where the rule lives and again in Follow-up 4.
+
+| Finding | Sorted as | Where it is recorded in `index.md` |
+|---|---|---|
+| m1, a `Ready` state cannot learn of a later latch | A duty of scope 004, with a recommended shape and a test it owes | Follow-up 4. Notes under writer admission, after walk 3 and in the first consequence about open admission |
+| m2, any crate can build a journal value | A duty of scope 004, when the journal reader is built | Follow-up 4. The same consequence |
+| m3, a sample after `now` or a repeated sample hides a second primary | Two duties of the caller, and one question for scope 004 | Follow-up 4. Note under the rule "Fresh" |
+| m4, the lockfile check of W4 has one way around it | Work for the next slice that touches `tools/repo-check/` | Follow-up 10. Note under Workspace and guards. One sentence in Follow-up 10 of spec 0002 |
+| m5, two million findings from one file | A decision for the user, with three options and a recommendation | Follow-up 11 |
+| m6, the cost of one admission | A question for scope 004, or scope 008 | Follow-up 4 |
+| m7, the unused workspace dependency | A known exception that ends with scope 004 | Follow-up 4. Note under Workspace and guards |
+| m8, control characters above U+007F | A gap, not a choice. Closing it changes which files are valid | Follow-up 12. Note at the name syntax |
+| d1, row k against the letter of `PRD-006 AC-2` | The exception is now stated where the PRD is cited. The note in the PRD is for the user | Follow-up 13 and Follow-up 7. Notes under the criteria, under writer admission and after walk 3 |
+| t6, no guard keeps a clock or a file out of `pool-control` | A proposal for scope 004 | Follow-up 4 |
+| n2, the expiry has no range | A duty of scope 004 | Follow-up 4 |
+| n4, case 17 fails when scope 004 leaves `planned` | With the slice of m4 | Follow-up 10 |
+| n12 and n15, text of the spec behind the code | With the next update that changes the interface | Follow-up 14 |
+| n16, the open case of `R-19` is not in the risk register | The "Document it" box | Follow-up 8 |
+
+Not recorded in this spec, because another file or another session owns each one: t1, t2, t3, t4 and t5 (tests, with the tester), n5, n6, n11 and n18 (code comments and the verification record), n1, n3, n7, n8, n9, n10 and n17 (code and tests), n13 (rows of spec 0001 and spec 0002), n14 (the glossary), and the first half of n16 (`AGENTS.md` and `CLAUDE.md`, which item 6 of the document corrections already gives to the "Document it" box).
+
+**m1, why a function in `pool-control` is the recommended shape.** Reading the journal again after every write also works, and scope 009 may need it anyway for a reload. It leaves one case to the memory of the daemon: the write that failed. A function that turns a `Ready` state and a closed answer into a `Ready` state with the latch set needs no journal, so it covers that case too, and the latch can then not be forgotten by a caller. That is the argument of decision 26. It stays a recommendation: the architect of scope 004 sees the journal reader and decides.
+
+**m5, why the recommendation is both, in two steps.** The buffer removes one system call per finding and changes nothing a user can see, so it needs no decision. It does not bound memory or the size of the output. A limit does, and it changes a public contract: `AC-3` says the whole configuration is reported in one run, and a last line that says findings were left out is new output under spec 0001. That is why the user decides it, and why this update does not pick the limit. The moment that matters is the first start of the daemon in scope 004, when "bounded resources" stops being about a command at a desk.
+
+**m8, why it is a gap.** No decision in the list above covers the control character list. It was written as the ASCII set and never weighed against the rest of Unicode. Decision 12 keeps names out of default telemetry, which is why nothing is exposed today. Refusing more characters makes files invalid that are valid now, so it is a change of behavior and not part of this update.
+
+**d1, why the exception stands.** Decision 17 and its note above give the reason. The review agreed with the decision and asked for one thing: say it where the requirement is cited. The spec now does. It cannot say it in the PRD.
