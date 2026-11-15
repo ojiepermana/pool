@@ -113,20 +113,91 @@ fn forbidden_paths(tree: &dyn Tree, report: &mut Report) {
     }
 }
 
+/// One meaningful line of `forbidden-source-patterns.txt` (spec 0004, "Source guard").
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SourceRule {
+    /// `<text>`: the text is forbidden in every `.rs` file under `apps/` and `crates/`.
+    Everywhere(String),
+    /// `deny <path> <text>`: the text is also forbidden in every `.rs` file at or under the path.
+    Deny(String, String),
+    /// `allow <path> <text>`: the text is allowed in every `.rs` file at or under the path.
+    Allow(String, String),
+}
+
+/// Reads one baseline line of rule W3. Returns `None` for a line that has none of the three forms.
+pub fn source_rule(line: &str) -> Option<SourceRule> {
+    let words: Vec<&str> = line.split(' ').collect();
+    if words.iter().any(|word| word.is_empty()) {
+        return None;
+    }
+    match words.as_slice() {
+        [text] if *text != "deny" && *text != "allow" => {
+            Some(SourceRule::Everywhere(text.to_string()))
+        }
+        ["deny", path, text] => Some(SourceRule::Deny(path.to_string(), text.to_string())),
+        ["allow", path, text] => Some(SourceRule::Allow(path.to_string(), text.to_string())),
+        _ => None,
+    }
+}
+
+/// Reports whether `path` is `dir` or lies under it, compared by whole path components.
+pub fn covers(dir: &str, path: &str) -> bool {
+    let dir = dir.trim_end_matches('/');
+    path == dir
+        || path
+            .strip_prefix(dir)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// Returns the texts that rule W3 forbids in the file at `path`, each once, in the order of the baseline.
+pub fn forbidden_in(rules: &[SourceRule], path: &str) -> Vec<String> {
+    let mut texts: Vec<String> = Vec::new();
+    for rule in rules {
+        let text = match rule {
+            SourceRule::Everywhere(text) => text,
+            SourceRule::Deny(dir, text) if covers(dir, path) => text,
+            _ => continue,
+        };
+        let allowed = rules.iter().any(|other| {
+            matches!(other, SourceRule::Allow(dir, allowed) if allowed == text && covers(dir, path))
+        });
+        if !allowed && !texts.contains(text) {
+            texts.push(text.clone());
+        }
+    }
+    texts
+}
+
 fn forbidden_text(tree: &dyn Tree, report: &mut Report) {
-    let Some(patterns) = baseline(tree, "forbidden-source-patterns.txt", report) else {
+    let name = "forbidden-source-patterns.txt";
+    let Some(lines) = baseline(tree, name, report) else {
         return;
     };
+    let mut rules = Vec::new();
+    for line in lines {
+        match source_rule(&line) {
+            Some(rule) => rules.push(rule),
+            None => report.add(
+                "W3",
+                &join(BASELINE, name),
+                format!("line {line} is not <text>, deny <path> <text> or allow <path> <text>"),
+            ),
+        }
+    }
     for dir in ["apps", "crates"] {
         for path in report.walk(tree, dir, &|name| name == "target") {
             if !path.ends_with(".rs") {
+                continue;
+            }
+            let texts = forbidden_in(&rules, &path);
+            if texts.is_empty() {
                 continue;
             }
             let Some(text) = report.need(tree, &path) else {
                 continue;
             };
             for (index, line) in text.lines().enumerate() {
-                for pattern in &patterns {
+                for pattern in &texts {
                     if line.contains(pattern.as_str()) {
                         report.add_at("W3", &path, index + 1, format!("forbidden text {pattern}"));
                     }
@@ -232,17 +303,21 @@ fn members(tree: &dyn Tree, report: &mut Report) -> Vec<Member> {
 
 /// Returns the package names of the entries of a lockfile that have no `source` line.
 ///
-/// An entry is the lines from one `[[package]]` line to the next, or to the end of the file.
+/// An entry is the lines from one `[[package]]` line to the next line that starts with `[`, or to the end of the
+/// file (spec 0004, "Proof script and lockfile check"). So a table that Cargo writes after the packages, such as
+/// `[[patch.unused]]`, is never part of the last entry.
 pub fn local_packages(text: &str) -> Vec<String> {
     let mut names = Vec::new();
     let mut entry: Option<(Option<String>, bool)> = None;
     for line in text.lines() {
         let line = line.trim();
-        if line == "[[package]]" {
+        if line.starts_with('[') {
             if let Some((Some(name), false)) = entry.take() {
                 names.push(name);
             }
-            entry = Some((None, false));
+            if line == "[[package]]" {
+                entry = Some((None, false));
+            }
         } else if let Some((name, has_source)) = entry.as_mut() {
             match key_value(line) {
                 Some(("name", value)) if name.is_none() => {
@@ -1016,8 +1091,9 @@ mod tests {
 #[cfg(test)]
 mod lockfile_edge_tests {
     //! Edges of the W4 lockfile check of spec 0003, added by /test
-    //! (0003 AC-13). "An entry is the lines from one `[[package]]` line to
-    //! the next, or to the end of the file."
+    //! (0003 AC-13). Since spec 0004 (`0004 AC-4`) an entry is the lines
+    //! from one `[[package]]` line to the next line that starts with `[`,
+    //! or to the end of the file.
 
     use super::*;
     use crate::tree::MemTree;
@@ -1207,26 +1283,25 @@ mod lockfile_edge_tests {
     }
 
     #[test]
-    fn w4_a_table_after_the_last_entry_counts_as_part_of_it() {
-        // Pins the behaviour that the spec text defines: the last entry runs
-        // to the end of the file. Cargo writes `[[patch.unused]]` tables
-        // after the packages, with their own `source` line. Such a table
-        // after a local last entry hides that entry from W4; this is the
-        // gap the developer's verification record names. A local last entry
-        // followed by a table without `source` is still found.
+    fn w4_a_table_after_the_last_entry_ends_it() {
+        // Spec 0004, "Proof script and lockfile check": an entry ends at the
+        // next line that starts with `[`. Cargo writes `[[patch.unused]]`
+        // tables after the packages, with their own `source` line; such a
+        // table no longer hides a local last entry from W4.
         let unused =
             format!("\n[[patch.unused]]\nname = \"other\"\nversion = \"1.0.0\"\n{REGISTRY}");
         let names = ["pool", "pool-config", "serde", "ghost"];
-        let hidden = format!(
+        let found = format!(
             "{}{}{}{}{unused}",
             local("pool"),
             local("pool-config"),
             registry("serde"),
             local("ghost")
         );
-        assert_eq!(local_packages(&hidden), ["pool", "pool-config"]);
-        assert_eq!(w4_lines(&tree(&hidden, &names)), Vec::<String>::new());
+        assert_eq!(local_packages(&found), ["pool", "pool-config", "ghost"]);
+        assert_eq!(w4_lines(&tree(&found, &names)), [GHOST]);
 
+        // Any table ends the entry, also one without a `source` line.
         let metadata = format!(
             "{}{}{}{}\n[metadata]\nnote = \"no source here\"\n",
             local("pool"),
@@ -1235,6 +1310,16 @@ mod lockfile_edge_tests {
             local("ghost")
         );
         assert_eq!(w4_lines(&tree(&metadata, &names)), [GHOST]);
+
+        // A `source` line after a table belongs to no entry: it does not
+        // hide the local entry before the table.
+        let after_table = format!("{}{}[metadata]\n{REGISTRY}", local("pool"), local("ghost"));
+        assert_eq!(local_packages(&after_table), ["pool", "ghost"]);
+
+        // A table without a `name` line is not an entry, and its lines are
+        // not read as one.
+        let unused_only = format!("{}{unused}", local("pool"));
+        assert_eq!(local_packages(&unused_only), ["pool"]);
 
         // After a registry last entry the table changes nothing.
         let after_registry = format!(
@@ -1272,5 +1357,201 @@ mod lockfile_edge_tests {
                 .any(|l| l.contains("package Pool has no source line")),
             "{lines:?}"
         );
+    }
+}
+
+#[cfg(test)]
+mod source_guard_tests {
+    //! The three kinds of line of rule W3, spec 0004 "Source guard"
+    //! (`0004 AC-2`): one passing and one failing case for each kind.
+
+    use super::*;
+    use crate::tree::MemTree;
+
+    const PATTERNS: &str = "tools/repo-check/baseline/forbidden-source-patterns.txt";
+
+    /// A tree that passes every other rule, with the W3 baseline set to
+    /// `patterns`.
+    fn tree(patterns: &str) -> MemTree {
+        let mut tree = MemTree::of(&[
+            (
+                "Cargo.toml",
+                "[workspace]\nmembers = [\"apps/pool\", \"crates/pool-config\"]\n\n[workspace.lints.rust]\nunsafe_code = \"forbid\"\n",
+            ),
+            (
+                "apps/pool/Cargo.toml",
+                "[package]\nname = \"pool\"\n\n[dependencies]\npool-config.workspace = true\n\n[lints]\nworkspace = true\n",
+            ),
+            (
+                "crates/pool-config/Cargo.toml",
+                "[package]\nname = \"pool-config\"\n\n[lints]\nworkspace = true\n",
+            ),
+            (
+                "Cargo.lock",
+                "[[package]]\nname = \"pool\"\n\n[[package]]\nname = \"pool-config\"\n",
+            ),
+            (
+                SPEC_0001,
+                "# 0001\n\n### Linux build\n\n```bash\nrun\n```\n",
+            ),
+            (
+                LINUX_BUILD_SCRIPT,
+                "#!/bin/sh\n# --- spec 0001, Linux build ---\nrun\n",
+            ),
+            (
+                "tools/repo-check/baseline/lock-packages.txt",
+                "# spec 0002\npool\npool-config\n",
+            ),
+            (
+                "tools/repo-check/baseline/fuzz-lock-packages.txt",
+                "# spec 0002\npool-config\n",
+            ),
+            (
+                "tools/repo-check/baseline/tool-lock-packages.txt",
+                "# spec 0002\npool-repo-check\n",
+            ),
+            (
+                "tools/repo-check/baseline/forbidden-paths.txt",
+                "# spec 0002\n",
+            ),
+            (
+                "tools/repo-check/baseline/internal-dependencies.txt",
+                "# spec 0002\npool -> pool-config\n",
+            ),
+            (
+                "crates/pool-config/fuzz/Cargo.lock",
+                "[[package]]\nname = \"pool-config\"\n",
+            ),
+            (
+                "tools/repo-check/Cargo.lock",
+                "[[package]]\nname = \"pool-repo-check\"\n",
+            ),
+            ("apps/pool/src/main.rs", "fn main() {}\n"),
+            ("crates/pool-config/src/lib.rs", "//! Config.\n"),
+        ]);
+        tree.set(PATTERNS, patterns);
+        tree
+    }
+
+    fn w3_lines(tree: &MemTree) -> Vec<String> {
+        let report = check(tree);
+        assert!(report.faults.is_empty(), "{}", report.dump());
+        report
+            .problems
+            .iter()
+            .map(ToString::to_string)
+            .inspect(|line| assert!(line.starts_with("W3"), "only W3 may object: {line}"))
+            .collect()
+    }
+
+    #[test]
+    fn a_bare_line_forbids_the_text_everywhere() {
+        let mut t = tree("# spec 0004\ntokio\n");
+        assert_eq!(w3_lines(&t), Vec::<String>::new());
+        t.set("crates/pool-config/src/lib.rs", "//! Config.\nuse tokio;\n");
+        t.set("apps/pool/src/run.rs", "// tokio\n");
+        let lines = w3_lines(&t);
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert!(lines.iter().any(|l| l.contains("apps/pool/src/run.rs:1") && l.contains("forbidden text tokio")));
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("crates/pool-config/src/lib.rs:2"))
+        );
+    }
+
+    #[test]
+    fn a_deny_line_forbids_the_text_only_at_or_under_its_path() {
+        let patterns = "deny crates/pool-config/src std::fs\n";
+        let mut t = tree(patterns);
+        t.set("crates/pool-config/build.rs", "use std::fs;\n");
+        t.set("crates/pool-config-x/src/lib.rs", "use std::fs;\n");
+        t.set("apps/pool/src/main.rs", "use std::fs;\nfn main() {}\n");
+        assert_eq!(w3_lines(&t), Vec::<String>::new());
+        t.set("crates/pool-config/src/inner/read.rs", "\nuse std::fs;\n");
+        let lines = w3_lines(&t);
+        assert_eq!(lines.len(), 1, "{lines:?}");
+        assert!(
+            lines[0].contains("crates/pool-config/src/inner/read.rs:2"),
+            "{}",
+            lines[0]
+        );
+        assert!(lines[0].contains("std::fs"), "{}", lines[0]);
+    }
+
+    #[test]
+    fn an_allow_line_lifts_the_text_only_at_or_under_its_path() {
+        let patterns = "tokio\nallow apps/pool tokio\ndeny crates/pool-config/src rusqlite\nallow crates/pool-config/src/journal.rs rusqlite\n";
+        let mut t = tree(patterns);
+        t.set("apps/pool/src/run.rs", "use tokio;\n");
+        t.set("crates/pool-config/src/journal.rs", "use rusqlite;\n");
+        assert_eq!(w3_lines(&t), Vec::<String>::new());
+        // The allowed path is compared by whole components, a file is a
+        // path of its own, and an allow line lifts only its own text.
+        t.set("apps/pool-x/src/lib.rs", "use tokio;\n");
+        t.set("crates/pool-config/src/journal.rs.rs", "use rusqlite;\n");
+        t.set("crates/pool-config/src/other.rs", "use rusqlite;\n");
+        t.set("apps/pool/src/thread.rs", "use rusqlite;\n");
+        let lines = w3_lines(&t);
+        assert_eq!(lines.len(), 3, "{lines:?}");
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("apps/pool-x/src/lib.rs:1") && l.contains("tokio"))
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("crates/pool-config/src/journal.rs.rs:1"))
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("crates/pool-config/src/other.rs:1"))
+        );
+    }
+
+    #[test]
+    fn a_text_forbidden_twice_is_reported_once_per_line() {
+        let mut t = tree("std::env\ndeny apps/pool std::env\n");
+        t.set("apps/pool/src/main.rs", "use std::env;\nfn main() {}\n");
+        assert_eq!(w3_lines(&t).len(), 1);
+    }
+
+    #[test]
+    fn a_line_of_no_known_form_is_a_problem_of_the_baseline() {
+        for line in [
+            "deny crates/pool-config",
+            "allow a b c",
+            "permit apps/pool tokio",
+            "deny  apps/pool tokio",
+            "deny",
+        ] {
+            let lines = w3_lines(&tree(&format!("{line}\n")));
+            assert_eq!(lines.len(), 1, "{line}: {lines:?}");
+            assert!(lines[0].contains(PATTERNS), "{}", lines[0]);
+            assert!(lines[0].contains(line), "{}", lines[0]);
+        }
+    }
+
+    #[test]
+    fn source_rule_reads_the_three_forms() {
+        assert_eq!(
+            source_rule("tokio"),
+            Some(SourceRule::Everywhere("tokio".into()))
+        );
+        assert_eq!(
+            source_rule("deny crates/x std::fs"),
+            Some(SourceRule::Deny("crates/x".into(), "std::fs".into()))
+        );
+        assert_eq!(
+            source_rule("allow crates/x tokio"),
+            Some(SourceRule::Allow("crates/x".into(), "tokio".into()))
+        );
+        assert_eq!(source_rule("two words"), None);
+        assert!(covers("crates/pool-core", "crates/pool-core/src/lib.rs"));
+        assert!(covers("crates/pool-core/", "crates/pool-core/src/lib.rs"));
+        assert!(!covers("crates/pool-core", "crates/pool-core-x/src/lib.rs"));
+        assert!(covers("crates/a/journal.rs", "crates/a/journal.rs"));
     }
 }
