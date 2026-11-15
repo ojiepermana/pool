@@ -18,6 +18,6 @@ Use [PRD-001](../prd/001-core-proxy.md#acceptance-criteria): deliver AC-1 and th
 - [x] Verify it: `/check verify one real primary path`
 - [x] Test it: `/test one real primary path`
 - [x] Review it (fresh model): `/check review one real primary path`
-- [ ] Document it: `/document one real primary path`
+- [x] Document it: `/document one real primary path`
 
 Spec [0004](../specs/0004-one-real-primary-path/index.md) · code in `tools/repo-check/`, `scripts/prove-checks.sh`, `crates/pool-protocol/`, `crates/pool-core/`, `crates/pool-config/`, `crates/pool-control/`, `apps/pool/`, `scripts/check.sh`, `scripts/integration/`, `crates/pool-protocol/fuzz/`.
