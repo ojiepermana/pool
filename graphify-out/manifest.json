@@ -912,9 +912,51 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/lib.rs": {
-    "mtime": 1794738319.1174488,
-    "seen": 1794738404.830529,
-    "ast_hash": "b5b945cdaa10a978b69338a819da131e",
+    "mtime": 1794739082.5154173,
+    "seen": 1794739104.278893,
+    "ast_hash": "9eeca0e93f489745b12c7a7d9a31ed55",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/startup.rs": {
+    "mtime": 1794739082.5161052,
+    "seen": 1794739104.2788968,
+    "ast_hash": "f8b0ca2ef3249f65f7f69754b8d720bd",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/message.rs": {
+    "mtime": 1794739082.5156252,
+    "seen": 1794739104.278899,
+    "ast_hash": "4024b76f92bd9ec40e73c438a039c042",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/auth.rs": {
+    "mtime": 1794739082.5150266,
+    "seen": 1794739104.2789,
+    "ast_hash": "a11d21f3a279899c1aec88db74682bd7",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/sqlstate.rs": {
+    "mtime": 1794739082.5159614,
+    "seen": 1794739104.278901,
+    "ast_hash": "d8ea8db9f88242a7647bea8f4ed3f833",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/scram.rs": {
+    "mtime": 1794739082.5158336,
+    "seen": 1794739104.278902,
+    "ast_hash": "98ddd71e7617e199b316b1f09e1c2e2c",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/base64.rs": {
+    "mtime": 1794739082.515214,
+    "seen": 1794739104.278903,
+    "ast_hash": "ccd8e47a15950ec1687a2e2e3130f04a",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/tests/golden.rs": {
+    "mtime": 1794739082.5163229,
+    "seen": 1794739104.278904,
+    "ast_hash": "c93f2c465f90fd0ccbfd95fe543ce6c6",
     "semantic_hash": ""
   }
 }
