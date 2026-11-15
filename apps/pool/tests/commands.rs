@@ -1047,3 +1047,71 @@ fn ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_le
         assert_no_path(&run, &layout);
     }
 }
+
+// ---- added by the tests of scope 004, round two ----
+
+/// Runs `pool` with `args` and waits at most `seconds` for it; a child that
+/// is still running then is killed and the test fails.
+fn pool_within(args: &[&str], seconds: u64) -> Run {
+    let mut child = start(env!("CARGO_BIN_EXE_pool"), args);
+    let started = Instant::now();
+    while child.try_wait().expect("try_wait").is_none() {
+        if started.elapsed() > Duration::from_secs(seconds) {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("pool {args:?} did not end within {seconds} s");
+        }
+        pause();
+    }
+    let output = child.wait_with_output().expect("output");
+    Run {
+        code: output.status.code().expect("exit status, not a signal"),
+        stdout: String::from_utf8(output.stdout).expect("utf-8"),
+        stderr: String::from_utf8(output.stderr).expect("utf-8"),
+    }
+}
+
+#[test]
+fn ac10_a_run_that_stops_at_a_missing_protected_file_does_not_use_up_a_start_sequence() {
+    // covers: 0004 AC-10 ("Each pool run that finds the state Ready advances
+    // the start sequence by one before it listens. In every other state the
+    // content of journal.sqlite3 does not change") and the order of
+    // "pool run": the protected files of step 4 come before the journal is
+    // opened for writing in step 5. The listener certificate is missing.
+    let layout = Layout::new("run-missing-key");
+    let port = closed_port();
+    layout.write_serving_config(None, port);
+    real_journal(&layout);
+    layout.write_serving_config(Some(X), port);
+    let show = command("show-authority", &layout.config, "human");
+    assert_eq!(show.code, 0, "{}", show.stderr);
+    assert!(
+        show.stdout.starts_with("authority state: ready\n"),
+        "{}",
+        show.stdout
+    );
+    let before = fs::read(layout.journal()).expect("read the journal");
+    for _ in 0..2 {
+        let run = pool_within(
+            &["run", "--config", layout.config.to_str().expect("utf-8")],
+            10,
+        );
+        assert_eq!(run.code, 3, "{} {}", run.stdout, run.stderr);
+        assert_eq!(run.stdout, "");
+        assert_eq!(
+            run.stderr,
+            "error: secret.not_found at listener.tls_certificate_file: a file named by the configuration does not exist\n"
+        );
+        assert_no_path(&run, &layout);
+    }
+    assert_eq!(
+        fs::read(layout.journal()).expect("read the journal"),
+        before,
+        "the start sequence was not advanced"
+    );
+    let wal = layout.state.join("journal.sqlite3-wal");
+    assert!(
+        fs::metadata(&wal).map_or(true, |m| m.len() == 0),
+        "nothing waits in the write-ahead log"
+    );
+}
