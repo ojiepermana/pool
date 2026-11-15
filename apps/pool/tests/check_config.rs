@@ -1,5 +1,5 @@
 //! The built `pool` binary: exit status, exact stdout and stderr in both
-//! formats (spec 0001 AC-3 to AC-7, AC-9 to AC-11).
+//! formats (spec 0001 AC-3 to AC-7, AC-9 to AC-11; spec 0003 AC-1 to AC-4).
 
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -1904,4 +1904,247 @@ fn ac11_a_file_that_cannot_be_opened_is_permission_denied() {
         ),
         "",
     );
+}
+
+// Spec 0003: the topology fixtures through the built binary, both formats,
+// byte for byte (0003 AC-1 to AC-4).
+
+const INVALID_VALUE: &str = "a value is not in the allowed form or range";
+const MISSING_KEY: &str = "a required key is missing";
+
+/// One expected finding: code, key, position, message.
+type Expected = (&'static str, &'static str, Option<(u32, u32)>, &'static str);
+
+/// The exact human report for these findings.
+fn topology_human(findings: &[Expected]) -> String {
+    let mut text = format!("configuration invalid\nfindings: {}\n", findings.len());
+    for (code, key, at, message) in findings {
+        match at {
+            Some((line, column)) => text.push_str(&format!(
+                "{code} at {key}, line {line}, column {column}: {message}\n"
+            )),
+            None => text.push_str(&format!("{code} at {key}: {message}\n")),
+        }
+    }
+    text
+}
+
+/// The exact JSON report for these findings.
+fn topology_json(findings: &[Expected]) -> String {
+    let objects: Vec<String> = findings
+        .iter()
+        .map(|(code, key, at, message)| match at {
+            Some((line, column)) => format!(
+                "{{\"code\":\"{code}\",\"key\":\"{key}\",\"line\":{line},\"column\":{column},\"message\":\"{message}\"}}"
+            ),
+            None => key_finding_json(code, key, message),
+        })
+        .collect();
+    invalid_json(&objects.join(","))
+}
+
+fn assert_topology_rejection(name: &str, findings: &[Expected]) {
+    let path = fixture(name);
+    assert_run(&check(&path, "human"), 1, &topology_human(findings), "");
+    assert_run(&check(&path, "json"), 1, &topology_json(findings), "");
+}
+
+#[test]
+fn ac1_topology_fixtures_report_exactly_the_valid_report() {
+    for name in [
+        "valid-topology-minimal.toml",
+        "valid-topology.toml",
+        "valid-topology-names.toml",
+    ] {
+        let path = fixture(name);
+        assert_run(&check(&path, "human"), 0, VALID_HUMAN, "");
+        assert_run(&check(&path, "json"), 0, VALID_JSON, "");
+    }
+    let only_version = made_file("only-config-version.toml", b"config_version = 1\n");
+    let path = only_version.to_str().expect("utf-8 path");
+    assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
+    assert_run(&check(path, "json"), 0, VALID_JSON, "");
+}
+
+#[test]
+fn ac2_each_invalid_topology_fixture_reports_its_one_finding() {
+    let table: [(&str, Expected); 8] = [
+        (
+            "invalid-topology-missing-key.toml",
+            (
+                "config.missing_key",
+                "identity.backend_login",
+                Some((17, 1)),
+                MISSING_KEY,
+            ),
+        ),
+        (
+            "invalid-topology-missing-state-directory.toml",
+            (
+                "config.missing_key",
+                "control.state_directory",
+                None,
+                MISSING_KEY,
+            ),
+        ),
+        (
+            "invalid-topology-invalid-value.toml",
+            (
+                "config.invalid_value",
+                "node.id",
+                Some((12, 6)),
+                INVALID_VALUE,
+            ),
+        ),
+        (
+            "invalid-topology-duplicate-id.toml",
+            (
+                "config.duplicate_id",
+                "node.id",
+                Some((18, 6)),
+                "an id is used more than once",
+            ),
+        ),
+        (
+            "invalid-topology-unknown-reference.toml",
+            (
+                "config.unknown_reference",
+                "cluster.expected_writer",
+                Some((9, 19)),
+                "a reference does not name a matching entry",
+            ),
+        ),
+        (
+            "invalid-topology-duplicate-endpoint.toml",
+            (
+                "config.duplicate_endpoint",
+                "node.host",
+                Some((20, 8)),
+                "two nodes have the same host and port",
+            ),
+        ),
+        (
+            "invalid-topology-duplicate-identity.toml",
+            (
+                "config.duplicate_identity",
+                "identity.principal",
+                Some((27, 13)),
+                "two identity entries have the same principal and database",
+            ),
+        ),
+        (
+            "invalid-topology-unsupported-profile.toml",
+            (
+                "config.unsupported_value",
+                "identity.routing_profile",
+                Some((24, 19)),
+                "this value is not supported by this build",
+            ),
+        ),
+    ];
+    for (name, finding) in table {
+        assert_topology_rejection(name, &[finding]);
+    }
+}
+
+#[test]
+fn ac2_the_spec_examples_of_the_finding_line_are_exact() {
+    let path = fixture("invalid-topology-duplicate-id.toml");
+    assert_run(
+        &check(&path, "human"),
+        1,
+        "configuration invalid\nfindings: 1\nconfig.duplicate_id at node.id, line 18, column 6: an id is used more than once\n",
+        "",
+    );
+    assert_run(
+        &check(&path, "json"),
+        1,
+        "{\"output_version\":1,\"command\":\"check-config\",\"result\":\"invalid\",\"config_version\":null,\"capabilities\":null,\"findings\":[{\"code\":\"config.duplicate_id\",\"key\":\"node.id\",\"line\":18,\"column\":6,\"message\":\"an id is used more than once\"}]}\n",
+        "",
+    );
+}
+
+#[test]
+fn ac3_invalid_topology_multiple_reports_five_findings_in_order() {
+    assert_topology_rejection(
+        "invalid-topology-multiple.toml",
+        &[
+            (
+                "config.invalid_value",
+                "control.authority_id",
+                None,
+                INVALID_VALUE,
+            ),
+            (
+                "config.invalid_value",
+                "cluster.system_identifier",
+                Some((9, 21)),
+                INVALID_VALUE,
+            ),
+            (
+                "config.invalid_value",
+                "node.port",
+                Some((16, 8)),
+                INVALID_VALUE,
+            ),
+            (
+                "config.missing_key",
+                "identity.credential_file",
+                Some((18, 1)),
+                MISSING_KEY,
+            ),
+            (
+                "config.unknown_reference",
+                "identity.cluster",
+                Some((22, 11)),
+                "a reference does not name a matching entry",
+            ),
+        ],
+    );
+}
+
+#[test]
+fn ac4_topology_canary_never_reaches_the_output() {
+    assert_topology_rejection(
+        "secret-topology-values.toml",
+        &[
+            (
+                "config.invalid_value",
+                "node.host",
+                Some((14, 8)),
+                INVALID_VALUE,
+            ),
+            (
+                "config.invalid_value",
+                "identity.credential_file",
+                Some((23, 19)),
+                INVALID_VALUE,
+            ),
+        ],
+    );
+    for name in ["secret-topology-values.toml", "valid-topology-names.toml"] {
+        let path = fixture(name);
+        for format in ["human", "json"] {
+            let run = check(&path, format);
+            assert!(
+                !run.stdout.contains(CANARY),
+                "{name} {format}: {}",
+                run.stdout
+            );
+            assert!(
+                !run.stderr.contains(CANARY),
+                "{name} {format}: {}",
+                run.stderr
+            );
+        }
+    }
+}
+
+#[test]
+fn ac4_check_config_opens_no_file_the_configuration_names() {
+    let text = "config_version = 1\n\n[control]\nstate_directory = \"/does/not/exist/pool-state\"\n\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"1\"\nexpected_writer = \"pg1\"\n\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"10.0.0.11\"\nport = 5432\n\n[[identity]]\nid = \"a\"\nprincipal = \"p\"\ndatabase = \"d\"\ncluster = \"main\"\nbackend_login = \"l\"\ncredential_file = \"/does/not/exist/secret\"\n";
+    let made = made_file("missing-paths.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
+    assert_run(&check(path, "json"), 0, VALID_JSON, "");
 }
