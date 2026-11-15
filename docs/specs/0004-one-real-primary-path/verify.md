@@ -1851,6 +1851,11 @@ On 2026-11-16 until 04:51 WIB, by the tester session: [Follow-up 16](index.md#fo
 | `scripts/check.sh all > <file> 2>&1; echo $?` on `309905a` and again on `032aada` | exit status 0 both times | pass |
 | `scripts/check.sh integration > <file> 2>&1; echo $?` on `309905a` | exit status 0, 30 of 30 | pass |
 | `scripts/check.sh linux-build` on `309905a` and on `032aada` | exit status 0 both times | pass |
+| `scripts/check.sh all` and `scripts/check.sh integration` on `560c954` (`main` merged with the code of decisions 109 and 116) | exit status 0 both, 30 of 30 | pass |
+| `scripts/check.sh linux-build` on `560c954` | exit status 3: the check refuses a tree with local changes, and I had begun the next tests while it ran. Not a failure of the build | not counted |
+| `scripts/check.sh all` and `scripts/check.sh linux-build` on `36dda46` | exit status 0 both | pass |
+
+**Decisions 115 and 116** (added to the list by the lead). `ac17_an_empty_database_takes_the_user_name_and_reaches_its_identity_entry` (`session.rs`): a configuration whose identity entry asks for a database named like the principal, and a startup packet with `database` sent empty: the login is mapped and the node sees the backend login and database of that entry. With the arm `b"database" if value.is_empty()` of `parse_startup` removed: caught. `ac16_an_empty_user_gets_28p01_after_the_full_exchange`: an empty `user` gets SASL, continue and then `28P01`, as a wrong password does, and no backend is opened. The configurations of every new test meet decision 109.
 
 ## Full verification
 
