@@ -534,6 +534,19 @@ Notes that are not failures:
 - `derive_keys` is public and panics for a count of 0. Every caller in the crate passes a count that a parser has checked.
 - `Debug` of a `ServerExchange` prints the text of the client-first message, which holds whatever user name the client wrote there. Nothing logs it today.
 - CI evidence does not exist yet. It waits for the pull request.
+#### Checker run of the additions to step 7
+
+The three changes to step 7 that came with Build plan step 9 (commit `ca122c2`, decisions 55 and 58), on 2026-11-15 at 19:03 WIB, by the checker session, on the merged tree `8783337`. Every command below was run in this session, with a scripted node of the checker's own.
+
+**Verdict: PASS.** The two differences that the checker run above noted and did not judge are gone.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| Probe, the limit of a message of a node during startup: a notice with a body of 16384 bytes, then of 16385 bytes, before `ReadyForQuery` | accepted, then `protocol` | 16384 bytes: the connection opens. 16385 bytes: `protocol` | pass |
+| Probe, the limit of a probe answer: the one row query answered with a data row, a command complete and `ReadyForQuery` whose bodies are 4096 bytes together, then 4097 | the row, then `protocol` | 4096 bytes: one row with its column of 4086 bytes. 4097 bytes: `protocol`. No single message of the second answer is above 4096 bytes, so the bodies are counted together | pass |
+| Probe, one source of random bytes: a search of every first party crate for a call that asks for random bytes | `pool_core::random::fill_random` alone | `aws_lc_rs::rand::fill` is called in `crates/pool-core/src/random.rs` and nowhere else. `scram.rs` gets its nonce and the mock key through `fill_random` | pass |
+| Probe, `random_failed` | a login that cannot get random bytes is closed without a message and counted | read in the code, not seen: a failure of the generator cannot be made from outside. `ScramFault::Random` at the server nonce and `BackendError::Random` at the client nonce both end the login with no message and count `random_failed` | read |
+
 ### Build plan step 8: bootstrap, the authority command and the first run against PostgreSQL
 
 On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commits `0e93678` (step 8) and `7231266` (the finding `random.failed` with the random bytes of step 9), on the tree `ae729d5`. Image `postgres:18.7-bookworm`, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, `arm64` variant. Observed in it: `postgres --version` and `psql --version` print 18.7 (Debian 18.7-1.pgdg12+2), and `openssl version` prints OpenSSL 3.0.22.
@@ -616,6 +629,76 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 
 **Also in this item, from the spec text of 2026-11-15.** Commit `ca122c2` adds `crates/pool-core/src/random.rs` with `fill_random` and `RandomError` (unit test `two_fills_differ_and_the_error_prints_its_name`), makes it the one source of random bytes of the crate (`MockKey::generate` returns `RandomError`, for `random.failed`), ends a login without a message under `random_failed` when no nonce can be made, and stops the one row query of the probe at 4096 bytes of answer (`a_probe_answer_over_4096_bytes_is_not_read_on`). The limit of 16384 bytes per node message during startup has its test too (`a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt`). `cargo test -p pool-core --locked`: 32 unit and 27 session tests passed. `scripts/check.sh all` and `scripts/check.sh linux-build` at `ca122c2`: exit 0.
 
+#### Checker run
+
+Build plan step 9 only, on 2026-11-15 at 19:03 WIB, by the checker session, on the merged tree `8783337` (macOS 27.0.1, arm64, with Docker 29.9.2 running; the Linux build ran in the pinned image, the rest on the workstation, and none of it is CI). Tools: `rustc 1.100.0`. Every command below was run in this session. The probes are a small program outside the repository that builds a `Server` through the public functions of `pool-core`, with a scripted client, a scripted node behind a connector of its own, in memory streams and a `tracing` subscriber that keeps every event. The canary is in the principal name, its password, the requested database, the backend login, the backend database, the backend password, the host, every path and the SQL text.
+
+**Verdict: step 9 FAIL, for one finding.** A session whose client has stopped reading is ended neither by the shutdown deadline nor by a positive conflict, and `Server::shutdown` then never returns. Everything else that was probed is as the spec says. Three changes to `crates/pool-protocol` are known to be still in work and were not judged: `Terminate` with a length other than 4 (decision 52), the user name of a SCRAM first message (decision 53) and `FirstPacketReader` with its `Handshake` (decision 54).
+
+**The finding.** Sent to the developer of step 9 at the moment it was found.
+
+- **How to see it.** A client logs in, sends one `Query` that the node answers with 8 MB of data rows, and reads nothing more. After 500 ms the relay waits to write to that client. Then either `Server::shutdown` is called with `limits.shutdown_timeout_ms = 300`, or a route view with `Closed { conflict: true }` is published.
+- **Observed.** Shutdown: `shutdown` had not returned after 4 seconds; the phase was `Ending`, one connection and one session were left, and the backend was still open (1 opened, 0 closed). Conflict: 1.5 seconds later the session was still there and the backend still open. The same in each of seven runs.
+- **Expected.** [Shutdown](index.md#shutdown), step 4: when the deadline has passed, every session that is left is ended, with no message when it is not at a message boundary. [When a running session is ended](index.md#when-a-running-session-is-ended): a positive conflict ends every running session of the cluster and closes its backend. `0004 AC-25` (the daemon exits) and the ending rule of `0004 AC-14`.
+- **Where.** `copy_exact` in `crates/pool-core/src/session.rs` looks for a conflict or the end of shutdown between two pieces, and while it waits to read. Its write to the destination waits alone. Once the send buffer of the TLS connection and the stream to the client are full, the task stays in that write. The other writes of the relay toward the client (a message header, the flush, an error of POOL) wait the same way.
+- **What it touches.** A client that reads slowly is still ended at the next piece. The case of `0004 AC-21`, sessions that asked for many rows and then stopped reading, is exactly this one, so a daemon in that state does not stop on SIGTERM.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-core --locked` | exit 0 | exit 0: 32 unit tests and 27 in `tests/session.rs` passed, 0 failed | pass |
+| `scripts/check.sh all` | exit 0 | exit 0: `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` all `ok` | pass |
+| `scripts/check.sh linux-build` on the committed tree | exit 0 | exit 0: `host: aarch64-unknown-linux-gnu`, 19 test results `ok` and none failed, among them the 32 unit tests and the 27 session tests of `pool-core`, `linux build check passed` | pass |
+| Probe, the texts of rule W3, `unsafe`, `unwrap`, `expect`, `panic!` and a thread in `crates/pool-core/src` outside the tests | none that the baseline forbids | only `tokio`, `TcpStream` and `TcpListener`. No `unsafe`, no `unwrap()`, no `std::thread`. One `expect`, in `derive_keys`, as before. PBKDF2 runs in `spawn_blocking` | pass |
+| Probe, a startup packet without TLS: only its eight header bytes are sent, claiming a body of 92 bytes that never comes | `28000` at once, no authentication request | `28000`, `TLS is required`, within 300 ms, then the stream is closed. So the body is not read. Counted as `plaintext` | pass |
+| Probe, the other first packets | the rows under [Startup](index.md#startup) | `GSSENCRequest`: `N`, then `SSLRequest`: `S`. Over TLS: protocol 3.2 with a `_pq_.` name gets `NegotiateProtocolVersion` first, then `SCRAM-SHA-256` alone; major 2, major 4, `replication` and `options`: `0A000`; no `user`, and a second `SSLRequest`: `08P01`; a packet of 513 bytes with a limit of 512: `54000`; none of them gets an authentication request. A `CancelRequest` over TLS: no answer and no effect on the node | pass |
+| Probe, the startup deadline, `limits.startup_timeout_ms = 400` | closed at the deadline, with no message | a client that sends nothing: closed after 403 ms with no byte. A client that stops after the SASL request: closed 402 ms after the accept, not after the request, with no message. Both counted as `startup_timeout` | pass |
+| Probe, authentication | the same messages for a wrong password and an unknown name | the right password: SASL, continue, final, `AuthenticationOk`, two parameters, `ReadyForQuery`. A wrong password and a name that is no principal: the same three messages and the same error, `28P01`. A SASL message of 1025 bytes of body: `08P01`. The mechanism names `SCRAM-SHA-256-PLUS`, `PLAIN` and `scram-sha-256`, each with a well formed first message: `08P01` and no server-first message | pass |
+| Probe, the identity map | `28000` and no backend; the backend login of the entry | a database without an entry: `28000`, `no identity entry for this user and database`, and the node saw no connection. A mapped login: the node is logged in to as the backend login and backend database of the entry, with `application_name` and `client_encoding`, and never sees the name or the database the client sent | pass |
+| Probe, the first route check | `57P03` and no backend | a route that is closed, closed with a conflict, open and stale, or missing from the view: `57P03`, no backend opened, no `AuthenticationOk` | pass |
+| Probe, the second route check: the view is replaced at the moment the backend has opened | `57P03`, the backend closed, no byte of SQL | the route closes, names another node, has another topology epoch, has another authority revision, or is stale: `57P03` with no `AuthenticationOk`; the backend that was opened is closed again and got no byte after its login. The same route published again, and one that only has a later `fresh_until`: the session opens | pass |
+| Probe, no byte before a query | nothing reaches the node after its login until the client sends a `Query` | 0 bytes after the login of the node, then the `Query` | pass |
+| Probe, a backend that cannot be opened | `08006` | no connection: `08006`, `the backend connection could not be established`. A node that reports `in_hot_standby` as `on`: `08006` and no session. A backend that does not open before the acquire deadline: `08006` | pass |
+| Probe, the limits | [Limits](index.md#limits) | one session more than `limits.session_max_count = 1`: `53300` and no second backend. The second session of a principal with `session_max_count = 1`: `53300`, while another principal logs in. One handshake more than `limits.handshake_max_count = 1`: the stream is dropped at once. With one backend per node and one waiter: a third login gets `53300` at once, the waiter gets `53300` after 621 ms with a deadline of 600 ms, and a waiter gets the permit when the first session ends. A normal login succeeds after each case | pass |
+| Probe, the message limit, `limits.frontend_message_max_bytes = 1024` | `54000` and no byte of the query at the node | a `Query` whose length field is 1025: `54000`; the node got 5 bytes, a `Terminate` of POOL, and no query. A length field of exactly 1024 is relayed | pass |
+| Probe, the permits come back | the next login succeeds | a client that leaves inside a transaction: the backend gets `Terminate` and is closed, no session is left, and with `limits.session_max_count = 1` the next login succeeds. The same after a `Terminate` of the client | pass |
+| Probe, the greeting and the relay | [Messages after login](index.md#messages-after-login) | the greeting is `AuthenticationOk`, the parameters of the node and `ReadyForQuery`; the `BackendKeyData` of the node is in no message a client received in the whole run. `Parse`, `Sync`, `CopyData` and a function call: `0A000`; an unknown tag and a length of 3: `08P01`; a COPY response of the node: `0A000`. Each time the backend is closed and `session.ended` names the reason. An answer of 3 MB in 375 rows passes through | pass |
+| Probe, backend loss | `08007` with a query in flight, `08006` without, nothing in the middle of a message, never a second attempt | the node closes after it took the query (a lost COMMIT answer): `08007`, the query reached the node once, no new backend was opened. A `ReadyForQuery` of length 6: `08007`. The node closes in the middle of a data row: no error, the connection is closed. The node closes while no query is in flight: `08006`, `the backend connection was lost`. `session.ended` says `in_flight` for the first two | pass |
+| Probe, a positive conflict and silence, with a client that reads | [When a running session is ended](index.md#when-a-running-session-is-ended) | the cluster closes without a conflict: the running session goes on and a new login gets `57P03`. A conflict with no query in flight: `57P01`, and both sessions that were running on the cluster are ended and their backends closed. A conflict with a query in flight: `08007`, never `57P01`. A conflict while a message of the node is half written to the client: the connection is closed with no error message | pass |
+| Probe, shutdown with clients that read, `limits.shutdown_timeout_ms = 500` | [Shutdown](index.md#shutdown), steps 1 to 4 | an idle session: `57P01` at once. A connection that had not started its session: closed with no byte. A new connection: not accepted. A session inside a transaction: `57P01` at the deadline. A session with a query in flight: `08007` at the deadline, never `57P01`. The end of shutdown while a message is half written: no error message. `shutdown` returns after 504 ms with no connection left. With a deadline of 5 seconds, a session that commits during the drain gets its answer, then `57P01`, and `shutdown` returns long before the deadline | pass |
+| Probe, shutdown and a conflict with a client that does not read | the session is ended | not ended: see the finding above | **fail** |
+| Probe, the log events of the whole run, 85 lines | only the fields of [Log events](index.md#log-events), and none of the canary | `session.started` carries its seven fields and `session.ended` its four; every line is one of `session.started`, `session.ended`, `session.refused`, `backend.failed`, with no other field. A session ID is 32 hex characters that start with the start sequence. Within one server the lease generation rises by one with each lease (1 to 16). `flush` writes `session.refused` per reason and `backend.failed` per node and class. No line holds the principal name, a login, a database name, a host, a path, a password or SQL | pass |
+| Probe, 47 changes to the code, one at a time in a private clone, each followed by `cargo test -p pool-core -p pool-protocol --locked` | every change to a rule is caught by a test | 31 caught and 16 not. Caught: a second check that never refuses, the swap of `08007` and `57P01`, a lost backend that always gives `08006`, the in flight flag in both directions, session permits that are not given back, each limit raised by one except the one of a principal, the message, startup and authentication limits, and the deadlines. The 16 that no test caught are under the table | see below |
+
+| Criterion | Checker verdict |
+|---|---|
+| `0004 AC-14`, hermetic half | **not met** for one case: a running session whose client does not read is not ended when its cluster closes with a conflict. Met for the rest: both route checks, no connection for a closed or stale route, a running session ended by a conflict and kept through silence |
+| `0004 AC-15`, hermetic half | met on the listener side |
+| `0004 AC-16`, hermetic half | met |
+| `0004 AC-17`, hermetic half | met |
+| `0004 AC-19`, hermetic half | met: the backend is closed and the permits come back after a disconnect inside a transaction and after `Terminate` |
+| `0004 AC-20`, hermetic half | met |
+| `0004 AC-22`, hermetic half | met: one `08007`, no second attempt, no claim of a rollback |
+| `0004 AC-23`, hermetic half | met, with the reading of `Terminate` that decision 52 changes |
+| `0004 AC-25`, hermetic half | **not met** for one case: with a client that does not read, the sessions are not all ended at `limits.shutdown_timeout_ms` and `shutdown` does not return. Met for clients that read |
+
+The changes that no test caught, for the tester. A probe above covers each rule except where it says so:
+
+- **The second route check has one test, for a route that closes.** Leaving out the comparison of the node, of the topology epoch or of the authority revision, or the freshness of the second look, passes every test. The probe covers all four. Leaving out the pool key changes nothing that can be seen, because the node and the epoch are compared beside it.
+- **Endings in the middle of a message.** A conflict that does not cut a message, and an error sent after a cut or after a backend lost in the middle of a message, pass every test. The probe covers all three.
+- **A lease that is never dropped** (the backend stays open) passes, because the tests count closed backends only where the node closes first or gets a `Terminate`. The probe counts opened and closed backends after a conflict and after shutdown.
+- **The limit of a principal** raised by one, **any SASL mechanism name** accepted, and **the same lease generation for every lease** pass. The probe covers them.
+- **`session.started` with the name of the principal** in the place of its ID passes: no test reads a log event. The probe does.
+- **Connections before their session at shutdown** are closed by the startup deadline in the test, so a shutdown that does not close them passes. The probe sees them closed within 400 ms, with a startup deadline of 5 seconds.
+- **The limit of 16384 bytes** for a message of a node during startup, and **a probe answer that is not counted across messages**, pass. The probe of the additions to step 7 covers both.
+
+Notes that are not failures:
+
+- `Terminate` is sent on with whatever body its length field claims. Decision 52 changes that in `pool-protocol`, and the session follows what `classify_frontend` gives.
+- `random_failed` was read in the code and not seen.
+- The lease generation is taken before the greeting is written, so a greeting that fails uses up a generation. Nothing depends on a gap.
+- Once in five runs the probe read the count of closed backends in the same instant in which `shutdown` returned and saw one fewer than opened. The node of the probe notices the close a moment later, and the read did not wait. In the other runs, and wherever the probe waits 80 ms first, the counts are equal.
+- CI evidence does not exist yet. It waits for the pull request.
+
 #### Fix: a client that stops reading (from the verification of step 9)
 
 The verification of step 9 found that a relay waiting on a write toward a client that no longer read was never ended by the shutdown deadline or by a positive conflict (`0004 AC-25`, `0004 AC-14`). Commit `da51f43` races every write of the relay, toward the client and toward the backend, against the cut: a write that fits still completes, a write that waits is abandoned when the cut comes, and mid message the connection is closed without a message. The close of the client stream at the end of a session is bounded by one second (`CLOSE_TIMEOUT`).
@@ -626,6 +709,18 @@ The verification of step 9 found that a relay waiting on a write toward a client
 | `a_positive_conflict_ends_a_session_whose_client_stopped_reading` | The same client; a positive conflict ends the session within 3 s and closes the backend | failed | pass |
 
 `cargo test -p pool-core --locked`: 37 unit and 29 session tests passed. `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6) at `da51f43`: exit 0.
+
+#### Checker run of the fix
+
+The fix `da51f43` for the finding of the checker run above, on 2026-11-15 at 19:09 WIB, by the checker session, on the merged tree `5b11ca3`, which holds it. The same probe program was built against this tree and run again, whole. No mutation was run again.
+
+**Verdict: the finding is closed.** With it, the probe finds nothing against the hermetic halves of `0004 AC-14` and `0004 AC-25`.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| Probe, shutdown with `limits.shutdown_timeout_ms = 300` and one client that stopped reading in the middle of 8 MB of rows | `shutdown` returns after the deadline, nothing is left | `shutdown` returns after 1.31 s, which is the deadline and the one second the close of the client stream may take; no connection, no session, the backend closed (1 opened, 1 closed) | pass |
+| Probe, a positive conflict with the same client | the session is ended and the backend closed | 1.5 s later: no session, the backend closed | pass |
+| Probe, the rest of the program on this tree | as in the checker run above | 101 checks. The two that do not match are mistakes of the probe, the same as before: one expects one closed backend where two sessions were running on the cluster and both were ended, and one compares a lease generation in decimal with a session counter in hex. The rows of the table above state what was seen | pass |
 
 ### Build plan step 10: the daemon
 
