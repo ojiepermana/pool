@@ -233,9 +233,11 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$DIR/certs:/certs" --entrypoint s
 # 2. Two servers from the same image, with the same certificate, roles and
 #    passwords. Only the system identifier differs, which initdb makes.
 for name in "$CONTAINER_1" "$CONTAINER_2"; do
-  # A container that was made and could not start prints no ID, so it is
-  # removed by its name, which holds the process ID of this script.
-  if ! id=$(docker run -d --name "$name" \
+  # docker create prints the ID also when the start below fails, and the ID
+  # is kept before the start, so the cleanup removes the container by its
+  # ID. When the name is taken by another container, create makes nothing
+  # and nothing is removed: a name is never used to remove.
+  id=$(docker create --name "$name" \
     -p 127.0.0.1::5432 \
     --add-host=host.docker.internal:host-gateway \
     -e POSTGRES_PASSWORD="$SUPERUSER_PASSWORD" \
@@ -243,11 +245,9 @@ for name in "$CONTAINER_1" "$CONTAINER_2"; do
     -e POOL_IT_RW_PASSWORD="$RW_PASSWORD" \
     -v "$ROOT/scripts/integration/initdb:/docker-entrypoint-initdb.d:ro" \
     -v "$DIR/certs:/certs:ro" \
-    "$POOL_IT_IMAGE"); then
-    docker rm -f -v "$name" >/dev/null 2>&1 || :
-    fail "container $name did not start"
-  fi
+    "$POOL_IT_IMAGE") || fail "container $name could not be created"
   IDS="$IDS $id"
+  docker start "$id" >/dev/null || fail "container $name did not start"
 done
 
 # 3. Wait until both answer over TCP, which they do only after the init
