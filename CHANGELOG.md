@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A limit on validation time at the 1 MiB file limit. Three made files of almost 1 MiB, one of them invalid with one finding for each entry, each validate within 10 seconds in a debug build (`0003 AC-15`).
 - A check in `writer_admission` that a ready authority still belongs to the configuration it was confirmed with. A configuration without `control.authority_id`, or with another value, closes writes (`0003 AC-16`).
 - Thirteen new configuration fixtures, which brings the set to twenty eight.
-- Spec 0003 with acceptance criteria `0003 AC-1` to `AC-16`, ADR 0003, a verification record (`docs/specs/0003-control-and-session-data-model/verify.md`) and an independent review (`docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md`). The record holds the workstation evidence and a Linux container build. The evidence from a pull request is not in it yet.
+- Spec 0003 with acceptance criteria `0003 AC-1` to `AC-16`, ADR 0003, a verification record (`docs/specs/0003-control-and-session-data-model/verify.md`) and an independent review (`docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md`). The record holds the workstation evidence, a Linux container build and the seven checks on the pull request.
 - The journal format (one SQLite file), the bootstrap rules and the contract of every control and session record, written down in spec 0003. They are specified here and built by later scopes. Nothing reads or writes a journal in this build.
 - Ten glossary terms, among them Node, Journal, Authority ID, Bootstrap, Restore hold and Conflict latch.
 
