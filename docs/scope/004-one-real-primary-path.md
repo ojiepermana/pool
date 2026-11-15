@@ -1,4 +1,4 @@
-# 4. One real primary path · in-progress
+# 4. One real primary path · done
 
 [Scope index](index.md)
 
