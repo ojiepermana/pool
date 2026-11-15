@@ -262,9 +262,10 @@ delete_lines_starting "$C/tools/repo-check/baseline/lock-packages.txt" 'zmij'
 expect 8 guards 'W1' 'zmij'
 restore
 
-mkdir -p "$C/crates/pool-core"
-: >"$C/crates/pool-core/.keep"
-expect 9 guards 'W2' 'crates/pool-core'
+# Since spec 0004 step 3, apps/pool-cli is the one forbidden path.
+mkdir -p "$C/apps/pool-cli"
+: >"$C/apps/pool-cli/.keep"
+expect 9 guards 'W2' 'apps/pool-cli'
 restore
 
 append "$C/apps/pool/src/main.rs" '// std::thread'
