@@ -628,7 +628,7 @@ The `pool-config` run skipped the three slow tests, because on `32a7b24` they to
 
 ### Review gaps: tests added after the review of 2026-11-15
 
-Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15, for t1, t2, t4, t5 and the test nits n5, n6 and n17 of [the review](../../reviews/2026-11-15-scope-003-control-and-session-data-model.md). The tree is `main` at `d2e8548` plus this branch's commit. No production line changed: `crates/pool-config/src/lib.rs` gained the module `line_index_tests` at its end, and the `edge_tests` module of `topology.rs` changed inside.
+Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15, for t1, t2, t4, t5 and the test nits n5, n6 and n17 of [the review](../../reviews/2026-11-15-scope-003-control-and-session-data-model.md). The tests were written on `main` at `d2e8548` (commit `8425a28`); `scripts/check.sh all` ran again with the same result on `3f1bb9b`, which merges `main` at `455b1a5` (document changes only). No production line changed: `crates/pool-config/src/lib.rs` gained the module `line_index_tests` at its end, and the `edge_tests` module of `topology.rs` changed inside.
 
 | Command | Expected | Observed | Result |
 |---|---|---|---|
