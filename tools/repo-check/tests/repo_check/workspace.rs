@@ -463,3 +463,111 @@ fn workspace_reports_every_problem_before_the_count() {
     out.assert_problem("workspace", "W2", &["apps/pool-cli"]);
     assert_eq!(out.last_line(), "pool-repo-check workspace: 3 problems");
 }
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+/// The repository this program lives in.
+fn repository(path: &str) -> String {
+    std::fs::read_to_string(format!("{}/../../{path}", env!("CARGO_MANIFEST_DIR")))
+        .unwrap_or_else(|e| panic!("{path}: {e}"))
+}
+
+/// The lines of a baseline file that count: not empty, not a comment.
+fn baseline_lines(text: &str) -> Vec<&str> {
+    text.lines()
+        .map(str::trim_end)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .collect()
+}
+
+#[test]
+fn ac2_the_committed_w3_baseline_is_the_block_of_spec_0004() {
+    // covers: 0004 AC-2. The block after "The file of this slice:" under "Source guard".
+    let spec = repository("docs/specs/0004-one-real-primary-path/index.md");
+    let section = spec
+        .split_once("\n### Source guard\n")
+        .expect("the section")
+        .1;
+    let block = section
+        .split_once("The file of this slice:\n\n```text\n")
+        .expect("the block")
+        .1
+        .split_once("\n```")
+        .expect("the end of the block")
+        .0;
+    let committed = repository("tools/repo-check/baseline/forbidden-source-patterns.txt");
+    assert_eq!(baseline_lines(&committed), baseline_lines(block));
+}
+
+#[test]
+fn ac2_the_committed_w3_baseline_allows_and_refuses_each_text_where_the_spec_says() {
+    // covers: 0004 AC-2, through the real binary on a tree with the committed baseline.
+    let f = good_tree("ws_ac2_matrix");
+    f.write(
+        "tools/repo-check/baseline/forbidden-source-patterns.txt",
+        &repository("tools/repo-check/baseline/forbidden-source-patterns.txt"),
+    );
+    // (file, text, refused)
+    let cases: &[(&str, &str, bool)] = &[
+        // Sockets and the runtime: allowed in pool-core and apps/pool only.
+        ("crates/pool-core/src/a.rs", "tokio", false),
+        ("crates/pool-core/tests/a.rs", "TcpStream", false),
+        ("crates/pool-core/src/b.rs", "std::net", false),
+        ("apps/pool/src/a.rs", "TcpListener", false),
+        ("apps/pool/tests/a.rs", "tokio", false),
+        ("crates/pool-config/src/a.rs", "tokio", true),
+        ("crates/pool-config/tests/a.rs", "TcpStream", true),
+        ("crates/pool-control/src/a.rs", "TcpListener", true),
+        ("crates/pool-control/tests/a.rs", "tokio", true),
+        ("crates/pool-protocol/src/a.rs", "std::net", true),
+        ("crates/pool-protocol/fuzz/fuzz_targets/a.rs", "tokio", true),
+        // Paths are whole components.
+        ("crates/pool-core-x/src/lib.rs", "tokio", true),
+        ("apps/pool-cli/src/main.rs", "TcpStream", true),
+        // Rejected everywhere.
+        ("crates/pool-core/src/c.rs", "std::thread", true),
+        ("apps/pool/src/b.rs", "UdpSocket", true),
+        ("apps/pool/tests/b.rs", "UnixListener", true),
+        ("crates/pool-core/src/d.rs", "UnixStream", true),
+        // No clock, file or environment under pool-control/src; its tests may.
+        ("crates/pool-control/src/b.rs", "Instant::now", true),
+        ("crates/pool-control/src/c.rs", "SystemTime", true),
+        ("crates/pool-control/src/d.rs", "std::fs", true),
+        ("crates/pool-control/src/e.rs", "std::env", true),
+        ("crates/pool-control/tests/b.rs", "std::fs", false),
+        ("crates/pool-core/src/e.rs", "std::fs", false),
+        // rusqlite: journal.rs only, within pool-control/src.
+        ("crates/pool-control/src/journal.rs", "rusqlite", false),
+        ("crates/pool-control/src/f.rs", "rusqlite", true),
+        ("crates/pool-control/tests/c.rs", "rusqlite", false),
+        // The five names of pool-control, refused outside it.
+        ("crates/pool-control/src/g.rs", "StoredAuthority", false),
+        ("crates/pool-control/tests/d.rs", "writer_admission", false),
+        ("apps/pool/src/c.rs", "StoredAuthority", true),
+        ("apps/pool/tests/c.rs", "StoreProbe", true),
+        ("crates/pool-core/src/f.rs", "classify_startup", true),
+        ("crates/pool-config/src/b.rs", "plan_bootstrap", true),
+        ("crates/pool-protocol/src/b.rs", "writer_admission", true),
+    ];
+    for (file, text, _) in cases {
+        f.write(file, &format!("// {text}\n"));
+    }
+    let out = f.check("workspace", &[]);
+    for (file, text, refused) in cases {
+        assert_eq!(
+            out.has("W3", &[&format!("{file}:"), text]),
+            *refused,
+            "{file} with {text}:\n{out}"
+        );
+    }
+    let w3 = out
+        .problems()
+        .iter()
+        .filter(|l| l.starts_with("W3: "))
+        .count();
+    assert_eq!(
+        w3,
+        cases.iter().filter(|c| c.2).count(),
+        "one W3 problem per refused case:\n{out}"
+    );
+}

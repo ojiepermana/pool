@@ -778,3 +778,179 @@ fn ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked() {
     let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("pool-cmd-lock-race-locked.txt");
     fs::write(path, format!("{locked}\n")).expect("write");
 }
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+impl Layout {
+    /// The configuration with a probe timeout of 3 seconds toward `port`, so
+    /// that a bootstrap holds the lock that long against a node that never answers.
+    fn write_slow_probe_config(&self, port: u16) {
+        self.write_config(None, port, CA, "");
+        let text = fs::read_to_string(&self.config).expect("read the configuration");
+        let text = text.replacen(
+            "timeout_ms = 200\nobservation_expiry_ms = 1000",
+            "timeout_ms = 3000\nobservation_expiry_ms = 4000",
+            1,
+        );
+        assert!(text.contains("timeout_ms = 3000"));
+        fs::write(&self.config, text).expect("write the configuration");
+    }
+}
+
+/// 50 ms on a small runtime of the test: rule W3 keeps `std::thread` out of the tests too.
+fn pause() {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .expect("a runtime for the test")
+        .block_on(async { tokio::time::sleep(Duration::from_millis(50)).await });
+}
+
+/// Waits, asking every 50 ms for at most `limit`, for one connection on `listener`, and keeps it open.
+fn accept_within(listener: &TcpListener, limit: Duration) -> Option<std::net::TcpStream> {
+    listener.set_nonblocking(true).expect("nonblocking");
+    let started = Instant::now();
+    while started.elapsed() < limit {
+        if let Ok((stream, _)) = listener.accept() {
+            return Some(stream);
+        }
+        pause();
+    }
+    None
+}
+
+#[test]
+fn ac9_a_lock_held_by_another_pool_process_gives_state_locked_and_changes_nothing() {
+    // covers: 0004 AC-9. A `pool bootstrap` holds the lock while it waits on
+    // a node that accepts and never speaks. It connects only after it took the
+    // lock, so its connection is the signal. Then each command of the test meets
+    // the lock the way two daemons would.
+    let layout = Layout::new("lock-held-by-a-process");
+    let silent = TcpListener::bind("127.0.0.1:0").expect("bind");
+    let port = silent.local_addr().expect("address").port();
+    layout.write_slow_probe_config(port);
+    let holder = start(
+        env!("CARGO_BIN_EXE_pool"),
+        &[
+            "bootstrap",
+            "--config",
+            layout.config.to_str().expect("utf-8"),
+        ],
+    );
+    let _connection =
+        accept_within(&silent, Duration::from_secs(5)).expect("the holder reached the node");
+    let before = layout.entries();
+    assert_eq!(before, ["pool.lock"]);
+    for name in ["bootstrap", "show-authority"] {
+        assert_error(
+            &layout,
+            name,
+            "state.locked",
+            None,
+            "another process is using the state directory",
+        );
+    }
+    assert_eq!(layout.entries(), before, "nothing changed");
+    let output = holder.wait_with_output().expect("wait for the holder");
+    assert_eq!(
+        output.status.code(),
+        Some(1),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        format!("bootstrap refused\nfindings: 1\nbootstrap.evidence_missing: {REFUSED}\n")
+    );
+    assert_eq!(layout.entries(), ["pool.lock"], "no journal");
+    let run = command("show-authority", &layout.config, "human");
+    assert_eq!(run.code, 0, "the lock was given back: {}", run.stderr);
+}
+
+#[test]
+fn ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_leave_only_the_lock()
+ {
+    // covers: 0004 AC-9 (finding 2 of milestone 3, with bootstrap). Eight
+    // `pool bootstrap` read their configuration from named pipes and are
+    // released together; the one that takes the lock holds it for the probe
+    // timeout. Exactly one reaches the node and is refused for missing
+    // evidence; the seven others get `state.locked`.
+    use std::io::Write;
+    for round in 0..3 {
+        let layout = Layout::new(&format!("bootstrap-race-{round}"));
+        let silent = TcpListener::bind("127.0.0.1:0").expect("bind");
+        let port = silent.local_addr().expect("address").port();
+        layout.write_slow_probe_config(port);
+        let text = fs::read(&layout.config).expect("read the configuration");
+        let pipes: Vec<PathBuf> = (0..8)
+            .map(|index| layout.root.join(format!("bootstrap-{index}.toml")))
+            .collect();
+        for pipe in &pipes {
+            let made = start("mkfifo", &[pipe.to_str().expect("utf-8")])
+                .wait()
+                .expect("mkfifo");
+            assert!(made.success());
+        }
+        let children: Vec<_> = pipes
+            .iter()
+            .map(|pipe| {
+                start(
+                    env!("CARGO_BIN_EXE_pool"),
+                    &["bootstrap", "--config", pipe.to_str().expect("utf-8")],
+                )
+            })
+            .collect();
+        let mut writers: Vec<fs::File> = pipes
+            .iter()
+            .map(|pipe| {
+                fs::OpenOptions::new()
+                    .write(true)
+                    .open(pipe)
+                    .expect("open the pipe")
+            })
+            .collect();
+        for writer in &mut writers {
+            writer.write_all(&text).expect("write the configuration");
+        }
+        drop(writers);
+        let _connection =
+            accept_within(&silent, Duration::from_secs(5)).expect("one bootstrap reached the node");
+        let (mut refused, mut locked) = (0, 0);
+        for child in children {
+            let output = child.wait_with_output().expect("wait");
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            match output.status.code() {
+                Some(1) => {
+                    assert_eq!(
+                        stdout,
+                        format!(
+                            "bootstrap refused\nfindings: 1\nbootstrap.evidence_missing: {REFUSED}\n"
+                        )
+                    );
+                    refused += 1;
+                }
+                Some(3) => {
+                    assert_eq!(
+                        stderr,
+                        "error: state.locked: another process is using the state directory\n",
+                        "round {round}"
+                    );
+                    locked += 1;
+                }
+                other => panic!("round {round}: exit {other:?}: {stdout} {stderr}"),
+            }
+        }
+        assert_eq!((refused, locked), (1, 7), "round {round}");
+        assert!(
+            accept_within(&silent, Duration::from_millis(100)).is_none(),
+            "round {round}: a second bootstrap reached the node"
+        );
+        assert_eq!(layout.entries(), ["pool.lock"], "round {round}");
+        let mode = fs::metadata(layout.state.join("pool.lock"))
+            .expect("the lock file")
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o7777, 0o600, "round {round}");
+    }
+}
