@@ -113,9 +113,10 @@ check_deny() {
     missing "cargo-deny $CARGO_DENY_VERSION is required; run scripts/check.sh tools" || return 1
   fi
   run cargo deny --locked --config deny.toml check || return 1
-  run cargo deny --locked --manifest-path crates/pool-config/fuzz/Cargo.toml --config deny.toml check || return 1
-  # This lockfile holds no package under Unicode-3.0, so the unused allowance of the general list is not an error
-  # here. Every other license rule of deny.toml applies unchanged.
+  # The list of allowed licenses is the list of the product, and the command above keeps it from growing unseen.
+  # A fuzz lockfile holds a part of the product and the fuzz runtime, so for it an allowed license that no package
+  # uses is not an error (spec 0004, "Dependency policy"). Every other rule of deny.toml applies unchanged.
+  run cargo deny --locked --manifest-path crates/pool-config/fuzz/Cargo.toml --config deny.toml check -A license-not-encountered || return 1
   run cargo deny --locked --manifest-path crates/pool-protocol/fuzz/Cargo.toml --config deny.toml check -A license-not-encountered
 }
 
