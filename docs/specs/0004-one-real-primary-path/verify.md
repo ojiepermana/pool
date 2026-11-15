@@ -819,3 +819,16 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 |---|---|---|
 | `0004 AC-27` | `crates/pool-protocol/fuzz/` with the targets `startup`, `frontend_message` and `scram`, its lockfile and committed regression inputs; `scripts/check.sh fuzz` builds every target of both fuzz packages and runs each on its committed inputs for 30 s, and ends without a crash file | pass on the workstation; the CI job is manual step M2 |
 | `0004 AC-24`, the `pool-protocol` types | `tests/redaction.rs` puts `CANARY-9f2c7b1e` into every content field of `Message`, `MessageReader`, `Authentication`, `SaslInitialResponse`, `NegotiateProtocolVersion`, `ParameterStatus`, `ClientFirst`, `ServerFirst`, `ClientFinal`, `ServerFinal`, `Forwarded`, `FirstPacket` and `FirstPacketReader` and finds it in no `Debug` text | pass |
+
+### Build plan step 13: document corrections
+
+On 2026-11-15, on top of `main` with step 12 merged. Items 1 and 2 of [Document corrections](index.md#document-corrections), and nothing else in the two files.
+
+| Item | File | Change | Result |
+|---|---|---|---|
+| 1 | `docs/engineering-standards.md` | The row "SQLSTATEs and messages that POOL itself generates" of the shared conventions table now holds the rule (`FATAL`, the fields `S`, `V`, `C` and `M` only, constant text, one SQLSTATE per situation from a fixed table, a server error during a query passed on unchanged) and links to [SQLSTATEs that POOL generates](index.md#sqlstates-that-pool-generates). The first paragraph names the five workspace members | done |
+| 2 | `docs/repository-structure.md` | The first paragraph adds `crates/pool-protocol` and `crates/pool-core` to the paths that exist | done |
+
+`scripts/check.sh docs`: exit 0 (links and anchors D1 and D2, scope status D3, IDs D4 to D6).
+
+Two sentences of the same files are no longer exact and are left to the "Document it" box of scope 004, as item 5 of the corrections says: the paragraph on the fuzz package in "Rust and runtime" of `docs/engineering-standards.md` names only `crates/pool-config/fuzz/`, and `crates/pool-protocol/fuzz/` now exists too; the row of `apps/pool` in the crate table of `docs/repository-structure.md` says it depends on all four internal crates, and today it depends on `pool-config`, `pool-control` and `pool-core`, not on `pool-protocol`.
