@@ -738,11 +738,7 @@ fn bootstrap_refusals_need_every_node_and_a_cluster() {
     )
     .expect("a plan");
     assert_eq!(plan.clusters()[0].writer_timeline, timeline(4));
-    assert!(
-        BootstrapRefusal::NoCluster
-            .as_str()
-            .starts_with("bootstrap.")
-    );
+    assert_eq!(BootstrapRefusal::NoCluster.as_str(), "bootstrap.no_cluster");
 }
 
 // Edge cases beyond the rows of the walks, added by /test. Each one names the
