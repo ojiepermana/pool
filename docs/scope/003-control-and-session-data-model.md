@@ -17,7 +17,7 @@ Before 004, the control and protocol owners agree how to distinguish first boots
   - [ ] Validation time: step 8 (`AC-15`), after the milestone "Identifiers, configuration keys and the finding line"
   - [ ] Witness in writer admission: step 9 (`AC-16`), after the milestone "Authority model and the four walks"
 - [ ] Verify it: `/check verify control and session data model`
-- [ ] Test it: `/test control and session data model`
+- [x] Test it: `/test control and session data model`
 - [ ] Review it (fresh model): `/check review control and session data model`
 - [ ] Document it: `/document control and session data model`
 
