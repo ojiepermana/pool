@@ -25,6 +25,8 @@ const KEY_NODE_CA: &str = "node.tls_ca_file";
 const REFUSED_MESSAGE: &str = "bootstrap is not possible in this state";
 const JOURNAL_FAILED: &str = "journal.failed";
 const JOURNAL_FAILED_MESSAGE: &str = "the journal could not be written";
+const RANDOM_FAILED: &str = "random.failed";
+const RANDOM_FAILED_MESSAGE: &str = "random bytes could not be obtained";
 
 /// Runs `pool bootstrap` on the file at `path` and returns its report.
 pub fn bootstrap_file(path: &Path) -> Report {
@@ -126,7 +128,7 @@ fn bootstrap(config: &ValidatedConfig) -> Result<Report, Report> {
     // transaction. Without random bytes no file is created.
     let journal_failed = || Report::Error(Item::plain(JOURNAL_FAILED, JOURNAL_FAILED_MESSAGE));
     let authority_id = new_authority_id()
-        .map_err(|error| Report::Error(Item::plain(error.code(), error.message())))?;
+        .map_err(|_| Report::Error(Item::plain(RANDOM_FAILED, RANDOM_FAILED_MESSAGE)))?;
     let path = state.create_empty_journal().map_err(state_error)?;
     Journal::create(&path, &plan, authority_id, unix_ms()).map_err(|_| journal_failed())?;
     // 7. The result.
