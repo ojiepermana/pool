@@ -1793,6 +1793,13 @@ On 2026-11-16 until 03:05 WIB, by the tester session: the rest of finding t10 of
 | From `crates/pool-protocol`: `CARGO_TARGET_DIR=<root>/target/fuzz cargo +nightly-2026-10-17 fuzz run scram fuzz/corpus/scram fuzz/regressions/scram -- -max_total_time=30 -max_len=4096` | exit 0, 3943376 runs in 31 s, no file under `fuzz/artifacts/` | pass |
 | `scripts/check.sh linux-build` on `9923a48` | exit status 0, `linux build check passed` | pass |
 
+**Decision 102: `data_row`.** It left the target `auth`, and `data_row_refuses_every_body_that_lies_about_its_columns` in `crates/pool-core/src/backend/tests.rs` (commit `582431d`) feeds it, directly, every prefix of a good body of three columns, more columns than there are, the largest count, a column longer than the body, a column of `i32::MAX` bytes, the lengths -2 and `i32::MIN`, a byte after the last column, and text that is not UTF-8. Each is `BackendError::Protocol`, none panics, and a count of 0 with nothing after it is an empty row. No body gave another result, so there is no finding. Wrong changes: the check for bytes after the last column removed, and lossy UTF-8 in place of the check: both caught by the new test.
+
+| Command | Observed | Result |
+|---|---|---|
+| `scripts/check.sh all > <file> 2>&1; echo $?` on `d90869b` (`582431d` with `main` at `0ef7f69` merged) | exit status 0, all six checks `ok` | pass |
+| `scripts/check.sh linux-build` on `d90869b` | exit status 0, `linux build check passed` | pass |
+
 ## Full verification
 
 The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.
