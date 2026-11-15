@@ -81,22 +81,58 @@ fn open_error(error: &io::Error) -> SecretError {
     }
 }
 
-/// Checks a secret file: a regular file after links, mode with no group or other bit, owned by `owner`.
-pub fn check_secret_file(path: &Path, owner: u32) -> Result<(), SecretError> {
-    let metadata = std::fs::metadata(path).map_err(|e| open_error(&e))?;
-    let mode = metadata.permissions().mode();
-    if !metadata.is_file() || mode & 0o077 != 0 || metadata.uid() != owner {
-        return Err(SecretError::Permissions);
-    }
-    Ok(())
+/// How a file is checked: a secret file, or a certificate or CA file.
+#[derive(Clone, Copy)]
+enum Kind {
+    /// A regular file with no group or other permission bit, owned by the service account.
+    Secret { owner: u32 },
+    /// A regular file that can be read.
+    Certificate,
 }
 
-/// Reads a whole file of at most `limit` bytes. A longer file is [`SecretError::Invalid`].
-fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>, SecretError> {
-    let file = File::open(path).map_err(|e| open_error(&e))?;
-    if !file.metadata().map_err(|e| open_error(&e))?.is_file() {
-        return Err(SecretError::Invalid);
+impl Kind {
+    /// The finding for a path that is not a regular file.
+    fn not_regular(self) -> SecretError {
+        match self {
+            Kind::Secret { .. } => SecretError::Permissions,
+            Kind::Certificate => SecretError::Invalid,
+        }
     }
+}
+
+/// Opens a file and checks it on the open file (decision 67 of the spec rationale).
+///
+/// The path is looked at first only to refuse what is not a regular file,
+/// so a named pipe or a device is never opened and never waited on. The
+/// type, the mode and the owner are then checked on the file that was
+/// opened, and the caller reads from that same file.
+fn open_checked(path: &Path, kind: Kind) -> Result<File, SecretError> {
+    let looked = std::fs::metadata(path).map_err(|e| open_error(&e))?;
+    if !looked.is_file() {
+        return Err(kind.not_regular());
+    }
+    let file = File::open(path).map_err(|e| open_error(&e))?;
+    let metadata = file.metadata().map_err(|e| open_error(&e))?;
+    if !metadata.is_file() {
+        return Err(kind.not_regular());
+    }
+    if let Kind::Secret { owner } = kind
+        && (metadata.permissions().mode() & 0o077 != 0 || metadata.uid() != owner)
+    {
+        return Err(SecretError::Permissions);
+    }
+    Ok(file)
+}
+
+/// Checks a secret file: a regular file after links, mode with no group or other bit, owned by `owner`.
+///
+/// The check is made on the open file, as every reader of this module does.
+pub fn check_secret_file(path: &Path, owner: u32) -> Result<(), SecretError> {
+    open_checked(path, Kind::Secret { owner }).map(drop)
+}
+
+/// Reads a whole open file of at most `limit` bytes. A longer file is [`SecretError::Invalid`].
+fn read_open(file: File, limit: u64) -> Result<Vec<u8>, SecretError> {
     let mut bytes = Vec::new();
     file.take(limit + 1)
         .read_to_end(&mut bytes)
@@ -107,9 +143,12 @@ fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>, SecretError> {
     Ok(bytes)
 }
 
+fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>, SecretError> {
+    read_open(open_checked(path, Kind::Certificate)?, limit)
+}
+
 fn read_secret(path: &Path, owner: u32, limit: u64) -> Result<Vec<u8>, SecretError> {
-    check_secret_file(path, owner)?;
-    read_limited(path, limit)
+    read_open(open_checked(path, Kind::Secret { owner })?, limit)
 }
 
 /// Drops one trailing line feed, or carriage return and line feed.
@@ -268,9 +307,17 @@ fn certificates(pem: &[u8]) -> Result<Vec<CertificateDer<'static>>, SecretError>
     Ok(certs)
 }
 
-/// A certificate chain in PEM, leaf first.
-#[derive(Debug, Clone)]
+/// A certificate chain in PEM, leaf first. Its certificates carry names from a file: `Debug` prints the count only.
+#[derive(Clone)]
 pub struct CertificateChain(pub(crate) Vec<CertificateDer<'static>>);
+
+impl fmt::Debug for CertificateChain {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CertificateChain")
+            .field("certificates", &self.0.len())
+            .finish()
+    }
+}
 
 impl CertificateChain {
     /// Parses one or more certificates in PEM.
@@ -284,9 +331,17 @@ pub fn read_certificate_chain(path: &Path) -> Result<CertificateChain, SecretErr
     CertificateChain::parse(&read_limited(path, CERTIFICATE_MAX_BYTES)?)
 }
 
-/// The trust roots for one node: the certificates of its CA file and nothing else.
-#[derive(Debug, Clone)]
+/// The trust roots for one node: the certificates of its CA file and nothing else. `Debug` prints the count only.
+#[derive(Clone)]
 pub struct TrustRoots(pub(crate) RootCertStore);
+
+impl fmt::Debug for TrustRoots {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TrustRoots")
+            .field("roots", &self.0.len())
+            .finish()
+    }
+}
 
 impl TrustRoots {
     /// Parses a CA file: at least one certificate in PEM, each usable as a trust anchor.
@@ -498,6 +553,15 @@ mod tests {
             0o644,
         );
         assert!(read_certificate_chain(&chain).is_ok());
+        let debug = format!(
+            "{:?} {:?}",
+            read_certificate_chain(&chain).expect("chain"),
+            read_trust_roots(&chain).expect("roots")
+        );
+        assert_eq!(
+            debug,
+            "CertificateChain { certificates: 1 } TrustRoots { roots: 1 }"
+        );
         assert!(read_trust_roots(&chain).is_ok());
         let empty = dir.file("empty", b"no certificate here\n", 0o644);
         assert_eq!(
@@ -521,6 +585,56 @@ mod tests {
             read_trust_roots(&big).map(|_| ()),
             Err(SecretError::Invalid)
         );
+    }
+
+    #[tokio::test]
+    async fn a_named_pipe_is_refused_without_waiting() {
+        let dir = TempDir::new("pipe");
+        let owner = dir.owner();
+        let pipe = dir.0.join("pipe");
+        let made = std::process::Command::new("mkfifo")
+            .arg(&pipe)
+            .status()
+            .expect("mkfifo");
+        assert!(made.success());
+        std::fs::set_permissions(&pipe, std::fs::Permissions::from_mode(0o600)).expect("chmod");
+        // Nobody writes to the pipe: an open of it would wait for ever.
+        let reads = tokio::task::spawn_blocking({
+            let pipe = pipe.clone();
+            move || {
+                (
+                    read_credential(&pipe, owner).map(|_| ()),
+                    read_verifier(&pipe, owner).map(|_| ()),
+                    read_private_key(&pipe, owner).map(|_| ()),
+                    read_certificate_chain(&pipe).map(|_| ()),
+                    read_trust_roots(&pipe).map(|_| ()),
+                )
+            }
+        });
+        let results = tokio::time::timeout(std::time::Duration::from_secs(5), reads)
+            .await
+            .expect("no wait on the pipe")
+            .expect("join");
+        assert_eq!(
+            results,
+            (
+                Err(SecretError::Permissions),
+                Err(SecretError::Permissions),
+                Err(SecretError::Permissions),
+                Err(SecretError::Invalid),
+                Err(SecretError::Invalid),
+            )
+        );
+        // A link to a pipe is the same.
+        let link = dir.0.join("link-to-pipe");
+        std::os::unix::fs::symlink(&pipe, &link).expect("symlink");
+        let link_read =
+            tokio::task::spawn_blocking(move || read_credential(&link, owner).map(|_| ()));
+        let link_result = tokio::time::timeout(std::time::Duration::from_secs(5), link_read)
+            .await
+            .expect("no wait")
+            .expect("join");
+        assert_eq!(link_result, Err(SecretError::Permissions));
     }
 
     #[test]

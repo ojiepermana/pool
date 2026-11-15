@@ -184,7 +184,12 @@ async fn run_node(
             record.client_first = String::from_utf8(data.clone()).expect("utf-8");
             let _ = seen.send(record);
             let verifier = Verifier::parse(
-                verifier_text(&password(script.password), b"node salt", 4096).as_bytes(),
+                verifier_text(
+                    &password(script.password),
+                    b"node salt",
+                    std::num::NonZeroU32::new(4096).expect("count"),
+                )
+                .as_bytes(),
             )
             .expect("verifier");
             let (exchange, mut server_first) =
@@ -627,4 +632,77 @@ async fn a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt() {
             assert_eq!(run.result.err(), Some(BackendError::Protocol));
         }
     }
+}
+
+#[tokio::test]
+async fn the_last_report_of_in_hot_standby_decides() {
+    for (params, ok) in [
+        (
+            vec![("in_hot_standby", "off"), ("in_hot_standby", "on")],
+            false,
+        ),
+        (
+            vec![("in_hot_standby", "on"), ("in_hot_standby", "off")],
+            true,
+        ),
+    ] {
+        let mut script = Script::primary();
+        script.params = params;
+        let run = run(
+            script,
+            good_tls(),
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        if ok {
+            assert!(run.result.is_ok());
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::NotPrimary));
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn eight_logins_at_a_cold_start_derive_the_keys_once() {
+    let credential = Credential::new(password("backend-secret"));
+    let mut tasks = Vec::new();
+    for _ in 0..8 {
+        let credential = Arc::clone(&credential);
+        tasks.push(tokio::spawn(
+            async move { credential.keys(b"salt", 4096).await },
+        ));
+    }
+    let mut all = Vec::new();
+    for task in tasks {
+        all.push(task.await.expect("join").expect("keys"));
+    }
+    assert!(all.windows(2).all(|w| w[0] == w[1]));
+    assert_eq!(credential.derivations(), 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_waiter_goes_on_when_the_login_that_derives_is_cancelled() {
+    let credential = Credential::new(password("backend-secret"));
+    // A high count, so the first derivation is still running when its deadline passes.
+    let first = {
+        let credential = Arc::clone(&credential);
+        tokio::spawn(async move {
+            tokio::time::timeout(Duration::from_millis(5), credential.keys(b"salt", 600_000)).await
+        })
+    };
+    tokio::time::sleep(Duration::from_millis(1)).await;
+    let second = {
+        let credential = Arc::clone(&credential);
+        tokio::spawn(async move { credential.keys(b"salt", 600_000).await })
+    };
+    assert!(
+        first.await.expect("join").is_err(),
+        "the first login ran into its deadline"
+    );
+    let keys = tokio::time::timeout(Duration::from_secs(60), second)
+        .await
+        .expect("the waiter is not stuck")
+        .expect("join");
+    assert!(keys.is_ok());
 }

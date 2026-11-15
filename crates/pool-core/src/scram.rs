@@ -9,6 +9,7 @@
 //! a blocking thread and keeps per credential, salt and count.
 
 use std::fmt;
+use std::num::NonZeroU32;
 
 use aws_lc_rs::{constant_time, digest, hmac, pbkdf2};
 use pool_protocol::base64;
@@ -89,18 +90,13 @@ impl fmt::Debug for ScramKeys {
 
 /// Derives the client key and the server key with PBKDF2-HMAC-SHA-256.
 ///
-/// This is blocking work proportional to `iterations` (at most 600000):
-/// run it inside `tokio::task::spawn_blocking`.
-///
-/// # Panics
-///
-/// When `iterations` is 0; the parser of the server-first message never returns 0.
-pub fn derive_keys(password: &Password, salt: &[u8], iterations: u32) -> ScramKeys {
-    let rounds = std::num::NonZeroU32::new(iterations).expect("an iteration count of at least 1");
+/// This is blocking work proportional to `iterations` (at most 600000 from a
+/// node): run it inside `tokio::task::spawn_blocking`. The count cannot be 0.
+pub fn derive_keys(password: &Password, salt: &[u8], iterations: NonZeroU32) -> ScramKeys {
     let mut salted = [0; 32];
     pbkdf2::derive(
         pbkdf2::PBKDF2_HMAC_SHA256,
-        rounds,
+        iterations,
         salt,
         password.as_bytes(),
         &mut salted,
@@ -114,7 +110,7 @@ pub fn derive_keys(password: &Password, salt: &[u8], iterations: u32) -> ScramKe
 /// The verifier text that PostgreSQL would store for this password, salt and count.
 ///
 /// For test fixtures and tools: the daemon never makes a verifier.
-pub fn verifier_text(password: &Password, salt: &[u8], iterations: u32) -> String {
+pub fn verifier_text(password: &Password, salt: &[u8], iterations: NonZeroU32) -> String {
     let keys = derive_keys(password, salt, iterations);
     format!(
         "SCRAM-SHA-256${iterations}:{}${}:{}",
@@ -149,8 +145,8 @@ impl fmt::Debug for MockKey {
     }
 }
 
-/// What the server checks a client against.
-#[derive(Debug, Clone)]
+/// What the server checks a client against. `Debug` names the variant only.
+#[derive(Clone)]
 pub enum ServerCredential<'a> {
     /// The verifier of the principal entry with the claimed name.
     Known(&'a Verifier),
@@ -180,8 +176,32 @@ impl<'a> ServerCredential<'a> {
     }
 }
 
+impl fmt::Debug for ServerCredential<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Known(_) => "ServerCredential::Known([REDACTED])",
+            Self::Unknown { .. } => "ServerCredential::Unknown([REDACTED])",
+        })
+    }
+}
+
+impl fmt::Debug for ServerExchange<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ServerExchange([REDACTED])")
+    }
+}
+
+impl fmt::Debug for ClientExchange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ClientExchange([REDACTED])")
+    }
+}
+
 /// The server side after the client-first message: what it must remember for the final message.
-#[derive(Debug, Clone)]
+///
+/// It holds the nonces and the first message of the client, which can carry
+/// the user name the client wrote: `Debug` prints `[REDACTED]`.
+#[derive(Clone)]
 pub struct ServerExchange<'a> {
     credential: ServerCredential<'a>,
     header: Gs2Header,
@@ -259,7 +279,9 @@ impl<'a> ServerExchange<'a> {
 }
 
 /// The client side toward a node, from the client-first message to the check of the server signature.
-#[derive(Debug, Clone)]
+///
+/// It holds the client nonce: `Debug` prints `[REDACTED]`.
+#[derive(Clone)]
 pub struct ClientExchange {
     nonce: String,
 }
@@ -346,6 +368,10 @@ mod tests {
     const CLIENT_FINAL: &str = "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=";
     const SERVER_FINAL: &str = "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=";
 
+    fn count(n: u32) -> NonZeroU32 {
+        NonZeroU32::new(n).expect("a count of at least 1")
+    }
+
     fn pencil() -> Password {
         Password::parse(b"pencil").expect("valid")
     }
@@ -356,7 +382,7 @@ mod tests {
 
     #[test]
     fn rfc_7677_proof_and_signature() {
-        let keys = derive_keys(&pencil(), &salt(), 4096);
+        let keys = derive_keys(&pencil(), &salt(), count(4096));
         let without_proof = format!("c=biws,r={CLIENT_NONCE}{SERVER_NONCE}");
         let auth = text::auth_message(
             &CLIENT_FIRST[3..],
@@ -373,8 +399,8 @@ mod tests {
 
     #[test]
     fn rfc_7677_as_the_server() {
-        let verifier =
-            Verifier::parse(verifier_text(&pencil(), &salt(), 4096).as_bytes()).expect("valid");
+        let verifier = Verifier::parse(verifier_text(&pencil(), &salt(), count(4096)).as_bytes())
+            .expect("valid");
         let (exchange, server_first) = ServerExchange::start_with_nonce(
             ServerCredential::Known(&verifier),
             CLIENT_FIRST.as_bytes(),
@@ -396,8 +422,9 @@ mod tests {
 
     #[test]
     fn client_and_server_agree_and_a_wrong_password_fails() {
-        let verifier = Verifier::parse(verifier_text(&pencil(), b"some salt", 4096).as_bytes())
-            .expect("valid");
+        let verifier =
+            Verifier::parse(verifier_text(&pencil(), b"some salt", count(4096)).as_bytes())
+                .expect("valid");
         for (password, ok) in [("pencil", true), ("pencil2", false)] {
             let (client, first) = ClientExchange::start().expect("random");
             let (server, server_first) =
@@ -409,7 +436,7 @@ mod tests {
             let keys = derive_keys(
                 &Password::parse(password.as_bytes()).expect("valid"),
                 &parsed.salt,
-                parsed.iterations,
+                count(parsed.iterations),
             );
             let (fin, expected) = client.client_final(&parsed, &keys);
             match server.finish(fin.as_bytes()) {
@@ -440,7 +467,7 @@ mod tests {
             .server_first(server_first.as_bytes())
             .expect("same shape as a real one");
         assert_eq!(parsed.iterations, 4096);
-        let keys = derive_keys(&pencil(), &parsed.salt, parsed.iterations);
+        let keys = derive_keys(&pencil(), &parsed.salt, count(parsed.iterations));
         let (fin, _) = client.client_final(&parsed, &keys);
         assert_eq!(server.finish(fin.as_bytes()), Err(ScramFault::Failed));
         assert_eq!(format!("{key:?}"), REDACTED);
@@ -449,7 +476,7 @@ mod tests {
     #[test]
     fn protocol_faults_and_server_refusals() {
         let verifier =
-            Verifier::parse(verifier_text(&pencil(), b"salt", 1).as_bytes()).expect("valid");
+            Verifier::parse(verifier_text(&pencil(), b"salt", count(1)).as_bytes()).expect("valid");
         assert_eq!(
             ServerExchange::start(
                 ServerCredential::Known(&verifier),
@@ -476,7 +503,10 @@ mod tests {
         );
         assert_eq!(expected.check(b"v=AAAA"), Err(ScramFault::Protocol));
         assert_eq!(format!("{expected:?}"), REDACTED);
-        assert_eq!(format!("{:?}", derive_keys(&pencil(), b"s", 1)), REDACTED);
+        assert_eq!(
+            format!("{:?}", derive_keys(&pencil(), b"s", count(1))),
+            REDACTED
+        );
     }
 
     #[test]
@@ -485,5 +515,37 @@ mod tests {
         let b = new_nonce().expect("random");
         assert_ne!(a, b);
         assert_eq!(a.len(), 24);
+    }
+
+    #[test]
+    fn the_exchange_types_print_no_nonce_and_no_client_message() {
+        let verifier = Verifier::parse(verifier_text(&pencil(), &salt(), count(4096)).as_bytes())
+            .expect("valid");
+        let (server, server_first) = ServerExchange::start_with_nonce(
+            ServerCredential::Known(&verifier),
+            CLIENT_FIRST.as_bytes(),
+            SERVER_NONCE,
+        )
+        .expect("first");
+        let (client, client_first) = ClientExchange::start().expect("random");
+        let unknown =
+            ServerCredential::unknown(&MockKey::generate().expect("random"), b"mallory", 4096);
+        let text = format!(
+            "{server:?} {client:?} {:?} {unknown:?}",
+            ServerCredential::Known(&verifier)
+        );
+        let client_nonce = client_first.strip_prefix("n,,n=,r=").expect("shape");
+        for hidden in [
+            CLIENT_NONCE,
+            SERVER_NONCE,
+            "user",
+            client_nonce,
+            &server_first,
+            SALT,
+            "mallory",
+        ] {
+            assert!(!text.contains(hidden), "{hidden} in {text}");
+        }
+        assert!(text.contains("[REDACTED]"));
     }
 }

@@ -451,6 +451,23 @@ What the tests hold:
 | `0004 AC-15`, library half | the TLS and backend tests above: no startup packet unless the node answered `S`, the chain leads to the configured CA and the name matches | pass for the library half; the listener side and `psql` are steps 9 and 10 |
 | `0004 AC-16`, library half | the SCRAM tests above: the right password passes, a wrong one and an unknown name fail after the same exchange; the backend password and the frontend verifier are separate types | pass for the library half; the message sequence over the listener is step 9 |
 
+#### Changes after the verification of step 7 (decisions 62 to 69)
+
+On 2026-11-15, one commit per decision, on top of `main` at `8458624`:
+
+| Commit | Decision | Change | Test |
+|---|---|---|---|
+| `da0931f` | 66 | The last report of `in_hot_standby` before `ReadyForQuery` decides (`0004 AC-14`) | `the_last_report_of_in_hot_standby_decides`: `off` then `on` is `NotPrimary`, `on` then `off` passes |
+| `e9bcacd` | 69 | `Debug` by hand on `ServerExchange`, `ClientExchange`, `ServerCredential`, `CertificateChain` and `TrustRoots` (`0004 AC-24`) | `the_exchange_types_print_no_nonce_and_no_client_message`; the counts of `CertificateChain` and `TrustRoots` in `files_are_read_through_their_limit` |
+| `ca17e89` | 64 | One derivation at a time per credential: the cache is behind an async lock held across PBKDF2 | `eight_logins_at_a_cold_start_derive_the_keys_once` (one derivation), `a_waiter_goes_on_when_the_login_that_derives_is_cancelled` |
+| `614eb24` | 68 | `derive_keys` and `verifier_text` take a `NonZeroU32`; the backend turns its parsed count (1 to 600000) into one | every SCRAM test |
+| `251d840` | 67 | Protected files: the path is looked at only to refuse what is not a regular file, then type, mode and owner are checked on the open file and the content is read from it | `a_named_pipe_is_refused_without_waiting` (a pipe and a link to it: `secret.permissions` for a secret, `secret.invalid` for a certificate or CA file, within 5 s); the link to a good file in `secret_files_need_owner_only_mode_a_regular_file_and_the_owner` still passes |
+| `def82a0` | 62 | The first line of `tests/fixtures/node.key` is the text `test key for node.test, used only by the tests of pool-core; it protects nothing`; the PEM reader skips it | every test that loads the key |
+
+**The trace of `#[derive(Debug)]` in `pool-core` against the definition under "Log events".** Changed by hand, because they hold a nonce, a client message, a salt made from a name, or certificates from a file: the five types above. Judged safe, because they hold only IDs, generations, counts, durations or constant names: `Route`, `RouteState`, `RouteView` (`route.rs`: node and cluster IDs, epoch, revision, a duration); `LeaseGeneration`, `SessionId`, `StartupProfile` (`records.rs`); `Refusal`, `EndReason`, `Counters` (`report.rs`: reasons, node IDs, constant classes and SQLSTATEs, counts); `Phase`, `ServerError`, `Tracker` (`session.rs`); `WireError` (`wire.rs`); `BackendError`, `Purpose`, `TcpConnector`, `SecretError`, `ScramFault`, `RandomError`, `TlsPolicy`. Already by hand before: `Password`, `Verifier`, `PrivateKey`, `ScramKeys`, `MockKey`, `ExpectedSignature`, `Credential`, `Node`, `Login`, `BackendConnection`, `NodeTls`, `VerifiedPrincipal`, `PoolKey`, `Lease`, `Server`, `ServerParts`. Outside `pool-core`, several types of `pool-protocol` still derive `Debug` over content (`Message`, `ParameterStatus`, `SaslInitialResponse`, `ClientFirst`, `ServerFirst`, `ClientFinal`, `Forwarded`, `NegotiateProtocolVersion`); they are not part of this item.
+
+Results on the final tree: `cargo test -p pool-core --locked` 37 unit and 27 session tests passed; `cargo test -p pool --locked` passed (7, 84, 10; the 6 integration tests run under `integration`); `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6, with Docker) exit 0.
+
 #### Checker run
 
 Build plan step 7 only, on 2026-11-15 at 18:20 WIB, by the checker session, on the merged tree `77ca71f` (macOS 27.0.1, arm64, with Docker 29.9.2 running; the Linux build ran in the pinned image, the rest on the workstation, and none of it is CI). Tools: `rustc 1.100.0`, OpenSSL 4.0.3 for the certificates of the probes, Python 3.9 for one cross check. Every command below was run in this session. The probes are a small program outside the repository that calls the public functions of `pool-core`. Its node is a scripted peer of its own over an in memory stream. Its certificates are a CA and three node certificates (valid, expired, not yet valid) made for this run in a folder outside the repository, so they are not the ones of `crates/pool-core/tests/fixtures/`.
