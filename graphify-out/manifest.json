@@ -270,10 +270,10 @@
     "semantic_hash": "d6dac06b367870b83b4c521826d7f0cc"
   },
   "docs/scope/003-control-and-session-data-model.md": {
-    "mtime": 1794719658.9786024,
-    "seen": 1794720579.5633001,
+    "mtime": 1794728642.0039248,
+    "seen": 1794730362.7395499,
     "ast_hash": "bbebd1c2bc8121d2262d0475abe4319d",
-    "semantic_hash": "3dfe3cc595883c12022abfcaa5f0f55f"
+    "semantic_hash": "5406ae14a34927b6134f10c1dd9425c0"
   },
   "docs/scope/004-one-real-primary-path.md": {
     "mtime": 1794623415.6864564,
@@ -756,34 +756,34 @@
     "semantic_hash": "e3ef591e856b1e470abad501ac4b3262"
   },
   "docs/scope/coordination/003-control-and-session-data-model.brief-umum.md": {
-    "mtime": 1794717395.0349505,
-    "seen": 1794718304.594806,
+    "mtime": 1794728271.5970294,
+    "seen": 1794730362.739553,
     "ast_hash": "",
-    "semantic_hash": "d5b29419250844a8dbb80d04470c8055"
+    "semantic_hash": "4e4d92e09be4bcd840c23416b22332d2"
   },
   "docs/scope/coordination/003-control-and-session-data-model.log.md": {
-    "mtime": 1794719658.9793375,
-    "seen": 1794720579.5633018,
+    "mtime": 1794728658.2170513,
+    "seen": 1794730362.739551,
     "ast_hash": "",
-    "semantic_hash": "0c956e6237a315a0a61dec4271eb3960"
+    "semantic_hash": "b599b22f27bf12a6c081a27f66463c0c"
   },
   "docs/scope/coordination/003-control-and-session-data-model.manual.md": {
-    "mtime": 1794718577.7383938,
-    "seen": 1794720579.563303,
+    "mtime": 1794726381.5753202,
+    "seen": 1794730362.739552,
     "ast_hash": "",
-    "semantic_hash": "7d32f8c75031b81d23004e25df9e4abc"
+    "semantic_hash": "5d6b6f242fd805e1a7581e3af373bd86"
   },
   "docs/specs/0003-control-and-session-data-model/index.md": {
-    "mtime": 1794719595.3833523,
-    "seen": 1794720579.563294,
+    "mtime": 1794727837.6252964,
+    "seen": 1794730362.7395468,
     "ast_hash": "",
-    "semantic_hash": "2eadaace8abc1d2853d68c11641b6f46"
+    "semantic_hash": "2f2f5a7f967e0b5bd2b15602fa054ca1"
   },
   "docs/specs/0003-control-and-session-data-model/rationale.md": {
-    "mtime": 1794719595.3835728,
-    "seen": 1794720579.563297,
+    "mtime": 1794727837.6257532,
+    "seen": 1794730362.739549,
     "ast_hash": "",
-    "semantic_hash": "16dc0f113688dcd58aa15bc54773a62c"
+    "semantic_hash": "46c9396bc145c10a3a84ce59d0a84190"
   },
   "docs/adr/0003-control-and-session-data-model.md": {
     "mtime": 1794719595.380638,
@@ -850,5 +850,29 @@
     "seen": 1794728234.0611598,
     "ast_hash": "55505ea565500cd7065887829fce0e25",
     "semantic_hash": ""
+  },
+  "docs/specs/0003-control-and-session-data-model/verify.md": {
+    "mtime": 1794728441.8714743,
+    "seen": 1794730362.739539,
+    "ast_hash": "",
+    "semantic_hash": "f559d7cfc923763f9c2c19129aab5bda"
+  },
+  "docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md": {
+    "mtime": 1794727430.3511548,
+    "seen": 1794730362.739543,
+    "ast_hash": "",
+    "semantic_hash": "f52847d54710dea1f3a105381fa60067"
+  },
+  "crates/pool-control/AGENTS.md": {
+    "mtime": 1794728566.7311592,
+    "seen": 1794730362.7395442,
+    "ast_hash": "",
+    "semantic_hash": "e8ca4d8a73441ebc7b35f9e44b8b2905"
+  },
+  "crates/pool-control/CLAUDE.md": {
+    "mtime": 1794728566.7312963,
+    "seen": 1794730362.739545,
+    "ast_hash": "",
+    "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
   }
 }

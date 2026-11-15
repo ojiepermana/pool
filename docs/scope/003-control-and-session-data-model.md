@@ -19,6 +19,8 @@ Before 004, the control and protocol owners agree how to distinguish first boots
 - [x] Verify it: `/check verify control and session data model`
 - [x] Test it: `/test control and session data model`
 - [x] Review it (fresh model): `/check review control and session data model`
-- [ ] Document it: `/document control and session data model`
+- [x] Document it: `/document control and session data model`
 
 Spec [0003](../specs/0003-control-and-session-data-model/index.md) · code in `crates/pool-config/`, `crates/pool-control/`, `apps/pool/src/report.rs`, `tools/repo-check/`.
+
+Evidence: [verification record](../specs/0003-control-and-session-data-model/verify.md), [independent review](../reviews/2026-11-15-scope-003-control-and-session-data-model.md) and [changelog](../../CHANGELOG.md). Every box is ticked on workstation evidence, with a Linux container build for `aarch64-unknown-linux-gnu`. Not checked yet: the seven checks on a pull request. The change is on the local `main` only, so the feature stays `in-progress` until that pull request is merged.

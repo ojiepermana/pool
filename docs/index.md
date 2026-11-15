@@ -45,6 +45,13 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [crates/pool-config/AGENTS.md](../crates/pool-config/AGENTS.md) | crates/pool-config agent guide |
 | [crates/pool-config/CLAUDE.md](../crates/pool-config/CLAUDE.md) | Claude Code pointer to crates/pool-config/AGENTS.md |
 
+## crates/pool-control
+
+| Path | Document |
+|---|---|
+| [crates/pool-control/AGENTS.md](../crates/pool-control/AGENTS.md) | crates/pool-control agent guide |
+| [crates/pool-control/CLAUDE.md](../crates/pool-control/CLAUDE.md) | Claude Code pointer to crates/pool-control/AGENTS.md |
+
 ## docs/adr
 
 | Path | Document |
