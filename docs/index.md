@@ -121,6 +121,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/reviews/2026-11-14-scope-001-stack-and-workspace.md](reviews/2026-11-14-scope-001-stack-and-workspace.md) | Review. Scope 001, stack and workspace (2026-11-14) |
 | [docs/reviews/2026-11-14-scope-002-standards-and-tooling.md](reviews/2026-11-14-scope-002-standards-and-tooling.md) | Review. Scope 002, standards and tooling (2026-11-14) |
+| [docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md](reviews/2026-11-15-scope-003-control-and-session-data-model.md) | Review. Scope 003, control and session data model (2026-11-15) |
 
 ## docs/scope
 
