@@ -35,6 +35,7 @@ pub fn check(tree: &dyn Tree) -> Report {
     forbidden_paths(tree, &mut report);
     forbidden_text(tree, &mut report);
     let members = members(tree, &mut report);
+    local_lock_packages(tree, &members, &mut report);
     dependencies(tree, &members, &mut report);
     stray_lockfiles(tree, &mut report);
     linux_build_copy(tree, &mut report);
@@ -227,6 +228,58 @@ fn members(tree: &dyn Tree, report: &mut Report) -> Vec<Member> {
         });
     }
     members
+}
+
+/// Returns the package names of the entries of a lockfile that have no `source` line.
+///
+/// An entry is the lines from one `[[package]]` line to the next, or to the end of the file.
+pub fn local_packages(text: &str) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut entry: Option<(Option<String>, bool)> = None;
+    for line in text.lines() {
+        let line = line.trim();
+        if line == "[[package]]" {
+            if let Some((Some(name), false)) = entry.take() {
+                names.push(name);
+            }
+            entry = Some((None, false));
+        } else if let Some((name, has_source)) = entry.as_mut() {
+            match key_value(line) {
+                Some(("name", value)) if name.is_none() => {
+                    *name = Some(value.trim_matches('"').to_string());
+                }
+                Some(("source", _)) => *has_source = true,
+                _ => {}
+            }
+        }
+    }
+    if let Some((Some(name), false)) = entry {
+        names.push(name);
+    }
+    names
+}
+
+/// Rule W4, added by spec 0003: every package of the root `Cargo.lock` without a `source` line is a listed member.
+fn local_lock_packages(tree: &dyn Tree, members: &[Member], report: &mut Report) {
+    // A missing or unreadable lockfile is already a fault of rule W1.
+    let Ok(Some(text)) = tree.read("Cargo.lock") else {
+        return;
+    };
+    let names: BTreeSet<&str> = members
+        .iter()
+        .filter_map(|member| member.name.as_deref())
+        .collect();
+    for name in local_packages(&text) {
+        if !names.contains(name.as_str()) {
+            report.add(
+                "W4",
+                "Cargo.lock",
+                format!(
+                    "package {name} has no source line but is not a member written in members of Cargo.toml"
+                ),
+            );
+        }
+    }
 }
 
 const DEPENDENCY_TABLES: [&str; 3] = ["dependencies", "dev-dependencies", "build-dependencies"];
@@ -514,10 +567,20 @@ mod tests {
     const SPEC: &str = "# 0001\n\n### Linux build\n\nRun it.\n\n```bash\ngit archive HEAD | docker run x\necho \"linux build check passed\"\n```\n\nMore text.\n\n```bash\nother\n```\n";
     const SCRIPT: &str = "#!/bin/sh\nset -eu\n# --- spec 0001, Linux build ---\ngit archive HEAD | docker run x\necho \"linux build check passed\"\n";
 
+    const REGISTRY: &str = "registry+https://github.com/rust-lang/crates.io-index";
+
+    /// Writes a lockfile. Every name that is not a member of [`ROOT_MANIFEST`] gets a `source` line.
     fn lock(names: &[&str]) -> String {
         names
             .iter()
-            .map(|name| format!("[[package]]\nname = \"{name}\"\nversion = \"1.0.0\"\n\n"))
+            .map(|name| {
+                let source = if ["pool", "pool-config"].contains(name) {
+                    String::new()
+                } else {
+                    format!("source = \"{REGISTRY}\"\n")
+                };
+                format!("[[package]]\nname = \"{name}\"\nversion = \"1.0.0\"\n{source}\n")
+            })
             .collect::<String>()
     }
 
@@ -692,6 +755,39 @@ mod tests {
             "unsafe_code = \"deny\"",
         );
         assert_problem(&tree, "W4", &["Cargo.toml", "unsafe_code"]);
+    }
+
+    #[test]
+    fn w4_lockfile_package_without_source_that_is_a_member_passes() {
+        // covers: 0003 AC-13
+        let mut tree = good();
+        assert_eq!(
+            local_packages(&lock(&["pool", "pool-config", "serde"])),
+            ["pool", "pool-config"]
+        );
+        tree.set(
+            "Cargo.lock",
+            "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.1.0\"\ndependencies = [\n \"pool-config\",\n]\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.1.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
+        );
+        assert_ok(&tree);
+    }
+
+    #[test]
+    fn w4_lockfile_package_without_source_that_is_not_a_member_fails() {
+        // covers: 0003 AC-13
+        let mut tree = good();
+        tree.set(
+            "Cargo.lock",
+            &format!(
+                "{}[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\n",
+                lock(&["pool", "pool-config"])
+            ),
+        );
+        assert_problem(
+            &tree,
+            "W4",
+            &["Cargo.lock", "package serde has no source line"],
+        );
     }
 
     #[test]
