@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `004-one-real-primary-path.brief-umum.md` · **Langkah manual:** `004-one-real-primary-path.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 15:47`
+- **Diperbarui:** `2026-11-15 16:02`
 
 ## Sub sesi wave `1`
 
@@ -39,6 +39,8 @@
 | 2026-11-15 | Disk: 24 GiB bebas (95% terpakai). Maksimal 2 build Rust penuh bersamaan; dua sesi developer saja. Sesi berhenti membangun di bawah 8 GiB bebas. | lead |
 | 2026-11-15 | Sesi dimulai pada giliran user ini: `arc-f4-spec` `langsung`; `dev-f4-m1`, `dev-f4-m2`, `chk-f4-verify`, `tst-f4-test`, `chk-f4-review`, dan `dbg-f4-fix` `standby`. Dua developer dan satu debugger dimulai sekarang karena `start_session` ditolak pada giliran yang dipicu sesi lain (log 003 keputusan 57). Effort lead `high`, jadi tidak ada sesi yang perlu `standby` karena effort. | lead |
 | 2026-11-15 | Tujuh sesi dimulai dari `619da9f`. Aplikasi memakai ulang lima folder worktree scope 003 di `/Users/ojiepermana/worktrees/pool/` untuk lima sesi baru (nama folder lama, branch baru; kolom Branch menyebut foldernya), jadi lima branch `claude/*-f3-*` kini tanpa worktree. Branch itu tetap ada dan tidak disentuh. | lead |
+| 2026-11-15 | User menjawab "Ya, buka PR 003". Lead mem-push `c4d5714` ke `scope/003-closing` (hanya tiga commit penutup 003; dua commit koordinasi 004 tidak ikut) dan membuka [pull request 5](https://github.com/ojiepermana/pool/pull/5). Run `ci` `43696000932` pada `c4d5714`: tujuh check `success`. Review otomatis Copilot membuka satu thread (severity rendah) pada log 003: `graphify-out/manifest.json` masih memuat hash lama untuk dokumen penutup, bertentangan dengan `AGENTS.md` langkah 6 dan dengan kalimat log 003 tentang "pembaruan kecil". Temuan itu benar. | user; lead |
+| 2026-11-15 | Perbaikan temuan itu: satu subagent (sekitar 315 ribu token, 11 menit) memperbarui graph untuk delapan dokumen pull request 5 lewat `graph_update.py --docs`: 3466 → 3503 node, 10781 → 10969 edge, 0 baris "minted by two different files", 0 node lama berpindah komunitas, tepat delapan baris manifest berubah dan tiap `semantic_hash` sama dengan MD5 file sekarang (dicek ulang lead). Commit di `main` = `04add78`; commit yang sama di-cherry-pick ke atas `c4d5714` di worktree sementara (`8bbfa97`) dan di-push ke `scope/003-closing`. Delapan dokumen itu keluar dari batch graph saat merge spec 0004. Menandai thread selesai dan merge menunggu jawaban user. | lead |
 
 ## Keputusan delegasi
 
