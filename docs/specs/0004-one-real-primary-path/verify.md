@@ -1986,6 +1986,28 @@ After `git merge main` at `7a67c93`: `d41d25c`, **a copy of the test CA in the c
 - `f11f4f3`, **the race in the second primary test** (the failure recorded above, one run in three). The writer now falls silent, and its monitor connection is ended and counted while pg2 is still refused. pg2 answers only after that, so its own monitor login can no longer be counted. What the test proves is unchanged: a second primary beside a silent writer, `57P01` for the session, the latch with `recorded` true, and closed after a restart. `2f960cd` adds `POOL_IT_FILTER` to `scripts/integration/run.sh`, a filter of test names. With it, `POOL_IT_FILTER=it_ac14_a_second_primary_beside_a_silent_writer scripts/check.sh integration` was run 10 times in a row: 10 of 10 exit 0, each with 1 passed and 29 filtered out. Then on `2f960cd`: `scripts/check.sh all` exit 0, and the full `scripts/check.sh integration` exit 0 with 30 of 30 and no container left.
 - `8fffb40`, **the filter says so** (decision 104). With `POOL_IT_FILTER` set, `scripts/integration/run.sh` writes `integration: POOL_IT_FILTER is set, only matching tests run` on stderr before the tests. `POOL_IT_FILTER=it_bootstrap_json_prints_the_new_id scripts/check.sh integration`: the line on stderr, exit 0, 1 passed and 29 filtered out. Without the variable: no such line on stdout or stderr, exit 0, 30 of 30, no container left.
 - `ce61930`, **the watchdog ends with the script** (found by `chk-f4-verify` on `099a597`). `kill` of the watchdog subshell left its `sleep 1800` running for up to 30 minutes, holding the stdout and stderr of the caller open, and `cleanup` did not stop the watchdog after a signal. The watchdog now runs in a process group of its own with stdin and stdout closed, and the script ends that group at the normal end and in `cleanup`. Checked on each path, with stdout and stderr through a pipe, counting the processes left whose working directory is this worktree: a normal end (`POOL_IT_FILTER`, 1 test) closed the pipe when the script ended, with nothing left; SIGTERM to the script while the tests ran gave exit 1, with nothing left; a temporary limit of 25 seconds ended the tests after 28 seconds with the line `the tests did not end within 25 seconds`, with nothing left. The `sleep 1800` already on the machine came from runs of the older script, in the folder of another session, and were left alone.
+- `f24ed57`, **no job control** (finding r1 of the second review). The watchdog fix above still relied on `set -m`, and `dash` turns job control off without a terminal. The script now finds every process under the test command and under the watchdog by their parent process IDs (`ps -A -o pid= -o ppid=` where `ps` exists, `/proc/*/stat` where it does not; the pinned image has no `ps`). It stops that tree with SIGSTOP until no new process appears in it, so that none escapes when its parent ends first. Then it sends SIGTERM and SIGCONT, and SIGKILL to what still runs after 5 seconds. A process that still runs after that is named on stderr and the script exits 1, so a cleanup that cannot be made sure is never silent. All the tools are POSIX (`ps`, `awk`, `sleep` in whole seconds, `kill`), and nothing new is installed.
+
+  Runs on macOS, each without a terminal: stdin from `/dev/null`, stdout and stderr through a pipe into a file. The interpreter was forced by running the script as `/bin/dash scripts/integration/run.sh` or `/bin/bash scripts/integration/run.sh`, with `POOL_IT_IMAGE` set as `scripts/check.sh integration` sets it. The inner `sh -c` of the test command is `/bin/sh` in both. Containers were counted by the name the run gave them (`pool-it-1-<pid>`, `pool-it-2-<pid>`), and processes by a working directory inside this worktree, after the run.
+
+  | Shell | Case | Exit | Pipe closed after | Containers left | Processes left |
+  |---|---|---|---|---|---|
+  | `/bin/dash` | full run | 0, 30 of 30 | 76 s | 0 | 0 |
+  | `/bin/dash` | watchdog, a copy with a limit of 25 s | 1, `the tests did not end within 25 seconds` | 29 s | 0 | 0 |
+  | `/bin/dash` | SIGTERM to the script while the tests ran | 1 | 3 s | 0 | 0 |
+  | `/bin/bash` | full run | 0, 30 of 30 | 65 s | 0 | 0 |
+  | `/bin/bash` | watchdog, the same copy | 1, the same line | 28 s | 0 | 0 |
+  | `/bin/bash` | SIGTERM to the script while the tests ran | 1 | 4 s | 0 | 0 |
+
+  "Processes left" excludes the harness that ran the cases and the process of Claude Code, which also have their working directory here. Every `cargo test`, test binary, `pool` daemon, `docker exec` and `sleep` of these runs had ended. The one `sleep 1800` on the machine afterwards belonged to a mutation run in the folder of the reviewer.
+
+  In the pinned image `postgres:18.7-bookworm` (`/bin/sh` is `dash`, `tty` says `not a tty`, no `ps`), the functions of the script, taken from `run.sh` with `sed`, were driven with stand-in commands in place of the tests. 14 of 14 checks passed:
+  - a normal end of a tree of three levels and of a watchdog with a long `sleep`;
+  - a watchdog that ends a tree that never ends by itself, within 5 seconds and not with status 0;
+  - a process that ignores SIGTERM, ended by SIGKILL;
+  - SIGTERM to a script that uses the functions as `run.sh` does, which ended within 3 seconds with status 1 and nothing left.
+
+  **Not proven:** the full `scripts/check.sh integration` on Linux. It needs Docker and Rust inside Linux, which this machine has only through the CI job, so it stays `NOT_RUN` until that job exists (`F4-3`). The path in which a process cannot be ended at all was not reached in any run. Its message is read from the code, not observed.
 
 ### Crates, tooling and build (developer A)
 

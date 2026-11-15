@@ -1,11 +1,11 @@
 # Graph Report - pool  (2026-11-16)
 
 ## Corpus Check
-- 1 files · ~529,723 words
+- 1 files · ~546,622 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5688 nodes · 17972 edges · 127 communities (101 shown, 26 thin omitted)
+- 5693 nodes · 17982 edges · 127 communities (101 shown, 26 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1530 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
@@ -626,8 +626,8 @@ Cohesion: 0.01
 Nodes (765): ac14_a_latch_write_that_fails_is_logged_and_the_latch_holds_in_memory(), ac14_a_latched_journal_with_an_empty_board_is_a_conflict(), ac14_a_second_primary_beside_a_silent_writer_is_a_conflict_although_silence_is_not(), ac14_a_second_primary_latches_the_cluster_in_the_journal_through_the_control_loop(), ac14_route_view_marks_a_positive_conflict_and_not_silence(), ac14_the_conflict_view_is_published_before_the_latch_is_written(), ac30_a_failure_of_another_class_starts_the_time_again(), ac30_connect_and_timeout_for_the_whole_time_mark_the_writer_lost_once() (+757 more)
 
 ### Community 125 - "scripts/integration/run.sh"
-Cohesion: 0.18
-Nodes (9): run.sh script, fail(), POOL_IT_CONTAINER, POOL_IT_CONTAINER_2, POOL_IT_PG_PORT, POOL_IT_PG_PORT_2, POOL_IT_DIR, POOL_IT_LISTEN_HOST (+1 more)
+Cohesion: 0.16
+Nodes (13): run.sh script, running(), end_tree(), wait_ended(), cleanup(), fail(), POOL_IT_CONTAINER, POOL_IT_CONTAINER_2 (+5 more)
 
 ## Knowledge Gaps
 - **151 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+146 more)

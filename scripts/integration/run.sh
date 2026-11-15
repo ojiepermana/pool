@@ -34,24 +34,136 @@ CONTAINER_2="pool-it-2-$$"
 TEST_LIMIT_SECONDS=1800
 
 # The trap is set before anything is made. Containers are removed by the ID
-# that `docker run -d` printed, and the test command, which runs in a
-# process group of its own, is ended with them.
+# that `docker run -d` printed. The test command and the watchdog are ended
+# with every process under them, found by their parent process IDs: job
+# control is not used, since dash turns it off without a terminal.
 DIR=
 IDS=
 TEST_PID=
 WATCHDOG=
+
+# Prints "pid ppid" for every process: from ps where it exists, and from
+# /proc on a Linux without ps (the pinned image has none).
+process_table() {
+  if command -v ps >/dev/null 2>&1; then
+    ps -A -o pid= -o ppid=
+  elif [ -r /proc/self/stat ]; then
+    for stat in /proc/[0-9]*/stat; do
+      line=$(cat "$stat" 2>/dev/null) || continue
+      # The name in parentheses may hold spaces; the state and the parent
+      # come after the last ") ".
+      rest=${line##*) }
+      set -- $rest
+      echo "${line%% *} $2"
+    done
+  else
+    return 1
+  fi
+}
+
+# Prints $1 and every process under it.
+process_tree() {
+  table=$(process_table) || return 1
+  printf '%s\n' "$table" | awk -v root="$1" '
+    { parent[$1] = $2 }
+    END {
+      tree[root] = 1
+      do {
+        grown = 0
+        for (pid in parent) {
+          if (!(pid in tree) && (parent[pid] in tree)) { tree[pid] = 1; grown = 1 }
+        }
+      } while (grown)
+      for (pid in tree) print pid
+    }'
+}
+
+# Whether process $1 still runs: it exists and is not a zombie.
+running() {
+  if command -v ps >/dev/null 2>&1; then
+    state=$(ps -o stat= -p "$1" 2>/dev/null) || return 1
+  elif [ -r "/proc/$1/stat" ]; then
+    line=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+    rest=${line##*) }
+    state=${rest%% *}
+  else
+    return 1
+  fi
+  case $state in
+    "" | Z*) return 1 ;;
+  esac
+  return 0
+}
+
+# Ends $1 and every process under it. The tree is stopped first, until no
+# new process appears in it, so that none escapes by its parent ending
+# first. Then each gets SIGTERM, and after 5 seconds SIGKILL. Returns 1,
+# after one line on stderr, when a process of the tree still runs.
+end_tree() {
+  [ -n "$1" ] || return 0
+  if ! running "$1"; then
+    wait "$1" 2>/dev/null || :
+    return 0
+  fi
+  if ! command -v ps >/dev/null 2>&1 && [ ! -r /proc/self/stat ]; then
+    echo "integration: neither ps nor /proc is there to end the processes of the tests" >&2
+    return 1
+  fi
+  frozen=" "
+  rounds=0
+  while [ "$rounds" -lt 20 ]; do
+    grown=no
+    for pid in $(process_tree "$1"); do
+      case $frozen in
+        *" $pid "*) ;;
+        *) kill -STOP "$pid" 2>/dev/null && frozen="$frozen$pid "
+           grown=yes ;;
+      esac
+    done
+    [ "$grown" = no ] && break
+    rounds=$((rounds + 1))
+  done
+  for pid in $frozen; do kill -TERM "$pid" 2>/dev/null || :; done
+  for pid in $frozen; do kill -CONT "$pid" 2>/dev/null || :; done
+  wait_ended 5 || {
+    for pid in $left; do kill -KILL "$pid" 2>/dev/null || :; done
+    wait_ended 2
+  } || {
+    echo "integration: process$left of the tests could not be ended" >&2
+    return 1
+  }
+  wait "$1" 2>/dev/null || :
+  return 0
+}
+
+# Asks every second, for at most $1 seconds, whether a process of $frozen
+# still runs. Leaves the ones that do in $left.
+wait_ended() {
+  waited=0
+  while :; do
+    left=
+    for pid in $frozen; do
+      running "$pid" && left="$left $pid"
+    done
+    [ -z "$left" ] && return 0
+    [ "$waited" -ge "$1" ] && return 1
+    sleep 1
+    waited=$((waited + 1))
+  done
+}
+
 cleanup() {
-  if [ -n "$WATCHDOG" ]; then
-    kill -TERM -- "-$WATCHDOG" 2>/dev/null || :
-  fi
-  if [ -n "$TEST_PID" ]; then
-    kill -TERM -- "-$TEST_PID" 2>/dev/null || :
-  fi
+  ended=0
+  end_tree "$WATCHDOG" || ended=1
+  end_tree "$TEST_PID" || ended=1
   if [ -n "$IDS" ]; then
     docker rm -f -v $IDS >/dev/null 2>&1 || :
   fi
   if [ -n "$DIR" ]; then
     rm -rf "$DIR"
+  fi
+  if [ "$ended" -ne 0 ]; then
+    exit 1
   fi
 }
 trap cleanup EXIT
@@ -160,16 +272,15 @@ export POOL_IT_DIR="$DIR"
 export POOL_IT_LISTEN_HOST="$LISTEN_HOST"
 export POOL_IT_CLIENT_HOST=host.docker.internal
 
-# 6. The tests, in the background in a process group of their own, so that
-#    a signal to this script runs the trap at once, and a watchdog that ends
-#    them after TEST_LIMIT_SECONDS. Their output is kept to count the tests.
+# 6. The tests, in the background, so that a signal to this script runs the
+#    trap at once, and a watchdog that ends them after TEST_LIMIT_SECONDS.
+#    Their output is kept to count the tests. POOL_IT_FILTER, when set, is
+#    passed on as the filter of test names, to run one test again and again;
+#    a filter that matches none fails below.
 OUT="$DIR/test-output.txt"
 if [ -n "${POOL_IT_FILTER:-}" ]; then
   echo "integration: POOL_IT_FILTER is set, only matching tests run" >&2
 fi
-set -m
-#    POOL_IT_FILTER, when set, is passed on as the filter of test names, to
-#    run one test again and again; a filter that matches none fails below.
 sh -c '
   out=$1
   shift
@@ -177,21 +288,16 @@ sh -c '
   exit "$(cat "$out.rc" 2>/dev/null || echo 1)"
 ' sh "$OUT" ${POOL_IT_FILTER:+"$POOL_IT_FILTER"} &
 TEST_PID=$!
-# The watchdog has a process group of its own too, so that ending the group
-# also ends its `sleep`: nothing of it outlives the script, on any path, and
-# none of it holds the output of the caller open.
-sh -c '
-  sleep "$1"
-  echo "integration: the tests did not end within $1 seconds" >&2
-  kill -TERM -- "-$2" 2>/dev/null || :
-' sh "$TEST_LIMIT_SECONDS" "$TEST_PID" </dev/null >/dev/null &
+(
+  sleep "$TEST_LIMIT_SECONDS"
+  echo "integration: the tests did not end within $TEST_LIMIT_SECONDS seconds" >&2
+  end_tree "$TEST_PID"
+) </dev/null >/dev/null &
 WATCHDOG=$!
-set +m
 rc=0
 wait "$TEST_PID" || rc=$?
 TEST_PID=
-kill -TERM -- "-$WATCHDOG" 2>/dev/null || :
-wait "$WATCHDOG" 2>/dev/null || :
+end_tree "$WATCHDOG" || fail "the watchdog could not be ended"
 WATCHDOG=
 if [ "$rc" -ne 0 ]; then
   exit 1
