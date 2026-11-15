@@ -17,6 +17,7 @@
 
 pub mod backend;
 pub mod load;
+pub mod random;
 pub mod scram;
 pub mod secret;
 pub mod tls;
