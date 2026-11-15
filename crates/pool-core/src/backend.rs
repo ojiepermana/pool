@@ -9,7 +9,7 @@
 //! [`BackendConnection::query_one_row`].
 
 use std::fmt;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::Arc;
 
 use pool_protocol::auth::{
     self, Authentication, BackendKeyData, ParameterStatus, TransactionStatus,
@@ -121,7 +121,8 @@ struct CachedKeys {
 /// (decision 43 of the spec rationale). `Debug` prints `[REDACTED]`.
 pub struct Credential {
     password: Password,
-    cache: Mutex<Option<CachedKeys>>,
+    /// One entry per credential. The lock is held across the derivation, so at most one runs at a time.
+    cache: tokio::sync::Mutex<Option<CachedKeys>>,
     derivations: std::sync::atomic::AtomicU32,
 }
 
@@ -136,27 +137,28 @@ impl Credential {
     pub fn new(password: Password) -> Arc<Self> {
         Arc::new(Self {
             password,
-            cache: Mutex::new(None),
+            cache: tokio::sync::Mutex::new(None),
             derivations: std::sync::atomic::AtomicU32::new(0),
         })
     }
 
-    fn cached(&self, salt: &[u8], iterations: u32) -> Option<ScramKeys> {
-        let cache = self.cache.lock().unwrap_or_else(PoisonError::into_inner);
-        cache
-            .as_ref()
-            .filter(|c| c.salt == salt && c.iterations == iterations)
-            .map(|c| c.keys.clone())
-    }
-
     /// The keys for this salt and count: from the cache, or derived with PBKDF2 inside `spawn_blocking`.
+    ///
+    /// At most one derivation per credential runs at a time: the others wait
+    /// for the lock and then find its result in the cache. When the login
+    /// that derives is cancelled (its deadline passed), the lock is released
+    /// and the next waiter derives.
     async fn keys(
         self: &Arc<Self>,
         salt: &[u8],
         iterations: u32,
     ) -> Result<ScramKeys, BackendError> {
-        if let Some(keys) = self.cached(salt, iterations) {
-            return Ok(keys);
+        let mut cache = self.cache.lock().await;
+        if let Some(cached) = cache
+            .as_ref()
+            .filter(|c| c.salt == salt && c.iterations == iterations)
+        {
+            return Ok(cached.keys.clone());
         }
         let credential = Arc::clone(self);
         let owned_salt = salt.to_vec();
@@ -168,7 +170,7 @@ impl Credential {
         })
         .await
         .map_err(|_| BackendError::Closed)?;
-        *self.cache.lock().unwrap_or_else(PoisonError::into_inner) = Some(CachedKeys {
+        *cache = Some(CachedKeys {
             salt: salt.to_vec(),
             iterations,
             keys: keys.clone(),
