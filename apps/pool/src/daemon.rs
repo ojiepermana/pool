@@ -440,13 +440,11 @@ mod tests {
         let listener: OwnedFd = listener.into_std().expect("std").into();
         let listener = TcpSocket::from_std_stream(std::net::TcpStream::from(listener));
         assert!(listener.keepalive().expect("keepalive"), "the listener");
-        if cfg!(target_os = "linux") {
-            // Linux hands the option of the listener to every accepted socket.
-            assert!(
-                accepted.keepalive().expect("keepalive"),
-                "an accepted socket"
-            );
-        }
+        // Linux and macOS both hand the option of the listener to every accepted socket.
+        assert!(
+            accepted.keepalive().expect("keepalive"),
+            "an accepted socket"
+        );
         drop(client);
     }
 }
