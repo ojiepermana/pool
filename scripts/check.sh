@@ -221,7 +221,8 @@ check_fuzz() {
   fuzz_target crates/pool-config validate 4096 tests/fixtures || return 1
   fuzz_target crates/pool-protocol startup 16384 || return 1
   fuzz_target crates/pool-protocol frontend_message 16384 || return 1
-  fuzz_target crates/pool-protocol scram 4096
+  fuzz_target crates/pool-protocol scram 4096 || return 1
+  fuzz_target crates/pool-protocol auth 4096
 }
 
 check_sbom() {
