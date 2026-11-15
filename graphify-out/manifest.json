@@ -1,27 +1,27 @@
 {
   "AGENTS.md": {
-    "mtime": 1794655899.7476175,
-    "seen": 1794656203.326158,
+    "mtime": 1794700264.841344,
+    "seen": 1794700674.021596,
     "ast_hash": "6a2a621b8ad6297803a7692988b1a653",
-    "semantic_hash": "e74ed764700f4efda554d0b2e5b9b6c7"
+    "semantic_hash": "2fcbe7a60c4e9f3d206fce7bc154d281"
   },
   "CLAUDE.md": {
-    "mtime": 1794656288.3384438,
-    "seen": 1794656671.854808,
+    "mtime": 1794700264.8416882,
+    "seen": 1794700674.021603,
     "ast_hash": "55fe7d84f7ba3641b9fc9769c9b8451a",
-    "semantic_hash": "b389c51c2529240081f8e461b9bfb562"
+    "semantic_hash": "065e3d249dfac25a26a63e71a45eacc9"
   },
   "CONTRIBUTING.md": {
-    "mtime": 1794659447.8350792,
-    "seen": 1794659470.0807848,
+    "mtime": 1794700032.846221,
+    "seen": 1794700674.021604,
     "ast_hash": "c80c5397122eb63b50c013a6af9307a6",
-    "semantic_hash": "95c512a49bca2b418e016d3d142e0f7a"
+    "semantic_hash": "a322e597ae4e78307325cf32fb50511d"
   },
   "README.md": {
     "mtime": 1794659447.8674207,
     "seen": 1794659470.080792,
     "ast_hash": "4ec1a8513e49db5ed8f2e206460b96c1",
-    "semantic_hash": "6c518c650d3d409ba826e09cc420eb6f"
+    "semantic_hash": ""
   },
   "SECURITY.md": {
     "mtime": 1794623188.8471694,
@@ -90,10 +90,10 @@
     "semantic_hash": "302469f735651f3744288de61006e500"
   },
   "docs/engineering-standards.md": {
-    "mtime": 1794664013.9580307,
-    "seen": 1794664015.665796,
+    "mtime": 1794700032.846677,
+    "seen": 1794700674.021606,
     "ast_hash": "67328cf9bcc20369bf1e4aebd44fcb30",
-    "semantic_hash": "f33266281ac7d14699467575f27f15e6"
+    "semantic_hash": "c6bdd236de6c9112f697bfc27130df76"
   },
   "docs/feature-matrix.md": {
     "mtime": 1794624031.2750814,
@@ -105,13 +105,13 @@
     "mtime": 1794659447.8908396,
     "seen": 1794659470.080794,
     "ast_hash": "5bfdd5c5843108d9f1be1314aa0e412a",
-    "semantic_hash": "700e37e9da7239f6fdfc8e5e0f50646e"
+    "semantic_hash": ""
   },
   "docs/index.md": {
     "mtime": 1794662878.1984997,
     "seen": 1794662910.369161,
     "ast_hash": "0c29ef61cbd06c46cedd27eea63141e9",
-    "semantic_hash": "fcf65680c3c19142e2bdceedf7e4fb14"
+    "semantic_hash": ""
   },
   "docs/plan/decision-ledger.md": {
     "mtime": 1794623188.8460188,
@@ -141,7 +141,7 @@
     "mtime": 1794659447.9514096,
     "seen": 1794659470.080796,
     "ast_hash": "79c7e5a275104bf174072944d0ea9730",
-    "semantic_hash": "ecff10c1f71d451b6f079fe416ab5aa6"
+    "semantic_hash": ""
   },
   "docs/plan/roadmap.md": {
     "mtime": 1794623415.6865785,
@@ -219,7 +219,7 @@
     "mtime": 1794659447.9733515,
     "seen": 1794659470.080796,
     "ast_hash": "e507143fbb3f313aaf4569bc0173e4f5",
-    "semantic_hash": "3f6cf02b85a41076f2db5477aa2155ea"
+    "semantic_hash": ""
   },
   "docs/research/competitor-analysis.md": {
     "mtime": 1794620030.0528038,
@@ -255,7 +255,7 @@
     "mtime": 1794664013.9585109,
     "seen": 1794664015.665799,
     "ast_hash": "0db82cc523cd656f46a085e12c09b188",
-    "semantic_hash": "91a082e8e17ef66d85f7267414a3d6b1"
+    "semantic_hash": ""
   },
   "docs/scope/001-stack-and-workspace.md": {
     "mtime": 1794657721.7350848,
@@ -264,10 +264,10 @@
     "semantic_hash": "43598dcca2090e662aaabad06d818661"
   },
   "docs/scope/002-standards-and-tooling.md": {
-    "mtime": 1794665801.2175493,
-    "seen": 1794665801.822484,
+    "mtime": 1794700264.8394399,
+    "seen": 1794700674.0216079,
     "ast_hash": "821d7d5a1cd17a6e41c40554ef04510f",
-    "semantic_hash": "927cda023aed4060afd0ac2adfc64d6a"
+    "semantic_hash": "d6dac06b367870b83b4c521826d7f0cc"
   },
   "docs/scope/003-control-and-session-data-model.md": {
     "mtime": 1794623130.2351134,
@@ -360,10 +360,10 @@
     "semantic_hash": "d894e0d3a8045f88571853f736396b49"
   },
   "docs/scope/index.md": {
-    "mtime": 1794658259.4234176,
-    "seen": 1794658537.156868,
+    "mtime": 1794700264.8401492,
+    "seen": 1794700674.021611,
     "ast_hash": "5aef3b02f87fb3e8058fdcd509457a4a",
-    "semantic_hash": "8261123e0bfeb80c2b7a81475ead2857"
+    "semantic_hash": "950cd77be4f1526de389e2d4d4f1b8d2"
   },
   "docs/security/security-requirements.md": {
     "mtime": 1794624116.17761,
@@ -381,7 +381,7 @@
     "mtime": 1794659284.6874626,
     "seen": 1794659285.235847,
     "ast_hash": "d273cb4d4139b2882af50db5d8277a24",
-    "semantic_hash": "dca37393a8a433b7e5da314bea0398dd"
+    "semantic_hash": ""
   },
   "docs/specs/0001-initial-architecture/rationale.md": {
     "mtime": 1794657747.7125878,
@@ -405,13 +405,13 @@
     "mtime": 1794659448.064522,
     "seen": 1794659470.0808,
     "ast_hash": "b7f4032681d4771d5f83d82c84f026a9",
-    "semantic_hash": "89e9ee05c668a042c7a1182f2d467915"
+    "semantic_hash": ""
   },
   "docs/glossary.md": {
     "mtime": 1794658233.5353715,
     "seen": 1794658537.156836,
     "ast_hash": "e1eeb7e41e80e9ae848a45818764ded4",
-    "semantic_hash": "118f9e7e6136bdec9c469bac1352c839"
+    "semantic_hash": ""
   },
   "docs/scope/coordination/001-stack-and-workspace.brief-umum.md": {
     "mtime": 1794631706.8664336,
@@ -438,8 +438,8 @@
     "semantic_hash": ""
   },
   "apps/pool/src/main.rs": {
-    "mtime": 1794647183.3368294,
-    "seen": 1794647617.8160481,
+    "mtime": 1794668177.2134368,
+    "seen": 1794700713.509778,
     "ast_hash": "101ad9bc58efdc5da0410f76378d2b8a",
     "semantic_hash": ""
   },
@@ -492,10 +492,10 @@
     "semantic_hash": "7d11a21607be053b19e3537260482819"
   },
   "CHANGELOG.md": {
-    "mtime": 1794657721.735334,
-    "seen": 1794658147.180525,
+    "mtime": 1794665786.0312116,
+    "seen": 1794700674.021601,
     "ast_hash": "",
-    "semantic_hash": "283e2c809f3243b8e09be677668aad04"
+    "semantic_hash": "b2be6e1301daca08b06b37e01b1f498c"
   },
   "docs/scope/coordination/002-standards-and-tooling.brief-umum.md": {
     "mtime": 1794658259.4247355,
@@ -504,16 +504,16 @@
     "semantic_hash": "2748521703f0f2aaa1f3fef318de6fa0"
   },
   "docs/scope/coordination/002-standards-and-tooling.log.md": {
-    "mtime": 1794668320.802007,
-    "seen": 1794668321.172447,
+    "mtime": 1794700318.485164,
+    "seen": 1794700674.021609,
     "ast_hash": "",
-    "semantic_hash": "dcdcc3ef843562de47e4c258163e6303"
+    "semantic_hash": "10f57b8bc8a2c5f0394ca1e667db9ce0"
   },
   "docs/scope/coordination/002-standards-and-tooling.manual.md": {
-    "mtime": 1794658048.2894921,
-    "seen": 1794658537.156867,
+    "mtime": 1794700318.4618936,
+    "seen": 1794700674.02161,
     "ast_hash": "",
-    "semantic_hash": "ca455460b5e14624ef94bfba6773987a"
+    "semantic_hash": "eeddab5379aa350f80298965c9426545"
   },
   "apps/pool/AGENTS.md": {
     "mtime": 1794655899.747823,
@@ -528,10 +528,10 @@
     "semantic_hash": "d702c83aebb4df1322ceb33a0fc249ec"
   },
   "crates/pool-config/AGENTS.md": {
-    "mtime": 1794655899.748113,
-    "seen": 1794656203.326164,
+    "mtime": 1794665852.4179785,
+    "seen": 1794700674.021605,
     "ast_hash": "",
-    "semantic_hash": "f65d65ba7c457b7f96a1ec624f723538"
+    "semantic_hash": "e37978fe1c7a5b7899e467e01d0213ef"
   },
   "crates/pool-config/CLAUDE.md": {
     "mtime": 1794655899.7482288,
@@ -546,22 +546,22 @@
     "semantic_hash": "9da9242060431dba3d92f215b25ebec0"
   },
   "docs/specs/0002-standards-and-tooling/index.md": {
-    "mtime": 1794664013.9591525,
-    "seen": 1794664015.665801,
+    "mtime": 1794700264.8408055,
+    "seen": 1794700674.021611,
     "ast_hash": "",
-    "semantic_hash": "5d9bbf5bfd204bbd916f363627d23902"
+    "semantic_hash": "edc8b9808f463affa917a7c6dda165d2"
   },
   "docs/specs/0002-standards-and-tooling/rationale.md": {
-    "mtime": 1794664013.9594727,
-    "seen": 1794664015.665802,
+    "mtime": 1794700032.7843552,
+    "seen": 1794700674.021612,
     "ast_hash": "",
-    "semantic_hash": "2441c1d70238629ccbb37ca3ce71149f"
+    "semantic_hash": "16f37893cad680659cf0e241258f484f"
   },
   "docs/specs/0002-standards-and-tooling/verify.md": {
-    "mtime": 1794665122.2701452,
-    "seen": 1794665123.363189,
+    "mtime": 1794700235.419423,
+    "seen": 1794700674.0216131,
     "ast_hash": "",
-    "semantic_hash": "65052fb0a5b12542968847ed578dc4f6"
+    "semantic_hash": "9c63dc2471966bdf1f0477e666513f15"
   },
   "Cargo.toml": {
     "mtime": 1794658748.1588957,
@@ -748,5 +748,11 @@
     "seen": 1794664390.1158988,
     "ast_hash": "54b6463e9980ea03e05628b3f931a360",
     "semantic_hash": ""
+  },
+  "docs/reviews/2026-11-14-scope-002-standards-and-tooling.md": {
+    "mtime": 1794665732.081972,
+    "seen": 1794700674.021607,
+    "ast_hash": "",
+    "semantic_hash": "e3ef591e856b1e470abad501ac4b3262"
   }
 }

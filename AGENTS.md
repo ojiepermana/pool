@@ -34,6 +34,7 @@ Each rule below is owned by the linked file; edit it there.
 - Tests use the built in `cargo test` harness only, in the files [spec 0001](docs/specs/0001-initial-architecture/index.md#tests-and-who-owns-them) assigns to each package. The checks you can run today are in [CONTRIBUTING.md](CONTRIBUTING.md).
 - `tools/repo-check/` (the `pool-repo-check` program) and `crates/pool-config/fuzz/` are packages outside the workspace, each with its own lockfile. A change to a locked package set, to a dependency between workspace packages or to the CI files also changes a baseline under `tools/repo-check/baseline/` or the rule text in [spec 0002](docs/specs/0002-standards-and-tooling/index.md#the-repository-check-program).
 - A commit names the Build plan step it implements ([change path](docs/specs/0001-initial-architecture/index.md#change-path)).
+- A change reaches `main` only through a pull request whose seven checks passed and whose review threads are resolved. A push to `main` is refused by the branch rule ([spec 0002](docs/specs/0002-standards-and-tooling/index.md#branch-rule-and-change-path)). Writing to GitHub needs the user's permission each time.
 
 ## Context files
 
