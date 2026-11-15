@@ -34,9 +34,10 @@ CONTAINER_2="pool-it-2-$$"
 TEST_LIMIT_SECONDS=1800
 
 # The trap is set before anything is made. Containers are removed by the ID
-# that `docker run -d` printed. The test command and the watchdog are ended
-# with every process under them, found by their parent process IDs: job
-# control is not used, since dash turns it off without a terminal.
+# that `docker create` printed, never by name. The test command and the
+# watchdog are ended with every process under them, found by their parent
+# process IDs: job control is not used, since dash turns it off without a
+# terminal.
 DIR=
 IDS=
 TEST_PID=
@@ -308,7 +309,8 @@ export POOL_IT_LISTEN_HOST="$LISTEN_HOST"
 export POOL_IT_CLIENT_HOST=host.docker.internal
 
 # 6. The tests, in the background, so that a signal to this script runs the
-#    trap at once, and a watchdog that ends them after TEST_LIMIT_SECONDS.
+#    trap at once, and a watchdog that tells this script, which then ends
+#    them, when TEST_LIMIT_SECONDS have passed.
 #    Their output is kept to count the tests. POOL_IT_FILTER, when set, is
 #    passed on as the filter of test names, to run one test again and again;
 #    a filter that matches none fails below.
