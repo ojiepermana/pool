@@ -68,12 +68,22 @@ struct Prepared {
     authority_id: String,
 }
 
-/// Runs `pool run` on the file at `path`. Returns the report of a failure
-/// before step 8, or `None` when the daemon served and stopped cleanly.
-pub fn run_file(path: &Path) -> Option<Report> {
+/// How `pool run` ended.
+pub enum Outcome {
+    /// A failure before step 8, written as a finding.
+    Report(Report),
+    /// A signal stopped the daemon cleanly: exit 0.
+    Stopped,
+    /// A task of the daemon ended without a shutdown asking for it. The
+    /// event `daemon.failed` was written, and the exit status is 3.
+    Failed,
+}
+
+/// Runs `pool run` on the file at `path`.
+pub fn run_file(path: &Path) -> Outcome {
     let prepared = match prepare(path) {
         Ok(prepared) => prepared,
-        Err(report) => return Some(report),
+        Err(report) => return Outcome::Report(report),
     };
     // 6. The runtime, with at most four threads for blocking work.
     let Ok(runtime) = tokio::runtime::Builder::new_multi_thread()
@@ -81,7 +91,7 @@ pub fn run_file(path: &Path) -> Option<Report> {
         .max_blocking_threads(4)
         .build()
     else {
-        return Some(runtime_failed());
+        return Outcome::Report(runtime_failed());
     };
     runtime.block_on(serve(prepared))
 }
@@ -196,8 +206,14 @@ fn server_error(error: ServerError) -> Report {
     secret_error(SecretError::Invalid, key)
 }
 
+/// The task that ended first without a shutdown asking for it.
+enum Ended {
+    Signal,
+    Task(&'static str),
+}
+
 /// Steps 7 to 10, inside the runtime.
-async fn serve(prepared: Prepared) -> Option<Report> {
+async fn serve(prepared: Prepared) -> Outcome {
     let Prepared {
         config,
         _state,
@@ -212,11 +228,11 @@ async fn serve(prepared: Prepared) -> Option<Report> {
     } = prepared;
     let server = match Server::new(server_parts) {
         Ok(server) => server,
-        Err(error) => return Some(server_error(error)),
+        Err(error) => return Outcome::Report(server_error(error)),
     };
     // 7. The listener: the first address of `listener.host` that binds.
     let Some(listener_config) = config.listener() else {
-        return Some(Report::Error(Item::plain(
+        return Outcome::Report(Report::Error(Item::plain(
             LISTENER_FAILED,
             LISTENER_FAILED_MESSAGE,
         )));
@@ -224,7 +240,7 @@ async fn serve(prepared: Prepared) -> Option<Report> {
     let listener = match TcpListener::bind((listener_config.host(), listener_config.port())).await {
         Ok(listener) => listener,
         Err(_) => {
-            return Some(Report::Error(Item::plain(
+            return Outcome::Report(Report::Error(Item::plain(
                 LISTENER_FAILED,
                 LISTENER_FAILED_MESSAGE,
             )));
@@ -236,17 +252,18 @@ async fn serve(prepared: Prepared) -> Option<Report> {
         signal(SignalKind::terminate()),
         signal(SignalKind::interrupt()),
     ) else {
-        return Some(runtime_failed());
+        return Outcome::Report(runtime_failed());
     };
     // 8. From here every line on stderr is a log event.
-    let log = log::install();
+    let mut log = log::install();
     // 9. The control loop with an empty board, the first view (every
     //    cluster closed, published at creation), the probes and the listener.
     let (stop, stopped) = watch::channel(false);
     let (samples, received) = mpsc::channel(targets.len().saturating_mul(2).max(1));
     let probe = config.probe();
+    let mut probes = tokio::task::JoinSet::new();
     for target in targets {
-        tokio::spawn(probe::run(
+        probes.spawn(probe::run(
             target,
             probe.period(),
             probe.timeout(),
@@ -256,11 +273,11 @@ async fn serve(prepared: Prepared) -> Option<Report> {
         ));
     }
     drop(samples);
-    let control = tokio::spawn(
+    let mut control = tokio::spawn(
         ControlLoop::new(Arc::clone(&config), controller, journal, routes, origin)
             .run(received, stopped.clone()),
     );
-    let serving = tokio::spawn({
+    let mut serving = tokio::spawn({
         let server = Arc::clone(&server);
         async move { server.serve(listener).await }
     });
@@ -283,24 +300,65 @@ async fn serve(prepared: Prepared) -> Option<Report> {
         configuration_generation = ConfigurationGeneration::FIRST.get(),
         authority_id = authority_id.as_str()
     );
-    // 10. SIGTERM or SIGINT. A second signal does nothing more.
-    tokio::select! {
-        _ = terminate.recv() => {}
-        _ = interrupt.recv() => {}
+    // 10. SIGTERM or SIGINT, or a task that ended without being asked to.
+    //     A second signal does nothing more.
+    // A join handle that returned is not awaited again.
+    let mut journal = None;
+    let mut control_done = false;
+    let mut serving_done = false;
+    let ended = tokio::select! {
+        _ = terminate.recv() => Ended::Signal,
+        _ = interrupt.recv() => Ended::Signal,
+        returned = &mut control => {
+            control_done = true;
+            journal = returned.ok().flatten();
+            Ended::Task("control")
+        }
+        Some(_) = probes.join_next() => Ended::Task("probe"),
+        _ = &mut serving => {
+            serving_done = true;
+            Ended::Task("listener")
+        }
+        () = log_writer(&mut log) => Ended::Task("log"),
+    };
+    match ended {
+        Ended::Signal => {
+            tracing::info!(event = "daemon.stopping", sessions = server.sessions());
+        }
+        Ended::Task("log") => log::write_log_failed(),
+        Ended::Task(task) => tracing::error!(event = "daemon.failed", task),
     }
-    tracing::info!(event = "daemon.stopping", sessions = server.sessions());
     server.shutdown().await;
-    let _ = serving.await;
+    if !serving_done {
+        let _ = serving.await;
+    }
     let _ = stop.send(true);
-    let journal = control.await.ok().flatten();
+    if !control_done {
+        journal = control.await.ok().flatten();
+    }
     drop(journal);
+    probes.shutdown().await;
     let _ = flushing.await;
     server.counters().flush();
     tracing::info!(event = "daemon.stopped");
-    if let Some(log) = log {
+    if let Some(log) = &log {
         log.flush().await;
     }
-    None
+    match ended {
+        Ended::Signal => Outcome::Stopped,
+        Ended::Task(_) => Outcome::Failed,
+    }
+}
+
+/// Waits until the task of the log writer ended, or forever when there is
+/// none.
+async fn log_writer(log: &mut Option<log::LogHandle>) {
+    match log {
+        Some(log) => {
+            let _ = log.writer().await;
+        }
+        None => std::future::pending::<()>().await,
+    }
 }
 
 /// The finding of a runtime, or a signal handler, that could not be set up.

@@ -116,8 +116,9 @@ fn run_command(command: Command, path: &Path, format: Format) -> io::Result<u8> 
         Command::Bootstrap => commands::bootstrap_file(path),
         Command::ShowAuthority => commands::show_authority_file(path),
         Command::Run => match daemon::run_file(path) {
-            Some(report) => report,
-            None => return Ok(0),
+            daemon::Outcome::Report(report) => report,
+            daemon::Outcome::Stopped => return Ok(0),
+            daemon::Outcome::Failed => return Ok(EXIT_INCOMPLETE),
         },
         Command::CheckConfig => return check_config(path, format),
     };
