@@ -616,6 +616,8 @@ config_version = 1
 backend_password = "CANARY-9f2c7b1e-not-a-real-secret
 ```
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#fixtures): from Build plan step 5 of spec 0004 on, line 3 of `invalid-unknown-key.toml` reads `[no_table]`. The block above shows the file of the first build, where the line is `[listener]`. Spec 0004 makes `[listener]` a known table with `port` as a known key, so the old text would no longer be an example of an unknown table. The new name has the same eight bytes, so nothing else moves: the finding is still `config.schema` at line 3, as the table below says, at the same column, and the output of `pool check-config` for the file is the same bytes in both formats (`0004 AC-5`). The two cases of **AC-7** that the tests give to `validate` from memory with the text `[listener]` change in the same way and keep their findings. No other fixture of this spec changes.
+
 | Fixture | Exit | Findings, in order |
 |---|---|---|
 | `valid-minimal.toml`, `valid-capabilities-disabled.toml`, `valid-capabilities-empty.toml` | 0 | none |
