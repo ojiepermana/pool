@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use pool_config::{AuthorityRevision, ClusterId, NodeId, TopologyEpoch};
+use pool_config::{AuthorityRevision, ClusterId, NodeId, SystemIdentifier, TopologyEpoch};
 
 /// The open route of one cluster: the eligible primary and the generations it was admitted with.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -22,6 +22,11 @@ pub struct Route {
     pub authority_revision: AuthorityRevision,
     /// The time, since the origin the daemon passed at start, after which the route is stale.
     pub fresh_until: Duration,
+    /// The system identifier of the approved writer, which step 8 of the backend connection
+    /// compares with what the node says on the connection of the session.
+    pub system_identifier: SystemIdentifier,
+    /// The approved writer timeline, compared in step 8 like the system identifier.
+    pub timeline: u32,
 }
 
 /// The state of one cluster in the view.
@@ -29,11 +34,14 @@ pub struct Route {
 pub enum RouteState {
     /// New sessions may go to the route.
     Open(Route),
-    /// New sessions are refused. `conflict` is true for a positive conflict,
-    /// which also ends the running sessions of the cluster.
+    /// New sessions are refused. `conflict` is true for a positive conflict and `lost` for an
+    /// approved writer that the control loop marked as lost; both end the running sessions of
+    /// the cluster. When both are true, `conflict` decides what the client is told.
     Closed {
         /// Whether the reasons hold one of the names under "When a running session is ended".
         conflict: bool,
+        /// Whether the probe of the approved writer got no answer for `probe.node_loss_timeout_ms`.
+        lost: bool,
     },
 }
 
@@ -49,7 +57,15 @@ impl RouteView {
         RouteView {
             routes: clusters
                 .iter()
-                .map(|c| (c.clone(), RouteState::Closed { conflict: false }))
+                .map(|c| {
+                    (
+                        c.clone(),
+                        RouteState::Closed {
+                            conflict: false,
+                            lost: false,
+                        },
+                    )
+                })
                 .collect(),
         }
     }
@@ -66,7 +82,10 @@ impl RouteView {
         self.routes
             .get(cluster)
             .cloned()
-            .unwrap_or(RouteState::Closed { conflict: false })
+            .unwrap_or(RouteState::Closed {
+                conflict: false,
+                lost: false,
+            })
     }
 
     /// The route of a cluster when it is open and fresh at `now` (time since the origin).
@@ -81,7 +100,18 @@ impl RouteView {
     pub fn is_conflict(&self, cluster: &ClusterId) -> bool {
         matches!(
             self.routes.get(cluster),
-            Some(RouteState::Closed { conflict: true })
+            Some(RouteState::Closed { conflict: true, .. })
+        )
+    }
+
+    /// Whether the cluster is closed with its approved writer marked as lost, and no conflict.
+    pub fn is_lost(&self, cluster: &ClusterId) -> bool {
+        matches!(
+            self.routes.get(cluster),
+            Some(RouteState::Closed {
+                conflict: false,
+                lost: true
+            })
         )
     }
 }
@@ -109,6 +139,8 @@ mod tests {
             topology_epoch: TopologyEpoch::FIRST,
             authority_revision: AuthorityRevision::FIRST,
             fresh_until: Duration::from_secs(10),
+            system_identifier: SystemIdentifier::parse("1").expect("system identifier"),
+            timeline: 1,
         };
         let view = RouteView::new(vec![(cluster.clone(), RouteState::Open(route.clone()))]);
         assert_eq!(
@@ -118,14 +150,33 @@ mod tests {
         assert_eq!(view.fresh_route(&cluster, Duration::from_secs(10)), None);
         assert_eq!(
             RouteView::default().state(&cluster),
-            RouteState::Closed { conflict: false }
+            RouteState::Closed {
+                conflict: false,
+                lost: false
+            }
         );
         assert!(!RouteView::closed(std::slice::from_ref(&cluster)).is_conflict(&cluster));
         let conflict = RouteView::new(vec![(
             cluster.clone(),
-            RouteState::Closed { conflict: true },
+            RouteState::Closed {
+                conflict: true,
+                lost: false,
+            },
         )]);
         assert!(conflict.is_conflict(&cluster));
+        assert!(!conflict.is_lost(&cluster));
         assert_eq!(conflict.fresh_route(&cluster, Duration::ZERO), None);
+        let closed = |conflict, lost| {
+            RouteView::new(vec![(
+                cluster.clone(),
+                RouteState::Closed { conflict, lost },
+            )])
+        };
+        assert!(closed(false, true).is_lost(&cluster));
+        assert!(!closed(false, true).is_conflict(&cluster));
+        // A positive conflict wins over the mark.
+        assert!(closed(true, true).is_conflict(&cluster));
+        assert!(!closed(true, true).is_lost(&cluster));
+        assert!(!closed(false, false).is_lost(&cluster));
     }
 }

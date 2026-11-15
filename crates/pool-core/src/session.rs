@@ -181,6 +181,8 @@ pub struct Server<C: Connector> {
     shutdown_timeout: Duration,
     startup_packet_max: u32,
     frontend_message_max: u32,
+    /// The question of the probe, asked again on the connection of each session (step 8).
+    identity_query: Option<&'static str>,
 }
 
 impl<C: Connector> fmt::Debug for Server<C> {
@@ -229,8 +231,27 @@ struct Frontend<S> {
 }
 
 impl<C: Connector> Server<C> {
-    /// Builds the server. Every principal needs a verifier, every identity entry a credential and every node a TLS setup.
+    /// Builds the server with the question that step 8 of the backend connection asks every node
+    /// on the connection of a session: the probe query of `pool-control`, which the daemon hands in
+    /// because `pool-core` cannot name `pool-control` (spec 0004, decision 85, `0004 AC-29`).
+    pub fn with_identity_query(
+        parts: ServerParts<C>,
+        identity_query: &'static str,
+    ) -> Result<Arc<Self>, ServerError> {
+        Self::build(parts, Some(identity_query))
+    }
+
+    /// Builds the server without a question for step 8. It fails closed: every login is refused
+    /// at step 8 with the class `identity`. The daemon uses [`Self::with_identity_query`].
     pub fn new(parts: ServerParts<C>) -> Result<Arc<Self>, ServerError> {
+        Self::build(parts, None)
+    }
+
+    /// Every principal needs a verifier, every identity entry a credential and every node a TLS setup.
+    fn build(
+        parts: ServerParts<C>,
+        identity_query: Option<&'static str>,
+    ) -> Result<Arc<Self>, ServerError> {
         let config = parts.config;
         let verifiers: HashMap<PrincipalId, Verifier> = parts.verifiers.into_iter().collect();
         let first = config
@@ -311,6 +332,7 @@ impl<C: Connector> Server<C> {
             shutdown_timeout: limits.shutdown_timeout(),
             startup_packet_max: limits.startup_packet_max_bytes(),
             frontend_message_max: limits.frontend_message_max_bytes(),
+            identity_query,
             config,
         }))
     }
@@ -663,11 +685,28 @@ impl<C: Connector> Server<C> {
         for forwarded in &frontend.request.forwarded {
             login = login.forward(forwarded.name, &forwarded.value);
         }
-        let backend = match self
+        let opened = match self
             .connector
             .open(node, &login, Purpose::Session, deadline)
             .await
         {
+            // Step 8 of the backend connection: the node must name the writer of the route.
+            Ok(mut backend) => match self.identity_query {
+                Some(query) => match tokio::time::timeout_at(
+                    deadline,
+                    backend.verify_identity(query, admitted.system_identifier, admitted.timeline),
+                )
+                .await
+                {
+                    Ok(Ok(())) => Ok(backend),
+                    Ok(Err(error)) => Err(error),
+                    Err(_) => Err(BackendError::Timeout),
+                },
+                None => Err(BackendError::Identity),
+            },
+            Err(error) => Err(error),
+        };
+        let backend = match opened {
             Ok(backend) => backend,
             // No random bytes for the nonce: the login ends without a message.
             Err(BackendError::Random) => return Err(Refused::silent(Refusal::RandomFailed)),
@@ -951,8 +990,8 @@ where
 {
     /// Whether the session must end now, at a message boundary.
     fn stop_now(&self) -> Option<EndReason> {
-        if self.routes.borrow().is_conflict(self.cluster) {
-            return Some(EndReason::Conflict);
+        if let Some(reason) = route_cut(&self.routes.borrow(), self.cluster) {
+            return Some(reason);
         }
         match *self.phase.borrow() {
             Phase::Ending => Some(EndReason::Shutdown),
@@ -960,6 +999,15 @@ where
                 Some(EndReason::Shutdown)
             }
             _ => None,
+        }
+    }
+
+    /// The error for a cut at a message boundary. A lost node ends the session as backend loss
+    /// does (`08007` or `08006`); a conflict and shutdown end it with [`Self::ending_error`].
+    fn cut_error(&self, reason: EndReason) -> PoolError {
+        match reason {
+            EndReason::NodeLost => self.loss_error(),
+            _ => self.ending_error(),
         }
     }
 
@@ -981,7 +1029,7 @@ where
         let mut phase_alive = true;
         loop {
             if let Some(reason) = self.stop_now() {
-                self.send(self.ending_error()).await;
+                self.send(self.cut_error(reason)).await;
                 return reason;
             }
             let in_flight = self.in_flight;
@@ -1061,7 +1109,7 @@ where
                         return Err(Stop::End(EndReason::BackendLost));
                     }
                     Err(Some(reason)) => {
-                        self.send(self.ending_error()).await;
+                        self.send(self.cut_error(reason)).await;
                         return Err(Stop::End(reason));
                     }
                 }
@@ -1073,7 +1121,7 @@ where
                         return Err(Stop::End(EndReason::BackendLost));
                     }
                     Copied::Cut(reason) => {
-                        self.send(self.ending_error()).await;
+                        self.send(self.cut_error(reason)).await;
                         return Err(Stop::End(reason));
                     }
                 }
@@ -1084,7 +1132,7 @@ where
                         Err(Stop::End(EndReason::BackendLost))
                     }
                     Err(Some(reason)) => {
-                        self.send(self.ending_error()).await;
+                        self.send(self.cut_error(reason)).await;
                         Err(Stop::End(reason))
                     }
                 }
@@ -1130,7 +1178,7 @@ where
                         return Err(Stop::End(EndReason::BackendLost));
                     }
                     Err(reason) => {
-                        self.send(self.ending_error()).await;
+                        self.send(self.cut_error(reason)).await;
                         return Err(Stop::End(reason));
                     }
                 }
@@ -1234,13 +1282,25 @@ enum Copied {
     Cut(EndReason),
 }
 
+/// Whether the route view ends the running sessions of the cluster: a positive conflict, which
+/// wins, or an approved writer that the control loop marked as lost.
+fn route_cut(view: &RouteView, cluster: &ClusterId) -> Option<EndReason> {
+    if view.is_conflict(cluster) {
+        Some(EndReason::Conflict)
+    } else if view.is_lost(cluster) {
+        Some(EndReason::NodeLost)
+    } else {
+        None
+    }
+}
+
 fn must_cut(
     routes: &watch::Receiver<RouteView>,
     phase: &watch::Receiver<Phase>,
     cluster: &ClusterId,
 ) -> Option<EndReason> {
-    if routes.borrow().is_conflict(cluster) {
-        Some(EndReason::Conflict)
+    if let Some(reason) = route_cut(&routes.borrow(), cluster) {
+        Some(reason)
     } else if *phase.borrow() == Phase::Ending {
         Some(EndReason::Shutdown)
     } else {
@@ -1248,7 +1308,8 @@ fn must_cut(
     }
 }
 
-/// Resolves when the session must be cut: a positive conflict of its cluster or the end of shutdown.
+/// Resolves when the session must be cut: a positive conflict of its cluster, its node marked as
+/// lost, or the end of shutdown.
 /// It never resolves when neither can happen any more.
 async fn wait_cut(
     routes: &mut watch::Receiver<RouteView>,
@@ -1358,6 +1419,9 @@ mod tests {
             topology_epoch: pool_config::TopologyEpoch::FIRST,
             authority_revision: pool_config::AuthorityRevision::FIRST,
             fresh_until: Duration::from_secs(1),
+            system_identifier: pool_config::SystemIdentifier::parse("1")
+                .expect("system identifier"),
+            timeline: 1,
         };
         let key = pool_key(&config.identities()[0], &route);
         assert_eq!(key.cluster.as_str(), "main");
