@@ -22620,7 +22620,7 @@
       },
       "norm_label": "check_sbom()",
       "source_file": "scripts/check.sh",
-      "source_location": "L227"
+      "source_location": "L228"
     },
     {
       "id": "scripts_check_check_test",
@@ -106402,7 +106402,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L228",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -106414,7 +106414,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L230",
+      "source_location": "L231",
       "weight": 1.0
     },
     {
@@ -106426,7 +106426,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L231",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -106438,7 +106438,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L236",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -106558,7 +106558,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L249",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -106570,7 +106570,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L273",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -106582,7 +106582,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/check.sh",
-      "source_location": "L274",
+      "source_location": "L275",
       "weight": 1.0
     },
     {
@@ -164389,7 +164389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/check.sh",
-      "source_location": "L227",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -280535,5 +280535,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "16373a9fb750c3f6744ae33ccab626728f26b6d6"
+  "built_at_commit": "9af49e024d7c2d1710bd61d07b0ab740932e799d"
 }
