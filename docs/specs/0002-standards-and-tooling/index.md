@@ -337,6 +337,8 @@ pool-repo-check docs      [--root <DIR>] [--base <REVISION>]
 | W6 | Every file named `Cargo.lock` in the repository is one of the three lockfiles of W1. Directories named `target` and directories whose name starts with a dot are skipped | none |
 | W7 | The text of `scripts/linux-build.sh` after its marker line equals the first code block under the heading `### Linux build` in `docs/specs/0001-initial-architecture/index.md` | none |
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#fuzzing): the rows for W1 and W6 above say three lockfiles, which was the count when scope 002 was built. From Build plan step 12 of spec 0004 on there are four. The fourth is `crates/pool-protocol/fuzz/Cargo.lock`, with the baseline file `protocol-fuzz-lock-packages.txt`. Read both rows with four. The tool checks four, and the rows keep their text as the record of what scope 002 built.
+
 Baseline files live in `tools/repo-check/baseline/`. A line that is empty or starts with `#` is ignored. Each file starts with a comment line that names this spec.
 
 ```text

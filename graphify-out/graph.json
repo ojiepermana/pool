@@ -7817,7 +7817,7 @@
       "file_type": "code",
       "norm_label": "ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_left_as_it_is()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L996"
+      "source_location": "L1058"
     },
     {
       "id": "apps_pool_tests_commands_ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal",
@@ -7872,7 +7872,7 @@
       "file_type": "code",
       "norm_label": "ac9_a_lock_held_by_another_pool_process_gives_state_locked_and_changes_nothing()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L823"
+      "source_location": "L885"
     },
     {
       "id": "apps_pool_tests_commands_ac9_a_second_command_while_the_lock_is_held_is_state_locked_and_changes_nothing",
@@ -7927,7 +7927,7 @@
       "file_type": "code",
       "norm_label": "ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_leave_only_the_lock()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L871"
+      "source_location": "L933"
     },
     {
       "id": "apps_pool_tests_commands_ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked",
@@ -7949,7 +7949,7 @@
       "file_type": "code",
       "norm_label": "accept_within()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L810"
+      "source_location": "L872"
     },
     {
       "id": "apps_pool_tests_commands_assert_error",
@@ -8103,7 +8103,7 @@
       "file_type": "code",
       "norm_label": ".write_slow_probe_config()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L787"
+      "source_location": "L849"
     },
     {
       "id": "apps_pool_tests_commands_pause",
@@ -8114,7 +8114,7 @@
       "file_type": "code",
       "norm_label": "pause()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L801"
+      "source_location": "L863"
     },
     {
       "id": "apps_pool_tests_commands_pool",
@@ -8136,7 +8136,18 @@
       "file_type": "code",
       "norm_label": "real_journal()",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L959"
+      "source_location": "L1021"
+    },
+    {
+      "id": "apps_pool_tests_commands_release",
+      "label": "release()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "release()",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L788"
     },
     {
       "id": "apps_pool_tests_commands_rs_child",
@@ -8168,6 +8179,17 @@
       "community_name": "crates/pool-protocol/src/lib.rs",
       "file_type": "code",
       "norm_label": "option",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_commands_rs_output",
+      "label": "Output",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "output",
       "source_file": "",
       "source_location": ""
     },
@@ -77476,7 +77498,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1012",
+      "source_location": "L1074",
       "weight": 1.0
     },
     {
@@ -77488,7 +77510,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1013",
+      "source_location": "L1075",
       "weight": 1.0
     },
     {
@@ -77500,7 +77522,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1014",
+      "source_location": "L1076",
       "weight": 1.0
     },
     {
@@ -77512,7 +77534,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1021",
+      "source_location": "L1083",
       "weight": 1.0
     },
     {
@@ -77524,7 +77546,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1026",
+      "source_location": "L1088",
       "weight": 1.0
     },
     {
@@ -77536,7 +77558,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1047",
+      "source_location": "L1109",
       "weight": 1.0
     },
     {
@@ -77800,7 +77822,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L828",
+      "source_location": "L890",
       "weight": 1.0
     },
     {
@@ -77812,7 +77834,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L831",
+      "source_location": "L893",
       "weight": 1.0
     },
     {
@@ -77824,7 +77846,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L832",
+      "source_location": "L894",
       "weight": 1.0
     },
     {
@@ -77836,7 +77858,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L841",
+      "source_location": "L903",
       "weight": 1.0
     },
     {
@@ -77848,7 +77870,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L842",
+      "source_location": "L904",
       "weight": 1.0
     },
     {
@@ -77860,7 +77882,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L845",
+      "source_location": "L907",
       "weight": 1.0
     },
     {
@@ -77872,7 +77894,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L866",
+      "source_location": "L928",
       "weight": 1.0
     },
     {
@@ -78076,7 +78098,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L880",
+      "source_location": "L942",
       "weight": 1.0
     },
     {
@@ -78088,7 +78110,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L883",
+      "source_location": "L945",
       "weight": 1.0
     },
     {
@@ -78100,7 +78122,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L889",
+      "source_location": "L951",
       "weight": 1.0
     },
     {
@@ -78112,7 +78134,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L917",
+      "source_location": "L979",
       "weight": 1.0
     },
     {
@@ -78124,7 +78146,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L718",
+      "source_location": "L717",
       "weight": 1.0
     },
     {
@@ -78136,7 +78158,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L724",
+      "source_location": "L723",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked",
+      "target": "apps_pool_tests_commands_release",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L744",
       "weight": 1.0
     },
     {
@@ -78148,7 +78182,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L817",
+      "source_location": "L879",
       "weight": 1.0
     },
     {
@@ -78328,7 +78362,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L788",
+      "source_location": "L850",
       "weight": 1.0
     },
     {
@@ -78352,7 +78386,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L966",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -78364,7 +78398,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L977",
+      "source_location": "L1039",
       "weight": 1.0
     },
     {
@@ -78376,7 +78410,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L978",
+      "source_location": "L1040",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_release",
+      "target": "apps_pool_tests_commands_layout_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L805",
       "weight": 1.0
     },
     {
@@ -110596,7 +110642,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L810",
+      "source_location": "L872",
       "weight": 1.0
     },
     {
@@ -110609,6 +110655,30 @@
       "context": "generic_arg",
       "source_file": "apps/pool/tests/commands.rs",
       "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_release",
+      "target": "apps_pool_tests_commands_rs_child",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L788",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_release",
+      "target": "apps_pool_tests_commands_rs_output",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L788",
       "weight": 1.0
     },
     {
@@ -121648,7 +121718,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L810",
+      "source_location": "L872",
       "weight": 1.0
     },
     {
@@ -121660,7 +121730,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L810",
+      "source_location": "L872",
       "weight": 1.0
     },
     {
@@ -121768,7 +121838,19 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L959",
+      "source_location": "L1021",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_release",
+      "target": "apps_pool_tests_commands_rs_pathbuf",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L788",
       "weight": 1.0
     },
     {
@@ -129004,7 +129086,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L810",
+      "source_location": "L872",
       "weight": 1.0
     },
     {
@@ -129065,6 +129147,18 @@
       "context": "return_type",
       "source_file": "apps/pool/tests/commands.rs",
       "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands_release",
+      "target": "apps_pool_tests_commands_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L788",
       "weight": 1.0
     },
     {
@@ -139823,6 +139917,28 @@
     },
     {
       "source": "apps_pool_tests_commands",
+      "target": "apps_pool_tests_commands_real_journal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L1021",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands",
+      "target": "apps_pool_tests_commands_ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_left_as_it_is",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L1058",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands",
       "target": "apps_pool_tests_commands_layout",
       "relation": "contains",
       "_origin": "ast",
@@ -140065,13 +140181,13 @@
     },
     {
       "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_pause",
+      "target": "apps_pool_tests_commands_release",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L801",
+      "source_location": "L788",
       "weight": 1.0
     },
     {
@@ -140087,13 +140203,24 @@
     },
     {
       "source": "apps_pool_tests_commands",
+      "target": "apps_pool_tests_commands_pause",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/commands.rs",
+      "source_location": "L863",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_commands",
       "target": "apps_pool_tests_commands_accept_within",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L810",
+      "source_location": "L872",
       "weight": 1.0
     },
     {
@@ -140104,18 +140231,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L823",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_leave_only_the_lock",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L871",
+      "source_location": "L885",
       "weight": 1.0
     },
     {
@@ -140131,13 +140247,13 @@
     },
     {
       "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_real_journal",
+      "target": "apps_pool_tests_commands_ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_leave_only_the_lock",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L959",
+      "source_location": "L933",
       "weight": 1.0
     },
     {
@@ -140149,17 +140265,6 @@
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
       "source_location": "L99",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_commands",
-      "target": "apps_pool_tests_commands_ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_left_as_it_is",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L996",
       "weight": 1.0
     },
     {
@@ -156549,7 +156654,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L787",
+      "source_location": "L849",
       "weight": 1.0
     },
     {
@@ -164036,7 +164141,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L1019",
+      "source_location": "L1081",
       "weight": 1.0
     },
     {
@@ -164084,11 +164189,11 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L915",
+      "source_location": "L977",
       "weight": 1.0
     },
     {
-      "source": "apps_pool_tests_commands_ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked",
+      "source": "apps_pool_tests_commands_release",
       "target": "apps_pool_tests_integration_daemon_drop",
       "relation": "calls",
       "_origin": "ast",
@@ -164096,7 +164201,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/commands.rs",
-      "source_location": "L752",
+      "source_location": "L836",
       "weight": 1.0
     },
     {
@@ -270017,5 +270122,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "b8d5099a9ddf27043d4b7a2878f766db9baade8c"
+  "built_at_commit": "73c5e8f2769d9a487856e7b971da57be274750fb"
 }
