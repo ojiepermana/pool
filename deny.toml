@@ -18,23 +18,23 @@ crate = "libfuzzer-sys"
 allow = ["NCSA"]
 
 [[licenses.exceptions]]
-crate = "aws-lc-rs"
+crate = "aws-lc-rs@=1.19.0"
 allow = ["ISC"]
 
 [[licenses.exceptions]]
-crate = "aws-lc-sys"
+crate = "aws-lc-sys@=0.47.0"
 allow = ["ISC", "BSD-3-Clause"]
 
 [[licenses.exceptions]]
-crate = "rustls-webpki"
+crate = "rustls-webpki@=0.103.17"
 allow = ["ISC"]
 
 [[licenses.exceptions]]
-crate = "untrusted"
+crate = "untrusted@=0.9.0"
 allow = ["ISC"]
 
 [[licenses.exceptions]]
-crate = "subtle"
+crate = "subtle@=2.6.1"
 allow = ["BSD-3-Clause"]
 
 [licenses.private]

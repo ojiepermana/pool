@@ -252,11 +252,90 @@ The two changes to step 5 that followed the first checker run, on 2026-11-15 at 
 
 Note that is not a failure: with decision 49 the first note of the first checker run above (a period of 60000 that no expiry can cover) is settled. Every value in the range of the period can now be used with some timeout and expiry.
 
+### Checker run of milestone 2
+
+Build plan step 4, and a second look at step 5, on 2026-11-15 at 17:48 WIB, by the checker session, on the merged tree `8332451` (macOS 27.0.1, arm64, with Docker 29.9.2 running; the Linux build ran in the pinned image, the rest on the workstation, and none of it is CI). Tools: `rustc 1.100.0`. Every command below was run in this session. The probes are a small program outside the repository that calls the public functions of `pool-protocol`. Its packets and messages are written out as bytes by hand and its expected results are written from the tables of the spec, so it does not lean on the encoders or the tests of the crate.
+
+**Verdict: milestone 2 PASS** on the workstation and in the pinned Linux image. Steps 4 and 5 are both verified. The session halves of `0004 AC-15`, `AC-16` and `AC-23` belong to Build plan steps 7, 9, 10 and 11 and were not checked.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-protocol --locked` | exit 0 | exit 0: 21 unit tests and 9 in `tests/golden.rs` passed, 0 failed | pass |
+| `cargo clippy -p pool-protocol --all-targets --locked -- -D warnings` | exit 0 | exit 0 | pass |
+| `scripts/check.sh all` | exit 0 | exit 0: `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` all `ok` | pass |
+| `scripts/check.sh linux-build` on the committed tree | exit 0 | exit 0: `host: aarch64-unknown-linux-gnu`, 16 test results `ok` and none failed, among them the 21 unit tests and the 9 golden tests of `pool-protocol`, `linux build check passed` | pass |
+| Probe, first packets split at every position: 29 packets written as bytes (`SSLRequest`, `GSSENCRequest`, a `CancelRequest` of 8, 16 and 44 bytes, the startup packet of `psql`, one for 3.2, one with a `_pq_.` name, one exactly at the limit, and eighteen that must be refused), each fed whole, in two pieces at every position, in three pieces at every pair of positions, one byte at a time, and with other bytes after it | the result of the table under [Startup](index.md#startup) each time, and no byte taken after the packet | 19599 splits, 19715 checks, 0 mismatches | pass |
+| Probe, messages split at every position: 26 messages written as bytes, from both sides (`Query`, `Terminate`, the two SASL answers, seven `Authentication` messages, `ParameterStatus`, `BackendKeyData`, `ReadyForQuery` with each status, row description, data row, command complete, empty query, an error and a notice of PostgreSQL, a notification, `NegotiateProtocolVersion`, a COPY response), each fed whole, in two pieces, in three pieces and one byte at a time, then all as one stream split at every position, and the five header bytes split at every position | the same tag and body each time | 20877 splits, 21216 checks, 0 mismatches | pass |
+| Probe, random and changed inputs: 400000 inputs, a quarter random bytes and the rest golden bytes with up to three changes, through the thirteen parsers and through both readers whole and split at a random position | no panic, and the same result whole and split | no panic; 800000 comparisons, 0 mismatches | pass |
+| Probe, reservations, with an allocator that counts every reservation during the call | nothing reserved before the length passed its limit | a first packet that claims 4294967295, 2147483648 or one byte above its limit: 0 bytes reserved. A `CancelRequest` of 65536 bytes: 0 bytes for its header and 0 for its 65528 body bytes. A startup packet at its limit: one reservation of exactly its body (504 and 65528 bytes). A message that claims 4294967295 bytes, one byte above the limit, or a length of 3: 0 bytes. A message at the limit of 1024: 1024 bytes. A `NegotiateProtocolVersion` that claims 4294967295 names: 0 bytes. A `SASLInitialResponse` that claims 2147483647 bytes of data: 13 bytes, the mechanism name. Base64 of 1024 characters: 768 bytes | pass |
+| Probe, reading the code for the same rule | `Vec::with_capacity` only after the check | `FirstPacketReader::feed` reserves after `decode_first_header` accepted the length, and only for a `StartupMessage`. `MessageReader::feed` reserves after `body_len() > limit` was tested. No parser reserves from a count or a length inside a body | pass |
+| Probe, the order of first packets: every order of one to five packets of the four kinds (1364 orders), against a model written from the sentences under [Startup](index.md#startup) | the same step or SQLSTATE at every position | 12744 checks, 0 mismatches. A `StartupMessage` before TLS is `28000`, also after `GSSENCRequest`. After an error or a last packet every further packet is `08P01` | pass |
+| Probe, the first eight bytes: 95 cases | the rows of the table | a length of 0 to 7 is `08P01` for every code; a length above the limit is `54000` for every code; `SSLRequest` and `GSSENCRequest` of another length than 8 are `08P01`; a `CancelRequest` of 8 bytes up to the limit is accepted; major 3 with any minor version is a `StartupMessage`; major 0, 1, 2, 4 and others are `0A000`; an unknown code under major 1234 is `08P01` | pass |
+| Probe, the two tables under [Messages after login](index.md#messages-after-login): every tag byte from 0 to 255 with eleven lengths, from the client and from the backend | the action of the table | 5632 checks, 0 mismatches | pass |
+| Probe, the table under [SQLSTATEs that POOL generates](index.md#sqlstates-that-pool-generates), read from `index.md` by the program | twelve rows, the same SQLSTATE and message in the same order, and the bytes `S`, `V`, `C`, `M` and nothing else | 12 rows; every SQLSTATE, every message and every encoded message equal the spec, byte for byte, and each reads back through the message reader | pass |
+| Probe, SCRAM text, message bytes and `Debug`: 63 cases | as [Frontend authentication](index.md#frontend-authentication) and [Backend connection](index.md#backend-connection) say | the exchange of RFC 7677 parses. A client-first with `p=`, an authorization identity, `m=` or an extension is refused; `n,,` and `y,,` pass. A client-final must repeat the header (`biws` for `n,,`, `eSws` for `y,,`, and not the other way round), the whole nonce and a proof of 32 bytes. POOL as a client writes `n,,n=,r=<nonce>` and `c=biws,r=<nonce>`. A server-first needs the client nonce at its start and a count of 1 to 600000. `AuthenticationSASL` holds `SCRAM-SHA-256` alone. `BackendKeyData` takes a key of 4 to 256 bytes and prints `BackendKeyData([REDACTED])`. `Debug` of a startup request prints counts only | pass |
+| Probe, the crate itself | no dependency, no socket, runtime or thread | `cargo metadata` lists no dependency for `pool-protocol`; its manifest has no `dev-dependencies`; `scripts/check.sh guards` passes; a search of the crate for the texts of rule W3, for `std::fs`, `std::env`, a clock and `unsafe` finds nothing. Outside its tests the code has no `unwrap`, and four `expect` calls, each in an encoder with a `# Panics` section | pass |
+| Probe, step 5 on this tree | `0004 AC-5` to `AC-8` as before | no file of `crates/pool-config` or `apps/pool` changed since `486b90e`. `cargo test`: 32 unit and 123 in `tests/validate.rs`, 3 unit and 84 in `tests/check_config.rs`, 0 failed. Through the binary: 80 fixture runs with the exit status of their name, 138 range and order cases, 1918 name and path cases, made input 3 with 17268 findings, the edge at 20000, and made input 5 with 20000 finding lines, `findings omitted: 2077084`, 1777935 and 2358018 bytes. All as in the earlier runs | pass |
+
+| Criterion | Checker verdict |
+|---|---|
+| `0004 AC-28` | met. Every golden packet and message gives the same result whole and split at every position, also with packets and messages that the crate did not build itself, and no reader reserves from a length field before the limit check |
+| `0004 AC-15`, byte level half | met: `28000` before TLS, `0A000` for major 2 and 4, for `replication` and for a name outside the list, `NegotiateProtocolVersion` for 3.0, a `CancelRequest` that is read and dropped. `N` for `GSSENCRequest`, TLS and the node side are written by later steps |
+| `0004 AC-16`, byte level half | met: `SCRAM-SHA-256` alone, the refusals of the client-first message, and the limit of 1024 bytes. The exchange itself is Build plan step 7 |
+| `0004 AC-23`, byte level half | met: `Query` and `Terminate` are accepted, the eleven listed tags are `0A000`, every other tag and a length below 4 are `08P01`, a COPY response is told apart, and the real `BackendKeyData` prints nothing. The session is Build plan step 9 |
+| `0004 AC-5` to `AC-8` | still met on this tree |
+
+How the readings of the build were judged:
+
+- **Order of the startup checks** (structure, then `user`, then the names). The spec gives no order. Putting `08P01` before `0A000` is the safer reading, and it is accepted.
+- **`CancelRequest`** of any length from 8 to the limit, with the body dropped. That is what the row of the table says.
+- **Codes.** An unknown code under major 1234 is `08P01` and every other major but 3 is `0A000`. That fits the last two rows of the table.
+- **The 1024 bytes** of an authentication message are counted as the body, without the tag and the length field. The spec says "at most 1024 bytes" and does not say which bytes. The fixture test of Build plan step 11 should use the same edge.
+
+Notes that are not failures:
+
+- **`Terminate` is told from its tag alone.** A `Terminate` whose length field is 4294967295 is classified as `Terminate` with a body of 4294967291 bytes, whatever `limits.frontend_message_max_bytes` is. The table under "Messages after login" checks the size only for `Query`, and `0004 AC-20` names only `Query`. The table under [Limits](index.md#limits) counts "the length field of a message from the client". The two texts differ, and the session of step 9 will have to choose what it does with such a body. A question for the architect before step 9.
+- **The name in the client-first message.** The parser refuses a name that holds `=` in another form than `=2C` or `=3D`. The spec says the name is ignored, as PostgreSQL ignores it, and does not list this among the refusals. A client that sends such a name would pass PostgreSQL and be refused here with `08P01`. `psql` sends an empty name and is not touched.
+- **The duplicate check of the parameter parser** compares every name with every earlier one. At the default limit of 8192 bytes a packet with 1633 different names takes about 5 ms and reserves 128 KiB. At the largest limit a file may set, 65536 bytes, a packet with 13104 names takes about 330 ms and reserves 1 MiB, in the optimized build of the probe. It is bounded and happens after TLS and before authentication. Worth a look in the review.
+- **`FirstPacketReader`** reads and parses the body of a `StartupMessage` without asking `Handshake`. On the path before TLS the caller has to use `decode_first_header` and `Handshake`, as the module text says, or a body would be read where the spec sends `28000` at once. That is for the check of Build plan steps 7 and 9.
+- The encoders that call `encode_message` (`encode_query`, the authentication encoders, `PoolError::encode` and others) can panic on a body above 4 GiB like it does, and do not repeat its `# Panics` section. No caller builds such a body.
+- CI evidence does not exist yet. It waits for the pull request.
+
 ## Milestone 3: Authority on disk and the first contact with PostgreSQL
 
-Build plan steps 6 to 8. Each step keeps its own part of this section.
+### Build plan step 6: authority on disk and the control loop
 
-### Step 7: secrets, TLS and the backend connection
+On 2026-11-15, on macOS (workstation, not Linux and not CI). Commit `fc5a5fe` (step 6), merged with `main` at `8332451` in `dff749e`. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, the SQLite of `rusqlite 0.42.0` with the feature `bundled`. The step is hermetic: no container and no PostgreSQL. Every journal is a real file in a folder of the test's own under `CARGO_TARGET_TMPDIR`. Steps 7 and 8 belong to other sessions and get their own parts of this section.
+
+#### UI / manual
+
+None for step 6.
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-control --locked` on `dff749e` | exit 0 | exit 0: 5 unit, 3 in `tests/admission_model.rs`, 11 in `tests/controller.rs`, 15 in `tests/journal.rs`, 28 in `tests/walkthroughs.rs`, 6 and 6 doc tests (`compile_fail` included), 0 failed | pass |
+| `scripts/check.sh all` on `dff749e` | exit 0 | exit 0: `fmt`, `clippy`, `test`, `deny`, `guards`, `docs` all `ok` | pass |
+| `grep -rnE 'Instant::now\|SystemTime\|std::fs\|std::env' crates/pool-control/src` | no line | no line (exit 1) | pass |
+| `grep -rln rusqlite crates/pool-control/src` | `journal.rs` only | `crates/pool-control/src/journal.rs` | pass |
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0003 AC-17` | `AuthorityState::latch_conflict` and `latch_recorded` in `src/authority.rs`; `Controller::round` and `latch_recorded` in `src/snapshot.rs`; `ac17_walk_from_row_d_to_row_o_through_the_real_functions` in `tests/walkthroughs.rs` (once with a receipt of a real journal, once with the write refused as busy between the two calls; row o has no journal value built by hand), `ac17_latch_conflict_changes_nothing_unless_a_ready_state_is_asked_to`, and the `ac17_*` tests of `tests/controller.rs` (latch in memory before the write, the receipt, a failed write that stays listed and is tried again, a latch the journal already holds, a receipt for a cluster not latched, a state that is not `Ready`) | pass on the workstation |
+| `0003 AC-18` | `ObservationBoard` in `src/observation.rs`; `build_snapshot` in `src/snapshot.rs`, the one caller of `writer_admission`; `ac18_the_board_keeps_one_sample_per_node` and `ac18_a_now_earlier_than_the_latest_sample_gives_the_same_snapshot`; the text `writer_admission` outside `crates/pool-control` is refused by rule W3 (milestone 1) | pass on the workstation |
+| `0003 AC-19`, code half | `JournalRead` in `src/journal.rs`, with private fields and a `compile_fail` doc test; `ac19_journal_read_plans_bootstrap_with_the_board_and_the_configuration`; the guard half is milestone 1 | pass on the workstation |
+| `0004 AC-10`, library half | `Journal::read`, `create`, `open_ready`, `set_conflict_latch` in `src/journal.rs`; the 15 tests of `tests/journal.rs`: marks, WAL mode, exactly the four tables and the first rows; `Absent` for no file and an empty file; `Unreadable` for a wrong application ID, another schema version, a missing `store` row, a writer without member row, a value out of range, an ID of the wrong syntax or length, a missing table, damaged pages, a file of another kind and a folder; reading leaves the file bytes as they were; `open_ready` advances the start sequence once per start, refuses a journal that changed and stops at the top; busy with no wait; the latch written once, advancing the revision | pass on the workstation; the half through `pool bootstrap` and `pool run` is steps 8 and 10 |
+| `0004 AC-12`, library half | `PROBE_QUERY` and `observation_from_row` in `src/probe.rs` with three unit tests (a good row, sixteen other answers and no row give `Failed`); `ac12_build_snapshot_answers_every_cluster_with_the_expiry_of_the_configuration` and `ac12_a_failed_probe_row_takes_the_evidence_away_at_once` | pass on the workstation; the login, TLS and the query on PostgreSQL are steps 7 and 8 |
+| `0003 AC-7` to `AC-12`, `AC-14`, `AC-16` | `tests/walkthroughs.rs` (four walks, `ac9_*`, `ac11_*`, `ac16_*`) and `tests/admission_model.rs` (8192 cases) run unchanged; no rule of `classify_startup`, `plan_bootstrap` or `writer_admission` changed | pass on the workstation |
+
+**One reading.** When the snapshot generation cannot advance, `Controller::round` returns every cluster closed, as the spec says, but the spec names no reason for that case. The round builds its snapshot from the state `Unreadable`, so each cluster is closed with the existing `authority.unreadable` and no new reason name is added. The generation stays at 9223372036854775807. At one round per millisecond, it takes about 292 million years to get there. The unit test `a_round_whose_generation_cannot_advance_closes_every_cluster` locks it.
+
+### Build plan step 7: secrets, TLS and the backend connection
 
 Build plan step 7, on 2026-11-15, on macOS (workstation) and in the Linux builder image. Commit `24d1c8f`, on top of `main` at `8332451`. Tools: `rustc 1.100.0`. Every test is hermetic: the node is a scripted peer inside the test that speaks TLS over an in memory stream (`tokio::io::duplex`), plus one loopback TCP connection. No container and no PostgreSQL; the first real contact is step 8. The certificates and the key under `crates/pool-core/tests/fixtures/` were made with `openssl` for these tests only (a CA, a node certificate for `node.test` valid until 2126, and a second CA).
 
