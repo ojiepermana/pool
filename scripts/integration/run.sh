@@ -39,7 +39,11 @@ TEST_LIMIT_SECONDS=1800
 DIR=
 IDS=
 TEST_PID=
+WATCHDOG=
 cleanup() {
+  if [ -n "$WATCHDOG" ]; then
+    kill -TERM -- "-$WATCHDOG" 2>/dev/null || :
+  fi
   if [ -n "$TEST_PID" ]; then
     kill -TERM -- "-$TEST_PID" 2>/dev/null || :
   fi
@@ -173,18 +177,22 @@ sh -c '
   exit "$(cat "$out.rc" 2>/dev/null || echo 1)"
 ' sh "$OUT" ${POOL_IT_FILTER:+"$POOL_IT_FILTER"} &
 TEST_PID=$!
-set +m
-(
-  sleep "$TEST_LIMIT_SECONDS"
-  echo "integration: the tests did not end within $TEST_LIMIT_SECONDS seconds" >&2
-  kill -TERM -- "-$TEST_PID" 2>/dev/null || :
-) &
+# The watchdog has a process group of its own too, so that ending the group
+# also ends its `sleep`: nothing of it outlives the script, on any path, and
+# none of it holds the output of the caller open.
+sh -c '
+  sleep "$1"
+  echo "integration: the tests did not end within $1 seconds" >&2
+  kill -TERM -- "-$2" 2>/dev/null || :
+' sh "$TEST_LIMIT_SECONDS" "$TEST_PID" </dev/null >/dev/null &
 WATCHDOG=$!
+set +m
 rc=0
 wait "$TEST_PID" || rc=$?
 TEST_PID=
-kill "$WATCHDOG" 2>/dev/null || :
+kill -TERM -- "-$WATCHDOG" 2>/dev/null || :
 wait "$WATCHDOG" 2>/dev/null || :
+WATCHDOG=
 if [ "$rc" -ne 0 ]; then
   exit 1
 fi
