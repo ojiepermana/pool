@@ -97,6 +97,28 @@ pub enum WriterAdmission {
 /// }
 /// ```
 ///
+/// The same paths through the public functions compile, so the snippet
+/// above can fail only because the fields are private (the code after the
+/// comma is not checked by the stable compiler):
+///
+/// ```
+/// fn read(
+///     primary: &pool_control::EligiblePrimary,
+/// ) -> (
+///     pool_config::ClusterId,
+///     pool_config::NodeId,
+///     pool_config::TopologyEpoch,
+///     pool_config::AuthorityRevision,
+/// ) {
+///     (
+///         primary.cluster().clone(),
+///         primary.node().clone(),
+///         primary.topology_epoch(),
+///         primary.authority_revision(),
+///     )
+/// }
+/// ```
+///
 /// Restart rule: gone at a restart. It is made again by a fresh admission.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EligiblePrimary {
@@ -137,6 +159,16 @@ impl EligiblePrimary {
 /// ```compile_fail,E0451
 /// fn build(reasons: Vec<pool_control::ClosedReason>) -> pool_control::Closed {
 ///     pool_control::Closed { reasons }
+/// }
+/// ```
+///
+/// The same paths through the public functions compile, so the snippet
+/// above can fail only because the field is private (the code after the
+/// comma is not checked by the stable compiler):
+///
+/// ```
+/// fn read(closed: &pool_control::Closed) -> Vec<pool_control::ClosedReason> {
+///     closed.reasons().to_vec()
 /// }
 /// ```
 ///

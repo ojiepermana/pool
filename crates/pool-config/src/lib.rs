@@ -41,12 +41,23 @@ const KEY_AUTOMATIC_PROMOTION_ENABLED: &str = "automatic_promotion.enabled";
 /// It has no public constructor; [`validate`] returns one only when the file
 /// produced no finding. Code outside this crate cannot build one:
 ///
-/// ```compile_fail
-/// let config = pool_config::ValidatedConfig {
-///     config_version: 1,
-///     result_cache: pool_config::CapabilityState::Disabled,
-///     automatic_promotion: pool_config::CapabilityState::Disabled,
-/// };
+/// ```compile_fail,E0451
+/// fn change(valid: pool_config::ValidatedConfig) -> pool_config::ValidatedConfig {
+///     pool_config::ValidatedConfig { config_version: 2, ..valid }
+/// }
+/// ```
+///
+/// The same function through the public functions compiles, so the snippet
+/// above can fail only because the fields are private (the code after the
+/// comma is not checked by the stable compiler):
+///
+/// ```
+/// fn change(valid: pool_config::ValidatedConfig) -> pool_config::ValidatedConfig {
+///     assert_eq!(valid.config_version(), 1);
+///     valid
+/// }
+/// let valid = pool_config::validate(b"config_version = 1\n").expect("valid");
+/// let _ = change(valid);
 /// ```
 ///
 /// ```compile_fail

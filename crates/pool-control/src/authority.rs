@@ -131,6 +131,20 @@ pub enum AuthorityState {
 /// }
 /// ```
 ///
+/// The same paths through the public functions compile, so the snippet
+/// above can fail only because the field is private (the code after the
+/// comma is not checked by the stable compiler):
+///
+/// ```
+/// fn read(
+///     stored: pool_control::StoredAuthority,
+///     authority: &pool_control::Authority,
+/// ) -> pool_config::AuthorityRevision {
+///     drop(stored);
+///     authority.authority_revision()
+/// }
+/// ```
+///
 /// Restart rule: it lives in memory for one run and is made again by
 /// classifying the journal at the next start.
 #[derive(Debug, Clone, PartialEq, Eq)]
