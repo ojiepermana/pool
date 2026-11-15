@@ -4,8 +4,10 @@
 //!
 //! Each test makes its own folder under `CARGO_TARGET_TMPDIR`. A node "that
 //! does not answer" is a port on `127.0.0.1` that nothing listens on, or a
-//! listener of the test that accepts and never speaks. The CA file is the
-//! test CA of `crates/pool-core/tests/fixtures/`.
+//! listener of the test that accepts and never speaks. The CA file is a copy
+//! of the test CA of `crates/pool-core/tests/fixtures/` in the folder of the
+//! test, with mode `0644`: a tree from `git archive` gives the committed file
+//! mode `0664`, which the rule of decision 88 refuses, as it must.
 
 use std::fs;
 use std::net::TcpListener;
@@ -108,6 +110,7 @@ struct Layout {
     state: PathBuf,
     credential: PathBuf,
     config: PathBuf,
+    ca: PathBuf,
 }
 
 impl Layout {
@@ -119,17 +122,27 @@ impl Layout {
         let credential = root.join("monitor.password");
         write_mode(&credential, b"pz7-monitor-password\n", 0o600);
         let config = root.join("pool.toml");
+        let ca = root.join("ca.pem");
+        write_mode(&ca, &fs::read(CA).expect("read the test CA"), 0o644);
         let layout = Layout {
             root,
             state,
             credential,
             config,
+            ca,
         };
         layout.write_config(None, closed_port(), CA, "");
         layout
     }
 
+    /// Writes the configuration. `CA` stands for the copy of the test CA in
+    /// the folder of the test; any other path is used as it is.
     fn write_config(&self, witness: Option<&str>, port: u16, ca: &str, extra: &str) {
+        let ca = if ca == CA {
+            self.ca.to_str().expect("utf-8")
+        } else {
+            ca
+        };
         let witness = witness.map_or(String::new(), |id| format!("authority_id = \"{id}\"\n"));
         let text = format!(
             "config_version = 1\n\n[control]\nstate_directory = \"{state}\"\n{witness}\n\
