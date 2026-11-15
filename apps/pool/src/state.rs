@@ -91,13 +91,7 @@ impl StateDirectory {
             check_protected(&path.join(name), owner)?;
         }
         let lock_path = path.join(LOCK_FILE);
-        let lock = match OpenOptions::new().read(true).write(true).open(&lock_path) {
-            Ok(file) => file,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => create_protected(&lock_path)?,
-            Err(_) => return Err(StateError::Permissions),
-        };
-        // The file may have been made just now, so it is checked again.
-        check_protected(&lock_path, owner)?;
+        let lock = open_lock(&lock_path, owner)?;
         match lock.try_lock() {
             Ok(()) => {}
             Err(TryLockError::WouldBlock) => return Err(StateError::Locked),
@@ -132,11 +126,59 @@ impl StateDirectory {
         match std::fs::symlink_metadata(&path) {
             Ok(_) => Ok(path),
             Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                create_protected(&path)?;
+                create_protected(&path).map_err(|_| StateError::Permissions)?;
                 Ok(path)
             }
             Err(_) => Err(StateError::Permissions),
         }
+    }
+}
+
+/// Opens `pool.lock`, making it when it is absent, and checks the file that
+/// was opened.
+///
+/// Another command may make the file at the same moment: then `create_new`
+/// fails with `AlreadyExists`, and the file that the other command made is
+/// opened, so that `try_lock` decides and the loser gets `state.locked`. Any
+/// other failure is `state.permissions`.
+fn open_lock(path: &Path, owner: u32) -> Result<File, StateError> {
+    let open_existing = || {
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(path)
+            .map_err(|_| StateError::Permissions)
+    };
+    let file = match OpenOptions::new().read(true).write(true).open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => match create_protected(path) {
+            Ok(file) => file,
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => open_existing()?,
+            Err(_) => return Err(StateError::Permissions),
+        },
+        Err(_) => return Err(StateError::Permissions),
+    };
+    check_opened(&file, path, owner)?;
+    Ok(file)
+}
+
+/// The file that was opened, checked on the open descriptor: a regular file,
+/// mode exactly `0600`, owned by `owner`, and the very file that the path
+/// names without following a link. So a link put at the path, also between
+/// the open and the check, is refused.
+fn check_opened(file: &File, path: &Path, owner: u32) -> Result<(), StateError> {
+    let opened = file.metadata().map_err(|_| StateError::Permissions)?;
+    let named = std::fs::symlink_metadata(path).map_err(|_| StateError::Permissions)?;
+    let fits = opened.is_file()
+        && opened.permissions().mode() & 0o7777 == 0o600
+        && opened.uid() == owner
+        && named.is_file()
+        && named.dev() == opened.dev()
+        && named.ino() == opened.ino();
+    if fits {
+        Ok(())
+    } else {
+        Err(StateError::Permissions)
     }
 }
 
@@ -159,17 +201,16 @@ fn check_protected(path: &Path, owner: u32) -> Result<(), StateError> {
     }
 }
 
-/// Creates a new file with mode `0600`, and sets the mode again so that a
-/// strange umask cannot leave another one.
-fn create_protected(path: &Path) -> Result<File, StateError> {
+/// Creates a new file with mode `0600`, and sets the mode again on the open
+/// file so that a strange umask cannot leave another one. The error keeps
+/// its kind, so that the caller can tell `AlreadyExists` apart.
+fn create_protected(path: &Path) -> io::Result<File> {
     let file = OpenOptions::new()
         .read(true)
         .write(true)
         .create_new(true)
         .mode(0o600)
-        .open(path)
-        .map_err(|_| StateError::Permissions)?;
-    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
-        .map_err(|_| StateError::Permissions)?;
+        .open(path)?;
+    file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
     Ok(file)
 }
