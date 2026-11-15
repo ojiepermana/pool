@@ -769,6 +769,64 @@ The log of the walking fixture, as the daemon wrote it on that run (the authorit
 
 **Readings.** A runtime that cannot be built is `listener.failed`, since nothing can listen without it and the spec has no code for it. A `Server` that cannot be built names the key whose file is missing (`principal.verifier_file`, `identity.credential_file` or `node.tls_ca_file`); the serving view and step 4 make it unreachable. The two tests of spec 0001 that used `run` as the example of an unknown command now use `serve`, since `run` is a command. The walking fixture writes `principal.password` (mode 0600) for the client; POOL never reads it.
 
+### Build plan step 11: limits, loss and denial on the fixture
+
+On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commits `f59c7aa` and `38c4ffa` (the tests of step 11), merged with `main` at `08091ec` in `0e99342`, which holds the fix of `NegotiateProtocolVersion` (`795775f`). PostgreSQL 18.7 and `psql` 18.7 of `postgres:18.7-bookworm` by the digest of step 8. Every case starts its own daemon on a journal of its own. No file under `apps/pool/src/` changed in this step.
+
+#### UI / manual
+
+- [ ] The CI job `integration` on the hosted runner → `NOT_RUN`, owner: user (manual step M2).
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh integration` on `0e99342` | exit 0 | exit 0, 20 of 20; no `pool-it-` container, no new volume or network, no temporary directory | pass |
+| `scripts/check.sh integration` three times on `38c4ffa`, before the fix of `NegotiateProtocolVersion` | the protocol 3.2 case fails, every other case passes | each run: 19 passed, 1 failed (`it_a_request_for_protocol_3_2_goes_on_with_3_0`: `received invalid protocol negotiation message: server requested downgrade to pre-3.0 protocol version`); nothing left behind | the defect, found here and fixed in `pool-protocol` |
+| `cargo test -p pool --locked` on `0e99342` | exit 0 | exit 0: 13 unit, 84 in `tests/check_config.rs`, 12 in `tests/commands.rs`, 20 ignored in `tests/integration.rs` | pass |
+| `scripts/check.sh all` | exit 0 | exit 0, all six `ok` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0 | pass |
+
+Observed numbers:
+
+| What | Value |
+|---|---|
+| Highest resident memory of `pool` with 32 sessions that each asked for 256 MiB and stopped reading (`ps -o rss=`, 20 samples over 1 second) | 13376, 13952, 15968, 19120, 15200, 18624 and 18512 KiB in seven runs; the budget is 96 MiB (98304 KiB) |
+| One row of 64 MiB (`repeat('ab', 33554432)`) | 67108865 bytes on stdout of `psql -At` (with its line feed), the same `md5sum` straight and through POOL |
+| A `Query` whose length field is 1024, and 1025, with `frontend_message_max_bytes = 1024` | 1024 passes; 1025 gets `54000`; with a text of more than 1024 bytes the marker of the statement is not in the PostgreSQL log |
+| A startup packet of more than 512 bytes (`application_name` of 600 bytes) | `54000` |
+| A client that sends nothing, `startup_timeout_ms = 500` | closed with no byte after at least 450 ms and less than 2.5 s |
+| The waiter with `backend_acquire_timeout_ms = 3000` | `53300` after at least 3 s and at most 5.5 s from the start of its `psql`; one more waiter `53300` in less than 2 s |
+| Shutdown with `shutdown_timeout_ms = 1000` | an idle session `57P01`; a session in `pg_sleep(10)` `08007` after at least 0.9 s; exit 0 |
+
+The SQLSTATEs of the psql cases are read from the message of the `FATAL` line, since `psql` does not print a SQLSTATE for a connection error, and each message is one row of [SQLSTATEs that POOL generates](index.md#sqlstates-that-pool-generates). The raw client (the backend code of `pool-core`, logged in to POOL as a client) reads the field `C` itself.
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence (tests in `apps/pool/tests/integration.rs`) | Result |
+|---|---|---|
+| `0004 AC-14`, fixture half | `it_the_wrong_identity_closes_admission_before_any_login`: the node points at container 2 (same certificate, roles and passwords); `admission.changed` names `evidence.writer_identity`, the login gets `57P03`, and the log of container 2 shows no connection of `pz7_rw` | pass on the workstation |
+| `0004 AC-15`, completed | `it_startup_parameters_versions_and_authentication_on_the_fixture`: `sslmode=disable` gets `28000` (`TLS is required`), `replication=database` and `options` get `0A000`; `it_a_request_for_protocol_3_2_goes_on_with_3_0`; `it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet` (the relay answers `N` to the `SSLRequest` of the session connection: `08006`); `it_a_wrong_ca_or_name_toward_the_node_closes_admission` (see the reading below) | pass on the workstation |
+| `0004 AC-16`, completed | the same startup test: a wrong password and an unknown user both get `28P01` (`authentication failed`); the verifier logs in as nothing; the principal is no role of PostgreSQL | pass on the workstation |
+| `0004 AC-17`, completed | the same test: an unmapped database gets `28000` (`no identity entry for this user and database`) and the PostgreSQL log shows no connection; `current_user`, `current_database()` are `pz7_rw` and `pz7_appdb` | pass on the workstation |
+| `0004 AC-18`, completed | the same test: through POOL `pg_is_in_recovery()` is `f` and the system identifier is the one of container 1 | pass on the workstation |
+| `0004 AC-19`, with the limit | `it_the_session_limit_and_teardown_give_the_permit_back`: with `session_max_count = 1` a client that leaves inside an open transaction leaves no row, its backend is gone within 2 seconds, and the next login succeeds | pass on the workstation |
+| `0004 AC-20`, completed | `it_message_and_startup_limits_refuse_and_a_normal_login_follows`, `it_the_session_limit_and_teardown_give_the_permit_back`, `it_waiters_are_limited_and_time_out_after_the_acquire_deadline` (with `wait_limit` and `acquire_timeout` in the log); a normal login after each case | pass on the workstation |
+| `0004 AC-21`, completed | `it_the_memory_budget_holds_with_32_sessions_that_stopped_reading`, numbers above | pass on the workstation |
+| `0004 AC-22`, completed | `it_a_lost_commit_answer_gives_08007_and_is_never_replayed`: the relay passes the COMMIT, drops the answer of PostgreSQL and closes; the client gets one `FATAL` (`08007`), the COMMIT marker is in the PostgreSQL log once, no new connection of `pz7_rw` follows, the row is there afterwards, and the log has `backend_lost` | pass on the workstation |
+| `0004 AC-23`, real server half | `it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says`: a `NOTICE` from a `DO` block, `LISTEN` with `NOTIFY`, several statements in one query string, an error inside a transaction, all equal straight and through POOL; an empty query string gives `I` then `Z` from both; `COPY ... TO STDOUT` and `COPY ... FROM STDIN` work straight and end with `0A000` through POOL, and the backend is gone within 2 seconds | pass on the workstation |
+| `0004 AC-25`, with sessions | `it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007` | pass on the workstation |
+
+**Hermetic only**, as the rule "A golden message is not proof of a wire format" asks, because no real client of the fixture can be made to send them: a `GSSENCRequest`, a `CancelRequest`, a startup packet with another major version, a `_pq_.` parameter, another SCRAM header, a COPY of the tag `W`, and an authentication message of 1025 bytes. They are covered by the tests of `pool-protocol` and `pool-core`. An earlier version of this step sent them from the test with raw bytes and with `openssl s_client`; that was removed in `38c4ffa`.
+
+**Readings.**
+
+- A wrong CA or a wrong server name toward the node closes the cluster through the probe before any session tries: the probe and the sessions share the TLS setup of the node. On the fixture the client therefore gets `57P03`, not `08006`, and `probe.failed` names the class `tls`. `08006` toward the node is shown on the fixture with the relay that refuses TLS on the session connection only, and a wrong certificate gives `08006` in the hermetic test `a_wrong_node_certificate_gives_08006` of `pool-core`.
+- The notification line of `psql` names the process ID of the backend, which differs straight and through POOL. The test sets that number aside before it compares.
+- The fixture writes no new file for this step. The relay is a task of the test, in `apps/pool/tests/support/mod.rs`, and runs on a runtime of the test, since the source guard refuses threads of the standard library under `apps/`.
+
 ## Milestone 5: Fuzzing, documents and evidence
 
 Build plan steps 12 to 14. Each step keeps its own part of this section.

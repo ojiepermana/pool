@@ -8059,7 +8059,348 @@
       "file_type": "code",
       "norm_label": ".drop()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L587"
+      "source_location": "L618"
+    },
+    {
+      "id": "apps_pool_tests_support_mod",
+      "label": "mod.rs",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "mod.rs",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_error_fields",
+      "label": "error_fields()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "error_fields()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L51"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_login",
+      "label": "login()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "login()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L120"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_message",
+      "label": "Message",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "message",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L33"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_message_sqlstate",
+      "label": ".sqlstate()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".sqlstate()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L40"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_next_error",
+      "label": "next_error()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "next_error()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L81"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_pass",
+      "label": "pass()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "pass()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L257"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_query",
+      "label": "query()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "query()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L92"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_read_message",
+      "label": "read_message()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "read_message()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L66"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_read_to_close",
+      "label": "read_to_close()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "read_to_close()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L104"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_refuse_tls",
+      "label": "refuse_tls()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "refuse_tls()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L247"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay",
+      "label": "Relay",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "relay",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L160"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay_arm",
+      "label": ".arm()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".arm()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L219"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay_connections",
+      "label": ".connections()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".connections()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L214"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay_refuse_tls_from",
+      "label": ".refuse_tls_from()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".refuse_tls_from()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L231"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay_shared",
+      "label": ".shared()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".shared()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L203"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay_start",
+      "label": ".start()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".start()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L171"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_relay_was_cut",
+      "label": ".was_cut()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": ".was_cut()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L225"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_arc",
+      "label": "Arc",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "arc",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_atomicusize",
+      "label": "AtomicUsize",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "atomicusize",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_duration",
+      "label": "Duration",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "duration",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_notify",
+      "label": "Notify",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "notify",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_option",
+      "label": "Option",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "option",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_result",
+      "label": "Result",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "result",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_s",
+      "label": "S",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "s",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_string",
+      "label": "String",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "string",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_tcpstream",
+      "label": "TcpStream",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "tcpstream",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_rs_vec",
+      "label": "Vec",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "vec",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_support_mod_runtime",
+      "label": "runtime()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "runtime()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L23"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_send",
+      "label": "send()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "send()",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L144"
+    },
+    {
+      "id": "apps_pool_tests_support_mod_shared",
+      "label": "Shared",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "shared",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L237"
     },
     {
       "id": "atomicu32",
@@ -8080,6 +8421,17 @@
       "community_name": "crates/pool-protocol/src/lib.rs",
       "file_type": "code",
       "norm_label": "atomicu64",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "atomicu8",
+      "label": "AtomicU8",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "atomicu8",
       "source_file": "",
       "source_location": ""
     },
@@ -24519,7 +24871,7 @@
       "file_type": "code",
       "norm_label": "assert_log_is_clean()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L655"
+      "source_location": "L686"
     },
     {
       "id": "apps_pool_tests_integration_bootstrap",
@@ -24530,7 +24882,18 @@
       "file_type": "code",
       "norm_label": "bootstrap()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L214"
+      "source_location": "L216"
+    },
+    {
+      "id": "apps_pool_tests_integration_ca_pem",
+      "label": "ca_pem()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "ca_pem()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L960"
     },
     {
       "id": "apps_pool_tests_integration_case",
@@ -24541,7 +24904,7 @@
       "file_type": "code",
       "norm_label": "case",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L123"
+      "source_location": "L125"
     },
     {
       "id": "apps_pool_tests_integration_case_assert_quiet",
@@ -24552,7 +24915,7 @@
       "file_type": "code",
       "norm_label": ".assert_quiet()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L194"
+      "source_location": "L196"
     },
     {
       "id": "apps_pool_tests_integration_case_journal",
@@ -24563,7 +24926,7 @@
       "file_type": "code",
       "norm_label": ".journal()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L190"
+      "source_location": "L192"
     },
     {
       "id": "apps_pool_tests_integration_case_log_file",
@@ -24574,7 +24937,7 @@
       "file_type": "code",
       "norm_label": ".log_file()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L500"
+      "source_location": "L519"
     },
     {
       "id": "apps_pool_tests_integration_case_new",
@@ -24585,7 +24948,7 @@
       "file_type": "code",
       "norm_label": ".new()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L139"
+      "source_location": "L141"
     },
     {
       "id": "apps_pool_tests_integration_case_settings",
@@ -24596,7 +24959,7 @@
       "file_type": "code",
       "norm_label": ".settings()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L155"
+      "source_location": "L157"
     },
     {
       "id": "apps_pool_tests_integration_case_write",
@@ -24607,7 +24970,7 @@
       "file_type": "code",
       "norm_label": ".write()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L165"
+      "source_location": "L167"
     },
     {
       "id": "apps_pool_tests_integration_case_write_serving",
@@ -24618,7 +24981,18 @@
       "file_type": "code",
       "norm_label": ".write_serving()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L480"
+      "source_location": "L482"
+    },
+    {
+      "id": "apps_pool_tests_integration_case_write_serving_with",
+      "label": ".write_serving_with()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": ".write_serving_with()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L488"
     },
     {
       "id": "apps_pool_tests_integration_client",
@@ -24629,7 +25003,18 @@
       "file_type": "code",
       "norm_label": "client()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L595"
+      "source_location": "L626"
+    },
+    {
+      "id": "apps_pool_tests_integration_client_spawn",
+      "label": "client_spawn()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "client_spawn()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L913"
     },
     {
       "id": "apps_pool_tests_integration_closed_port",
@@ -24640,7 +25025,7 @@
       "file_type": "code",
       "norm_label": "closed_port()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L111"
+      "source_location": "L113"
     },
     {
       "id": "apps_pool_tests_integration_daemon",
@@ -24651,7 +25036,7 @@
       "file_type": "code",
       "norm_label": "daemon",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L525"
+      "source_location": "L544"
     },
     {
       "id": "apps_pool_tests_integration_daemon_log",
@@ -24662,7 +25047,7 @@
       "file_type": "code",
       "norm_label": ".log()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L545"
+      "source_location": "L564"
     },
     {
       "id": "apps_pool_tests_integration_daemon_start",
@@ -24673,7 +25058,7 @@
       "file_type": "code",
       "norm_label": ".start()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L531"
+      "source_location": "L550"
     },
     {
       "id": "apps_pool_tests_integration_daemon_stop",
@@ -24684,7 +25069,18 @@
       "file_type": "code",
       "norm_label": ".stop()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L569"
+      "source_location": "L600"
+    },
+    {
+      "id": "apps_pool_tests_integration_daemon_stop_after_signal",
+      "label": ".stop_after_signal()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": ".stop_after_signal()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L588"
     },
     {
       "id": "apps_pool_tests_integration_daemon_wait_for",
@@ -24695,7 +25091,7 @@
       "file_type": "code",
       "norm_label": ".wait_for()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L550"
+      "source_location": "L569"
     },
     {
       "id": "apps_pool_tests_integration_direct_conninfo",
@@ -24706,7 +25102,7 @@
       "file_type": "code",
       "norm_label": "direct_conninfo()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L629"
+      "source_location": "L660"
     },
     {
       "id": "apps_pool_tests_integration_eventually",
@@ -24717,7 +25113,29 @@
       "file_type": "code",
       "norm_label": "eventually()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L516"
+      "source_location": "L535"
+    },
+    {
+      "id": "apps_pool_tests_integration_fatal",
+      "label": "fatal()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "fatal()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L897"
+    },
+    {
+      "id": "apps_pool_tests_integration_finish",
+      "label": "finish()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "finish()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L941"
     },
     {
       "id": "apps_pool_tests_integration_fixture_dir",
@@ -24728,7 +25146,7 @@
       "file_type": "code",
       "norm_label": "fixture_dir()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L31"
+      "source_location": "L33"
     },
     {
       "id": "apps_pool_tests_integration_free_port",
@@ -24739,7 +25157,18 @@
       "file_type": "code",
       "norm_label": "free_port()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L472"
+      "source_location": "L474"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "label": "it_a_lost_commit_answer_gives_08007_and_is_never_replayed()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_a_lost_commit_answer_gives_08007_and_is_never_replayed()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1332"
     },
     {
       "id": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
@@ -24750,7 +25179,40 @@
       "file_type": "code",
       "norm_label": "it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L334"
+      "source_location": "L336"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "label": "it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1411"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_a_request_for_protocol_3_2_goes_on_with_3_0",
+      "label": "it_a_request_for_protocol_3_2_goes_on_with_3_0()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_a_request_for_protocol_3_2_goes_on_with_3_0()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1578"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "label": "it_a_wrong_ca_or_name_toward_the_node_closes_admission()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_a_wrong_ca_or_name_toward_the_node_closes_admission()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1440"
     },
     {
       "id": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
@@ -24761,7 +25223,7 @@
       "file_type": "code",
       "norm_label": "it_a_wrong_password_ca_or_server_name_is_a_failed_probe()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L393"
+      "source_location": "L395"
     },
     {
       "id": "apps_pool_tests_integration_it_bootstrap_json_prints_the_new_id",
@@ -24772,7 +25234,7 @@
       "file_type": "code",
       "norm_label": "it_bootstrap_json_prints_the_new_id()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L315"
+      "source_location": "L317"
     },
     {
       "id": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
@@ -24783,7 +25245,29 @@
       "file_type": "code",
       "norm_label": "it_bootstrap_writes_the_journal_and_show_authority_reads_it_back()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L235"
+      "source_location": "L237"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "label": "it_message_and_startup_limits_refuse_and_a_normal_login_follows()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_message_and_startup_limits_refuse_and_a_normal_login_follows()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1048"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "label": "it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1596"
     },
     {
       "id": "apps_pool_tests_integration_it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds",
@@ -24794,7 +25278,40 @@
       "file_type": "code",
       "norm_label": "it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L785"
+      "source_location": "L816"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "label": "it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1522"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "label": "it_startup_parameters_versions_and_authentication_on_the_fixture()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_startup_parameters_versions_and_authentication_on_the_fixture()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L966"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "label": "it_the_memory_budget_holds_with_32_sessions_that_stopped_reading()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_the_memory_budget_holds_with_32_sessions_that_stopped_reading()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1254"
     },
     {
       "id": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
@@ -24805,7 +25322,7 @@
       "file_type": "code",
       "norm_label": "it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L359"
+      "source_location": "L361"
     },
     {
       "id": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
@@ -24816,7 +25333,18 @@
       "file_type": "code",
       "norm_label": "it_the_second_server_is_another_identity()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L427"
+      "source_location": "L429"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "label": "it_the_session_limit_and_teardown_give_the_permit_back()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_the_session_limit_and_teardown_give_the_permit_back()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1147"
     },
     {
       "id": "apps_pool_tests_integration_it_the_walking_fixture_gives_the_same_answers_through_pool",
@@ -24827,7 +25355,29 @@
       "file_type": "code",
       "norm_label": "it_the_walking_fixture_gives_the_same_answers_through_pool()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L692"
+      "source_location": "L723"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "label": "it_the_wrong_identity_closes_admission_before_any_login()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_the_wrong_identity_closes_admission_before_any_login()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1484"
+    },
+    {
+      "id": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "label": "it_waiters_are_limited_and_time_out_after_the_acquire_deadline()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_waiters_are_limited_and_time_out_after_the_acquire_deadline()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1192"
     },
     {
       "id": "apps_pool_tests_integration_logs",
@@ -24838,7 +25388,7 @@
       "file_type": "code",
       "norm_label": "logs()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L98"
+      "source_location": "L100"
     },
     {
       "id": "apps_pool_tests_integration_nodeat",
@@ -24849,7 +25399,7 @@
       "file_type": "code",
       "norm_label": "nodeat",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L117"
+      "source_location": "L119"
     },
     {
       "id": "apps_pool_tests_integration_password",
@@ -24860,7 +25410,7 @@
       "file_type": "code",
       "norm_label": "password()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L464"
+      "source_location": "L466"
     },
     {
       "id": "apps_pool_tests_integration_pause",
@@ -24871,7 +25421,18 @@
       "file_type": "code",
       "norm_label": "pause()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L507"
+      "source_location": "L526"
+    },
+    {
+      "id": "apps_pool_tests_integration_pg_log_since",
+      "label": "pg_log_since()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "pg_log_since()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L907"
     },
     {
       "id": "apps_pool_tests_integration_pool",
@@ -24882,7 +25443,7 @@
       "file_type": "code",
       "norm_label": "pool()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L41"
+      "source_location": "L43"
     },
     {
       "id": "apps_pool_tests_integration_pool_conninfo",
@@ -24893,7 +25454,7 @@
       "file_type": "code",
       "norm_label": "pool_conninfo()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L635"
+      "source_location": "L666"
     },
     {
       "id": "apps_pool_tests_integration_primary_node",
@@ -24904,7 +25465,7 @@
       "file_type": "code",
       "norm_label": "primary_node()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L206"
+      "source_location": "L208"
     },
     {
       "id": "apps_pool_tests_integration_psql",
@@ -24915,7 +25476,7 @@
       "file_type": "code",
       "norm_label": "psql()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L62"
+      "source_location": "L64"
     },
     {
       "id": "apps_pool_tests_integration_ready_case",
@@ -24926,7 +25487,7 @@
       "file_type": "code",
       "norm_label": "ready_case()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L643"
+      "source_location": "L674"
     },
     {
       "id": "apps_pool_tests_integration_rs_child",
@@ -24995,6 +25556,28 @@
       "source_location": ""
     },
     {
+      "id": "apps_pool_tests_integration_rs_vec",
+      "label": "Vec",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "vec",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "apps_pool_tests_integration_rss_kib",
+      "label": "rss_kib()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "rss_kib()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1241"
+    },
+    {
       "id": "apps_pool_tests_integration_run",
       "label": "Run",
       "_origin": "ast",
@@ -25003,7 +25586,40 @@
       "file_type": "code",
       "norm_label": "run",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L35"
+      "source_location": "L37"
+    },
+    {
+      "id": "apps_pool_tests_integration_select_one_works",
+      "label": "select_one_works()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "select_one_works()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L887"
+    },
+    {
+      "id": "apps_pool_tests_integration_serving_case",
+      "label": "serving_case()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "serving_case()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864"
+    },
+    {
+      "id": "apps_pool_tests_integration_sessions_of_rw",
+      "label": "sessions_of_rw()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "sessions_of_rw()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L951"
     },
     {
       "id": "apps_pool_tests_integration_settings",
@@ -25014,7 +25630,7 @@
       "file_type": "code",
       "norm_label": "settings",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L130"
+      "source_location": "L132"
     },
     {
       "id": "apps_pool_tests_integration_system_identifier",
@@ -25025,7 +25641,7 @@
       "file_type": "code",
       "norm_label": "system_identifier()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L91"
+      "source_location": "L93"
     },
     {
       "id": "apps_pool_tests_integration_var",
@@ -25036,7 +25652,18 @@
       "file_type": "code",
       "norm_label": "var()",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L27"
+      "source_location": "L29"
+    },
+    {
+      "id": "apps_pool_tests_integration_write_stdin",
+      "label": "write_stdin()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "write_stdin()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L934"
     },
     {
       "id": "clusterid",
@@ -76237,7 +76864,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L666",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
@@ -76249,7 +76876,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L668",
+      "source_location": "L699",
       "weight": 1.0
     },
     {
@@ -76261,7 +76888,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L215",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -76273,7 +76900,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L229",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_ca_pem",
+      "target": "apps_pool_tests_integration_fixture_dir",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L961",
       "weight": 1.0
     },
     {
@@ -76285,7 +76924,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L196",
+      "source_location": "L198",
       "weight": 1.0
     },
     {
@@ -76297,7 +76936,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L158",
+      "source_location": "L160",
       "weight": 1.0
     },
     {
@@ -76309,7 +76948,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L158",
+      "source_location": "L160",
       "weight": 1.0
     },
     {
@@ -76321,7 +76960,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L159",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -76333,43 +76972,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L168",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration_case_write_serving",
-      "target": "apps_pool_tests_integration_fixture_dir",
+      "target": "apps_pool_tests_integration_case_write_serving_with",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L481",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_case_write_serving",
-      "target": "apps_pool_tests_integration_case_settings",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L482",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_case_write_serving",
-      "target": "apps_pool_tests_integration_case_write",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L484",
+      "source_location": "L483",
       "weight": 1.0
     },
     {
@@ -76381,7 +76996,43 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L484",
+      "source_location": "L483",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case_write_serving_with",
+      "target": "apps_pool_tests_integration_fixture_dir",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L496",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case_write_serving_with",
+      "target": "apps_pool_tests_integration_case_settings",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L497",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case_write_serving_with",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -76393,7 +77044,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L597",
+      "source_location": "L628",
       "weight": 1.0
     },
     {
@@ -76405,7 +77056,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L603",
+      "source_location": "L634",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_client_spawn",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L914",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_client_spawn",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L920",
       "weight": 1.0
     },
     {
@@ -76417,7 +77092,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L532",
+      "source_location": "L551",
       "weight": 1.0
     },
     {
@@ -76429,7 +77104,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L535",
+      "source_location": "L554",
       "weight": 1.0
     },
     {
@@ -76441,7 +77116,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L570",
+      "source_location": "L601",
       "weight": 1.0
     },
     {
@@ -76453,7 +77128,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L553",
+      "source_location": "L572",
       "weight": 1.0
     },
     {
@@ -76465,7 +77140,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L564",
+      "source_location": "L583",
       "weight": 1.0
     },
     {
@@ -76477,7 +77152,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L520",
+      "source_location": "L539",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_finish",
+      "target": "apps_pool_tests_integration_daemon_drop",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L942",
       "weight": 1.0
     },
     {
@@ -76489,36 +77176,192 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L32",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_daemon_start",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1336",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1336",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1337",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1348",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1349",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_direct_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1350",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_client_spawn",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1355",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1355",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_write_stdin",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1356",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_eventually",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1360",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_sessions_of_rw",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1361",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1369",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_finish",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1372",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_pg_log_since",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1379",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "target": "apps_pool_tests_integration_daemon_drop",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1406",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
       "target": "apps_pool_tests_integration_case_new",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L336",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
-      "target": "apps_pool_tests_integration_case_write",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L337",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
-      "target": "apps_pool_tests_integration_case_settings",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76530,7 +77373,19 @@
     },
     {
       "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
-      "target": "apps_pool_tests_integration_primary_node",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L339",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
+      "target": "apps_pool_tests_integration_case_settings",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76542,6 +77397,18 @@
     },
     {
       "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file",
       "target": "apps_pool_tests_integration_closed_port",
       "relation": "calls",
       "_origin": "ast",
@@ -76549,7 +77416,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L343",
+      "source_location": "L345",
       "weight": 1.0
     },
     {
@@ -76561,7 +77428,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L347",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -76573,24 +77440,288 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L354",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
-      "source": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
-      "target": "apps_pool_tests_integration_case_new",
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_daemon_start",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L395",
+      "source_location": "L1415",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1415",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1416",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1427",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1428",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1429",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "target": "apps_pool_tests_integration_daemon_drop",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1435",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_request_for_protocol_3_2_goes_on_with_3_0",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1581",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_request_for_protocol_3_2_goes_on_with_3_0",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1581",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_request_for_protocol_3_2_goes_on_with_3_0",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1582",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_request_for_protocol_3_2_goes_on_with_3_0",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1587",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1448",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1448",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_case_journal",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1449",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_case_write_serving_with",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1454",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1460",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_daemon_start",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1462",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_daemon_wait_for",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1463",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1464",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1465",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1466",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1467",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1468",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
-      "target": "apps_pool_tests_integration_case_write",
+      "target": "apps_pool_tests_integration_case_new",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76602,7 +77733,7 @@
     },
     {
       "source": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
-      "target": "apps_pool_tests_integration_case_settings",
+      "target": "apps_pool_tests_integration_case_write",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76614,7 +77745,7 @@
     },
     {
       "source": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
-      "target": "apps_pool_tests_integration_primary_node",
+      "target": "apps_pool_tests_integration_case_settings",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76626,6 +77757,18 @@
     },
     {
       "source": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L403",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_wrong_password_ca_or_server_name_is_a_failed_probe",
       "target": "apps_pool_tests_integration_pool",
       "relation": "calls",
       "_origin": "ast",
@@ -76633,7 +77776,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L414",
+      "source_location": "L416",
       "weight": 1.0
     },
     {
@@ -76645,7 +77788,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L421",
+      "source_location": "L423",
       "weight": 1.0
     },
     {
@@ -76657,7 +77800,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L317",
+      "source_location": "L319",
       "weight": 1.0
     },
     {
@@ -76669,7 +77812,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L318",
+      "source_location": "L320",
       "weight": 1.0
     },
     {
@@ -76681,7 +77824,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L318",
+      "source_location": "L320",
       "weight": 1.0
     },
     {
@@ -76693,7 +77836,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L318",
+      "source_location": "L320",
       "weight": 1.0
     },
     {
@@ -76705,7 +77848,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L319",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
@@ -76717,7 +77860,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L237",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -76729,36 +77872,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L238",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
       "target": "apps_pool_tests_integration_case_write",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L239",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
-      "target": "apps_pool_tests_integration_primary_node",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L239",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
-      "target": "apps_pool_tests_integration_bootstrap",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76770,6 +77889,30 @@
     },
     {
       "source": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L241",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
+      "target": "apps_pool_tests_integration_bootstrap",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_bootstrap_writes_the_journal_and_show_authority_reads_it_back",
       "target": "apps_pool_tests_integration_case_journal",
       "relation": "calls",
       "_origin": "ast",
@@ -76777,7 +77920,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L244",
+      "source_location": "L246",
       "weight": 1.0
     },
     {
@@ -76789,7 +77932,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L259",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -76801,7 +77944,259 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L265",
+      "source_location": "L267",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1052",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1052",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1053",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1054",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1057",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1058",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1059",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_select_one_works",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1066",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "target": "apps_pool_tests_integration_ca_pem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1071",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1601",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1601",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1602",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1632",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_direct_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1632",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1633",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1642",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_ca_pem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1644",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1646",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_eventually",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1706",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_psql",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1707",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "target": "apps_pool_tests_integration_select_one_works",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1713",
       "weight": 1.0
     },
     {
@@ -76813,7 +78208,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L787",
+      "source_location": "L818",
       "weight": 1.0
     },
     {
@@ -76825,7 +78220,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L788",
+      "source_location": "L819",
       "weight": 1.0
     },
     {
@@ -76837,7 +78232,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L788",
+      "source_location": "L819",
       "weight": 1.0
     },
     {
@@ -76849,7 +78244,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L789",
+      "source_location": "L820",
       "weight": 1.0
     },
     {
@@ -76861,7 +78256,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L790",
+      "source_location": "L821",
       "weight": 1.0
     },
     {
@@ -76873,7 +78268,427 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L791",
+      "source_location": "L822",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1526",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1526",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1527",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1528",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_ca_pem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1530",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_eventually",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1550",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_sessions_of_rw",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1550",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1552",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_integration_daemon_drop",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1573",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_pg_log_since",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1022",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_fixture_dir",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1033",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_direct_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1035",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_select_one_works",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1040",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_assert_log_is_clean",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1043",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L968",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L968",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L969",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L970",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L971",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L974",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L975",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1257",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1257",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1258",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1259",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_ca_pem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1261",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1263",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_eventually",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1286",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_sessions_of_rw",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1287",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_rss_kib",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1291",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_pause",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1292",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_daemon_drop",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1295",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_direct_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1321",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1322",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1326",
       "weight": 1.0
     },
     {
@@ -76885,7 +78700,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L361",
+      "source_location": "L363",
       "weight": 1.0
     },
     {
@@ -76897,60 +78712,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L362",
+      "source_location": "L364",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
       "target": "apps_pool_tests_integration_case_new",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L377",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
-      "target": "apps_pool_tests_integration_case_settings",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L378",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
-      "target": "apps_pool_tests_integration_case_write",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L378",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
-      "target": "apps_pool_tests_integration_primary_node",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L378",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
-      "target": "apps_pool_tests_integration_logs",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76962,7 +78729,7 @@
     },
     {
       "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
-      "target": "apps_pool_tests_integration_bootstrap",
+      "target": "apps_pool_tests_integration_case_settings",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -76970,6 +78737,54 @@
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
       "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L381",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question",
+      "target": "apps_pool_tests_integration_bootstrap",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L382",
       "weight": 1.0
     },
     {
@@ -76981,7 +78796,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L430",
+      "source_location": "L432",
       "weight": 1.0
     },
     {
@@ -76993,36 +78808,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L430",
+      "source_location": "L432",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
       "target": "apps_pool_tests_integration_case_new",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L433",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
-      "target": "apps_pool_tests_integration_case_write",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L434",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
-      "target": "apps_pool_tests_integration_case_settings",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -77034,6 +78825,30 @@
     },
     {
       "source": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L436",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
+      "target": "apps_pool_tests_integration_case_settings",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L437",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_second_server_is_another_identity",
       "target": "apps_pool_tests_integration_pool",
       "relation": "calls",
       "_origin": "ast",
@@ -77041,7 +78856,151 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L441",
+      "source_location": "L443",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1150",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1150",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1151",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_client_spawn",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1152",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1152",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_write_stdin",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1153",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_eventually",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1154",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_sessions_of_rw",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1155",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1158",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_finish",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1165",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_select_one_works",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1167",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "target": "apps_pool_tests_integration_direct_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1180",
       "weight": 1.0
     },
     {
@@ -77053,7 +79012,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L694",
+      "source_location": "L725",
       "weight": 1.0
     },
     {
@@ -77065,7 +79024,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L695",
+      "source_location": "L726",
       "weight": 1.0
     },
     {
@@ -77077,7 +79036,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L696",
+      "source_location": "L727",
       "weight": 1.0
     },
     {
@@ -77089,7 +79048,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L716",
+      "source_location": "L747",
       "weight": 1.0
     },
     {
@@ -77101,7 +79060,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L716",
+      "source_location": "L747",
       "weight": 1.0
     },
     {
@@ -77113,7 +79072,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L716",
+      "source_location": "L747",
       "weight": 1.0
     },
     {
@@ -77125,7 +79084,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L717",
+      "source_location": "L748",
       "weight": 1.0
     },
     {
@@ -77137,7 +79096,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L717",
+      "source_location": "L748",
       "weight": 1.0
     },
     {
@@ -77149,7 +79108,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L719",
+      "source_location": "L750",
       "weight": 1.0
     },
     {
@@ -77161,7 +79120,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L745",
+      "source_location": "L776",
       "weight": 1.0
     },
     {
@@ -77173,7 +79132,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L746",
+      "source_location": "L777",
       "weight": 1.0
     },
     {
@@ -77185,7 +79144,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L773",
+      "source_location": "L804",
       "weight": 1.0
     },
     {
@@ -77197,7 +79156,259 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L777",
+      "source_location": "L808",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1488",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1492",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_daemon_wait_for",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1498",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1507",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1508",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1509",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1510",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "target": "apps_pool_tests_integration_pg_log_since",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1515",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1195",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1195",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1196",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_client_spawn",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1197",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1197",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_write_stdin",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1198",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_eventually",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1199",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_sessions_of_rw",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1200",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_pause",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1205",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1211",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_finish",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1215",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_select_one_works",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1233",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "target": "apps_pool_tests_integration_daemon_log",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1234",
       "weight": 1.0
     },
     {
@@ -77209,7 +79420,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L99",
+      "source_location": "L101",
       "weight": 1.0
     },
     {
@@ -77221,7 +79432,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L465",
+      "source_location": "L467",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_pg_log_since",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L908",
       "weight": 1.0
     },
     {
@@ -77233,7 +79456,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L42",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -77245,7 +79468,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L209",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -77257,7 +79480,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L63",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -77269,7 +79492,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L644",
+      "source_location": "L675",
       "weight": 1.0
     },
     {
@@ -77281,7 +79504,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L645",
+      "source_location": "L676",
       "weight": 1.0
     },
     {
@@ -77293,7 +79516,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L645",
+      "source_location": "L676",
       "weight": 1.0
     },
     {
@@ -77305,7 +79528,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L646",
+      "source_location": "L677",
       "weight": 1.0
     },
     {
@@ -77317,7 +79540,175 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L647",
+      "source_location": "L678",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_rss_kib",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1242",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_select_one_works",
+      "target": "apps_pool_tests_integration_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L888",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_select_one_works",
+      "target": "apps_pool_tests_integration_pool_conninfo",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L889",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_select_one_works",
+      "target": "apps_pool_tests_integration_password",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L890",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L871",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_free_port",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L872",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L872",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_case_write_serving",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L873",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_bootstrap",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L874",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_case_write_serving_with",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L875",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_daemon_start",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L876",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_daemon_wait_for",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L877",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_sessions_of_rw",
+      "target": "apps_pool_tests_integration_psql",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L952",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_sessions_of_rw",
+      "target": "apps_pool_tests_integration_var",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L953",
       "weight": 1.0
     },
     {
@@ -77329,7 +79720,79 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L92",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_message_sqlstate",
+      "target": "apps_pool_tests_support_mod_error_fields",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_next_error",
+      "target": "apps_pool_tests_support_mod_read_message",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_next_error",
+      "target": "apps_pool_tests_support_mod_message_sqlstate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay_start",
+      "target": "apps_pool_tests_support_mod_relay_shared",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay_start",
+      "target": "apps_pool_tests_support_mod_refuse_tls",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L191",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay_start",
+      "target": "apps_pool_tests_support_mod_pass",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L195",
       "weight": 1.0
     },
     {
@@ -100501,7 +102964,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L126",
+      "source_location": "L128",
       "weight": 1.0
     },
     {
@@ -100513,7 +102976,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L526",
+      "source_location": "L545",
       "weight": 1.0
     },
     {
@@ -100525,7 +102988,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L527",
+      "source_location": "L546",
       "weight": 1.0
     },
     {
@@ -100537,7 +103000,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L38",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -100549,7 +103012,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L131",
+      "source_location": "L133",
       "weight": 1.0
     },
     {
@@ -100561,7 +103024,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L132",
+      "source_location": "L134",
       "weight": 1.0
     },
     {
@@ -100573,7 +103036,43 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L134",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_message",
+      "target": "apps_pool_tests_support_mod_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "field",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_rs_arc",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "field",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_shared",
+      "target": "apps_pool_tests_support_mod_rs_arc",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "field",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L242",
       "weight": 1.0
     },
     {
@@ -104642,6 +107141,210 @@
       "context": "generic_arg",
       "source_file": "apps/pool/tests/commands.rs",
       "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case_write_serving_with",
+      "target": "apps_pool_tests_integration_rs_pathbuf",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L488",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_fatal",
+      "target": "apps_pool_tests_integration_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L897",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_rs_pathbuf",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_error_fields",
+      "target": "apps_pool_tests_support_mod_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_login",
+      "target": "apps_pool_tests_support_mod_rs_tcpstream",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_login",
+      "target": "crates_pool_core_src_backend_backendconnection",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_login",
+      "target": "crates_pool_core_src_backend_backenderror",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_message_sqlstate",
+      "target": "apps_pool_tests_support_mod_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_next_error",
+      "target": "apps_pool_tests_support_mod_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_message",
+      "target": "apps_pool_tests_support_mod_message",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_to_close",
+      "target": "apps_pool_tests_support_mod_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "atomicu8",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_rs_notify",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L165",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_rs_atomicusize",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_shared",
+      "target": "atomicu8",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_shared",
+      "target": "apps_pool_tests_support_mod_rs_notify",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L240",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_shared",
+      "target": "apps_pool_tests_support_mod_rs_atomicusize",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L242",
       "weight": 1.0
     },
     {
@@ -112085,6 +114788,66 @@
       "weight": 1.0
     },
     {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_rs_arc",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_rs_duration",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "crates_pool_core_src_backend",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "crates_pool_core_src_secret",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_rs_notify",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
       "source": "crates_pool_config_src_lib",
       "target": "crates_pool_config_src_generation",
       "relation": "imports_from",
@@ -115465,7 +118228,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L655",
+      "source_location": "L686",
       "weight": 1.0
     },
     {
@@ -115477,7 +118240,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L214",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -115489,7 +118252,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L194",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -115501,7 +118264,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L165",
+      "source_location": "L167",
       "weight": 1.0
     },
     {
@@ -115513,7 +118276,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L165",
+      "source_location": "L167",
       "weight": 1.0
     },
     {
@@ -115525,7 +118288,31 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L480",
+      "source_location": "L482",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case_write_serving_with",
+      "target": "apps_pool_tests_integration_nodeat",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L488",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case_write_serving_with",
+      "target": "apps_pool_tests_integration_rs_option",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L488",
       "weight": 1.0
     },
     {
@@ -115537,7 +118324,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L531",
+      "source_location": "L550",
       "weight": 1.0
     },
     {
@@ -115549,7 +118336,19 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L516",
+      "source_location": "L535",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_finish",
+      "target": "apps_pool_tests_integration_rs_child",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L941",
       "weight": 1.0
     },
     {
@@ -115561,7 +118360,151 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L41",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_nodeat",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_rs_option",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_write_stdin",
+      "target": "apps_pool_tests_integration_rs_child",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L934",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_next_error",
+      "target": "apps_pool_tests_support_mod_rs_s",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_pass",
+      "target": "apps_pool_tests_support_mod_rs_tcpstream",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L257",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_pass",
+      "target": "apps_pool_tests_support_mod_shared",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L257",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_message",
+      "target": "apps_pool_tests_support_mod_rs_s",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_to_close",
+      "target": "apps_pool_tests_support_mod_rs_duration",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_to_close",
+      "target": "apps_pool_tests_support_mod_rs_tcpstream",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_refuse_tls",
+      "target": "apps_pool_tests_support_mod_rs_tcpstream",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay_start",
+      "target": "apps_pool_tests_support_mod_runtime",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_send",
+      "target": "apps_pool_tests_support_mod_rs_s",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L144",
       "weight": 1.0
     },
     {
@@ -122269,7 +125212,19 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L214",
+      "source_location": "L216",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_ca_pem",
+      "target": "apps_pool_tests_integration_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L960",
       "weight": 1.0
     },
     {
@@ -122281,7 +125236,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L190",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -122293,7 +125248,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L500",
+      "source_location": "L519",
       "weight": 1.0
     },
     {
@@ -122305,7 +125260,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L155",
+      "source_location": "L157",
       "weight": 1.0
     },
     {
@@ -122317,7 +125272,19 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L595",
+      "source_location": "L626",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_client_spawn",
+      "target": "apps_pool_tests_integration_rs_child",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L913",
       "weight": 1.0
     },
     {
@@ -122329,7 +125296,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L545",
+      "source_location": "L564",
       "weight": 1.0
     },
     {
@@ -122341,7 +125308,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L550",
+      "source_location": "L569",
       "weight": 1.0
     },
     {
@@ -122353,7 +125320,31 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L629",
+      "source_location": "L660",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_fatal",
+      "target": "apps_pool_tests_integration_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L897",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_finish",
+      "target": "apps_pool_tests_integration_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L941",
       "weight": 1.0
     },
     {
@@ -122365,7 +125356,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L31",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -122377,7 +125368,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L98",
+      "source_location": "L100",
       "weight": 1.0
     },
     {
@@ -122389,7 +125380,19 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L464",
+      "source_location": "L466",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_pg_log_since",
+      "target": "apps_pool_tests_integration_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L907",
       "weight": 1.0
     },
     {
@@ -122401,7 +125404,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L41",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -122413,7 +125416,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L635",
+      "source_location": "L666",
       "weight": 1.0
     },
     {
@@ -122425,7 +125428,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L206",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -122437,7 +125440,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L62",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -122449,7 +125452,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L643",
+      "source_location": "L674",
       "weight": 1.0
     },
     {
@@ -122461,7 +125464,43 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L643",
+      "source_location": "L674",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_case",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_serving_case",
+      "target": "apps_pool_tests_integration_daemon",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_sessions_of_rw",
+      "target": "apps_pool_tests_integration_rs_string",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L951",
       "weight": 1.0
     },
     {
@@ -122473,7 +125512,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L91",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -122485,7 +125524,115 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L27",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_error_fields",
+      "target": "apps_pool_tests_support_mod_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_login",
+      "target": "apps_pool_tests_support_mod_rs_result",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_message_sqlstate",
+      "target": "apps_pool_tests_support_mod_rs_option",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_next_error",
+      "target": "apps_pool_tests_support_mod_rs_option",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_query",
+      "target": "apps_pool_tests_support_mod_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_message",
+      "target": "apps_pool_tests_support_mod_rs_result",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_read_to_close",
+      "target": "apps_pool_tests_support_mod_rs_option",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay_shared",
+      "target": "apps_pool_tests_support_mod_shared",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_send",
+      "target": "apps_pool_tests_support_mod_rs_result",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L144",
       "weight": 1.0
     },
     {
@@ -132807,13 +135954,46 @@
     },
     {
       "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_logs",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_message_and_startup_limits_refuse_and_a_normal_login_follows",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1048",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
       "target": "apps_pool_tests_integration_closed_port",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L111",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_the_session_limit_and_teardown_give_the_permit_back",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1147",
       "weight": 1.0
     },
     {
@@ -132824,7 +136004,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L117",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_waiters_are_limited_and_time_out_after_the_acquire_deadline",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1192",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_rss_kib",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1241",
       "weight": 1.0
     },
     {
@@ -132835,7 +136037,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L123",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_the_memory_budget_holds_with_32_sessions_that_stopped_reading",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1254",
       "weight": 1.0
     },
     {
@@ -132846,7 +136059,84 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L130",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1332",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1411",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_a_wrong_ca_or_name_toward_the_node_closes_admission",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1440",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_the_wrong_identity_closes_admission_before_any_login",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1484",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1522",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_a_request_for_protocol_3_2_goes_on_with_3_0",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1578",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1596",
       "weight": 1.0
     },
     {
@@ -132857,7 +136147,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L206",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -132868,7 +136158,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L214",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -132879,7 +136169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L235",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -132890,18 +136180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L27",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration",
-      "target": "apps_pool_tests_integration_fixture_dir",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L31",
+      "source_location": "L29",
       "weight": 1.0
     },
     {
@@ -132912,7 +136191,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L315",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_fixture_dir",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -132923,18 +136213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L334",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration",
-      "target": "apps_pool_tests_integration_run",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L35",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -132945,7 +136224,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L359",
+      "source_location": "L361",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_run",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -132956,18 +136246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L393",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_tests_integration",
-      "target": "apps_pool_tests_integration_pool",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L41",
+      "source_location": "L395",
       "weight": 1.0
     },
     {
@@ -132978,7 +136257,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L427",
+      "source_location": "L429",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_pool",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -132989,7 +136279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L464",
+      "source_location": "L466",
       "weight": 1.0
     },
     {
@@ -133000,7 +136290,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L472",
+      "source_location": "L474",
       "weight": 1.0
     },
     {
@@ -133011,7 +136301,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L507",
+      "source_location": "L526",
       "weight": 1.0
     },
     {
@@ -133022,7 +136312,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L516",
+      "source_location": "L535",
       "weight": 1.0
     },
     {
@@ -133033,7 +136323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L525",
+      "source_location": "L544",
       "weight": 1.0
     },
     {
@@ -133044,7 +136334,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L595",
+      "source_location": "L626",
       "weight": 1.0
     },
     {
@@ -133055,7 +136345,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L62",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -133066,7 +136356,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L629",
+      "source_location": "L660",
       "weight": 1.0
     },
     {
@@ -133077,7 +136367,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L635",
+      "source_location": "L666",
       "weight": 1.0
     },
     {
@@ -133088,7 +136378,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L643",
+      "source_location": "L674",
       "weight": 1.0
     },
     {
@@ -133099,7 +136389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L655",
+      "source_location": "L686",
       "weight": 1.0
     },
     {
@@ -133110,7 +136400,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L692",
+      "source_location": "L723",
       "weight": 1.0
     },
     {
@@ -133121,7 +136411,62 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L785",
+      "source_location": "L816",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_serving_case",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L864",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_select_one_works",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L887",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_fatal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L897",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_pg_log_since",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L907",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_client_spawn",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L913",
       "weight": 1.0
     },
     {
@@ -133132,18 +136477,205 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L91",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
       "source": "apps_pool_tests_integration",
-      "target": "apps_pool_tests_integration_logs",
+      "target": "apps_pool_tests_integration_write_stdin",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L98",
+      "source_location": "L934",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_finish",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L941",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_sessions_of_rw",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L951",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_ca_pem",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L960",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_startup_parameters_versions_and_authentication_on_the_fixture",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L966",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_read_to_close",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_login",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_send",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_relay",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_runtime",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_shared",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L237",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_refuse_tls",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_pass",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L257",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_message",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_error_fields",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_read_message",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_next_error",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod",
+      "target": "apps_pool_tests_support_mod_query",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -146508,7 +150040,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L586",
+      "source_location": "L617",
       "weight": 1.0
     },
     {
@@ -148092,7 +151624,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L139",
+      "source_location": "L141",
       "weight": 1.0
     },
     {
@@ -148103,7 +151635,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L155",
+      "source_location": "L157",
       "weight": 1.0
     },
     {
@@ -148114,7 +151646,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L165",
+      "source_location": "L167",
       "weight": 1.0
     },
     {
@@ -148125,7 +151657,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L190",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -148136,7 +151668,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L194",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -148147,7 +151679,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L480",
+      "source_location": "L482",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_case",
+      "target": "apps_pool_tests_integration_case_write_serving_with",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L488",
       "weight": 1.0
     },
     {
@@ -148158,7 +151701,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L500",
+      "source_location": "L519",
       "weight": 1.0
     },
     {
@@ -148169,7 +151712,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L531",
+      "source_location": "L550",
       "weight": 1.0
     },
     {
@@ -148180,7 +151723,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L545",
+      "source_location": "L564",
       "weight": 1.0
     },
     {
@@ -148191,7 +151734,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L550",
+      "source_location": "L569",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_daemon",
+      "target": "apps_pool_tests_integration_daemon_stop_after_signal",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -148202,7 +151756,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L569",
+      "source_location": "L600",
       "weight": 1.0
     },
     {
@@ -148213,7 +151767,84 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L587",
+      "source_location": "L618",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_message",
+      "target": "apps_pool_tests_support_mod_message_sqlstate",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_relay_start",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_relay_shared",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_relay_connections",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_relay_arm",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L219",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_relay_was_cut",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L225",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_support_mod_relay",
+      "target": "apps_pool_tests_support_mod_relay_refuse_tls_from",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/support/mod.rs",
+      "source_location": "L231",
       "weight": 1.0
     },
     {
@@ -155395,7 +159026,19 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
-      "source_location": "L518",
+      "source_location": "L537",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007",
+      "target": "apps_pool_tests_support_mod_login",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1543",
       "weight": 1.0
     },
     {
@@ -261076,5 +264719,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "7231f0f8483716a69d649b9dac17e4a83b57a327"
+  "built_at_commit": "3b589979e80f3a05eff544ce0666fb54a9ae957c"
 }
