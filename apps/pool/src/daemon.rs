@@ -422,4 +422,31 @@ mod tests {
         codes.dedup();
         assert_eq!(codes.len(), cases.len());
     }
+
+    // Added by the tests of scope 004, round eight (S14 of the checker run of step 15).
+    #[tokio::test]
+    async fn ac30_the_listener_socket_has_keepalive_on_and_hands_it_to_the_sockets_it_accepts() {
+        // covers: 0004 AC-30, the first half of its first sentence. The
+        // option is read with `TcpSocket::keepalive` after a safe conversion
+        // through `OwnedFd`; no `unsafe`.
+        use std::os::fd::OwnedFd;
+        let listener = bind("127.0.0.1", 0).await.expect("bind");
+        let address = listener.local_addr().expect("address");
+        let client = tokio::net::TcpStream::connect(address)
+            .await
+            .expect("connect");
+        let (accepted, _) = listener.accept().await.expect("accept");
+        let accepted = TcpSocket::from_std_stream(accepted.into_std().expect("std"));
+        let listener: OwnedFd = listener.into_std().expect("std").into();
+        let listener = TcpSocket::from_std_stream(std::net::TcpStream::from(listener));
+        assert!(listener.keepalive().expect("keepalive"), "the listener");
+        if cfg!(target_os = "linux") {
+            // Linux hands the option of the listener to every accepted socket.
+            assert!(
+                accepted.keepalive().expect("keepalive"),
+                "an accepted socket"
+            );
+        }
+        drop(client);
+    }
 }
