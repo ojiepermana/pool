@@ -1780,6 +1780,38 @@ fn lines_with(daemon: &Daemon, parts: &[&str]) -> usize {
         .count()
 }
 
+/// Waits, asking every 50 ms for at most `seconds`, until more lines than
+/// `before` hold every part: a line written after the moment `before` was counted.
+fn wait_for_more(daemon: &Daemon, parts: &[&str], before: usize, seconds: u64) {
+    eventually(seconds, &format!("a new line with {parts:?}"), || {
+        lines_with(daemon, parts) > before
+    });
+}
+
+impl Daemon {
+    /// Sends SIGTERM and waits at most `seconds` for the exit status; a daemon
+    /// that is still running then is killed and the test fails.
+    fn stop_within(mut self, seconds: u64) -> i32 {
+        let status = Command::new("kill")
+            .args(["-TERM", &self.child.id().to_string()])
+            .status()
+            .expect("kill");
+        assert!(status.success());
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+        loop {
+            if let Some(status) = self.child.try_wait().expect("try_wait") {
+                std::mem::forget(self);
+                return status.code().expect("an exit status");
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the daemon did not stop within {seconds} s"
+            );
+            pause();
+        }
+    }
+}
+
 /// Lets the probe run for `seconds`: an observation window, not a wait for an event.
 fn watch_for(seconds: u64) {
     let until = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
@@ -1858,7 +1890,7 @@ fn it_ac12_a_probe_that_lost_its_connection_opens_a_new_one_and_logs_each_class_
         "one line per change of class (answer, answer, tls):\n{}",
         daemon.log()
     );
-    assert_eq!(daemon.stop(), 0);
+    assert_eq!(daemon.stop_within(20), 0);
     drop(relay);
 }
 
@@ -1887,17 +1919,18 @@ fn it_ac14_a_writer_that_falls_silent_keeps_running_sessions_and_refuses_new_log
             .expect("a row")
             .is_some()
     );
-    // The probe can no longer reach the node; the session's own connection still can.
+    // The probe can no longer reach the node; the session's own connection
+    // still can. The daemon wrote one closed line before its first sample,
+    // so the test waits for a new one.
+    let closed = [
+        "\"event\":\"admission.changed\"",
+        "\"state\":\"closed\"",
+        "\"reasons\":\"evidence.writer_missing\"",
+    ];
+    let before = lines_with(&daemon, &closed);
     relay.refuse_tls_from(relay.connections() + 1);
     assert_eq!(end_monitor_connections(), 1);
-    daemon.wait_for(
-        &[
-            "\"event\":\"admission.changed\"",
-            "\"state\":\"closed\"",
-            "\"reasons\":\"evidence.writer_missing\"",
-        ],
-        20,
-    );
+    wait_for_more(&daemon, &closed, before, 20);
     assert_eq!(
         runtime
             .block_on(running.query_one_row("SELECT 2"))
@@ -1919,7 +1952,7 @@ fn it_ac14_a_writer_that_falls_silent_keeps_running_sessions_and_refuses_new_log
     );
     relay.accept_tls_again();
     drop(running);
-    assert_eq!(daemon.stop(), 0);
+    assert_eq!(daemon.stop_within(20), 0);
     drop(relay);
 }
 
@@ -1980,7 +2013,7 @@ fn it_ac14_a_writer_that_changes_its_identity_ends_running_sessions_through_the_
         ],
         10,
     );
-    assert_eq!(daemon.stop(), 0);
+    assert_eq!(daemon.stop_within(20), 0);
     drop(relay);
 }
 
@@ -2086,7 +2119,7 @@ fn it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresq
     );
     daemon.wait_for(&["\"event\":\"session.ended\""], 10);
     let log = daemon.log();
-    assert_eq!(daemon.stop(), 0);
+    assert_eq!(daemon.stop_within(20), 0);
     let log = format!(
         "{log}{}",
         fs::read_to_string(case.log_file()).unwrap_or_default()
