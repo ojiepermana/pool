@@ -10141,6 +10141,17 @@
       "source_location": "L302"
     },
     {
+      "id": "crates_pool_core_src_backend_tests_data_row_refuses_every_body_that_lies_about_its_columns",
+      "label": "data_row_refuses_every_body_that_lies_about_its_columns()",
+      "_origin": "ast",
+      "community": 123,
+      "community_name": "crates/pool-protocol/src/lib.rs",
+      "file_type": "code",
+      "norm_label": "data_row_refuses_every_body_that_lies_about_its_columns()",
+      "source_file": "crates/pool-core/src/backend/tests.rs",
+      "source_location": "L1024"
+    },
+    {
       "id": "crates_pool_core_src_backend_tests_deadline",
       "label": "deadline()",
       "_origin": "ast",
@@ -97742,6 +97753,18 @@
       "weight": 1.0
     },
     {
+      "source": "crates_pool_core_src_backend_tests_data_row_refuses_every_body_that_lies_about_its_columns",
+      "target": "crates_pool_core_src_backend_tests_data_row_message",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "crates/pool-core/src/backend/tests.rs",
+      "source_location": "L1028",
+      "weight": 1.0
+    },
+    {
       "source": "crates_pool_core_src_backend_tests_eight_logins_at_a_cold_start_derive_the_keys_once",
       "target": "crates_pool_core_src_backend_tests_password",
       "relation": "calls",
@@ -126443,18 +126466,6 @@
       "context": "import",
       "source_file": "crates/pool-core/src/backend/tests.rs",
       "source_location": "L19",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_core_src_backend_tests",
-      "target": "crates_pool_protocol_src_auth",
-      "relation": "imports_from",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "crates/pool-core/src/backend/tests.rs",
-      "source_location": "L9",
       "weight": 1.0
     },
     {
@@ -155502,6 +155513,17 @@
       "confidence_score": 1.0,
       "source_file": "crates/pool-core/src/backend.rs",
       "source_location": "L622",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_core_src_backend_tests",
+      "target": "crates_pool_core_src_backend_tests_data_row_refuses_every_body_that_lies_about_its_columns",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-core/src/backend/tests.rs",
+      "source_location": "L1024",
       "weight": 1.0
     },
     {
@@ -280535,5 +280557,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "9af49e024d7c2d1710bd61d07b0ab740932e799d"
+  "built_at_commit": "952b773681a06ba63869ef5251ac9f3cb2755875"
 }

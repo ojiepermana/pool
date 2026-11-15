@@ -1026,9 +1026,9 @@
     "semantic_hash": ""
   },
   "crates/pool-core/src/backend/tests.rs": {
-    "mtime": 1794770372.6236594,
-    "seen": 1794770679.394836,
-    "ast_hash": "8fd6378f0ac9d5dc87ebb44261820b87",
+    "mtime": 1794773660.6062179,
+    "seen": 1794773697.155187,
+    "ast_hash": "5606a90bda899cb838ac19cde4866c1d",
     "semantic_hash": ""
   },
   "crates/pool-core/src/session.rs": {
