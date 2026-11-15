@@ -1722,12 +1722,12 @@ This also closes the gap "a second primary and the latch on the fixture" that ro
 
 #### Gates
 
-Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `0c0424c` (`486db56` with `main` at `6916184` merged, which holds Build plan step 15 of `apps/pool/src/` and the review decisions of spec 0004), on 2026-11-16 from 01:49 to 01:52 WIB.
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `0c0424c` (`486db56` with `main` at `6916184` merged, which holds Build plan step 15 of `apps/pool/src/` and the review decisions of spec 0004), on 2026-11-16 from 01:49 to 01:52 WIB, and again on `2734540` (the last merge of `main`, with more of step 15 in `apps/pool/src/`) from 01:53 to 01:56 WIB with the same results.
 
 | Command | Expected | Observed | Result |
 |---|---|---|---|
 | `scripts/check.sh all` | exit 0 | exit 1: fmt, clippy, deny, guards and docs `ok`; `test` failed in one test, `workspace::ac2_the_committed_w3_baseline_is_the_block_of_spec_0004` of round one. The block under [Source guard](index.md#source-guard) gained, with `14e6903`, a bare `rusqlite`, `allow crates/pool-control/tests rusqlite`, `aws_lc_rs` and `allow crates/pool-core aws_lc_rs`, and `tools/repo-check/baseline/forbidden-source-patterns.txt` does not hold them yet. The test reports exactly that difference, which the coordination log names as known (`9502b5c`). The baseline belongs to the developer; this item may not change it. Every other test of the workspace passed | **fail**, for a cause outside this item |
-| `scripts/check.sh integration` | exit 0, nothing left behind | exit 0: 29 of 29 in 56 s, each run of the daemon checked by `finish`; no container of this run left | pass |
+| `scripts/check.sh integration` | exit 0, nothing left behind | exit 0: 29 of 29 in 56 s and in 51 s, each run of the daemon checked by `finish`; no container of this run left | pass |
 | `scripts/check.sh linux-build` | exit 0 | exit 0, no test failed, `linux build check passed` | pass |
 | `git diff --stat main...HEAD` | test files and this record only | the files named at the top of this round and this record; 0 lines of production code | pass |
 
