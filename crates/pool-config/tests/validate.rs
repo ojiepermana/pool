@@ -2680,6 +2680,11 @@ fn ac5_each_invalid_serving_fixture_has_its_one_finding() {
             Location::Key("probe.observation_expiry_ms"),
         ),
         (
+            "invalid-serving-node-loss.toml",
+            FindingCode::InvalidValue,
+            Location::Key("probe.node_loss_timeout_ms"),
+        ),
+        (
             "invalid-serving-duplicate-principal.toml",
             FindingCode::DuplicatePrincipal,
             key_at("principal.name", 66, 8),
@@ -2864,14 +2869,15 @@ fn number_key(table: &str, key: &str) -> &'static str {
     .expect("a known key")
 }
 
-/// A `[probe]` table that keeps the cross rule true whatever one key holds.
+/// A `[probe]` table that keeps both cross rules true whatever one key holds.
+/// 90000 is twice the largest period plus the largest timeout (decision 109).
 fn probe_table(key: &str, value: &str) -> String {
     let mut lines = [
         "[probe]".to_owned(),
         "period_ms = 100".to_owned(),
         "timeout_ms = 100".to_owned(),
         "observation_expiry_ms = 60000".to_owned(),
-        "node_loss_timeout_ms = 30000".to_owned(),
+        "node_loss_timeout_ms = 90000".to_owned(),
     ];
     let line = format!("{key} = {value}");
     let index = lines
@@ -2958,10 +2964,17 @@ fn ac5_the_expiry_must_cover_the_period_and_the_timeout() {
         )]
     );
     // The largest period and the largest timeout still fit the largest
-    // expiry (spec 0004, decision 49), and one less is refused.
-    assert_text_valid(&at(30_000, 30_000, 60_000));
+    // expiry (spec 0004, decision 49), and one less is refused. The loss
+    // time must then be set too (decision 109).
+    let largest = |expiry: u32| {
+        serving_with_table(&format!(
+            "[probe]\nperiod_ms = 30000\ntimeout_ms = 30000\nobservation_expiry_ms = {expiry}\n\
+             node_loss_timeout_ms = 90000"
+        ))
+    };
+    assert_text_valid(&largest(60_000));
     assert_eq!(
-        findings(at(30_000, 30_000, 59_999).as_bytes()),
+        findings(largest(59_999).as_bytes()),
         [(
             FindingCode::InvalidValue,
             Location::Key("probe.observation_expiry_ms")
@@ -2988,6 +3001,74 @@ fn ac5_the_expiry_must_cover_the_period_and_the_timeout() {
         )]
     );
     assert_text_valid(&serving_with_table("[probe]\nobservation_expiry_ms = 3000"));
+}
+
+#[test]
+fn ac5_the_loss_time_must_cover_two_periods_and_the_timeout() {
+    // covers: 0004 AC-5 (decision 109, finding r2 of the second review).
+    let at = |period: u32, timeout: u32, node_loss: u32| {
+        serving_with_table(&format!(
+            "[probe]\nperiod_ms = {period}\ntimeout_ms = {timeout}\nobservation_expiry_ms = 60000\n\
+             node_loss_timeout_ms = {node_loss}"
+        ))
+    };
+    let refused = [(
+        FindingCode::InvalidValue,
+        Location::Key("probe.node_loss_timeout_ms"),
+    )];
+    // The period, timeout and loss time of the fixture
+    // `invalid-serving-node-loss.toml`, and one more.
+    assert_eq!(findings(at(20_000, 5000, 44_999).as_bytes()), refused);
+    assert_text_valid(&at(20_000, 5000, 45_000));
+    assert_text_valid(&at(100, 100, 1000));
+    // The largest period and timeout need 90000.
+    assert_eq!(findings(at(30_000, 30_000, 89_999).as_bytes()), refused);
+    assert_text_valid(&at(30_000, 30_000, 90_000));
+    // With the key left out its default of 30000 counts, as for the expiry.
+    let default_loss = |period: u32| {
+        serving_with_table(&format!(
+            "[probe]\nperiod_ms = {period}\ntimeout_ms = 1000\nobservation_expiry_ms = 60000"
+        ))
+    };
+    assert_text_valid(&default_loss(14_500));
+    assert_eq!(findings(default_loss(14_501).as_bytes()), refused);
+    // The defaults pass, and with the default period and timeout the least
+    // loss time is 5000.
+    assert_text_valid(&serving_with_table("[probe]\nnode_loss_timeout_ms = 5000"));
+    assert_eq!(
+        findings(serving_with_table("[probe]\nnode_loss_timeout_ms = 4999").as_bytes()),
+        refused
+    );
+    // A key that failed its own check is not judged again by this rule.
+    assert_eq!(
+        findings(at(30_001, 5000, 1000).as_bytes()),
+        [(FindingCode::InvalidValue, Location::Key("probe.period_ms"))]
+    );
+    assert_eq!(
+        findings(at(100, 100, 999).as_bytes()),
+        refused,
+        "below its range, at the key once"
+    );
+    // After the cross rule of the expiry, in that order.
+    assert_eq!(
+        findings(
+            serving_with_table(
+                "[probe]\nperiod_ms = 20000\ntimeout_ms = 5000\nobservation_expiry_ms = 1000\n\
+                 node_loss_timeout_ms = 1000"
+            )
+            .as_bytes()
+        ),
+        [
+            (
+                FindingCode::InvalidValue,
+                Location::Key("probe.observation_expiry_ms")
+            ),
+            (
+                FindingCode::InvalidValue,
+                Location::Key("probe.node_loss_timeout_ms")
+            ),
+        ]
+    );
 }
 
 #[test]
