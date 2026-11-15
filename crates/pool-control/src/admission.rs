@@ -190,8 +190,9 @@ impl Closed {
         &self.reasons
     }
 
-    /// True when the reasons report a second primary or a later timeline. The
-    /// daemon then sets the conflict latch of the cluster in the journal.
+    /// True when the reasons report a second primary or a later timeline.
+    /// [`crate::AuthorityState::latch_conflict`] then sets the conflict latch
+    /// of the cluster in memory, and the daemon writes it to the journal.
     pub fn latches_conflict(&self) -> bool {
         self.reasons
             .iter()
@@ -211,6 +212,15 @@ impl Closed {
 /// applies is reported. Admission is open only when the configuration, the
 /// journal and a fresh observation agree on the writer and no conflict is
 /// seen.
+///
+/// The caller has two duties, because two kinds of sample turn what a node
+/// said into no evidence and so can hide a second primary: it passes at most
+/// one sample per node (two samples at the latest time are a tie), and it
+/// never passes a `now` earlier than the latest sample. In the product the
+/// one caller is [`crate::build_snapshot`], which meets both: it passes the
+/// samples of an [`crate::ObservationBoard`] and clamps `now` to the latest
+/// of them (`0003 AC-18`). A source guard keeps every other crate from
+/// calling this function.
 pub fn writer_admission(
     config: &ValidatedConfig,
     state: &AuthorityState,
