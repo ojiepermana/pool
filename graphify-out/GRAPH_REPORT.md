@@ -1,12 +1,12 @@
 # Graph Report - pool  (2026-11-15)
 
 ## Corpus Check
-- 8 files · ~233,548 words
+- 2 files · ~246,798 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2941 nodes · 8186 edges · 117 communities (92 shown, 25 thin omitted)
-- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 991 edges (avg confidence: 0.87)
+- 2949 nodes · 8199 edges · 117 communities (92 shown, 25 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 990 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -249,7 +249,7 @@ Nodes (57): F-030 Validation and reset (close uncertain sessions), F-033 SQL AST
 
 ### Community 9 - "pool-config Validation Library"
 Cohesion: 0.02
-Nodes (177): ClusterId, authority_id_round_trips(), AuthorityId, is_name_id(), lower_hex_value(), Display, Formatter, Option (+169 more)
+Nodes (182): ClusterId, authority_id_round_trips(), AuthorityId, is_name_id(), lower_hex_value(), Display, Formatter, Option (+174 more)
 
 ### Community 10 - "Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories"
 Cohesion: 0.09
@@ -569,7 +569,7 @@ Nodes (6): Changed section (scope 002), Changed: root Cargo.toml denies Clippy l
 
 ### Community 116 - "pool-control Authority Model Crate"
 Cohesion: 0.12
-Nodes (10): ClosedReason, EligiblePrimary, Closed, state_reason(), Authority, BootstrapRefusal, NodeId, TopologyEpoch (+2 more)
+Nodes (10): Closed, ClosedReason, EligiblePrimary, AuthorityRevision, NodeId, TopologyEpoch, state_reason(), Authority (+2 more)
 
 ## Knowledge Gaps
 - **135 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+130 more)
@@ -582,9 +582,9 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Glossary and Routing Profiles`, `Scope 002 Brief Rules: apps/pool agent guide`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Linux Build Evidence, AC-2 and VM Architecture`, `Standards, Tooling and Release Qualification`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Scope 001 Coordination Log, Closing and Blockers`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Leases, Cancellation and Login Routing`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Security Requirements and Features F-100 to F-108`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack`, `Spec 0003 Records Table and Node Naming`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `High Availability PRD and Multi Proxy Authority`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Query Cache PRD and V2 Deferred Features`?**
   _High betweenness centrality (0.195) - this node is a cross-community bridge._
 - **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`?**
-  _High betweenness centrality (0.176) - this node is a cross-community bridge._
+  _High betweenness centrality (0.155) - this node is a cross-community bridge._
 - **Why does `Workspace guards W1-W7` connect `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `Glossary and Routing Profiles`?**
-  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+  _High betweenness centrality (0.142) - this node is a cross-community bridge._
 - **What connects `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165` to the rest of the system?**
   _135 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**

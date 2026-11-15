@@ -462,9 +462,9 @@
     "semantic_hash": ""
   },
   "crates/pool-config/src/lib.rs": {
-    "mtime": 1794721436.155331,
-    "seen": 1794721456.9318268,
-    "ast_hash": "b5ee748af8cbb660b093ada987fc0c0b",
+    "mtime": 1794723128.6468532,
+    "seen": 1794723134.38367,
+    "ast_hash": "916400a42034c3909863c74a465f4cc8",
     "semantic_hash": ""
   },
   "crates/pool-config/tests/validate.rs": {
@@ -810,9 +810,9 @@
     "semantic_hash": ""
   },
   "crates/pool-config/src/topology.rs": {
-    "mtime": 1794721296.8448877,
-    "seen": 1794721418.374902,
-    "ast_hash": "b7db1753aed6d930d945cd8fef60e97a",
+    "mtime": 1794723128.6470876,
+    "seen": 1794723134.3836741,
+    "ast_hash": "ccd471a0d5728e9efceda36e93311c54",
     "semantic_hash": ""
   },
   "crates/pool-control/src/admission.rs": {
