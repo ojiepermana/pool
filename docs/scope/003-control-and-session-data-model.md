@@ -10,7 +10,7 @@ Before 004, the control and protocol owners agree how to distinguish first boots
 
 - [x] Design it (spec): `/architect control and session data model`
 - [ ] Build it: `/develop control and session data model`
-  - [ ] Workspace member and guards: Build plan step 1 (`AC-13`)
+  - [x] Workspace member and guards: Build plan step 1 (`AC-13`)
   - [ ] Identifiers, configuration keys and the finding line: steps 2 to 4 (`AC-1` to `AC-6`), can run beside the milestone above
   - [ ] Authority model and the four walks: step 5 (`AC-7` to `AC-12`, code half of `AC-14`), needs the two milestones above
   - [ ] Document corrections and evidence: steps 6 and 7 (`AC-14`, evidence for `AC-1` to `AC-14`), after the three milestones above
@@ -19,4 +19,4 @@ Before 004, the control and protocol owners agree how to distinguish first boots
 - [ ] Review it (fresh model): `/check review control and session data model`
 - [ ] Document it: `/document control and session data model`
 
-Spec [0003](../specs/0003-control-and-session-data-model/index.md).
+Spec [0003](../specs/0003-control-and-session-data-model/index.md) · code in `crates/pool-control/`, `tools/repo-check/`.
