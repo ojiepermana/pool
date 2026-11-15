@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `003-control-and-session-data-model.brief-umum.md` · **Langkah manual:** `003-control-and-session-data-model.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 12:51`
+- **Diperbarui:** `2026-11-15 13:05`
 
 ## Sub sesi wave `1`
 
@@ -23,7 +23,7 @@
 | `tst-f3-test` (dipakai ulang) | tester | F3 · `Test it` (`AC-1` sampai `AC-13`), Range `ca9a897..a92bee7` | `003-control-and-session-data-model.md` | `crates/pool-config/tests/validate.rs`; `apps/pool/tests/check_config.rs`; `crates/pool-control/tests/`; `tools/repo-check/tests/`; modul `#[cfg(test)]` di `crates/pool-config/src/{identifier,generation,topology}.rs` dan `tools/repo-check/src/workspace.rs`; `verify.md` bagian "Test it" | `claude/tst-f3-test-465bc4` (`local_13c0bce8`) | `opus-5-5 · high` | `dipakai ulang` (konteks dibersihkan, effort kembali `high`); `aktif` |
 | `dev-f3-build` (fix) | developer (fix temuan verify) | F3 · waktu `pool_config::validate` kuadratik (`line_column` menghitung dari awal file untuk tiap entri dan nilai) | `003-control-and-session-data-model.md` | `crates/pool-config/src/topology.rs`, `crates/pool-config/src/lib.rs`, hanya kode produksi di luar modul test | `claude/dev-f3-build-c8a9c8` (`local_c0006fdb`) | `opus-5-5 · medium` | `dipakai ulang`; `aktif` |
 | `arc-f3-spec` (dipakai ulang) | architect (update) | F3 · teks spec 0003 dari verify milestone 2: aturan waktu mencakup seluruh validasi (mungkin `AC-15`), kalimat penjelas cek `expected_writer`, system identifier dan authority ID di tabel telemetry | `003-control-and-session-data-model.md` | `docs/specs/0003-control-and-session-data-model/{index,rationale}.md` | `claude/arc-f3-spec-679ffe` (`local_8439b3c7`) | `fable-5-2 · high` | `dipakai ulang` (konteks dibersihkan); `aktif` |
-| `chk-f3-verify` (dipakai ulang, kedua) | checker (verify) | F3 · verify milestone 3 (`AC-7` sampai `AC-12`, separuh kode `AC-14`) dan milestone 4 (`AC-14`, evidence) | `003-control-and-session-data-model.md` | `verify.md` bagian Milestone 3 dan Milestone 4 | `claude/chk-f3-verify-edf0ea` (`local_36b35f11`) | `fable-5-2 · high` | `dipakai ulang` (konteks dibersihkan); `aktif` |
+| `chk-f3-verify` (dipakai ulang, kedua) | checker (verify) | F3 · verify milestone 3 (`AC-7` sampai `AC-12`, separuh kode `AC-14`) dan milestone 4 (`AC-14`, evidence) | `003-control-and-session-data-model.md` | `verify.md` bagian Milestone 3 dan Milestone 4 | `claude/chk-f3-verify-edf0ea` (`local_36b35f11`) | `fable-5-2 · high` | `dipakai ulang` (konteks dibersihkan); laporan `done` 2026-11-15, verdict PASS untuk milestone 3 dan milestone 4 pada revisi `d26016c` (commit `391efef`, ujung `b143fd6`): empat telusuran, model 8192 kasus, probe checker 65536 kasus (474 `Open`, sama dengan hitungan tangan), 60 mutasi (46 tertangkap, 1 ekuivalen, 13 lolos dan dikirim ke tester), probe kompilasi dari luar crate gagal seperti seharusnya, evidence langkah 7 direproduksi (`check.sh all` 385 test, `prove-checks` 28 kasus, fuzz); `merged` → `22249a6` |
 
 ## Keputusan
 
@@ -59,6 +59,7 @@
 | 2026-11-15 | Gerbang milestone 4 di `main`: merge `1d2fd24` (lima file dokumen) tanpa konflik; `scripts/check.sh all` lulus; commit merge = `a92bee7`; sesudahnya `scripts/prove-checks.sh --with-linux-build` lulus 28 kasus. Verify milestone 2 di-merge sebagai `d26016c`. | lead |
 | 2026-11-15 | Penyimpangan dari Legend (`Test it` sesudah `Build it` `[x]`): tester dimulai saat seluruh build sudah di `main` dan lulus gerbang, sebelum verify milestone 2 sampai 4 selesai, supaya `Verify it` dan `Test it` berjalan bersamaan. | lead |
 | 2026-11-15 | Temuan checker di luar AC pada verify milestone 2: waktu `validate` kuadratik (file valid 16000 node, 1033905 byte: 11,99 s release, 241 s debug). Diputuskan diperbaiki sekarang, sebelum verify penuh: item fix untuk `dev-f3-build` (kode produksi `topology.rs`), test regresi oleh tester, dan item `architect (update)` untuk memperluas aturan waktu di spec 0003 plus dua klarifikasi teks. Verify penuh `Build it` dan `Verify it` menunggu perbaikan itu di-merge. | lead |
+| 2026-11-15 | Verify milestone 3 dan 4 di-merge (`22249a6`, hanya `verify.md`). Temuan checker di luar kriteria, diteruskan ke `arc-f3-spec`: state `Ready` tidak terikat pada konfigurasi yang mengonfirmasinya (`writer_admission` tidak melihat witness lagi), aman di 004 karena klasifikasi sekali saat start, tetapi reload di 009 yang mengubah `control.authority_id` harus mengklasifikasi ulang atau ditolak. Tiga belas mutasi `pool-control` yang lolos test repo (akar: test hanya satu cluster, timeline 1, epoch dan revision 1, satu sampel per node) dikirim checker ke tester. | lead |
 
 ## Keputusan delegasi
 
@@ -96,6 +97,8 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 - F3 · `Design it (spec): /architect control and session data model` · ringkasan `arc-f3-spec` 2026-11-15 dibalas `accept` · `claude/arc-f3-spec-679ffe` pada `24472d4` → `74ff835` · `scripts/check.sh docs` dan `guards` lulus di `main` · commit `docs(scope): 003 in progress, spec 0003 accepted`
 - F3 · `Workspace member and guards: Build plan step 1 (AC-13)` · laporan `tst-f3-test` (developer) dan `chk-f3-verify` (PASS pada `60fcb08`) 2026-11-15 · `claude/chk-f3-verify-edf0ea` pada `dd1183d` → `2648ae1` · `scripts/check.sh all`, test `pool-repo-check`, `scripts/prove-checks.sh --with-linux-build` (28 kasus) lulus di `main` · commit `docs(scope): tick F3 milestone 1`
 - F3 · `Identifiers, configuration keys and the finding line: steps 2 to 4 (AC-1 to AC-6)` · laporan `dev-f3-build` dan `chk-f3-verify` (PASS pada `198a1cd`) 2026-11-15 · `198a1cd` → `4090d2e`, verify `575e900` → `d26016c` · `scripts/check.sh all` (373 test), fuzz, dua fixture valid lewat binary lulus di `main` · commit `docs(scope): tick F3 milestone 2`
+- F3 · `Authority model and the four walks: step 5 (AC-7 to AC-12, code half of AC-14)` · laporan `dev-f3-build` dan `chk-f3-verify` (PASS pada `d26016c`) 2026-11-15 · `511d00d` → `74d1a4d`, verify `b143fd6` → `22249a6` · `scripts/check.sh all` (385 test), test `pool-control`, `grep` `AC-11` lulus di `main` · commit `docs(scope): tick F3 milestones 3 and 4`
+- F3 · `Document corrections and evidence: steps 6 and 7 (AC-14, evidence for AC-1 to AC-14)` · laporan `dev-f3-build` dan `chk-f3-verify` (PASS pada `d26016c`) 2026-11-15 · `1d2fd24` → `a92bee7`, verify `b143fd6` → `22249a6` · `scripts/check.sh all` dan `scripts/prove-checks.sh --with-linux-build` (28 kasus) lulus di `main` · commit `docs(scope): tick F3 milestones 3 and 4`
 
 ## Riwayat wave
 
