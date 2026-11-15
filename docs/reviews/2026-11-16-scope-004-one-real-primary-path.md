@@ -476,3 +476,34 @@ On the three things the lead named. A process that appears while the tree is bei
 **3. Does the full run on Linux, which is `NOT_RUN`, still hold the verdict as a major finding?** No. r1 was a fault of the shell on Linux, and that fault is shown gone in the shell of the pinned image with the real functions, and in the whole script under `dash` on macOS. What is not shown is the whole check on a Linux host: the Docker steps of the fixture there, for example the listener address taken from the bridge. That was never run, before the review or after it, and it was already named as open when the first review began (the CI job of manual step `F4-3`). It is a known manual step with an owner, not a finding of this review. Whether the feature may be called done before that job has run once is a rule of the scope and a decision of the lead and the user, not of the reviewer. My advice is to run the job once before the box is ticked, because it is the first time the fixture meets Linux.
 
 **4. Verdict.** Approved, with the notes above. M1, M2, M3 and r1 are closed, and I know of no open blocker or major finding in the range `c4d5714..6f69ae2`. Open and minor: r6 (new), and r2 to r5, a1 to a3, t8 and n15 until their fixes are on `main` and confirmed.
+
+### Addendum, `main` up to `79f3cbd`
+
+After the third look was written, `main` moved from `6f69ae2` to `79f3cbd`: one change to `scripts/integration/run.sh` (`113d305`), test changes for finding t8, and documents (decisions 114 to 117 of spec 0004 and a correction in its verification record). No product code changed. I read the script and the tests and ran them. The verdict stays "Approved" for what is on `main` at `79f3cbd`: no blocker and no major finding is open. One more minor finding came with the script change (r7).
+
+What I ran on that tree, with no terminal:
+
+| Run | Result |
+|---|---|
+| `cargo test -p pool --locked` | 26, 87 and 19 tests passed, 0 failed, 30 ignored |
+| The whole script as `/bin/dash scripts/integration/run.sh`, output through a pipe | 30 of 30 tests passed in 80 seconds, no container left. My wrapper did not keep the exit status of this run. The run on `6f69ae2` gave exit 0 |
+| The lines of the script for a container that did not start, with a name that a container of mine already held | the container that was there first was removed (r7) |
+
+The tests for t8. `ac14_the_conflict_view_is_published_before_the_latch_is_written` (`apps/pool/src/control.rs:660`) no longer polls once and hopes that a blocking write is still running. It reads the route view at the moment the latch is logged as recorded, so it holds the order with no window of time. On the fixture the waiter test starts two logins at once and starts each clock when its connection is made (`apps/pool/tests/integration.rs:1327`), so no pause decides who waits. Both fit what t8 asked. The lower bound of the deadline is still measured from the connection and not from step 5, which is early by the time of one login and no more.
+
+#### 🟡 r7. A container that the run did not make is removed when its name is already in use, `scripts/integration/run.sh:208` to `:218`
+
+**Problem**: The change removes a container by its name when `docker run -d` fails, so that one that was created and could not start is not left. `docker run -d --name` fails in the same way when another container already holds that name, and then the name belongs to that other container. I ran those lines with a name that a container of mine held: Docker said the name was in use, and the lines removed the container that was there first. The name ends in the process ID of the script, so this takes two runs with the same ID on one Docker daemon, or a container left from a run that was killed.
+**Why it matters**: It is the case finding g4 was about, and the fix of g4 (removal by the ID that Docker printed) had closed it. The checker proved exactly this in the record of step 15: a container under the name the script wants was still there afterwards. With this change that proof no longer holds, and `0004 AC-26` says the check removes every container it started, not one more.
+**Suggested fix**: Make the container with `docker create`, which prints the ID also when the start would fail, then `docker start` it, and remove by that ID. Or remove by name only when the failure was not a name that is in use. Owner: the developer.
+
+The documents of this range. `claude-opus-5-5` read decisions 114 to 117 and the correction in the verification record against the code, and I read the paragraph of decision 117 myself. Neither of us found a blocker or a major point. Decisions 114 and 115 write down what the code does, and both match it. The correction of the evidence of step 14 is dated, keeps the old words and names two tests that exist. Two minor points and four nits:
+
+- 🟡 Decision 117 says more than the script does, `docs/specs/0004-one-real-primary-path/index.md:1302`, `:1310`, `:1312`. The text says that what still runs after 5 seconds gets SIGKILL, that the watchdog uses the same steps, and that nothing of a run outlives the script. For the watchdog that is not so, which is r6, and r6 is in no triage row, no decision and no Follow-up item yet. The paragraph on what was shown is honest about the shells and about Linux, and it does not name the run of the third look that left four processes. Name r6 in the text and in the triage until the script is fixed. Owner: the architect.
+- 🟡 Decision 116 is written as if it were built, `index.md:887`. An empty `database` that takes the value of `user` is the decision. On this tree `crates/pool-protocol/src/startup.rs:259` still keeps the empty value and the client gets `28000`. Only the Build plan says that the code is still to come. Mark the sentence as not built until it is. Owner: the architect.
+- ⚪ `index.md:1311` says the script exits 1 when neither `ps` nor `/proc` is there. It returns 0 first (`scripts/integration/run.sh:104`), as the third look said.
+- ⚪ Decision 115 gives as the reason for not refusing an empty `user` at once that no name gets a special answer. An empty name can be no principal, so the real reason is one code path. Say which.
+- ⚪ Decision 114 leaves out two cases that also give `state.permissions`: a lock that fails for another reason than being held (`apps/pool/src/state.rs:98`), and an empty file that stays when the mode cannot be set (`state.rs:214`).
+- ⚪ The corrected row at `docs/specs/0004-one-real-primary-path/verify.md:1424` still links only to the older steps and not to the run that holds the new evidence.
+
+Open and minor at `79f3cbd`: r6 and r7 in the script, and r2 to r5, a1 to a3 and n15 as far as their fixes are not on `main` yet (the rule of decision 109, the code of decision 116 and the tests of Follow-up 16).
