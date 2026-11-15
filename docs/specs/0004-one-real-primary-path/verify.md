@@ -1731,6 +1731,55 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `scripts/check.sh linux-build` | exit 0 | exit 0, no test failed, `linux build check passed` | pass |
 | `git diff --stat main...HEAD` | test files and this record only | the files named at the top of this round and this record; 0 lines of production code | pass |
 
+### Round five
+
+On 2026-11-16 from 02:20 to 02:55 WIB, by the tester session: the findings of [the review](../../reviews/2026-11-16-scope-004-one-real-primary-path.md) that round four left for `crates/pool-core/tests/session.rs` (t1, t3, and the parts of t4 and t8 in that file), and decision 94 of [Fuzzing](index.md#fuzzing). On `main` at `ce67e27`, commit `9818739` of the branch. macOS 27.0.1, arm64.
+
+#### The tests
+
+| Finding | Tests in `crates/pool-core/tests/session.rs` | What they hold |
+|---|---|---|
+| t1 | `ac15_a_request_for_3_2_gets_negotiate_protocol_version_first_with_its_exact_body` | A new helper, `login_recorded`, keeps every message of a login in order with its authentication code and checks the server signature when it comes. For 3.2: `v`, then `R` 10, 11, 12 and 0, three `S`, `Z`; the body of `v` is `00 03 00 00 00 00 00 00` (3.0, no option). With `_pq_.zq9`: the body PostgreSQL 18.7 sent for that request |
+| t1 | `ac16_a_login_for_3_0_gets_the_server_signature_and_then_authentication_ok_and_no_negotiation` | `R` 10, 11, 12, 0, three `S`, `Z`, and no `v` |
+| t1 | `ac14_no_authentication_ok_comes_before_a_refusal_after_the_proof` | After a right proof, a closed route (`57P03`), a route that changed at the second look (`57P03`), a database without an identity entry (`28000`) and a node in recovery (`08006`) each give exactly `R` 10, 11, 12 and the error, and no `AuthenticationOk` |
+| t3 | `ac20_no_byte_of_an_oversized_query_reaches_the_node` | The scripted node keeps every byte it gets after its `ReadyForQuery` (`after_ready`, read with `read`, so also the bytes of a message that never ends). After a `Query` of 1100 bytes with a limit of 1024, `54000`, and the node got only the `Terminate` of POOL |
+| t4 | every test of the file | `read_msg` and the new `read_msg_kept` wait at most 30 seconds and then fail with `a message or the end of the stream within 30 s`; the two bare `shutdown()` calls wait at most 10 seconds |
+| t8 | `a_positive_conflict_ends_running_sessions_and_silence_does_not`, `at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01`, `waiters_and_the_acquire_deadline` | The first two wait until the node has the `Query` (then it is in flight) in place of a fixed 50 ms. The waiter test has a deadline of 1 second in place of 300 ms: "at once" is under 700 ms, the waiter ends at 1 to 3 seconds |
+
+The other fixed waits of the file stay. They come before an assertion that something did not happen (no query reached the node, no second backend), where the wait is the window in which a wrong byte would have arrived.
+
+| Wrong change (`crates/pool-core/src/session.rs`) | Before (`ce67e27`) | After, caught by |
+|---|---|---|
+| N1. `NegotiateProtocolVersion` is never sent | not caught (review) | `ac15_a_request_for_3_2_gets_negotiate_protocol_version_first_with_its_exact_body` |
+| N2. The server signature is never sent to the client | not caught (review) | `ac16_a_login_for_3_0_gets_the_server_signature_...`, `ac15_...`, `ac14_no_authentication_ok_...` |
+| N3. `AuthenticationOk` is sent right after the proof, before the route checks and the backend | not caught (review) | `ac14_no_authentication_ok_comes_before_a_refusal_after_the_proof` |
+| N4. The header of an oversized `Query` is written to the node before the refusal (for `MessageTooLarge` only, as the review made it) | not caught | `ac20_no_byte_of_an_oversized_query_reaches_the_node`. (A first version wrote the header for every refused message; the old `unsupported_and_broken_frontend_messages_end_the_session` caught that one through the other tags) |
+| N5. The cut check at the top of the relay loop is removed (t4) | the test binary hung (review: ten minutes) | 12 tests fail, among them `a_positive_conflict_ends_running_sessions_and_silence_does_not` and `at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01`; the whole run of the five mutations took under two minutes |
+
+"Before" was run again here, with the tests of `ce67e27` in a copy of the tree: N1, N2, N3 and N4 passed every test of `pool-core`, as the review found; N5 made the session tests hang until the limit of 600 seconds of the mutation runner ended the run.
+
+`cargo test -p pool-core --locked --test session`: 71 of 71, five runs in a row.
+
+#### Fuzzing (decision 94)
+
+- `crates/pool-protocol/fuzz/fuzz_targets/auth.rs`, a new target, with its `[[bin]]` entry in `crates/pool-protocol/fuzz/Cargo.toml`. It feeds the whole input to `parse_sasl_initial_response` first, then `parse_authentication`, `parse_negotiate_protocol_version`, `parse_ready_for_query`, `parse_parameter_status`, `parse_backend_key_data` and `error_sqlstate`. Nothing may panic, and what a parser accepts, its encoder writes back to the same bytes. 13 regression inputs under `fuzz/regressions/auth/`, made from the golden messages. `cargo metadata --locked` on the fuzz manifest passes: the lockfile of the package does not change. `max_len` for the line of `scripts/check.sh`: **4096** (a SASL message of a client is at most 1024 bytes; 4096 also covers the node messages these parsers read).
+- `data_row`, which decision 94 names too, is a private function of `pool-core` and is not reachable from this package: `pool-core` is not a dependency of the fuzz package, and adding it would change its lockfile. Not done; a question for the architect.
+- `scram` now takes the length of a nonce from its first byte (0 to 63) and the nonce from the next bytes; the rest is the message. Shown on a copy: with a `panic!` put right after the decoding of the proof in `parse_client_final`, an input that holds a nonce and a client-final message with that nonce reaches it (`REACHED: the proof of a client-final message was decoded`, `deadly signal`), and the old target with the same input does not. The committed regression inputs of `scram` were not changed; their first byte is now read as the length of a nonce.
+- The literal bytes of the short messages are in `golden.rs` since round four. The verifier of RFC 7677 as a literal is not added: `golden.rs` was not a file of this round.
+
+| Command, from `crates/pool-protocol` | Observed | Result |
+|---|---|---|
+| `CARGO_TARGET_DIR=<root>/target/fuzz cargo +nightly-2026-10-17 fuzz run auth fuzz/corpus/auth fuzz/regressions/auth -- -max_total_time=30 -max_len=4096` | exit 0, 3057871 runs in 31 s, no file under `fuzz/artifacts/` | pass |
+| the same for `scram` with `-max_len=4096` | exit 0, 3223829 runs in 31 s, no file under `fuzz/artifacts/` | pass |
+
+#### Gates
+
+| Command | Observed | Result |
+|---|---|---|
+| `scripts/check.sh all > <file> 2>&1; echo $?` on the tree of `9818739` before its commit | exit status 0: fmt, clippy, test, deny, guards and docs `ok` | pass |
+| `scripts/check.sh linux-build` on `9818739` | exit status 1: in the pinned image, 4 of the 18 tests of `apps/pool/tests/commands.rs` failed, each because `pool bootstrap` stops at `secret.permissions at node.tls_ca_file` before it reaches the node of the test (`ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal`, `ac10_a_journal_that_was_cut_or_whose_marks_changed_...`, `ac9_a_lock_held_by_another_pool_process_...`, `ac9_bootstraps_started_together_...`). These are the four that are red on `main` there, whose fix the developer of `apps/pool` is making; this round changed nothing in `apps/pool`. `cargo test` stops at the first test binary that fails, so the other packages did not run in that check | fail, the known four only |
+| `cargo test --locked --no-fail-fast -p pool-core -p pool-protocol -p pool-control -p pool-config` in the same pinned image, from `git archive` of `9818739` | exit 0, every test result `ok`, among them `session` 71 of 71 and `golden` 17 | pass |
+
 ## Full verification
 
 The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.
@@ -1895,6 +1944,20 @@ Built on 2026-11-16 on top of `main` at `6ba9e36`, as decisions 86 and 96 and fi
 - `77e57f8`, **a last try for each latch** (c9). When the loop stops, every latch on `unrecorded_latches()` is written once more before the journal is closed, and one that still fails gets `authority.conflict_latched` with `recorded` false. Test: `control::tests::c9_a_latch_still_open_at_shutdown_is_tried_once_more_and_said_so`, which fails without the last try: one line and one failed write instead of two.
 
 Gates on this tree, on macOS: `cargo test -p pool --locked` and `scripts/check.sh integration` passed (26 of 26). In `scripts/check.sh all`, every check but `test` passed, and `test` failed in one place only, the test `ac2_the_committed_w3_baseline_is_the_block_of_spec_0004` of `tools/repo-check`. The spec on `main` already has the lines `rusqlite` and `aws_lc_rs` of decision 93 (finding g2), and the committed `forbidden-source-patterns.txt` does not have them yet. That file belongs to another part of step 15, so this is not something stage 1 changed, and stage 1 does not touch `tools/`.
+
+### `apps/pool`, node loss, the failed path and the fixture (developer B, stage 2)
+
+Built on 2026-11-16 on top of `main` at `653d864`, which has the crate part of `dev-f4-m1` (the accessors of `EligiblePrimary`, the two fields of `Route`, the flag `lost`, `Server::with_identity_query`, `Server::shutdown_now`, `probe.node_loss_timeout_ms`). One commit for each part:
+
+- `f9df6c3`, **a silent writer is marked lost** (M1, decision 84). The probe task hands the class of each failure to the control loop with the sample. The loop keeps, per node, the time of the first failure of the class `connect` or `timeout` since the last other outcome; `tls`, `login` and `answer` start the time again. When the writer of a cluster has been silent for `probe.node_loss_timeout_ms`, the loop marks it, writes `node.lost` once, and the route view carries `lost` on that cluster. The first good sample removes the mark. The writer is the `expected_writer` of the configuration: a cluster opens only while it names the approved writer of the journal, and `apps/pool` cannot read the journal rows (rule W3), so a running session is only ever on that node. Unit tests in `control.rs`: `ac30_connect_and_timeout_for_the_whole_time_mark_the_writer_lost_once`, `ac30_a_failure_of_another_class_starts_the_time_again`, `ac30_a_good_sample_starts_the_time_again_and_removes_the_mark`, `ac30_only_the_writer_counts_and_the_view_carries_the_mark`.
+- `192604c`, **keepalive on the listener** (M1). Step 7 builds the listener with `TcpSocket`, keepalive and reuseaddr on, and listens with a backlog of 1024. Linux and macOS give an accepted socket the keepalive of its listener. That an accepted socket has it on is the check with `ss -tno` that the spec gives to the checker. This stage did not run it.
+- `1382928`, **`shutdown_now` on the failed path** (c2). A task that ended without being asked to now ends the sessions with `Server::shutdown_now`, from step 4 of Shutdown on. A signal still drains with `Server::shutdown`. This closes the gap that stage 1 left open.
+- `9b5f44e`, **the fixture tests**. `it_ac29_a_login_to_an_address_that_moved_to_another_server_gets_08006`: the probe stays on container 1 through the relay while new connections reach container 2. The login gets `08006` with the message of a backend that could not be established, `backend.failed` has the class `identity`, and the log of container 2 since the move has no statement but the identity question (counted by its first line, since PostgreSQL writes a statement of several lines with a tab after each line feed), and not the SQL of the client. `it_ac30_a_paused_writer_is_marked_lost_and_its_sessions_end`: container 1 is paused with `probe.node_loss_timeout_ms = 2000`. `node.lost` is written once, the session with `pg_sleep(60)` in flight gets `08007`, the idle one gets `08006`, both end with `node_lost`, and a login works again after the unpause. A guard unpauses the container and ends the `pg_sleep` backend also when the test fails. The first run without that end of the backend showed why it is needed: four later tests failed while it still ran. The log check of the tests now knows `node.lost`, `daemon.failed` and `daemon.panicked`.
+- `ddbb371`, **the integration script** (g4, and the two items of n13 for `run.sh`). Containers are removed by the ID that `docker run -d` printed. The trap is set before `mktemp`, and an empty listener address fails the run. The test command runs in a process group of its own with a watchdog of 1800 seconds, and a run in which no test passed exits 1. Each was checked once with a temporary change: a filter that matches no test gave exit 1 with `no test ran`, and a limit of 25 seconds ended the tests after 30 seconds with exit 1. In both, no container or test process was left. SIGTERM to the script alone, while the tests ran, ended it within one second, with nothing left. That is more than the paragraph "A signal to the script alone" of the spec says now (the trap ran only after the test command had returned), and that paragraph is for the architect to bring up to date.
+
+Gates on this tree, on macOS: `scripts/check.sh all` (exit 0), `cargo test -p pool --locked` and `scripts/check.sh integration` (31 of 31, exit 0, no container left) passed.
+
+After `git merge main` at `7a67c93`: `d41d25c`, **a copy of the test CA in the command tests**. `scripts/check.sh linux-build` had failed in four tests of `commands.rs` with `secret.permissions at node.tls_ca_file`, as the record of developer A above says: `git archive` gives the committed `ca.pem` mode 664, and the rule of decision 88 refuses it, as it must. Each test folder now holds a copy with mode 0644. Then, on that tree: `scripts/check.sh linux-build` exit 0 and `scripts/check.sh all` exit 0. `scripts/check.sh integration` was run twice. The first run exited 1: `it_ac14_a_second_primary_beside_a_silent_writer_ends_sessions_and_latches_the_journal` (round four of the tester, `fd84e4d`) found 2 monitor connections where it asserts 1. The test calls `second.accept_tls_again()` and then counts the monitor connections of container 1, so the probe of `pg2` can log in between the two. That reads as a race in the test, and stage 2 did not change that path. The second run exited 0, 31 of 31. On my trees that test failed once in three runs. The count of Docker volumes and networks was the same before and after each run, and no `pool-it-` container was left.
 
 ### Crates, tooling and build (developer A)
 

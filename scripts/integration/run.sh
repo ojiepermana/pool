@@ -29,15 +29,32 @@ PRINCIPAL_PASSWORD=pz7-principal-not-a-secret
 
 CONTAINER_1="pool-it-1-$$"
 CONTAINER_2="pool-it-2-$$"
-DIR=$(mktemp -d "${TMPDIR:-/tmp}/pool-it.XXXXXX")
-chmod 700 "$DIR"
+# How long the test command may run before it is ended, so that the cleanup
+# always runs.
+TEST_LIMIT_SECONDS=1800
 
+# The trap is set before anything is made. Containers are removed by the ID
+# that `docker run -d` printed, and the test command, which runs in a
+# process group of its own, is ended with them.
+DIR=
+IDS=
+TEST_PID=
 cleanup() {
-  docker rm -f -v "$CONTAINER_1" "$CONTAINER_2" >/dev/null 2>&1 || :
-  rm -rf "$DIR"
+  if [ -n "$TEST_PID" ]; then
+    kill -TERM -- "-$TEST_PID" 2>/dev/null || :
+  fi
+  if [ -n "$IDS" ]; then
+    docker rm -f -v $IDS >/dev/null 2>&1 || :
+  fi
+  if [ -n "$DIR" ]; then
+    rm -rf "$DIR"
+  fi
 }
 trap cleanup EXIT
 trap 'exit 1' INT TERM HUP
+
+DIR=$(mktemp -d "${TMPDIR:-/tmp}/pool-it.XXXXXX")
+chmod 700 "$DIR"
 
 fail() {
   echo "integration: $1" >&2
@@ -70,7 +87,7 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$DIR/certs:/certs" --entrypoint s
 # 2. Two servers from the same image, with the same certificate, roles and
 #    passwords. Only the system identifier differs, which initdb makes.
 for name in "$CONTAINER_1" "$CONTAINER_2"; do
-  docker run -d --name "$name" \
+  id=$(docker run -d --name "$name" \
     -p 127.0.0.1::5432 \
     --add-host=host.docker.internal:host-gateway \
     -e POSTGRES_PASSWORD="$SUPERUSER_PASSWORD" \
@@ -78,7 +95,8 @@ for name in "$CONTAINER_1" "$CONTAINER_2"; do
     -e POOL_IT_RW_PASSWORD="$RW_PASSWORD" \
     -v "$ROOT/scripts/integration/initdb:/docker-entrypoint-initdb.d:ro" \
     -v "$DIR/certs:/certs:ro" \
-    "$POOL_IT_IMAGE" >/dev/null || fail "container $name did not start"
+    "$POOL_IT_IMAGE") || fail "container $name did not start"
+  IDS="$IDS $id"
 done
 
 # 3. Wait until both answer over TCP, which they do only after the init
@@ -128,6 +146,7 @@ case "$(docker info --format '{{.OperatingSystem}}' 2>/dev/null)" in
   *"Docker Desktop"*) LISTEN_HOST=127.0.0.1 ;;
   *) LISTEN_HOST=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}') ;;
 esac
+[ -n "$LISTEN_HOST" ] || fail "the address for the listener could not be read"
 
 export POOL_IT_CONTAINER="$CONTAINER_1"
 export POOL_IT_CONTAINER_2="$CONTAINER_2"
@@ -137,9 +156,35 @@ export POOL_IT_DIR="$DIR"
 export POOL_IT_LISTEN_HOST="$LISTEN_HOST"
 export POOL_IT_CLIENT_HOST=host.docker.internal
 
+# 6. The tests, in the background in a process group of their own, so that
+#    a signal to this script runs the trap at once, and a watchdog that ends
+#    them after TEST_LIMIT_SECONDS. Their output is kept to count the tests.
+OUT="$DIR/test-output.txt"
+set -m
+sh -c '
+  { cargo test -p pool --locked --test integration -- --ignored --test-threads=1; echo "$?" > "$1.rc"; } 2>&1 | tee "$1"
+  exit "$(cat "$1.rc" 2>/dev/null || echo 1)"
+' sh "$OUT" &
+TEST_PID=$!
+set +m
+(
+  sleep "$TEST_LIMIT_SECONDS"
+  echo "integration: the tests did not end within $TEST_LIMIT_SECONDS seconds" >&2
+  kill -TERM -- "-$TEST_PID" 2>/dev/null || :
+) &
+WATCHDOG=$!
 rc=0
-cargo test -p pool --locked --test integration -- --ignored --test-threads=1 || rc=$?
+wait "$TEST_PID" || rc=$?
+TEST_PID=
+kill "$WATCHDOG" 2>/dev/null || :
+wait "$WATCHDOG" 2>/dev/null || :
 if [ "$rc" -ne 0 ]; then
   exit 1
+fi
+# A run in which no test passed is a failure: a filter or a build that runs
+# nothing must not look green.
+passed=$(sed -n 's/^test result: [A-Za-z]*\. \([0-9][0-9]*\) passed.*/\1/p' "$OUT" | awk '{ n += $1 } END { print n + 0 }')
+if [ "$passed" -eq 0 ]; then
+  fail "no test ran"
 fi
 exit 0

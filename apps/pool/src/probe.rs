@@ -78,6 +78,19 @@ impl FailureClass {
     }
 }
 
+impl FailureClass {
+    /// Whether the node gave no answer at all: the classes that count toward
+    /// `probe.node_loss_timeout_ms`. With `tls`, `login` and `answer` the node
+    /// answered, so it is there (spec 0004, decision 84).
+    pub fn is_silence(self) -> bool {
+        matches!(self, FailureClass::Connect | FailureClass::Timeout)
+    }
+}
+
+/// What a probe task hands to the control loop: the observation, and the
+/// class of the failure when the round failed.
+pub type Sample = (Observation, Option<FailureClass>);
+
 /// The connection a probe keeps between rounds, when it has one.
 type Kept = Option<BackendConnection<TcpStream>>;
 
@@ -166,7 +179,7 @@ pub async fn run(
     period: Duration,
     timeout: Duration,
     origin: Instant,
-    samples: mpsc::Sender<Observation>,
+    samples: mpsc::Sender<Sample>,
     mut stop: watch::Receiver<bool>,
 ) {
     let mut kept = None;
@@ -185,7 +198,7 @@ pub async fn run(
             }
             last = class;
         }
-        if samples.send(observation).await.is_err() {
+        if samples.send((observation, class)).await.is_err() {
             return;
         }
         tokio::select! {

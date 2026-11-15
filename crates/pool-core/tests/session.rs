@@ -178,6 +178,9 @@ struct NodeLog {
     closed: usize,
     /// How often the question of step 8 was asked; it is not in `queries`.
     identity_questions: usize,
+    /// Every byte the node got after its first `ReadyForQuery`, as it came
+    /// (round five, review finding t3: counted per byte, not per message).
+    after_ready: Vec<u8>,
 }
 
 struct NodeState {
@@ -272,7 +275,20 @@ impl Connector for TestConnector {
     }
 }
 
+/// One message, or `None` at the end of the stream. It waits at most 30
+/// seconds (round five of the tests, review finding t4): a defect that leaves
+/// a client or the node waiting fails the test with this message and does not
+/// hang the run.
 async fn read_msg<S: tokio::io::AsyncRead + Unpin>(stream: &mut S, limit: u32) -> Option<Message> {
+    tokio::time::timeout(Duration::from_secs(30), read_msg_unbounded(stream, limit))
+        .await
+        .expect("a message or the end of the stream within 30 s")
+}
+
+async fn read_msg_unbounded<S: tokio::io::AsyncRead + Unpin>(
+    stream: &mut S,
+    limit: u32,
+) -> Option<Message> {
     let mut reader = MessageReader::new(limit);
     let mut buf = vec![0u8; 65536];
     loop {
@@ -380,7 +396,7 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
         .await;
     let _ = tls.flush().await;
     loop {
-        let Some(message) = read_msg(&mut tls, 1 << 24).await else {
+        let Some(message) = read_msg_kept(&mut tls, 1 << 24, &state).await else {
             state.log.lock().expect("lock").closed += 1;
             return;
         };
@@ -478,6 +494,38 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
         }
         let _ = tls.flush().await;
     }
+}
+
+/// Like [`read_msg`], and keeps every byte read in `after_ready` of the node,
+/// also the bytes of a message that never ends.
+async fn read_msg_kept<S: tokio::io::AsyncRead + Unpin>(
+    stream: &mut S,
+    limit: u32,
+    state: &NodeState,
+) -> Option<Message> {
+    let read = async {
+        let mut reader = MessageReader::new(limit);
+        let mut buf = vec![0u8; 65536];
+        loop {
+            let want = reader.wanted().clamp(1, buf.len());
+            let n = stream.read(&mut buf[..want]).await.ok()?;
+            if n == 0 {
+                return None;
+            }
+            state
+                .log
+                .lock()
+                .expect("lock")
+                .after_ready
+                .extend_from_slice(&buf[..n]);
+            if let (_, Some(result)) = reader.feed(&buf[..n]) {
+                return result.ok();
+            }
+        }
+    };
+    tokio::time::timeout(Duration::from_secs(30), read)
+        .await
+        .expect("a message or the end of the stream within 30 s")
 }
 
 // ---- the harness ----
@@ -960,7 +1008,8 @@ async fn a_positive_conflict_ends_running_sessions_and_silence_does_not() {
     busy.write_all(&encode_query("a slow statement"))
         .await
         .expect("write");
-    settle().await;
+    // Round five (review finding t8): the node has the query, so it is in flight.
+    assert!(eventually(|| h.log(|l| l.queries.iter().any(|q| q == "a slow statement"))).await);
     // Silence (writer_missing alone) keeps running sessions.
     h.close(false);
     settle().await;
@@ -1202,8 +1251,11 @@ async fn the_session_limit_gives_53300() {
 
 #[tokio::test]
 async fn waiters_and_the_acquire_deadline() {
+    // Round five (review finding t8): a deadline of 1 second in place of
+    // 300 ms, so that "at once" and "at the deadline" are far apart on a busy
+    // machine, and the waiter's clock starts after its TLS handshake.
     let h = Harness::new(
-        "node_backend_max_count = 1\nbackend_wait_max_count = 1\nbackend_acquire_timeout_ms = 300",
+        "node_backend_max_count = 1\nbackend_wait_max_count = 1\nbackend_acquire_timeout_ms = 1000",
     );
     let (_holder, _) = login(&h).await.ready();
     // One waiter waits until the deadline; one more is refused at once.
@@ -1217,15 +1269,20 @@ async fn waiters_and_the_acquire_deadline() {
             (code, started.elapsed())
         }
     });
-    tokio::time::sleep(Duration::from_millis(100)).await;
+    tokio::time::sleep(Duration::from_millis(300)).await;
     let started = std::time::Instant::now();
     let (_, code) = login(&h).await.refused();
     assert_eq!(code, "53300");
-    assert!(started.elapsed() < Duration::from_millis(250), "at once");
+    assert!(
+        started.elapsed() < Duration::from_millis(700),
+        "at once: {:?}",
+        started.elapsed()
+    );
     let (code, waited) = waiting.await.expect("join");
     assert_eq!(code, "53300");
+    // Not before the deadline, and not more than 2 seconds after it.
     assert!(
-        waited >= Duration::from_millis(250) && waited < Duration::from_millis(2300),
+        waited >= Duration::from_millis(1000) && waited < Duration::from_millis(3000),
         "{waited:?}"
     );
     assert_eq!(h.server.counters().refused(Refusal::WaitLimit), 1);
@@ -1315,9 +1372,12 @@ async fn at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01() {
     busy.write_all(&encode_query("a slow statement"))
         .await
         .expect("write");
-    settle().await;
+    // Round five (review finding t8): the node has the query, so it is in flight.
+    assert!(eventually(|| h.log(|l| l.queries.iter().any(|q| q == "a slow statement"))).await);
     let started = std::time::Instant::now();
-    h.server.shutdown().await;
+    tokio::time::timeout(Duration::from_secs(10), h.server.shutdown())
+        .await
+        .expect("shutdown returns within 10 s");
     assert!(started.elapsed() >= Duration::from_millis(180));
     assert_eq!(
         last_error(&read_until_ready(&mut busy).await).as_deref(),
@@ -1330,7 +1390,9 @@ async fn shutdown_closes_connections_before_their_session_started() {
     let h = Harness::new("shutdown_timeout_ms = 1000");
     let mut raw = h.raw();
     settle().await;
-    h.server.shutdown().await;
+    tokio::time::timeout(Duration::from_secs(10), h.server.shutdown())
+        .await
+        .expect("shutdown returns within 10 s");
     let mut rest = Vec::new();
     let _ = tokio::time::timeout(Duration::from_secs(5), raw.read_to_end(&mut rest)).await;
     assert!(rest.is_empty());
@@ -2356,4 +2418,218 @@ async fn step_12_closes_the_backend_before_the_client_that_does_not_read() {
     tokio::time::timeout(Duration::from_secs(15), run)
         .await
         .expect("within the test limit");
+}
+
+// ---- added by the tests of scope 004, round five (review findings t1, t3) ----
+
+/// One message of a login as the client saw it: its tag, the authentication
+/// code when it is an `Authentication` message, and its body.
+type Seen = (u8, Option<i32>, Vec<u8>);
+
+/// A login over TLS with a startup packet for protocol 3.`minor` and `params`,
+/// that records every message the listener sends, in order, up to
+/// `ReadyForQuery`, an `ErrorResponse` or the end of the stream. The server
+/// signature of the SASL final message is checked when it comes.
+async fn login_recorded(h: &Harness, minor: u16, params: &[(&str, &[u8])]) -> Vec<Seen> {
+    let mut tls = upgrade(h.raw()).await;
+    tls.write_all(&encode_startup_version(3, minor, params))
+        .await
+        .expect("startup");
+    let mut seen = Vec::new();
+    let mut client = None;
+    let mut expected = None;
+    while let Some(m) = read_msg(&mut tls, 1 << 20).await {
+        let code = (m.tag == b'R')
+            .then(|| {
+                m.body
+                    .get(..4)
+                    .map(|b| i32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+            })
+            .flatten();
+        seen.push((m.tag, code, m.body.clone()));
+        match (m.tag, auth::parse_authentication(&m.body)) {
+            (b'R', Ok(Authentication::Sasl(_))) => {
+                let (exchange, first) = ClientExchange::start().expect("random");
+                tls.write_all(&auth::encode_sasl_initial_response(
+                    auth::SCRAM_SHA_256,
+                    first.as_bytes(),
+                ))
+                .await
+                .expect("write");
+                client = Some(exchange);
+            }
+            (b'R', Ok(Authentication::SaslContinue(data))) => {
+                let exchange = client.take().expect("a SASL request came first");
+                let server_first = exchange.server_first(&data).expect("server first");
+                let keys = derive_keys(
+                    &password(PRINCIPAL_PASSWORD),
+                    &server_first.salt,
+                    std::num::NonZeroU32::new(server_first.iterations).expect("count"),
+                );
+                let (fin, check) = exchange.client_final(&server_first, &keys);
+                tls.write_all(&auth::encode_sasl_response(fin.as_bytes()))
+                    .await
+                    .expect("write");
+                expected = Some(check);
+            }
+            (b'R', Ok(Authentication::SaslFinal(data))) => {
+                expected
+                    .take()
+                    .expect("a final message after a client proof")
+                    .check(&data)
+                    .expect("the server signature of the listener");
+            }
+            (b'Z' | b'E', _) => break,
+            _ => {}
+        }
+    }
+    seen
+}
+
+/// Tags and authentication codes only.
+fn shape(seen: &[Seen]) -> Vec<(char, Option<i32>)> {
+    seen.iter().map(|(t, c, _)| (char::from(*t), *c)).collect()
+}
+
+const PRINCIPAL_PARAMS: [(&str, &[u8]); 2] =
+    [("user", PRINCIPAL.as_bytes()), ("database", b"orders")];
+
+#[tokio::test]
+async fn ac15_a_request_for_3_2_gets_negotiate_protocol_version_first_with_its_exact_body() {
+    // covers: 0004 AC-15 (review finding t1): `v` comes before the
+    // authentication request and names protocol 3.0 and no option.
+    let h = Harness::new("");
+    let seen = login_recorded(&h, 2, &PRINCIPAL_PARAMS).await;
+    assert_eq!(
+        shape(&seen),
+        [
+            ('v', None),
+            ('R', Some(10)),
+            ('R', Some(11)),
+            ('R', Some(12)),
+            ('R', Some(0)),
+            ('S', None),
+            ('S', None),
+            ('S', None),
+            ('Z', None),
+        ]
+    );
+    assert_eq!(seen[0].2, [0, 3, 0, 0, 0, 0, 0, 0], "3.0, and no option");
+    // With a `_pq_.` option the option is named.
+    let h = Harness::new("");
+    let seen = login_recorded(
+        &h,
+        0,
+        &[
+            ("user", PRINCIPAL.as_bytes()),
+            ("database", b"orders"),
+            ("_pq_.zq9", b"1"),
+        ],
+    )
+    .await;
+    assert_eq!(seen[0].0, b'v');
+    assert_eq!(
+        seen[0].2,
+        [
+            0, 3, 0, 0, 0, 0, 0, 1, b'_', b'p', b'q', b'_', b'.', b'z', b'q', b'9', 0
+        ]
+    );
+}
+
+#[tokio::test]
+async fn ac16_a_login_for_3_0_gets_the_server_signature_and_then_authentication_ok_and_no_negotiation()
+ {
+    // covers: 0004 AC-16 (review finding t1): the SASL final message with the
+    // server signature, which the client checks, comes before AuthenticationOk.
+    let h = Harness::new("");
+    let seen = login_recorded(&h, 0, &PRINCIPAL_PARAMS).await;
+    assert_eq!(
+        shape(&seen),
+        [
+            ('R', Some(10)),
+            ('R', Some(11)),
+            ('R', Some(12)),
+            ('R', Some(0)),
+            ('S', None),
+            ('S', None),
+            ('S', None),
+            ('Z', None),
+        ]
+    );
+}
+
+#[tokio::test]
+async fn ac14_no_authentication_ok_comes_before_a_refusal_after_the_proof() {
+    // covers: 0004 AC-14, AC-17 (review finding t1): AuthenticationOk is sent
+    // only after the route checks and the backend; a login refused after a
+    // right proof sees the SASL messages and the error, and no
+    // AuthenticationOk.
+    let expect_refused = |seen: &[Seen], code: &str| {
+        assert_eq!(
+            shape(seen),
+            [
+                ('R', Some(10)),
+                ('R', Some(11)),
+                ('R', Some(12)),
+                ('E', None)
+            ],
+            "{code}"
+        );
+        assert_eq!(
+            error_sqlstate(&seen[3].2)
+                .map(|s| String::from_utf8_lossy(&s).into_owned())
+                .as_deref(),
+            Some(code)
+        );
+    };
+    // A closed route (step 5).
+    let h = Harness::new("");
+    h.close(false);
+    expect_refused(&login_recorded(&h, 0, &PRINCIPAL_PARAMS).await, "57P03");
+    // A route that changed while the backend opened (step 9).
+    let h = Harness::new("");
+    *h.node.after_open.lock().expect("lock") = Some(h.route(2, Duration::from_secs(3600)));
+    expect_refused(&login_recorded(&h, 0, &PRINCIPAL_PARAMS).await, "57P03");
+    // No identity entry for the database.
+    let h = Harness::new("");
+    expect_refused(
+        &login_recorded(
+            &h,
+            0,
+            &[
+                ("user", PRINCIPAL.as_bytes()),
+                ("database", BACKEND_DATABASE.as_bytes()),
+            ],
+        )
+        .await,
+        "28000",
+    );
+    // A node in recovery.
+    let h = Harness::new("");
+    *h.node.hot_standby.lock().expect("lock") = "on";
+    expect_refused(&login_recorded(&h, 0, &PRINCIPAL_PARAMS).await, "08006");
+}
+
+#[tokio::test]
+async fn ac20_no_byte_of_an_oversized_query_reaches_the_node() {
+    // covers: 0004 AC-20 (review finding t3): counted per byte. After its
+    // ReadyForQuery the node gets the question of step 8 and, at the end,
+    // the Terminate of POOL, and no byte of the refused Query, not even its header.
+    let h = Harness::new("frontend_message_max_bytes = 1024");
+    let (mut tls, _) = login(&h).await.ready();
+    let before = h.log(|l| l.after_ready.clone());
+    let messages = query(&mut tls, &"x".repeat(1100)).await;
+    assert_eq!(last_error(&messages).as_deref(), Some("54000"));
+    assert!(closed(&mut tls).await);
+    let terminate = encode_terminate();
+    assert!(
+        eventually(|| h.log(|l| l.after_ready.len()) >= before.len() + terminate.len()).await,
+        "the Terminate of POOL arrives"
+    );
+    settle().await;
+    assert_eq!(
+        h.log(|l| l.after_ready[before.len()..].to_vec()),
+        terminate,
+        "only the Terminate of POOL after the refusal"
+    );
 }
