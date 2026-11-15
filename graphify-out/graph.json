@@ -4371,7 +4371,7 @@
       "file_type": "code",
       "norm_label": "ac5_each_new_number_key_takes_its_range_edges_and_refuses_one_past_them()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2813"
+      "source_location": "L2819"
     },
     {
       "id": "apps_pool_tests_check_config_ac5_every_fixture_gives_the_result_its_name_prefix_promises",
@@ -4382,7 +4382,7 @@
       "file_type": "code",
       "norm_label": "ac5_every_fixture_gives_the_result_its_name_prefix_promises()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2766"
+      "source_location": "L2772"
     },
     {
       "id": "apps_pool_tests_check_config_ac5_sec10_result_cache_enabled_true_is_refused_in_the_dotted_and_inline_spellings",
@@ -4404,7 +4404,7 @@
       "file_type": "code",
       "norm_label": "ac6_raw_c1_direction_and_separator_characters_in_names_and_paths_are_refused_without_the_canary()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2950"
+      "source_location": "L2956"
     },
     {
       "id": "apps_pool_tests_check_config_ac6_sec10_automatic_promotion_enabled_true_is_refused_in_the_dotted_and_inline_spellings",
@@ -4734,7 +4734,7 @@
       "file_type": "code",
       "norm_label": "made_input_5()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2683"
+      "source_location": "L2689"
     },
     {
       "id": "apps_pool_tests_check_config_made_inputs_check_utf8_and_the_inclusive_size_limit",
@@ -4899,7 +4899,7 @@
       "file_type": "code",
       "norm_label": "serving_with()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2805"
+      "source_location": "L2811"
     },
     {
       "id": "apps_pool_tests_check_config_spawn",
@@ -4943,7 +4943,7 @@
       "file_type": "code",
       "norm_label": "spec_0004_ac6_the_canary_never_reaches_the_output()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2663"
+      "source_location": "L2669"
     },
     {
       "id": "apps_pool_tests_check_config_spec_0004_ac7_a_report_of_twenty_thousand_has_no_omitted_line_or_field",
@@ -4954,7 +4954,7 @@
       "file_type": "code",
       "norm_label": "spec_0004_ac7_a_report_of_twenty_thousand_has_no_omitted_line_or_field()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2744"
+      "source_location": "L2750"
     },
     {
       "id": "apps_pool_tests_check_config_spec_0004_ac7_the_binary_writes_twenty_thousand_findings_and_the_omitted_count",
@@ -4965,7 +4965,7 @@
       "file_type": "code",
       "norm_label": "spec_0004_ac7_the_binary_writes_twenty_thousand_findings_and_the_omitted_count()",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2698"
+      "source_location": "L2704"
     },
     {
       "id": "apps_pool_tests_check_config_top_level_keys",
@@ -17277,7 +17277,7 @@
       "file_type": "code",
       "norm_label": "a_cancel_body_is_dropped_and_nothing_after_the_packet_is_taken()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L642"
+      "source_location": "L648"
     },
     {
       "id": "crates_pool_protocol_src_startup_body",
@@ -17288,7 +17288,7 @@
       "file_type": "code",
       "norm_label": "body()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L552"
+      "source_location": "L555"
     },
     {
       "id": "crates_pool_protocol_src_startup_decode_first_header",
@@ -17310,7 +17310,7 @@
       "file_type": "code",
       "norm_label": "encode_ssl_request()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L403"
+      "source_location": "L406"
     },
     {
       "id": "crates_pool_protocol_src_startup_encode_startup",
@@ -17321,7 +17321,7 @@
       "file_type": "code",
       "norm_label": "encode_startup()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L415"
+      "source_location": "L418"
     },
     {
       "id": "crates_pool_protocol_src_startup_encode_startup_version",
@@ -17332,7 +17332,7 @@
       "file_type": "code",
       "norm_label": "encode_startup_version()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L424"
+      "source_location": "L427"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstheader",
@@ -17365,7 +17365,7 @@
       "file_type": "code",
       "norm_label": "firstpacket",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L277"
+      "source_location": "L280"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstpacketreader",
@@ -17376,7 +17376,7 @@
       "file_type": "code",
       "norm_label": "firstpacketreader",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L300"
+      "source_location": "L303"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstpacketreader_feed",
@@ -17387,7 +17387,7 @@
       "file_type": "code",
       "norm_label": ".feed()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L346"
+      "source_location": "L349"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstpacketreader_fmt",
@@ -17398,7 +17398,7 @@
       "file_type": "code",
       "norm_label": ".fmt()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L310"
+      "source_location": "L313"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstpacketreader_is_tls",
@@ -17409,7 +17409,7 @@
       "file_type": "code",
       "norm_label": ".is_tls()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L332"
+      "source_location": "L335"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstpacketreader_new",
@@ -17420,7 +17420,7 @@
       "file_type": "code",
       "norm_label": ".new()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L321"
+      "source_location": "L324"
     },
     {
       "id": "crates_pool_protocol_src_startup_firstpacketreader_wanted",
@@ -17431,7 +17431,7 @@
       "file_type": "code",
       "norm_label": ".wanted()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L337"
+      "source_location": "L340"
     },
     {
       "id": "crates_pool_protocol_src_startup_forwarded",
@@ -17508,7 +17508,7 @@
       "file_type": "code",
       "norm_label": "handshake_order()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L498"
+      "source_location": "L501"
     },
     {
       "id": "crates_pool_protocol_src_startup_handshakestep",
@@ -17530,7 +17530,7 @@
       "file_type": "code",
       "norm_label": "header()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L446"
+      "source_location": "L449"
     },
     {
       "id": "crates_pool_protocol_src_startup_header_rows",
@@ -17541,7 +17541,7 @@
       "file_type": "code",
       "norm_label": "header_rows()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L454"
+      "source_location": "L457"
     },
     {
       "id": "crates_pool_protocol_src_startup_negotiation_only_when_needed",
@@ -17552,7 +17552,7 @@
       "file_type": "code",
       "norm_label": "negotiation_only_when_needed()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L626"
+      "source_location": "L632"
     },
     {
       "id": "crates_pool_protocol_src_startup_one_reader_follows_the_connection_and_never_reads_a_body_before_tls",
@@ -17563,7 +17563,7 @@
       "file_type": "code",
       "norm_label": "one_reader_follows_the_connection_and_never_reads_a_body_before_tls()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L657"
+      "source_location": "L663"
     },
     {
       "id": "crates_pool_protocol_src_startup_parameter_rows",
@@ -17574,7 +17574,7 @@
       "file_type": "code",
       "norm_label": "parameter_rows()",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L558"
+      "source_location": "L561"
     },
     {
       "id": "crates_pool_protocol_src_startup_parse_startup",
@@ -20895,7 +20895,7 @@
       "file_type": "code",
       "norm_label": "ac5_a_period_above_thirty_thousand_is_refused_at_the_period()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2923"
+      "source_location": "L2929"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_a_principal_lacking_its_keys_is_reported_at_its_entry",
@@ -20906,7 +20906,7 @@
       "file_type": "code",
       "norm_label": "ac5_a_principal_lacking_its_keys_is_reported_at_its_entry()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3122"
+      "source_location": "L3203"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text",
@@ -20917,7 +20917,7 @@
       "file_type": "code",
       "norm_label": "ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3241"
+      "source_location": "L3322"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_ac6_sec10_one_capability_off_does_not_hide_the_other_turned_on",
@@ -20961,7 +20961,7 @@
       "file_type": "code",
       "norm_label": "ac5_left_out_tables_and_keys_have_their_defaults()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2712"
+      "source_location": "L2717"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_listener_keys_are_required_together_and_checked_in_order",
@@ -20972,7 +20972,7 @@
       "file_type": "code",
       "norm_label": "ac5_listener_keys_are_required_together_and_checked_in_order()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2994"
+      "source_location": "L3075"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_monitor_tls_and_principal_keys_are_checked_at_their_value",
@@ -20983,7 +20983,7 @@
       "file_type": "code",
       "norm_label": "ac5_monitor_tls_and_principal_keys_are_checked_at_their_value()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3040"
+      "source_location": "L3121"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_new_checks_come_after_item_5_and_before_the_cross_checks",
@@ -20994,7 +20994,7 @@
       "file_type": "code",
       "norm_label": "ac5_new_checks_come_after_item_5_and_before_the_cross_checks()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3174"
+      "source_location": "L3255"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_number_keys_accept_their_range_and_refuse_what_is_outside",
@@ -21005,7 +21005,7 @@
       "file_type": "code",
       "norm_label": "ac5_number_keys_accept_their_range_and_refuse_what_is_outside()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2894"
+      "source_location": "L2900"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_principal_repeats_are_reported_ids_then_names",
@@ -21016,7 +21016,7 @@
       "file_type": "code",
       "norm_label": "ac5_principal_repeats_are_reported_ids_then_names()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3146"
+      "source_location": "L3227"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_resolve_identity_keeps_names_byte_for_byte",
@@ -21104,7 +21104,18 @@
       "file_type": "code",
       "norm_label": "ac5_the_expiry_must_cover_the_period_and_the_timeout()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2944"
+      "source_location": "L2950"
+    },
+    {
+      "id": "crates_pool_config_tests_validate_ac5_the_loss_time_must_cover_two_periods_and_the_timeout",
+      "label": "ac5_the_loss_time_must_cover_two_periods_and_the_timeout()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "pool-config Validation Tests",
+      "file_type": "code",
+      "norm_label": "ac5_the_loss_time_must_cover_two_periods_and_the_timeout()",
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3007"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_valid_serving_exposes_every_new_key",
@@ -21115,7 +21126,7 @@
       "file_type": "code",
       "norm_label": "ac5_valid_serving_exposes_every_new_key()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2751"
+      "source_location": "L2756"
     },
     {
       "id": "crates_pool_config_tests_validate_ac5_valid_serving_limits_has_every_lowest_value",
@@ -21126,7 +21137,7 @@
       "file_type": "code",
       "norm_label": "ac5_valid_serving_limits_has_every_lowest_value()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2796"
+      "source_location": "L2801"
     },
     {
       "id": "crates_pool_config_tests_validate_ac6_every_name_and_path_key_refuses_each_listed_character",
@@ -21137,7 +21148,7 @@
       "file_type": "code",
       "norm_label": "ac6_every_name_and_path_key_refuses_each_listed_character()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3294"
+      "source_location": "L3375"
     },
     {
       "id": "crates_pool_config_tests_validate_ac6_sec10_automatic_promotion_enabled_true_is_refused_in_the_dotted_spelling",
@@ -21181,7 +21192,7 @@
       "file_type": "code",
       "norm_label": "ac6_the_neighbours_of_each_listed_range_stay_allowed()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3412"
+      "source_location": "L3493"
     },
     {
       "id": "crates_pool_config_tests_validate_ac7_a_capability_written_twice_across_spellings_is_a_syntax_finding",
@@ -21313,7 +21324,7 @@
       "file_type": "code",
       "norm_label": "ac7_at_twenty_thousand_nothing_is_omitted_and_one_more_is_counted()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3479"
+      "source_location": "L3560"
     },
     {
       "id": "crates_pool_config_tests_validate_ac7_automatic_promotion_enabled_that_is_not_a_boolean_is_a_schema_finding",
@@ -21445,7 +21456,7 @@
       "file_type": "code",
       "norm_label": "ac7_validate_keeps_the_first_twenty_thousand_and_counts_the_rest()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3443"
+      "source_location": "L3524"
     },
     {
       "id": "crates_pool_config_tests_validate_ac8_a_missing_version_is_reported_before_both_capabilities",
@@ -21489,7 +21500,7 @@
       "file_type": "code",
       "norm_label": "ac8_one_missing_monitor_key_or_principal_gives_one_finding()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3588"
+      "source_location": "L3669"
     },
     {
       "id": "crates_pool_config_tests_validate_ac8_two_findings_leave_out_the_one_that_is_fine",
@@ -21511,7 +21522,7 @@
       "file_type": "code",
       "norm_label": "ac8_validate_never_gives_incomplete()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3637"
+      "source_location": "L3718"
     },
     {
       "id": "crates_pool_config_tests_validate_ac8_validation_is_repeatable_for_the_same_bytes",
@@ -21533,7 +21544,7 @@
       "file_type": "code",
       "norm_label": "ac8_views_need_what_each_command_needs()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3511"
+      "source_location": "L3592"
     },
     {
       "id": "crates_pool_config_tests_validate_ac9_sec11_a_canary_in_other_places_does_not_reach_the_rejection_text",
@@ -21775,7 +21786,7 @@
       "file_type": "code",
       "norm_label": "made_input_5()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3426"
+      "source_location": "L3507"
     },
     {
       "id": "crates_pool_config_tests_validate_multiple_findings_are_reported_in_order",
@@ -21819,7 +21830,7 @@
       "file_type": "code",
       "norm_label": "number_key()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2845"
+      "source_location": "L2850"
     },
     {
       "id": "crates_pool_config_tests_validate_number_table",
@@ -21830,7 +21841,7 @@
       "file_type": "code",
       "norm_label": "number_table()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2885"
+      "source_location": "L2891"
     },
     {
       "id": "crates_pool_config_tests_validate_other_invalid_fixtures_have_the_listed_finding",
@@ -21885,7 +21896,7 @@
       "file_type": "code",
       "norm_label": "probe_table()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2868"
+      "source_location": "L2874"
     },
     {
       "id": "crates_pool_config_tests_validate_refused_scalars",
@@ -21896,7 +21907,7 @@
       "file_type": "code",
       "norm_label": "refused_scalars()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3282"
+      "source_location": "L3363"
     },
     {
       "id": "crates_pool_config_tests_validate_rejected",
@@ -22061,7 +22072,7 @@
       "file_type": "code",
       "norm_label": "spec_0004_finding_codes_and_messages_are_stable()",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3649"
+      "source_location": "L3730"
     },
     {
       "id": "crates_pool_config_tests_validate_toml_string",
@@ -30182,7 +30193,7 @@
       "file_type": "code",
       "norm_label": "build_principals()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L760"
+      "source_location": "L769"
     },
     {
       "id": "crates_pool_config_src_serving_check",
@@ -30193,7 +30204,7 @@
       "file_type": "code",
       "norm_label": "check()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446"
+      "source_location": "L447"
     },
     {
       "id": "crates_pool_config_src_serving_check_limits",
@@ -30204,7 +30215,7 @@
       "file_type": "code",
       "norm_label": "check_limits()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L516"
+      "source_location": "L517"
     },
     {
       "id": "crates_pool_config_src_serving_check_listener",
@@ -30215,7 +30226,7 @@
       "file_type": "code",
       "norm_label": "check_listener()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L483"
+      "source_location": "L484"
     },
     {
       "id": "crates_pool_config_src_serving_check_monitor",
@@ -30226,7 +30237,7 @@
       "file_type": "code",
       "norm_label": "check_monitor()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L653"
+      "source_location": "L662"
     },
     {
       "id": "crates_pool_config_src_serving_check_node_tls",
@@ -30237,7 +30248,7 @@
       "file_type": "code",
       "norm_label": "check_node_tls()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L674"
+      "source_location": "L683"
     },
     {
       "id": "crates_pool_config_src_serving_check_principal",
@@ -30248,7 +30259,7 @@
       "file_type": "code",
       "norm_label": "check_principal()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L688"
+      "source_location": "L697"
     },
     {
       "id": "crates_pool_config_src_serving_check_probe",
@@ -30259,7 +30270,7 @@
       "file_type": "code",
       "norm_label": "check_probe()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L587"
+      "source_location": "L588"
     },
     {
       "id": "crates_pool_config_src_serving_clustermonitor",
@@ -30270,7 +30281,7 @@
       "file_type": "code",
       "norm_label": "clustermonitor",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L334"
+      "source_location": "L335"
     },
     {
       "id": "crates_pool_config_src_serving_cross_check",
@@ -30281,7 +30292,7 @@
       "file_type": "code",
       "norm_label": "cross_check()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L729"
+      "source_location": "L738"
     },
     {
       "id": "crates_pool_config_src_serving_defaults_follow_the_table_of_keys",
@@ -30292,7 +30303,7 @@
       "file_type": "code",
       "norm_label": "defaults_follow_the_table_of_keys()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L792"
+      "source_location": "L801"
     },
     {
       "id": "crates_pool_config_src_serving_entry_optional",
@@ -30303,7 +30314,7 @@
       "file_type": "code",
       "norm_label": "entry_optional()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639"
+      "source_location": "L648"
     },
     {
       "id": "crates_pool_config_src_serving_limits",
@@ -30490,7 +30501,7 @@
       "file_type": "code",
       "norm_label": "millis()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L225"
+      "source_location": "L226"
     },
     {
       "id": "crates_pool_config_src_serving_nodetls",
@@ -30501,7 +30512,7 @@
       "file_type": "code",
       "norm_label": "nodetls",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L342"
+      "source_location": "L343"
     },
     {
       "id": "crates_pool_config_src_serving_number",
@@ -30512,7 +30523,7 @@
       "file_type": "code",
       "norm_label": "number",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L381"
+      "source_location": "L382"
     },
     {
       "id": "crates_pool_config_src_serving_principal_index_debug_prints_only_the_count",
@@ -30523,7 +30534,7 @@
       "file_type": "code",
       "norm_label": "principal_index_debug_prints_only_the_count()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L815"
+      "source_location": "L824"
     },
     {
       "id": "crates_pool_config_src_serving_principalconfig",
@@ -30534,7 +30545,7 @@
       "file_type": "code",
       "norm_label": "principalconfig",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L236"
+      "source_location": "L237"
     },
     {
       "id": "crates_pool_config_src_serving_principalconfig_fmt",
@@ -30545,7 +30556,7 @@
       "file_type": "code",
       "norm_label": ".fmt()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L263"
+      "source_location": "L264"
     },
     {
       "id": "crates_pool_config_src_serving_principalconfig_id",
@@ -30556,7 +30567,7 @@
       "file_type": "code",
       "norm_label": ".id()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L244"
+      "source_location": "L245"
     },
     {
       "id": "crates_pool_config_src_serving_principalconfig_session_max_count",
@@ -30567,7 +30578,7 @@
       "file_type": "code",
       "norm_label": ".session_max_count()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L257"
+      "source_location": "L258"
     },
     {
       "id": "crates_pool_config_src_serving_principalconfig_verifier",
@@ -30578,7 +30589,7 @@
       "file_type": "code",
       "norm_label": ".verifier()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L250"
+      "source_location": "L251"
     },
     {
       "id": "crates_pool_config_src_serving_principalentry",
@@ -30589,7 +30600,7 @@
       "file_type": "code",
       "norm_label": "principalentry",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L360"
+      "source_location": "L361"
     },
     {
       "id": "crates_pool_config_src_serving_principalindex",
@@ -30600,7 +30611,7 @@
       "file_type": "code",
       "norm_label": "principalindex",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L273"
+      "source_location": "L274"
     },
     {
       "id": "crates_pool_config_src_serving_principalindex_fmt",
@@ -30611,7 +30622,7 @@
       "file_type": "code",
       "norm_label": ".fmt()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L282"
+      "source_location": "L283"
     },
     {
       "id": "crates_pool_config_src_serving_principalindex_get",
@@ -30622,7 +30633,7 @@
       "file_type": "code",
       "norm_label": ".get()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L276"
+      "source_location": "L277"
     },
     {
       "id": "crates_pool_config_src_serving_probeconfig",
@@ -30644,7 +30655,7 @@
       "file_type": "code",
       "norm_label": ".node_loss_timeout()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L220"
+      "source_location": "L221"
     },
     {
       "id": "crates_pool_config_src_serving_probeconfig_observation_expiry",
@@ -30688,7 +30699,7 @@
       "file_type": "code",
       "norm_label": "push_key()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L397"
+      "source_location": "L398"
     },
     {
       "id": "crates_pool_config_src_serving_rawclustermonitor",
@@ -30699,7 +30710,7 @@
       "file_type": "code",
       "norm_label": "rawclustermonitor",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L348"
+      "source_location": "L349"
     },
     {
       "id": "crates_pool_config_src_serving_rawnodetls",
@@ -30710,7 +30721,7 @@
       "file_type": "code",
       "norm_label": "rawnodetls",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L355"
+      "source_location": "L356"
     },
     {
       "id": "crates_pool_config_src_serving_rawserving",
@@ -30721,7 +30732,7 @@
       "file_type": "code",
       "norm_label": "rawserving",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L326"
+      "source_location": "L327"
     },
     {
       "id": "crates_pool_config_src_serving_rs_btreemap",
@@ -30930,7 +30941,7 @@
       "file_type": "code",
       "norm_label": "serving",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L370"
+      "source_location": "L371"
     },
     {
       "id": "crates_pool_config_src_serving_top_number",
@@ -30941,7 +30952,7 @@
       "file_type": "code",
       "norm_label": "top_number()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L406"
+      "source_location": "L407"
     },
     {
       "id": "crates_pool_config_src_serving_top_required",
@@ -30952,7 +30963,7 @@
       "file_type": "code",
       "norm_label": "top_required()",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425"
+      "source_location": "L426"
     },
     {
       "id": "crates_pool_config_src_topology",
@@ -79681,7 +79692,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2855",
+      "source_location": "L2861",
       "weight": 1.0
     },
     {
@@ -79693,7 +79704,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2863",
+      "source_location": "L2869",
       "weight": 1.0
     },
     {
@@ -79705,7 +79716,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2863",
+      "source_location": "L2869",
       "weight": 1.0
     },
     {
@@ -79717,7 +79728,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2865",
+      "source_location": "L2871",
       "weight": 1.0
     },
     {
@@ -79729,7 +79740,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2783",
+      "source_location": "L2789",
       "weight": 1.0
     },
     {
@@ -79741,7 +79752,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2785",
+      "source_location": "L2791",
       "weight": 1.0
     },
     {
@@ -79753,7 +79764,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2792",
+      "source_location": "L2798",
       "weight": 1.0
     },
     {
@@ -79789,7 +79800,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2983",
+      "source_location": "L2989",
       "weight": 1.0
     },
     {
@@ -79801,7 +79812,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2990",
+      "source_location": "L2996",
       "weight": 1.0
     },
     {
@@ -80797,7 +80808,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2806",
+      "source_location": "L2812",
       "weight": 1.0
     },
     {
@@ -80809,7 +80820,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2809",
+      "source_location": "L2815",
       "weight": 1.0
     },
     {
@@ -80821,7 +80832,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2615",
+      "source_location": "L2621",
       "weight": 1.0
     },
     {
@@ -80833,7 +80844,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2615",
+      "source_location": "L2621",
       "weight": 1.0
     },
     {
@@ -80845,7 +80856,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2640",
+      "source_location": "L2646",
       "weight": 1.0
     },
     {
@@ -80857,7 +80868,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2644",
+      "source_location": "L2650",
       "weight": 1.0
     },
     {
@@ -80869,7 +80880,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2645",
+      "source_location": "L2651",
       "weight": 1.0
     },
     {
@@ -80881,7 +80892,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2655",
+      "source_location": "L2661",
       "weight": 1.0
     },
     {
@@ -80941,7 +80952,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2672",
+      "source_location": "L2678",
       "weight": 1.0
     },
     {
@@ -80953,7 +80964,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2672",
+      "source_location": "L2678",
       "weight": 1.0
     },
     {
@@ -80965,7 +80976,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2748",
+      "source_location": "L2754",
       "weight": 1.0
     },
     {
@@ -80977,7 +80988,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2750",
+      "source_location": "L2756",
       "weight": 1.0
     },
     {
@@ -80989,7 +81000,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2701",
+      "source_location": "L2707",
       "weight": 1.0
     },
     {
@@ -81001,7 +81012,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2703",
+      "source_location": "L2709",
       "weight": 1.0
     },
     {
@@ -81013,7 +81024,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2707",
+      "source_location": "L2713",
       "weight": 1.0
     },
     {
@@ -87433,7 +87444,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L784",
+      "source_location": "L793",
       "weight": 1.0
     },
     {
@@ -87445,7 +87456,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L455",
+      "source_location": "L456",
       "weight": 1.0
     },
     {
@@ -87457,7 +87468,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L456",
+      "source_location": "L457",
       "weight": 1.0
     },
     {
@@ -87469,7 +87480,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L457",
+      "source_location": "L458",
       "weight": 1.0
     },
     {
@@ -87481,7 +87492,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L460",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -87493,7 +87504,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L464",
+      "source_location": "L465",
       "weight": 1.0
     },
     {
@@ -87505,7 +87516,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L469",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -87517,7 +87528,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L471",
+      "source_location": "L472",
       "weight": 1.0
     },
     {
@@ -87529,7 +87540,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L527",
+      "source_location": "L528",
       "weight": 1.0
     },
     {
@@ -87541,7 +87552,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L484",
+      "source_location": "L485",
       "weight": 1.0
     },
     {
@@ -87553,7 +87564,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L487",
+      "source_location": "L488",
       "weight": 1.0
     },
     {
@@ -87565,7 +87576,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L654",
+      "source_location": "L663",
       "weight": 1.0
     },
     {
@@ -87577,7 +87588,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L675",
+      "source_location": "L684",
       "weight": 1.0
     },
     {
@@ -87589,7 +87600,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L592",
+      "source_location": "L593",
       "weight": 1.0
     },
     {
@@ -87601,7 +87612,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L627",
+      "source_location": "L628",
       "weight": 1.0
     },
     {
@@ -87649,7 +87660,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L816",
+      "source_location": "L825",
       "weight": 1.0
     },
     {
@@ -87661,7 +87672,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L221",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -87709,7 +87720,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L417",
+      "source_location": "L418",
       "weight": 1.0
     },
     {
@@ -87721,7 +87732,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L432",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -89425,7 +89436,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2929",
+      "source_location": "L2935",
       "weight": 1.0
     },
     {
@@ -89437,7 +89448,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3243",
+      "source_location": "L3324",
       "weight": 1.0
     },
     {
@@ -89449,7 +89460,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3243",
+      "source_location": "L3324",
       "weight": 1.0
     },
     {
@@ -89461,7 +89472,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3273",
+      "source_location": "L3354",
       "weight": 1.0
     },
     {
@@ -89497,7 +89508,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2685",
+      "source_location": "L2690",
       "weight": 1.0
     },
     {
@@ -89509,7 +89520,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2714",
+      "source_location": "L2719",
       "weight": 1.0
     },
     {
@@ -89521,7 +89532,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2714",
+      "source_location": "L2719",
       "weight": 1.0
     },
     {
@@ -89533,7 +89544,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3029",
+      "source_location": "L3110",
       "weight": 1.0
     },
     {
@@ -89545,7 +89556,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3029",
+      "source_location": "L3110",
       "weight": 1.0
     },
     {
@@ -89557,7 +89568,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3046",
+      "source_location": "L3127",
       "weight": 1.0
     },
     {
@@ -89569,7 +89580,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3095",
+      "source_location": "L3176",
       "weight": 1.0
     },
     {
@@ -89581,7 +89592,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3106",
+      "source_location": "L3187",
       "weight": 1.0
     },
     {
@@ -89593,7 +89604,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3179",
+      "source_location": "L3260",
       "weight": 1.0
     },
     {
@@ -89605,7 +89616,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2898",
+      "source_location": "L2904",
       "weight": 1.0
     },
     {
@@ -89617,7 +89628,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2900",
+      "source_location": "L2906",
       "weight": 1.0
     },
     {
@@ -89629,7 +89640,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2900",
+      "source_location": "L2906",
       "weight": 1.0
     },
     {
@@ -89641,7 +89652,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2901",
+      "source_location": "L2907",
       "weight": 1.0
     },
     {
@@ -89653,7 +89664,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3166",
+      "source_location": "L3247",
       "weight": 1.0
     },
     {
@@ -89665,7 +89676,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3170",
+      "source_location": "L3251",
       "weight": 1.0
     },
     {
@@ -89821,7 +89832,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2947",
+      "source_location": "L2953",
       "weight": 1.0
     },
     {
@@ -89833,7 +89844,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2951",
+      "source_location": "L2957",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate_ac5_the_loss_time_must_cover_two_periods_and_the_timeout",
+      "target": "crates_pool_config_tests_validate_serving_with_table",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3010",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate_ac5_the_loss_time_must_cover_two_periods_and_the_timeout",
+      "target": "crates_pool_config_tests_validate_assert_text_valid",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3022",
       "weight": 1.0
     },
     {
@@ -89845,7 +89880,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2753",
+      "source_location": "L2758",
       "weight": 1.0
     },
     {
@@ -89857,7 +89892,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2753",
+      "source_location": "L2758",
       "weight": 1.0
     },
     {
@@ -89869,7 +89904,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2798",
+      "source_location": "L2803",
       "weight": 1.0
     },
     {
@@ -89881,7 +89916,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2798",
+      "source_location": "L2803",
       "weight": 1.0
     },
     {
@@ -89893,7 +89928,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3379",
+      "source_location": "L3460",
       "weight": 1.0
     },
     {
@@ -89905,7 +89940,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3392",
+      "source_location": "L3473",
       "weight": 1.0
     },
     {
@@ -89917,7 +89952,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3393",
+      "source_location": "L3474",
       "weight": 1.0
     },
     {
@@ -89929,7 +89964,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3394",
+      "source_location": "L3475",
       "weight": 1.0
     },
     {
@@ -89977,7 +90012,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3419",
+      "source_location": "L3500",
       "weight": 1.0
     },
     {
@@ -89989,7 +90024,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3419",
+      "source_location": "L3500",
       "weight": 1.0
     },
     {
@@ -90001,7 +90036,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3420",
+      "source_location": "L3501",
       "weight": 1.0
     },
     {
@@ -90157,7 +90192,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3485",
+      "source_location": "L3566",
       "weight": 1.0
     },
     {
@@ -90289,7 +90324,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3445",
+      "source_location": "L3526",
       "weight": 1.0
     },
     {
@@ -90301,7 +90336,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3449",
+      "source_location": "L3530",
       "weight": 1.0
     },
     {
@@ -90313,7 +90348,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3466",
+      "source_location": "L3547",
       "weight": 1.0
     },
     {
@@ -90349,7 +90384,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3612",
+      "source_location": "L3693",
       "weight": 1.0
     },
     {
@@ -90361,7 +90396,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3613",
+      "source_location": "L3694",
       "weight": 1.0
     },
     {
@@ -90421,7 +90456,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3514",
+      "source_location": "L3595",
       "weight": 1.0
     },
     {
@@ -90433,7 +90468,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3514",
+      "source_location": "L3595",
       "weight": 1.0
     },
     {
@@ -90445,7 +90480,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3529",
+      "source_location": "L3610",
       "weight": 1.0
     },
     {
@@ -90457,7 +90492,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3529",
+      "source_location": "L3610",
       "weight": 1.0
     },
     {
@@ -90637,7 +90672,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2887",
+      "source_location": "L2893",
       "weight": 1.0
     },
     {
@@ -105853,7 +105888,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L643",
+      "source_location": "L649",
       "weight": 1.0
     },
     {
@@ -105865,7 +105900,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L645",
+      "source_location": "L651",
       "weight": 1.0
     },
     {
@@ -105877,7 +105912,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L651",
+      "source_location": "L657",
       "weight": 1.0
     },
     {
@@ -105889,7 +105924,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L554",
+      "source_location": "L557",
       "weight": 1.0
     },
     {
@@ -105901,7 +105936,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L416",
+      "source_location": "L419",
       "weight": 1.0
     },
     {
@@ -105913,7 +105948,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L425",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -105925,7 +105960,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L357",
+      "source_location": "L360",
       "weight": 1.0
     },
     {
@@ -105937,7 +105972,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L367",
+      "source_location": "L370",
       "weight": 1.0
     },
     {
@@ -105949,7 +105984,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L394",
+      "source_location": "L397",
       "weight": 1.0
     },
     {
@@ -105961,7 +105996,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L313",
+      "source_location": "L316",
       "weight": 1.0
     },
     {
@@ -105973,7 +106008,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L314",
+      "source_location": "L317",
       "weight": 1.0
     },
     {
@@ -105985,7 +106020,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L502",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -105997,7 +106032,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L455",
+      "source_location": "L458",
       "weight": 1.0
     },
     {
@@ -106009,7 +106044,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L455",
+      "source_location": "L458",
       "weight": 1.0
     },
     {
@@ -106021,7 +106056,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L627",
+      "source_location": "L633",
       "weight": 1.0
     },
     {
@@ -106033,7 +106068,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L627",
+      "source_location": "L633",
       "weight": 1.0
     },
     {
@@ -106045,7 +106080,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L658",
+      "source_location": "L664",
       "weight": 1.0
     },
     {
@@ -106057,7 +106092,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L660",
+      "source_location": "L666",
       "weight": 1.0
     },
     {
@@ -106069,7 +106104,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L667",
+      "source_location": "L673",
       "weight": 1.0
     },
     {
@@ -106081,7 +106116,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L675",
+      "source_location": "L681",
       "weight": 1.0
     },
     {
@@ -106093,7 +106128,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L684",
+      "source_location": "L690",
       "weight": 1.0
     },
     {
@@ -106105,7 +106140,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L559",
+      "source_location": "L562",
       "weight": 1.0
     },
     {
@@ -106117,7 +106152,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L559",
+      "source_location": "L562",
       "weight": 1.0
     },
     {
@@ -113965,7 +114000,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L336",
+      "source_location": "L337",
       "weight": 1.0
     },
     {
@@ -113977,7 +114012,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L337",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -114025,7 +114060,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L344",
+      "source_location": "L345",
       "weight": 1.0
     },
     {
@@ -114037,7 +114072,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L237",
+      "source_location": "L238",
       "weight": 1.0
     },
     {
@@ -114049,7 +114084,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L238",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -114061,7 +114096,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L273",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -114073,7 +114108,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L351",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -114085,7 +114120,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L357",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -114097,7 +114132,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L329",
+      "source_location": "L330",
       "weight": 1.0
     },
     {
@@ -114109,7 +114144,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L330",
+      "source_location": "L331",
       "weight": 1.0
     },
     {
@@ -114121,7 +114156,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L372",
+      "source_location": "L373",
       "weight": 1.0
     },
     {
@@ -114133,7 +114168,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L373",
+      "source_location": "L374",
       "weight": 1.0
     },
     {
@@ -114145,7 +114180,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L376",
+      "source_location": "L377",
       "weight": 1.0
     },
     {
@@ -114157,7 +114192,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L377",
+      "source_location": "L378",
       "weight": 1.0
     },
     {
@@ -116809,7 +116844,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L285",
+      "source_location": "L288",
       "weight": 1.0
     },
     {
@@ -116821,7 +116856,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L302",
+      "source_location": "L305",
       "weight": 1.0
     },
     {
@@ -116833,7 +116868,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L305",
+      "source_location": "L308",
       "weight": 1.0
     },
     {
@@ -118789,7 +118824,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L760",
+      "source_location": "L769",
       "weight": 1.0
     },
     {
@@ -118801,7 +118836,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L760",
+      "source_location": "L769",
       "weight": 1.0
     },
     {
@@ -118813,7 +118848,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L516",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -118825,7 +118860,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L483",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -118837,7 +118872,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L653",
+      "source_location": "L662",
       "weight": 1.0
     },
     {
@@ -118849,7 +118884,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L674",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -118861,7 +118896,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L688",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
@@ -118873,7 +118908,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L587",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -118885,7 +118920,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L337",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -118897,7 +118932,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -118909,7 +118944,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -118921,7 +118956,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -118933,7 +118968,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -118945,7 +118980,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L343",
+      "source_location": "L344",
       "weight": 1.0
     },
     {
@@ -118957,7 +118992,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L344",
+      "source_location": "L345",
       "weight": 1.0
     },
     {
@@ -118969,7 +119004,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L388",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -118981,7 +119016,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L388",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -118993,36 +119028,12 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L361",
+      "source_location": "L362",
       "weight": 1.0
     },
     {
       "source": "crates_pool_config_src_serving_principalentry",
       "target": "crates_pool_config_src_serving_rs_string",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "generic_arg",
-      "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L362",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_src_serving_principalentry",
-      "target": "crates_pool_config_src_topology_at",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "generic_arg",
-      "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L362",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_src_serving_principalentry",
-      "target": "crates_pool_config_src_serving_rs_pathbuf",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -119034,6 +119045,30 @@
     },
     {
       "source": "crates_pool_config_src_serving_principalentry",
+      "target": "crates_pool_config_src_topology_at",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "crates/pool-config/src/serving.rs",
+      "source_location": "L363",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_src_serving_principalentry",
+      "target": "crates_pool_config_src_serving_rs_pathbuf",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "crates/pool-config/src/serving.rs",
+      "source_location": "L364",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_src_serving_principalentry",
       "target": "crates_pool_config_src_serving_rs_option",
       "relation": "references",
       "_origin": "ast",
@@ -119041,7 +119076,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L365",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -119053,7 +119088,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L273",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -119065,7 +119100,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L351",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -119077,7 +119112,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L351",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -119089,7 +119124,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L357",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -119101,7 +119136,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L357",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -119113,7 +119148,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L327",
+      "source_location": "L328",
       "weight": 1.0
     },
     {
@@ -119125,7 +119160,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L328",
+      "source_location": "L329",
       "weight": 1.0
     },
     {
@@ -119137,7 +119172,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L329",
+      "source_location": "L330",
       "weight": 1.0
     },
     {
@@ -119149,7 +119184,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L330",
+      "source_location": "L331",
       "weight": 1.0
     },
     {
@@ -119161,7 +119196,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L330",
+      "source_location": "L331",
       "weight": 1.0
     },
     {
@@ -119173,7 +119208,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L371",
+      "source_location": "L372",
       "weight": 1.0
     },
     {
@@ -119185,7 +119220,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L374",
+      "source_location": "L375",
       "weight": 1.0
     },
     {
@@ -119197,7 +119232,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L375",
+      "source_location": "L376",
       "weight": 1.0
     },
     {
@@ -119209,7 +119244,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L375",
+      "source_location": "L376",
       "weight": 1.0
     },
     {
@@ -119221,7 +119256,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L376",
+      "source_location": "L377",
       "weight": 1.0
     },
     {
@@ -119233,7 +119268,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L406",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -119245,7 +119280,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -119257,7 +119292,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -119269,7 +119304,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -124297,7 +124332,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L305",
+      "source_location": "L308",
       "weight": 1.0
     },
     {
@@ -124309,7 +124344,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L305",
+      "source_location": "L308",
       "weight": 1.0
     },
     {
@@ -124321,7 +124356,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L346",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -124333,7 +124368,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L346",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -124345,7 +124380,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L346",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -130513,7 +130548,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -130525,7 +130560,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -130537,7 +130572,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -130549,7 +130584,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -130561,7 +130596,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L516",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -130573,7 +130608,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L516",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -130585,7 +130620,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L483",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -130597,7 +130632,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L483",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -130609,7 +130644,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L653",
+      "source_location": "L662",
       "weight": 1.0
     },
     {
@@ -130621,7 +130656,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L653",
+      "source_location": "L662",
       "weight": 1.0
     },
     {
@@ -130633,7 +130668,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L674",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -130645,7 +130680,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L674",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -130657,7 +130692,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L688",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
@@ -130669,7 +130704,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L688",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
@@ -130681,7 +130716,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L587",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -130693,7 +130728,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L587",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -130705,7 +130740,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L729",
+      "source_location": "L738",
       "weight": 1.0
     },
     {
@@ -130717,7 +130752,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L729",
+      "source_location": "L738",
       "weight": 1.0
     },
     {
@@ -130729,7 +130764,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -130741,7 +130776,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -130765,7 +130800,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L388",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -130777,7 +130812,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L388",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -130789,7 +130824,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L263",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -130801,7 +130836,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L282",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -130813,7 +130848,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L397",
+      "source_location": "L398",
       "weight": 1.0
     },
     {
@@ -130825,7 +130860,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L397",
+      "source_location": "L398",
       "weight": 1.0
     },
     {
@@ -130837,7 +130872,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L406",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -130849,7 +130884,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L406",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -130861,7 +130896,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -130873,7 +130908,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -135481,7 +135516,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L310",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -137653,7 +137688,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2683",
+      "source_location": "L2689",
       "weight": 1.0
     },
     {
@@ -137701,7 +137736,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2805",
+      "source_location": "L2811",
       "weight": 1.0
     },
     {
@@ -138877,7 +138912,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L760",
+      "source_location": "L769",
       "weight": 1.0
     },
     {
@@ -138889,7 +138924,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -138901,7 +138936,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L516",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -138913,7 +138948,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L483",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -138925,7 +138960,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L653",
+      "source_location": "L662",
       "weight": 1.0
     },
     {
@@ -138937,7 +138972,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L674",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -138949,7 +138984,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L688",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
@@ -138961,7 +138996,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L587",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -139045,7 +139080,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L225",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -139057,7 +139092,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L263",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -139069,7 +139104,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L244",
+      "source_location": "L245",
       "weight": 1.0
     },
     {
@@ -139081,7 +139116,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L250",
+      "source_location": "L251",
       "weight": 1.0
     },
     {
@@ -139093,7 +139128,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L282",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -139105,7 +139140,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L276",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -139117,7 +139152,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L220",
+      "source_location": "L221",
       "weight": 1.0
     },
     {
@@ -139165,7 +139200,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L406",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -139177,7 +139212,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -139921,7 +139956,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3426",
+      "source_location": "L3507",
       "weight": 1.0
     },
     {
@@ -139933,7 +139968,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2885",
+      "source_location": "L2891",
       "weight": 1.0
     },
     {
@@ -139957,7 +139992,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2868",
+      "source_location": "L2874",
       "weight": 1.0
     },
     {
@@ -139969,7 +140004,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3282",
+      "source_location": "L3363",
       "weight": 1.0
     },
     {
@@ -144829,7 +144864,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L552",
+      "source_location": "L555",
       "weight": 1.0
     },
     {
@@ -144853,7 +144888,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L415",
+      "source_location": "L418",
       "weight": 1.0
     },
     {
@@ -144865,7 +144900,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L424",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -144877,7 +144912,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L346",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -144889,7 +144924,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L310",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -144901,7 +144936,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L321",
+      "source_location": "L324",
       "weight": 1.0
     },
     {
@@ -148830,7 +148865,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2663",
+      "source_location": "L2669",
       "weight": 1.0
     },
     {
@@ -148841,7 +148876,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2683",
+      "source_location": "L2689",
       "weight": 1.0
     },
     {
@@ -148852,7 +148887,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2698",
+      "source_location": "L2704",
       "weight": 1.0
     },
     {
@@ -148863,7 +148898,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2744",
+      "source_location": "L2750",
       "weight": 1.0
     },
     {
@@ -148874,7 +148909,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2766",
+      "source_location": "L2772",
       "weight": 1.0
     },
     {
@@ -148885,7 +148920,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2805",
+      "source_location": "L2811",
       "weight": 1.0
     },
     {
@@ -148896,7 +148931,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2813",
+      "source_location": "L2819",
       "weight": 1.0
     },
     {
@@ -148918,7 +148953,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L2950",
+      "source_location": "L2956",
       "weight": 1.0
     },
     {
@@ -151316,7 +151351,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L225",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -151327,7 +151362,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L236",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -151338,7 +151373,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L273",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -151349,7 +151384,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L326",
+      "source_location": "L327",
       "weight": 1.0
     },
     {
@@ -151360,7 +151395,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L334",
+      "source_location": "L335",
       "weight": 1.0
     },
     {
@@ -151371,7 +151406,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L342",
+      "source_location": "L343",
       "weight": 1.0
     },
     {
@@ -151382,7 +151417,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L348",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -151393,7 +151428,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L355",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
@@ -151404,7 +151439,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L360",
+      "source_location": "L361",
       "weight": 1.0
     },
     {
@@ -151415,7 +151450,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L370",
+      "source_location": "L371",
       "weight": 1.0
     },
     {
@@ -151426,7 +151461,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L388",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -151437,7 +151472,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L397",
+      "source_location": "L398",
       "weight": 1.0
     },
     {
@@ -151448,7 +151483,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L406",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -151459,7 +151494,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L425",
+      "source_location": "L426",
       "weight": 1.0
     },
     {
@@ -151470,7 +151505,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L446",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -151481,7 +151516,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L483",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -151503,7 +151538,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L516",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -151514,7 +151549,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L587",
+      "source_location": "L588",
       "weight": 1.0
     },
     {
@@ -151525,7 +151560,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L639",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -151536,7 +151571,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L653",
+      "source_location": "L662",
       "weight": 1.0
     },
     {
@@ -151547,7 +151582,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L674",
+      "source_location": "L683",
       "weight": 1.0
     },
     {
@@ -151558,7 +151593,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L688",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
@@ -151569,7 +151604,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L729",
+      "source_location": "L738",
       "weight": 1.0
     },
     {
@@ -151580,7 +151615,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L760",
+      "source_location": "L769",
       "weight": 1.0
     },
     {
@@ -151591,7 +151626,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L792",
+      "source_location": "L801",
       "weight": 1.0
     },
     {
@@ -151602,7 +151637,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L815",
+      "source_location": "L824",
       "weight": 1.0
     },
     {
@@ -152823,7 +152858,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2712",
+      "source_location": "L2717",
       "weight": 1.0
     },
     {
@@ -152834,18 +152869,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2751",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac5_valid_serving_limits_has_every_lowest_value",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2796",
+      "source_location": "L2756",
       "weight": 1.0
     },
     {
@@ -152861,13 +152885,24 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac5_valid_serving_limits_has_every_lowest_value",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L2801",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
       "target": "crates_pool_config_tests_validate_number_key",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2845",
+      "source_location": "L2850",
       "weight": 1.0
     },
     {
@@ -152878,7 +152913,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2868",
+      "source_location": "L2874",
       "weight": 1.0
     },
     {
@@ -152889,7 +152924,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2885",
+      "source_location": "L2891",
       "weight": 1.0
     },
     {
@@ -152900,7 +152935,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2894",
+      "source_location": "L2900",
       "weight": 1.0
     },
     {
@@ -152911,7 +152946,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2923",
+      "source_location": "L2929",
       "weight": 1.0
     },
     {
@@ -152922,7 +152957,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2944",
+      "source_location": "L2950",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac5_the_loss_time_must_cover_two_periods_and_the_timeout",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3007",
       "weight": 1.0
     },
     {
@@ -152933,7 +152979,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L2994",
+      "source_location": "L3075",
       "weight": 1.0
     },
     {
@@ -152944,7 +152990,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3040",
+      "source_location": "L3121",
       "weight": 1.0
     },
     {
@@ -152955,7 +153001,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3122",
+      "source_location": "L3203",
       "weight": 1.0
     },
     {
@@ -152966,7 +153012,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3146",
+      "source_location": "L3227",
       "weight": 1.0
     },
     {
@@ -152977,18 +153023,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3174",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3241",
+      "source_location": "L3255",
       "weight": 1.0
     },
     {
@@ -153004,24 +153039,13 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_refused_scalars",
+      "target": "crates_pool_config_tests_validate_ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3282",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac6_every_name_and_path_key_refuses_each_listed_character",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3294",
+      "source_location": "L3322",
       "weight": 1.0
     },
     {
@@ -153037,13 +153061,24 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac6_the_neighbours_of_each_listed_range_stay_allowed",
+      "target": "crates_pool_config_tests_validate_refused_scalars",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3412",
+      "source_location": "L3363",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac6_every_name_and_path_key_refuses_each_listed_character",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3375",
       "weight": 1.0
     },
     {
@@ -153059,39 +153094,6 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_made_input_5",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3426",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac7_validate_keeps_the_first_twenty_thousand_and_counts_the_rest",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3443",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac7_at_twenty_thousand_nothing_is_omitted_and_one_more_is_counted",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3479",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
       "target": "crates_pool_config_tests_validate_ac4_sec10_automatic_promotion_left_out_validates_as_disabled",
       "relation": "contains",
       "_origin": "ast",
@@ -153099,6 +153101,17 @@
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
       "source_location": "L348",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac6_the_neighbours_of_each_listed_range_stay_allowed",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3493",
       "weight": 1.0
     },
     {
@@ -153114,13 +153127,24 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac8_views_need_what_each_command_needs",
+      "target": "crates_pool_config_tests_validate_made_input_5",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3511",
+      "source_location": "L3507",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac7_validate_keeps_the_first_twenty_thousand_and_counts_the_rest",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3524",
       "weight": 1.0
     },
     {
@@ -153136,13 +153160,24 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac8_one_missing_monitor_key_or_principal_gives_one_finding",
+      "target": "crates_pool_config_tests_validate_ac7_at_twenty_thousand_nothing_is_omitted_and_one_more_is_counted",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3588",
+      "source_location": "L3560",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac8_views_need_what_each_command_needs",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3592",
       "weight": 1.0
     },
     {
@@ -153158,28 +153193,6 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_ac8_validate_never_gives_incomplete",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3637",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
-      "target": "crates_pool_config_tests_validate_spec_0004_finding_codes_and_messages_are_stable",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3649",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_config_tests_validate",
       "target": "crates_pool_config_tests_validate_ac4_sec10_result_cache_enabled_false_validates_in_every_spelling",
       "relation": "contains",
       "_origin": "ast",
@@ -153191,6 +153204,28 @@
     },
     {
       "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac8_one_missing_monitor_key_or_principal_gives_one_finding",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3669",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_ac8_validate_never_gives_incomplete",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3718",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
       "target": "crates_pool_config_tests_validate_ac4_sec10_automatic_promotion_enabled_false_validates_in_every_spelling",
       "relation": "contains",
       "_origin": "ast",
@@ -153198,6 +153233,17 @@
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/tests/validate.rs",
       "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_config_tests_validate",
+      "target": "crates_pool_config_tests_validate_spec_0004_finding_codes_and_messages_are_stable",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-config/tests/validate.rs",
+      "source_location": "L3730",
       "weight": 1.0
     },
     {
@@ -160226,7 +160272,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L277",
+      "source_location": "L280",
       "weight": 1.0
     },
     {
@@ -160248,7 +160294,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L300",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -160259,7 +160305,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L403",
+      "source_location": "L406",
       "weight": 1.0
     },
     {
@@ -160270,7 +160316,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L415",
+      "source_location": "L418",
       "weight": 1.0
     },
     {
@@ -160281,7 +160327,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L424",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -160292,7 +160338,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L446",
+      "source_location": "L449",
       "weight": 1.0
     },
     {
@@ -160314,7 +160360,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L454",
+      "source_location": "L457",
       "weight": 1.0
     },
     {
@@ -160325,7 +160371,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L498",
+      "source_location": "L501",
       "weight": 1.0
     },
     {
@@ -160336,7 +160382,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L552",
+      "source_location": "L555",
       "weight": 1.0
     },
     {
@@ -160347,7 +160393,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L558",
+      "source_location": "L561",
       "weight": 1.0
     },
     {
@@ -160369,7 +160415,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L626",
+      "source_location": "L632",
       "weight": 1.0
     },
     {
@@ -160380,7 +160426,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L642",
+      "source_location": "L648",
       "weight": 1.0
     },
     {
@@ -160391,7 +160437,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L657",
+      "source_location": "L663",
       "weight": 1.0
     },
     {
@@ -165627,7 +165673,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L262",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -165638,7 +165684,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L281",
+      "source_location": "L282",
       "weight": 1.0
     },
     {
@@ -166408,7 +166454,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L308",
+      "source_location": "L311",
       "weight": 1.0
     },
     {
@@ -168289,7 +168335,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L244",
+      "source_location": "L245",
       "weight": 1.0
     },
     {
@@ -168300,7 +168346,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L250",
+      "source_location": "L251",
       "weight": 1.0
     },
     {
@@ -168311,7 +168357,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L257",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -168322,7 +168368,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L263",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -168333,7 +168379,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L276",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -168344,7 +168390,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L282",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -168388,7 +168434,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L220",
+      "source_location": "L221",
       "weight": 1.0
     },
     {
@@ -171633,7 +171679,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L310",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -171644,7 +171690,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L321",
+      "source_location": "L324",
       "weight": 1.0
     },
     {
@@ -171655,7 +171701,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L332",
+      "source_location": "L335",
       "weight": 1.0
     },
     {
@@ -171666,7 +171712,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L337",
+      "source_location": "L340",
       "weight": 1.0
     },
     {
@@ -171677,7 +171723,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-protocol/src/startup.rs",
-      "source_location": "L346",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -175097,18 +175143,6 @@
       "weight": 1.0
     },
     {
-      "source": "apps_pool_tests_check_config_pool_into_closed_pipe",
-      "target": "apps_pool_tests_integration_daemon_drop",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "apps/pool/tests/check_config.rs",
-      "source_location": "L1769",
-      "weight": 1.0
-    },
-    {
       "source": "apps_pool_tests_commands_ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_left_as_it_is",
       "target": "crates_pool_control_tests_journal_damage",
       "relation": "calls",
@@ -175153,7 +175187,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L701",
+      "source_location": "L710",
       "weight": 1.0
     },
     {
@@ -175165,7 +175199,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L743",
+      "source_location": "L752",
       "weight": 1.0
     },
     {
@@ -175177,7 +175211,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-config/src/serving.rs",
-      "source_location": "L413",
+      "source_location": "L414",
       "weight": 1.0
     },
     {
@@ -175201,7 +175235,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-config/tests/validate.rs",
-      "source_location": "L3485",
+      "source_location": "L3566",
       "weight": 1.0
     },
     {
@@ -281290,5 +281324,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "47d06298e5b397cc0022917a032f3b4faf76a7e0"
+  "built_at_commit": "7f16ab5797bc1d0cf421d42278555ee460b266d1"
 }

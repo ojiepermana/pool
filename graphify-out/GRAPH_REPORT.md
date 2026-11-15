@@ -1,12 +1,12 @@
 # Graph Report - pool  (2026-11-16)
 
 ## Corpus Check
-- 1 files · ~549,620 words
+- 4 files · ~553,302 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5704 nodes · 18018 edges · 127 communities (101 shown, 26 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 1531 edges (avg confidence: 0.88)
+- 5705 nodes · 18020 edges · 127 communities (101 shown, 26 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 1530 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -149,14 +149,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `0003 full verification: scripts/check.sh linux-build passes on aaad537 and on the tree of 4c61e3b in rust:1.100.0-slim-bookworm (linux/arm64): cargo test --workspace 240 passed with the ac15_ and ac16_ tests; Linux evidence for the time limit of AC-15` --references--> `linux-build.sh script`  [INFERRED]
   docs/specs/0003-control-and-session-data-model/verify.md → scripts/linux-build.sh
-- `Reading: JSON field order is checked on the raw line (agreed, also done byte for byte)` --references--> `ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
-- `Extra runs beyond the spec: mode 000 file exits 3 io.permission_denied; closed stdout or stderr pipe exits 3 with no output and no panic (not the /dev/full case)` --references--> `ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
-- `Extra runs beyond the spec: mode 000 file exits 3 io.permission_denied; closed stdout or stderr pipe exits 3 with no output and no panic (not the /dev/full case)` --references--> `ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
-- `io.permission_denied test under cfg(unix): file of mode 000; returns as passed when the process can still open it (root in the container), else checks exit 3 and exact output in both formats` --references--> `ac11_a_file_that_cannot_be_opened_is_permission_denied()`  [INFERRED]
-  docs/specs/0001-initial-architecture/index.md → apps/pool/tests/check_config.rs
+- `Scope 003 review Minor t3 (admission.rs:89, pool-config lib.rs:44): the compile_fail,E0451 documentation tests do not check the error code on Rust 1.100.0 (E0308 also passed) although verify.md:206 says so; fix: correct verify.md and pair each with a passing test` --references--> `Closed`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
+- `Scope 003 review Minor t3 (admission.rs:89, pool-config lib.rs:44): the compile_fail,E0451 documentation tests do not check the error code on Rust 1.100.0 (E0308 also passed) although verify.md:206 says so; fix: correct verify.md and pair each with a passing test` --references--> `EligiblePrimary`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
+- `Scope 003 review nits in pool-control code: n1 a cluster left out of the bootstrap plan gets no reason, n2 expiry Duration::MAX makes every sample fresh, n3 BootstrapRefused lacks a compile_fail test, n9 unreachable Ready arm, n10 EligiblePrimary can be cloned and kept` --references--> `state_reason()`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
+- `Scope 003 review question 1: nothing gets Open without full agreement from honest inputs; writer_admission returns Open only at admission.rs:305 and Authority is made only at authority.rs:183; three caller limits remain (m1, m2, m3)` --references--> `state_reason()`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
 
 ## Import Cycles
 - 2-file cycle: `crates/pool-config/src/serving.rs -> crates/pool-config/src/topology.rs -> crates/pool-config/src/serving.rs`
@@ -243,7 +243,7 @@
 
 ### Community 0 - "check-config Integration Tests"
 Cohesion: 0.05
-Nodes (122): Command, a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read() (+114 more)
+Nodes (122): Command, Child, PathBuf, String, Vec, Child, Expected, I (+114 more)
 
 ### Community 1 - "repo_check/docs.rs"
 Cohesion: 0.05
@@ -251,7 +251,7 @@ Nodes (84): line_of(), base_could_not_run_for_a_revision_that_does_not_exist(), 
 
 ### Community 2 - "pool-config Validation Tests"
 Cohesion: 0.03
-Nodes (164): ac15_findings_follow_the_validation_order_against_the_file_order(), ac15_inline(), ac15_input_1(), ac15_large_valid_inputs_validate_within_ten_seconds(), ac15_made_inputs_have_the_listed_size(), ac15_one_finding_per_entry_on_one_line_at_each_value(), ac1_a_file_without_topology_has_no_records(), ac1_ac2_empty_and_inline_tables() (+156 more)
+Nodes (165): Option, String, ValidatedConfig, Vec, Scope 003 review Minor t4 (validate.rs:1446, check_config.rs:2284): the 0003 AC-4 canary tests put the secret text in string values only, not in an unknown key, a table name, an array entry or a wrong typed value; fix: one table driven test in each of the two files, Test coverage in the scope 003 review: test signal configured (the built in cargo test harness, no test dependency); every criterion a test can prove has a real test and the old spec 0001 tests were not weakened, The 10 second limit of 0003 AC-15: each validate call on made input 1, 2 or 3 and each run of the built binary on input 3 returns within 10 seconds, measured by the test with std::time::Instant in the debug build (validate never reads a clock); no ratio of two timings; the test cannot stop a slow call (rule W3 allows no thread), so it checks the time after each input, 0003 AC-15 made input 1 (many lines): the control table, cluster main with expected_writer n0, then one [[node]] block per entry (id n<i>, cluster main, host h<i>.db.internal, port 5432); 13217 entries, 1048511 bytes, valid; built by the test at run time and not committed (+157 more)
 
 ### Community 3 - "Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6"
 Cohesion: 0.06
@@ -371,7 +371,7 @@ Nodes (34): First review scope: 30 files in range a82cf67..02bdcbe on main (26 c
 
 ### Community 32 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende"
 Cohesion: 0.12
-Nodes (32): position_counts_lines_and_scalars(), ac7_column_counts_characters_not_bytes_before_the_error(), Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, Minor 4: the column test cannot fail for a byte count (multibyte key is the unknown key, column 1 either way), Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests (+24 more)
+Nodes (32): position_counts_lines_and_scalars(), Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, Minor 4: the column test cannot fail for a byte count (multibyte key is the unknown key, column 1 either way), Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests, Second review run at 4ebcf93: fmt and clippy exit 0, tests 3 + 66 + 3 + 60 + 2 passed, 18 lock packages, AC-12 grep empty; Linux build not run (+24 more)
 
 ### Community 33 - "check.sh"
 Cohesion: 0.09
@@ -427,7 +427,7 @@ Nodes (30): Delegated (berat) 0003 section The journal (built in 004): one SQLit
 
 ### Community 46 - "check-config Exit Status and AC-11 Readings"
 Cohesion: 0.16
-Nodes (24): ac11_a_first_argument_that_is_not_a_command_is_unknown(), AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full), The check-config command (arguments and usage errors), --format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument, First argument compared whole: --help=x, -h=x, --version=x and -V=x as the first argument are unknown command, Option name is the text before the first equals sign: --help=x and -h=x after check-config print the help; --version and -V there are unknown option, Clarification evidence: review record docs/reviews/2026-11-14-scope-001-stack-and-workspace.md (rows 1 to 7); debug pool build at 07f7994 rerun for rows 2, 3, 4, 6 (81-part key config.syntax null location, 80-part key config.schema, x = "éé" junk at column 10), AC-11 passes on the workstation; /dev/full part waits for the Linux build (+16 more)
+Nodes (24): AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full), The check-config command (arguments and usage errors), --format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument, First argument compared whole: --help=x, -h=x, --version=x and -V=x as the first argument are unknown command, Option name is the text before the first equals sign: --help=x and -h=x after check-config print the help; --version and -V there are unknown option, Clarification evidence: review record docs/reviews/2026-11-14-scope-001-stack-and-workspace.md (rows 1 to 7); debug pool build at 07f7994 rerun for rows 2, 3, 4, 6 (81-part key config.syntax null location, 80-part key config.schema, x = "éé" junk at column 10), AC-11 passes on the workstation; /dev/full part waits for the Linux build, Linux evidence AC coverage: replaces only the two BLOCKED rows of the second run; AC-2 PASS from a clean 18e9228; /dev/full clause of AC-11 PASS, so AC-11 is PASS in full (+16 more)
 
 ### Community 47 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine"
 Cohesion: 0.11
@@ -511,7 +511,7 @@ Nodes (15): Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk st
 
 ### Community 67 - "Linux Only /dev/full Write Tests"
 Cohesion: 0.28
-Nodes (13): a_failed_write_exits_3_without_stderr(), ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr(), Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Review test coverage: what is covered well and the gaps (array starting with a boolean, permission denied arm, no span arm, column through validate, AC-8/12/13 guards, --format=<bytes>), Sub session chk-f1-verify-2 (checker verify after closing: Linux build evidence for AC-2 and the /dev/full clause of AC-11; report done, commit 972e160: revision 18e9228, exit 0, host x86_64-unknown-linux-gnu, 136 tests (3 + 68 + 3 + 60 + 2), two Linux only tests ok, 30 fixture blocks, no canary leaked; merged to main), Sub session chk-f1-verify-3 (checker verify: Linux build evidence for aarch64, 0001 AC-2 and the /dev/full clause of AC-11; first turn standby, done, commit 38da818: revision 41e8eda, exit 0, host aarch64, 136 tests, two Linux only tests ok, 30 fixture blocks, no emulation; merged to main), F1-2 pass criteria as written while the target was x86_64: exit 0, host x86_64-unknown-linux-gnu, tests pass including the two Linux-only failed-write tests, one block per fixture and format (0 valid-*, 1 others), no canary leaked, last line linux build check passed, Both Linux only tests passed on aarch64 (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr; cfg target_os linux, /dev/full as stdout, check_config.rs lines 525 and 1781) (+5 more)
+Nodes (13): Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Review test coverage: what is covered well and the gaps (array starting with a boolean, permission denied arm, no span arm, column through validate, AC-8/12/13 guards, --format=<bytes>), Sub session chk-f1-verify-2 (checker verify after closing: Linux build evidence for AC-2 and the /dev/full clause of AC-11; report done, commit 972e160: revision 18e9228, exit 0, host x86_64-unknown-linux-gnu, 136 tests (3 + 68 + 3 + 60 + 2), two Linux only tests ok, 30 fixture blocks, no canary leaked; merged to main), Sub session chk-f1-verify-3 (checker verify: Linux build evidence for aarch64, 0001 AC-2 and the /dev/full clause of AC-11; first turn standby, done, commit 38da818: revision 41e8eda, exit 0, host aarch64, 136 tests, two Linux only tests ok, 30 fixture blocks, no emulation; merged to main), F1-2 pass criteria as written while the target was x86_64: exit 0, host x86_64-unknown-linux-gnu, tests pass including the two Linux-only failed-write tests, one block per fixture and format (0 valid-*, 1 others), no canary leaked, last line linux build check passed, Both Linux only tests passed on aarch64 (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr; cfg target_os linux, /dev/full as stdout, check_config.rs lines 525 and 1781), Test counts on Linux aarch64: 136 passed, 0 failed, 0 ignored (3 + 68 + 3 + 60 + 2), the same 136 names as the x86_64 run, 134 on macOS, Both Linux only tests ran for the first time and printed ok (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr); each gives /dev/full to pool as stdout (check_config.rs lines 525 and 1781) (+5 more)
 
 ### Community 68 - "Security Features, Identity Requirements and Spec 0003 Security Model"
 Cohesion: 0.22
@@ -579,7 +579,7 @@ Nodes (8): Added: reviewer roster in the engineering standards; every role Not a
 
 ### Community 84 - "Offline Bounds, Parser Depth and Known Limits"
 Cohesion: 0.46
-Nodes (8): error_location(), ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding(), ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location(), Minor 2: the toml parser depth limit (80 levels) and the Location::None branch of error_location have no test; the unbounded feature is not pinned off, Nesting deeper than the toml parser allows (e.g. a dotted key with 81 parts) is config.syntax; for a dotted key or table header the finding has no location (line and column null), Rule check: 1 MiB files of brackets and nested inline tables end with one config.syntax, no crash or exit 101, Rule check: a dotted key with 81 parts is config.syntax with no location; 80 parts is inside the parser limit, toml unbounded feature stays off: parser stops at a fixed nesting depth (80 levels in toml 1.2.1), so a 1 MiB file of brackets cannot exhaust the stack
+Nodes (8): error_location(), Minor 2: the toml parser depth limit (80 levels) and the Location::None branch of error_location have no test; the unbounded feature is not pinned off, Nesting deeper than the toml parser allows (e.g. a dotted key with 81 parts) is config.syntax; for a dotted key or table header the finding has no location (line and column null), Rule check: 1 MiB files of brackets and nested inline tables end with one config.syntax, no crash or exit 101, Rule check: a dotted key with 81 parts is config.syntax with no location; 80 parts is inside the parser limit, toml unbounded feature stays off: parser stops at a fixed nesting depth (80 levels in toml 1.2.1), so a 1 MiB file of brackets cannot exhaust the stack, ac7_nesting_deeper_than_the_parser_allows_is_a_syntax_finding_without_location(), ac7_arrays_and_inline_tables_nested_far_past_the_limit_give_one_finding()
 
 ### Community 85 - "Deployment Reference and Four VM Lab"
 Cohesion: 0.38
@@ -627,7 +627,7 @@ Nodes (767): ac14_a_latch_write_that_fails_is_logged_and_the_latch_holds_in_memo
 
 ### Community 125 - "scripts/integration/run.sh"
 Cohesion: 0.16
-Nodes (13): run.sh script, running(), end_tree(), wait_ended(), cleanup(), fail(), POOL_IT_CONTAINER, POOL_IT_CONTAINER_2 (+5 more)
+Nodes (13): cleanup(), end_tree(), fail(), POOL_IT_CLIENT_HOST, POOL_IT_CONTAINER, POOL_IT_CONTAINER_2, POOL_IT_DIR, POOL_IT_LISTEN_HOST (+5 more)
 
 ## Knowledge Gaps
 - **151 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+146 more)
@@ -638,9 +638,11 @@ Nodes (13): run.sh script, running(), end_tree(), wait_ended(), cleanup(), fail(
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Spec 0003 Delegated Decisions and Workspace Guards`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`, `Spec 0004 Requirements, Decision and Consequences`?**
-  _High betweenness centrality (0.071) - this node is a cross-community bridge._
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **Why does `SystemIdentifier` connect `pool-config Validation Library` to `crates/pool-protocol/src/lib.rs`, `pool-control Authority Model Crate`?**
-  _High betweenness centrality (0.062) - this node is a cross-community bridge._
+  _High betweenness centrality (0.061) - this node is a cross-community bridge._
+- **Why does `Spec 0004 Build plan step 5: Configuration: implement the Configuration section in pool-config (the keys, the two codes, the name rule, the finding limit, the two views, the two generation types and the fixtures, with the one changed line in invalid-unknown-key.toml and in the two tests the Fixtures section names), wrap the output of the binary in a BufWriter and add the omitted line and field to apps/pool/src/report.rs; files crates/pool-config/, apps/pool/src/report.rs, apps/pool/src/main.rs and apps/pool/tests/check_config.rs; satisfies 0004 AC-5 to AC-8` connect `Spec 0004 Workspace, Guards, Build Plan and Evidence` to `check-config Integration Tests`, `pool-config Validation Tests`, `cli.rs Parsing and Test Count Evidence`, `pool-config Validation Library`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Spec 0004 Requirements, Decision and Consequences`, `Spec 0004 Configuration, Commands and Protected Files`, `pool-config Validation Library: pool/src/report.rs`?**
+  _High betweenness centrality (0.050) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Spec 0001. POOL initial architecture` (e.g. with `Planning ledger: the assembled foundation was ratified by the user on 2026-11-14 ('Accept, looks solid'); scope feature 1 design checked, execution queued, the governing spec Proposed until built` and `Linux builder image rust:1.100.0-slim-bookworm by index digest`) actually correct?**
   _`Spec 0001. POOL initial architecture` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 9 inferred relationships involving `4. One real primary path (in-progress)` (e.g. with `Features 1, 2 and 3 are done; their evidence is in the verification records of spec 0001, spec 0002 and spec 0003; the next queued feature is 4, the first walking slice whose acceptance is in docs/testing/strategy.md` and `1. Stack and workspace (done)`) actually correct?**
@@ -649,5 +651,3 @@ _Questions this graph is uniquely positioned to answer:_
   _151 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**
   _Cohesion score 0.053107789142407553 - nodes in this community are weakly interconnected._
-- **Should `repo_check/docs.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.04569083447332421 - nodes in this community are weakly interconnected._
