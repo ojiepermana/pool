@@ -2050,6 +2050,11 @@ After `git merge main` at `7a67c93`: `d41d25c`, **a copy of the test CA in the c
   | full run | exit 0, 30 of 30, pipe closed after 90 s | exit 0, 30 of 30, 71 s |
   | watchdog, a copy with a limit of 25 s | exit 1, 30 s | exit 1, 35 s |
   | SIGTERM to the script | exit 1, 4 s | exit 1, 6 s |
+- `cc0d81a`, **no removal by name** (r7 of the second review). The removal by name of the item before this one also ran when `docker run -d` failed because the name already belonged to another container, and so removed that container. The containers are now made with `docker create`, which prints the ID also when the start then fails. The ID is kept before `docker start`, and the cleanup removes by ID only. Checked without a terminal under `/bin/dash` and `/bin/bash`:
+  - **A name that was already taken.** The script was started through a shell that wrote its process ID, waited 3 seconds and then ran `exec` on the script, and in those seconds a decoy container got the name the run would give. Both runs exited 1 with `container pool-it-1-<pid> could not be created`. The decoy was still there afterwards, and no container of the run was left. The same case with the script before this change exited 1 with `did not start` and had removed the decoy.
+  - **A container that was made and could not start.** A temporary copy gave `docker create` `--entrypoint /nonexistent`. Both runs exited 1 with `did not start`, and no container of the run was left.
+
+  The decoys were then removed by their label `pz7-decoy=1`.
 
 ### Crates, tooling and build (developer A)
 
