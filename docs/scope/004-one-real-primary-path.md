@@ -16,7 +16,7 @@ Use [PRD-001](../prd/001-core-proxy.md#acceptance-criteria): deliver AC-1 and th
   - [ ] The session path: steps 9 to 11 (`AC-13` to `AC-25`), step 9 after step 7, steps 10 and 11 need the milestone above
   - [ ] Fuzzing, documents and evidence: steps 12 to 14 (`AC-27`, evidence for `AC-1` to `AC-28`), after the milestone above; manual steps M2 and M3 follow step 12
 - [ ] Verify it: `/check verify one real primary path`
-- [ ] Test it: `/test one real primary path`
+- [x] Test it: `/test one real primary path`
 - [ ] Review it (fresh model): `/check review one real primary path`
 - [ ] Document it: `/document one real primary path`
 
