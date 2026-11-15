@@ -219,6 +219,90 @@ Cargo prints `warning: unused workspace dependency pool-control` for the root `C
 | `0003 AC-14`, code half | Each record type the [Records](index.md#records) table builds in 003, with the line of its restart rule: `ClusterConfig` `crates/pool-config/src/topology.rs:88`, `NodeConfig` `topology.rs:117`, `IdentityRoute` `topology.rs:166`, `SecretReference` `topology.rs:226`, `ValidatedConfig` `crates/pool-config/src/lib.rs:38`, `Observation` `crates/pool-control/src/observation.rs:74`, journal identity `StoredAuthority` `crates/pool-control/src/authority.rs:31`, approved topology `ApprovedTopology` `authority.rs:65`, `Quarantine` `authority.rs:90`. Also stated: `ControlConfig` `topology.rs:53`, `Hold` `authority.rs:52`, `Authority` `authority.rs:134`, `EligiblePrimary` `crates/pool-control/src/admission.rs:100`, `Closed` `admission.rs:143`, `BootstrapPlan` `crates/pool-control/src/bootstrap.rs:63`, `BootstrapRefused` `bootstrap.rs:81`, and the three generations in `crates/pool-config/src/generation.rs:54`, `:71`, `:80`. The row of the shared conventions is step 6 | code half pass |
 | `0003 AC-1` to `0003 AC-6`, `0003 AC-13` | Milestones 1 and 2 above | see there |
 
+### Checker run: `/check verify`, milestone 3
+
+Recorded by the checker session `chk-f3-verify` on 2026-11-15 at revision `d26016c` (`main`), on macOS 27.0.1, arm64 (workstation, not Linux and not CI). `git diff f98d634 d26016c` is empty for `crates/`, `apps/`, `tools/`, `scripts/`, `Cargo.toml`, `Cargo.lock`, `deny.toml` and `.github/`, so the code is the code of step 5. The checker did not write the code. Every command was run again from this session's own checkout, with `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`. The developer's record above is kept as it was. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`. Every probe test, probe program and mutation was written and run in a copy of the workspace outside the repository. No file of the repository was changed for a probe.
+
+**Verdict: PASS for milestone 3.** It covers `0003 AC-7` to `0003 AC-12` and the code half of `0003 AC-14` on the workstation. The code gives the answer of the spec tables in every case the checker tried, also in the checker's own model of 65536 cases. Thirteen mutations of the code are caught by no test of the repository. They are listed under "Mutations" and went to the tester session. They do not change the verdict, because the code under test is right in each of those places. One point for the architect is listed under "Finding outside the criteria".
+
+**The commands of the record**
+
+- [x] `cargo test -p pool-control --locked walk_` → exit 0, 4 passed: `walk_clean_startup`, `walk_missing_journal`, `walk_conflicting_evidence`, `walk_restore_before_promotion` → `0003 AC-7` to `0003 AC-10`
+- [x] `cargo test -p pool-control --locked open_only_on_full_agreement` → exit 0, 1 passed → `0003 AC-12`
+- [x] `cargo test -p pool-control --locked --doc` → exit 0, 4 passed, each marked `compile fail`: `authority::Authority (line 128)`, `admission::EligiblePrimary (line 89)`, `admission::Closed (line 137)`, `bootstrap::BootstrapPlan (line 57)` → `0003 AC-12`
+- [x] `cargo test -p pool-control --locked` → exit 0. `tests/walkthroughs.rs` 7 passed, `tests/admission_model.rs` 1 passed, doc tests 4 passed → `0003 AC-7` to `0003 AC-12`
+- [x] `grep -rnE 'Instant::now|SystemTime|std::fs|std::env' crates/pool-control/src` → no output, exit 1 → `0003 AC-11`
+- [x] `scripts/check.sh all` → exit 0, `ok` for `fmt`, `clippy`, `test`, `deny`, `guards` and `docs`. 385 tests passed, 0 failed. `deny` shows only the known `license-exception-not-encountered` warning
+- [x] `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` → exit 0
+- [x] The developer's mutation (drop the quarantine filter of checks 9 and 10) → `open_only_on_full_agreement` and `walk_conflicting_evidence` fail. It is mutation A15 below
+
+**Extra checks**
+
+- [x] The tests against the spec tables, by reading → every row of walk 1 (1, 2, 2a to 2e, 3, 4), walk 2 (1, 1a, 2, 2a, 3), walk 3 (a to p) and walk 4 (1 to 4) has an assertion in `tests/walkthroughs.rs` with the setup and the result of the table: the same nodes, sample times, timelines and identifiers, the same reason names in the same order, and `latches_conflict()` true for rows c, d and i of walk 3 and steps 2 to 4 of walk 4 only → `0003 AC-7` to `0003 AC-10`
+- [x] The model test, by reading → `expected` in `tests/admission_model.rs` works on the test's own values (two writer numbers, two flags and three `Seen` values). It calls nothing of `pool-control`. The loop counts 8192 cases and the domain is the one under [Tests and who owns them](index.md#tests-and-who-owns-them). Two limits: for a closed answer it compares only `latches_conflict()` and that the list is not empty, and it asserts `opened > 0` where the exact number for this domain is 130 → `0003 AC-12`
+- [x] The checker's own model, 65536 cases → written from rows 2 to 10 of the table under [Writer admission](index.md#writer-admission), not from the code and not from the developer's tests. It loops over `expected_writer` in `pg1`, `pg2`; the approved writer in `pg1`, `pg2`; the journal timeline 1 or 2; no quarantine or one of the three nodes; the latch; the configured system identifier equal to the journal's or not; and the eight observations for each node. For every case the code gives exactly the list of reasons of the model, in the order of the table, `latches_conflict()` is true exactly when the list holds `evidence.second_primary` or `evidence.timeline_ahead`, and an open answer names the approved writer. The number of open answers is 474, which is the number the rule predicts by hand → `0003 AC-9`, `0003 AC-12`
+- [x] Start classification, the whole table → `Absent` gives `Uninitialized` or `Missing`. `Unreadable` gives `Unreadable` in both columns. `Present` without a witness is `Unconfirmed`, also when the hold is `restore_pending` and also for a configuration with no `[control]` table. A witness that differs gives `Mismatch`, also when the hold is set, so the witness is compared before the hold. The matching witness gives `Held` or `Ready`. A journal that is not consistent (a member twice in a second cluster, a writer outside the members of a second cluster, no members at all, a quarantine row for a cluster it does not hold) is `Unreadable` whatever the witness and the hold say. Each of the six states that are not `Ready` closes with its one reason, with healthy observations and with none, and never asks for the latch → `0003 AC-7`, `0003 AC-8`, `0003 AC-10`
+- [x] Freshness with more than one sample for a node → an age equal to the expiry is no evidence, one nanosecond less is fresh, age 0 is fresh, one nanosecond in the future is no evidence, and an expiry of 0 makes nothing fresh. A failed latest sample does not fall back to an older fresh one, in either order of the list. A latest sample in the future does not fall back either. An older failed sample does not hide a later good one. A tie among older samples does not matter. A tie at the latest time gives no evidence, also when the two samples differ, with three samples, and when one of them failed. The same holds for a node that is not the writer: a tie, a stale sample or a future sample of `pg2` that says primary does not close, and a later failed sample hides an older one that said primary → `0003 AC-11`
+- [x] Two clusters (`main` with three nodes, `b` with two) → each cluster opens by itself. The primary of `b` is not a second primary of `main`, and its timeline 3 is not ahead of timeline 1 of `main`, also when it reports the system identifier of `main`. The latch, the quarantine and the missing evidence of one cluster do not touch the other. A quarantine row `(b, pg2)` does not quarantine `pg2` of `main`. A cluster that only the journal holds, or only the configuration, gives `authority.cluster_unknown` alone, also when its latch is set. A member of the journal that the configuration lists under another cluster gives `authority.config_conflict` → `0003 AC-9`
+- [x] Timelines below the journal's → with a journal timeline of 3, a writer on timeline 2 closes with `evidence.writer_timeline`, a replica on timeline 2 or 3 does not close, and a replica on timeline 4 closes with `evidence.timeline_ahead` → `0003 AC-9`
+- [x] A configured node that is not a member in the journal is still looked at → it does not close while it is in recovery, and it closes with `evidence.second_primary` when it says primary → `0003 AC-9`
+- [x] What `Open` carries → with epoch 7 for `main`, epoch 9 for `b` and revision 41 in the journal, the open answers carry 7 and 41, and 9 and 41. The three accessors of `Authority` return what the journal held → `0003 AC-12`
+- [x] Every reason at once → reasons 2, 3, 4, 5, 9, 10 in one answer, and 2, 3, 4, 7, 8, 9, 10 in another, each reason once though two nodes cause 9 and 10, in the order of the table → `0003 AC-9`
+- [x] Bootstrap, the whole refusal table with two clusters → the plan holds one approved topology for each cluster in the order of the configuration, with the timeline each writer reported (1 and 5), epoch 1, every configured node as a member and no latch. Each of the refusals 4 to 8 is given when only the second cluster causes it, and when only the first does. A stale sample, a future sample, a failed sample and a missing sample each give `bootstrap.evidence_missing`. A node with another system identifier that says primary on a later timeline gives `bootstrap.identity_mismatch` and nothing more. Check 8 is skipped for a cluster whose writer does not fit and still runs for the other cluster. Refusals 1 and 2 do not stop the evidence checks: one call gives all of 1, 2, 4, 5, 6, 7 and 8 in order, and a configuration with no cluster gives 1, 2 and 3. A sample of a node outside the configuration is ignored → `0003 AC-7`, `0003 AC-8`
+- [x] The types from outside the crate → small programs that use `pool-control` as a dependency do not compile, each for the expected reason: a struct literal of `BootstrapRefused` (`E0451`), `Authority { ..a }` and `EligiblePrimary { node, ..e }` (`E0451`), `Default` for `Authority`, `EligiblePrimary`, `Closed` and `BootstrapPlan` (`E0277`), writing through `Ready(ref mut a)` into `a.stored` (`E0616`), reading or clearing `Closed.reasons` and `BootstrapPlan.clusters` (`E0616`), and the tuple constructors `TimelineId(0)` and `MonotonicTime(..)` (`E0423`). The only public functions that return one of these types are `classify_startup`, `writer_admission` and `plan_bootstrap` → `0003 AC-12`
+- [x] The derives → every public type has `Debug, Clone, PartialEq, Eq`. The seven types the spec names also have `Copy`, and `TimelineId` and `MonotonicTime` have `PartialOrd, Ord`. `TimelineId::from_observed(0)` is `None`. Both also derive `Hash`, which the spec does not list and which harms nothing
+- [x] Rule W3 on the new code → in a private clone, `pool-repo-check workspace` is `ok` on the clean tree and gives `W3: crates/pool-control/src/admission.rs:303: forbidden text ...` with exit 1 for each of `std::thread`, `tokio`, `TcpStream` and `std::net` added to `admission.rs`, and for `std::thread` added to `tests/walkthroughs.rs`
+- [x] The dependencies of `pool-control` → `cargo metadata --no-deps --format-version 1` and `cargo tree -p pool-control -e normal,build,dev` show `pool-config` alone. The manifest has no `dev-dependencies` and the package has no build script
+- [x] The restart rules, by reading → each line that the developer lists for `0003 AC-14` holds a documentation comment that starts with `Restart rule:` and sits on the named public type. The nine records that the [Records](index.md#records) table builds in this slice are `ClusterConfig`, `NodeConfig`, `IdentityRoute`, `SecretReference`, `ValidatedConfig`, `Observation`, `StoredAuthority`, `ApprovedTopology` and `Quarantine`, and each rule says what the table says. The change to `crates/pool-config/src/lib.rs` in `f98d634` is three comment lines and no code → `0003 AC-14`, code half
+
+**Mutations**
+
+60 changes to `crates/pool-control/src`, one at a time, each run with `cargo test -p pool-control --locked --tests` in the copy. 46 make a test of the repository fail. One is a control that changes nothing (the open answer names `expected_writer`, which is equal to the approved writer whenever the answer is open). 13 are caught by no test of the repository, and each of them is caught by the checker's probe file.
+
+The seven the lead named are all caught by the repository tests: the conflict latch dropped (`walk_conflicting_evidence`, `open_only_on_full_agreement`), the missing member dropped (`walk_conflicting_evidence`), the later timeline dropped (`walk_conflicting_evidence`, `walk_restore_before_promotion`, `open_only_on_full_agreement`), another system identifier for the writer, for the configuration and for another node (`walk_conflicting_evidence`, `open_only_on_full_agreement`), another `expected_writer` (three tests), `restore_pending` ignored (`walk_restore_before_promotion`), and an age equal to the expiry taken as fresh (`walk_conflicting_evidence`, row e).
+
+Not caught by any test of the repository:
+
+| Mutation | Why no test sees it |
+|---|---|
+| Check 8 closes only for a higher writer timeline, so a writer on a lower timeline than the journal is accepted | Every journal in the tests records timeline 1 |
+| Check 10 also counts a lower timeline of another node as ahead | Same |
+| A quarantine row is matched by its node alone, and its cluster is ignored | Every test has one cluster |
+| `Open` carries epoch 1, not the epoch of the journal | Every test uses epoch 1 |
+| `Open` carries revision 1, not the revision of the journal | Every test uses revision 1 |
+| Checks 2, 9 and 10 look at the nodes of every cluster | One cluster |
+| A failed latest sample falls back to an older fresh sample | No test gives a node a failed sample and an older one |
+| A latest sample in the future falls back to an older fresh sample | No test gives a node a future sample and an older one |
+| A tie among older samples counts as a tie | No test has three samples for one node |
+| A held journal of another identity is `Held`, not `Mismatch` | No test combines the hold with a wrong witness |
+| Bootstrap checks 6 to 8 also look at a node with another system identifier | Row 2d uses a node in recovery on timeline 1 |
+| Bootstrap checks and plans only the first configured cluster | One cluster |
+| Bootstrap treats the nodes of every cluster as nodes of each cluster | One cluster |
+
+**Finding outside the criteria**
+
+- **A `Ready` state is not tied to the configuration that confirmed it.** `writer_admission` takes the configuration and the state as two arguments and, in `Ready`, does not look at the witness again. Observed: a state classified `Ready` with witness `X` gives `Open` for `pg1` when it is passed together with a configuration that has no witness, or one with witness `Y`. Classified fresh, those two configurations give `Unconfirmed` and `Mismatch`. This is what the spec text asks: the table of checks for `Ready` has no witness row, and the function takes both values. It cannot happen in scope 004, which classifies once at the start with the one configuration it has. It matters when a reload exists (scope 009): a reload that changes or removes `control.authority_id` has to classify again, or be refused. The checker suggests that the architect say so in the spec, under [Writer admission](index.md#writer-admission) or in the Follow-up for 009. It does not change the verdict of `0003 AC-12`.
+
+**Readings the checker assessed**
+
+- **Fresh: the latest sample only.** The checker accepts the reading. It is the text of the paragraph "Fresh" under [The authority model in pool-control](index.md#the-authority-model-in-pool-control): the functions use the observation with the latest `sampled_at`, a tie at that time gives no evidence, and an observation that is not fresh or that failed is no evidence. Nothing there lets an older sample stand in. Observed for the writer and for another node, in admission and in bootstrap. A sample of a node that the configuration does not list for the cluster is ignored, as the last sentence of that paragraph says.
+- **`plan_bootstrap` reports every refusal, and the structural check comes before the witness.** The checker accepts both. "Every reason that applies is reported, in this order" stands above the refusal table, and row 2a of walk 2 lists two reasons. The sentence on a journal that is not consistent has no condition on the witness, and the row `Unreadable` of the classification table has the same answer in both columns. Observed: such a journal is `Unreadable` with no witness, with the matching witness, with another witness and with the hold set.
+- **The three accessors of `Authority`.** The checker accepts them. They return copies of three numbers and give no way to build or change an `Authority`. On the question of another way to an open answer from outside the crate: the checker found two. The first is a `StoreProbe::Present` built by hand, which [The authority model in pool-control](index.md#the-authority-model-in-pool-control) names and binds to the journal reader as the only builder. The second is the finding above. No struct literal, update syntax, `Default`, field access or tuple constructor works, and `forbid(unsafe_code)` holds for the workspace.
+- **The comment in `crates/pool-config/src/lib.rs`.** The checker accepts it. The [Records](index.md#records) table marks the type `ValidatedConfig` as built in 003, so `0003 AC-14` asks for its restart rule. The edit adds comment lines only.
+
+**Criteria in this milestone**
+
+| Criterion | Result |
+|---|---|
+| `0003 AC-7` | met on the workstation: no journal and no witness is `Uninitialized` and closed with `authority.uninitialized` with healthy observations; a plan only when every node of every cluster has fresh, fitting evidence; each row of the refusal table gives its reason, with one and with two clusters; a journal without a witness is `Unconfirmed` and closed |
+| `0003 AC-8` | met on the workstation: `Missing`, `Unreadable` and `Mismatch` with their reasons, and bootstrap refused with `bootstrap.witness_present`, `bootstrap.store_present` or both, with healthy observations and with bad ones |
+| `0003 AC-9` | met on the workstation: rows a to p of walk 3 give the listed result and reasons, only full agreement opens over 65536 cases, the latch is asked for exactly when a second primary or a later timeline is reported, and a latched journal stays closed with `authority.conflict_latched` whatever the evidence |
+| `0003 AC-10` | met on the workstation: a journal with the hold is `Held` and closed with `authority.restore_pending` for healthy, empty and conflicting observations; steps 1 to 4 of walk 4 give the listed results |
+| `0003 AC-11` | met on the workstation: an age equal to or above the expiry and a sample later than now are no evidence, to the nanosecond; the `grep` prints nothing |
+| `0003 AC-12` | met on the workstation: over the small domain and over the checker's wider one, `Open` is given only for the node that is the approved writer and the `expected_writer`, and never with a listed conflict; a struct literal of `Authority`, `EligiblePrimary`, `Closed` and `BootstrapPlan` does not compile outside the crate |
+| `0003 AC-14`, code half | met by reading: the nine records built in this slice are public types at the named places, and each documentation comment states its restart rule |
+| `0003 AC-1` to `0003 AC-6`, `0003 AC-13` | outside this milestone |
+
 ## Milestone 4: Document corrections and evidence
 
 Build plan steps 6 and 7, on 2026-11-15, on macOS (workstation, not Linux and not CI). Docker was running (`docker info` exit 0). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`.
@@ -273,3 +357,42 @@ Every criterion on the one revision `0a41060`. The test names are in the milesto
 | `0003 AC-12` | `open_only_on_full_agreement` and the four `compile_fail,E0451` doc tests | pass |
 | `0003 AC-13` | `cargo metadata` and the manifest comparison above; `scripts/check.sh all` and `scripts/prove-checks.sh --with-linux-build` pass | pass on the workstation; CI evidence waits for the pull request |
 | `0003 AC-14` | code half: the types and lines listed under milestone 3, unchanged since `f98d634`. Document half: the row "Identifier and generation types" of the [shared conventions](../../engineering-standards.md#shared-conventions) names the rule and links to [Identifier and generation types](index.md#identifier-and-generation-types); `scripts/check.sh docs` passes | pass |
+
+### Checker run: `/check verify`, milestone 4
+
+Recorded by the checker session `chk-f3-verify` on 2026-11-15 at revision `d26016c` (`main`), on macOS 27.0.1, arm64 (workstation, not Linux and not CI). Docker was running (`docker info` exit 0). `git diff 0a41060 d26016c --stat` names only `docs/index.md`, this file and `graphify-out/`, so every code file, manifest, script and baseline is the one of the revision the developer recorded. The checker did not write the code or the document edits. Every command was run again from this session's own checkout, with `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`. The developer's record above is kept as it was. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`.
+
+**Verdict: PASS for milestone 4.** The five document corrections are in place as the table under [Document corrections](index.md#document-corrections) asks, both halves of `0003 AC-14` are met, and the evidence of step 7 was reproduced on `main`. This is not the full verification of the feature. The fix to the time of `validate` (the finding of milestone 2) is still open, so the fixture steps, `0003 AC-2` and `0003 AC-3` are run again in the full verification after that fix is merged.
+
+**The commands of the record**
+
+- [x] `scripts/check.sh docs` → exit 0, `pool-repo-check docs: ok` → `0003 AC-14`
+- [x] `scripts/check.sh all` → exit 0, `ok` for `fmt`, `clippy`, `test`, `deny`, `guards` and `docs`. 385 tests passed, 0 failed. `deny` shows only the known `license-exception-not-encountered` warning
+- [x] `scripts/prove-checks.sh --with-linux-build` → exit 0, `prove-checks: commit d26016c9863fb956452bb26d935f1ac2e2103fe7`, cases 1 to 28 `PASS`, no `FAIL`, `all checks reject their bad change`. Case 17 matched `D3: docs/scope/004-one-real-primary-path.md:1: status disagrees: done in the heading, planned in docs/scope/index.md`. Case 20 ran the Linux build in Docker → `0003 AC-13`
+- [x] `scripts/check.sh fuzz` → exit 0, `Done 1096245 runs in 61 second(s)`, no file under `crates/pool-config/fuzz/artifacts/validate/`
+- [x] `cargo metadata --no-deps --format-version 1` → exit 0, three workspace members: `pool` (`pool-config`, `serde`, `serde_json`), `pool-config` (`serde`, `toml`), `pool-control` (`pool-config`) → `0003 AC-13`
+- [x] `git diff 2648ae1 d26016c --stat -- Cargo.lock Cargo.toml crates/pool-control/Cargo.toml` → empty, so the three files are as milestone 1 left them. `Cargo.lock` holds 19 entries: the three workspace packages and sixteen others → `0003 AC-13`
+- [x] `cargo test -p pool-control --locked walk_` → exit 0, 4 passed
+- [x] `cargo test -p pool-control --locked open_only_on_full_agreement` → exit 0, 1 passed
+- [x] `cargo test -p pool-control --locked --doc` → exit 0, 4 passed
+- [x] `grep -rnE 'Instant::now|SystemTime|std::fs|std::env' crates/pool-control/src` → no output, exit 1
+- [x] `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-topology.toml` → exit 0, the valid report of spec 0001
+- [x] `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` → exit 0
+
+**The document corrections, read against the table**
+
+- [x] Item 1 → `git show 0a41060 -- docs/engineering-standards.md`: in the row "Identifier and generation types" of the shared conventions, `Pending` is replaced. The new text holds the five rules of the table: one type per identifier and per generation, an identifier built only by a function that checks it, a generation advances by one and fails closed at the top, shared types live in `pool-config`, and a generation kept in memory compares only inside one start sequence. It ends with a link to `specs/0003-control-and-session-data-model/index.md#identifier-and-generation-types`, and that heading exists (line 135 of the spec; rule D2 of `scripts/check.sh docs` checks the fragment) → `0003 AC-14`
+- [x] Item 2 → the first paragraph of `docs/engineering-standards.md` names `apps/pool`, `crates/pool-config` and `crates/pool-control`
+- [x] Item 3 → the first paragraph of `docs/repository-structure.md` lists `crates/pool-control` among the paths that exist
+- [x] Item 4 → in `docs/glossary.md` the rows "Observation" and "Approved writer" say node where they said backend. No other word of the two rows changed
+- [x] Item 5 → `docs/index.md` line 177 holds the row for this file. `crates/pool-control/AGENTS.md` does not exist, so there is no section to add
+- [x] The commit of step 6 changes these three files and nothing else (5 lines added, 5 removed). The commit of step 7 changes `docs/index.md` and this file. Items 6 and 7 belong to other steps and were not checked here
+
+**Criteria in this milestone**
+
+| Criterion | Result |
+|---|---|
+| `0003 AC-14` | met: the code half as recorded under milestone 3, and the row of the shared conventions names the rule and links to [Identifier and generation types](index.md#identifier-and-generation-types) |
+| `0003 AC-7` to `0003 AC-12` | met on the workstation, as recorded under milestone 3, on the same revision |
+| `0003 AC-13` | the commands of step 7 pass on the workstation, and the Linux build ran in Docker inside case 20. CI evidence waits for the pull request |
+| `0003 AC-1` to `0003 AC-6` | not run again by hand here. Their tests are part of the 385 that passed. The full verification after the fix to `validate` runs their steps again |

@@ -12,8 +12,9 @@ Before 004, the control and protocol owners agree how to distinguish first boots
 - [ ] Build it: `/develop control and session data model`
   - [x] Workspace member and guards: Build plan step 1 (`AC-13`)
   - [x] Identifiers, configuration keys and the finding line: steps 2 to 4 (`AC-1` to `AC-6`), can run beside the milestone above
-  - [ ] Authority model and the four walks: step 5 (`AC-7` to `AC-12`, code half of `AC-14`), needs the two milestones above
-  - [ ] Document corrections and evidence: steps 6 and 7 (`AC-14`, evidence for `AC-1` to `AC-14`), after the three milestones above
+  - [x] Authority model and the four walks: step 5 (`AC-7` to `AC-12`, code half of `AC-14`), needs the two milestones above
+  - [x] Document corrections and evidence: steps 6 and 7 (`AC-14`, evidence for `AC-1` to `AC-14`), after the three milestones above
+  - [ ] Validation time: step 8 (`AC-15`), after the milestone "Identifiers, configuration keys and the finding line"
 - [ ] Verify it: `/check verify control and session data model`
 - [ ] Test it: `/test control and session data model`
 - [ ] Review it (fresh model): `/check review control and session data model`
