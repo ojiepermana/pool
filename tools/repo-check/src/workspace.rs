@@ -1012,3 +1012,265 @@ mod tests {
         assert_ok(&tree);
     }
 }
+
+#[cfg(test)]
+mod lockfile_edge_tests {
+    //! Edges of the W4 lockfile check of spec 0003, added by /test
+    //! (0003 AC-13). "An entry is the lines from one `[[package]]` line to
+    //! the next, or to the end of the file."
+
+    use super::*;
+    use crate::tree::MemTree;
+
+    const REGISTRY: &str = "source = \"registry+https://github.com/rust-lang/crates.io-index\"\n";
+
+    fn local(name: &str) -> String {
+        format!("[[package]]\nname = \"{name}\"\nversion = \"0.1.0\"\n\n")
+    }
+
+    fn registry(name: &str) -> String {
+        format!(
+            "[[package]]\nname = \"{name}\"\nversion = \"1.0.0\"\n{REGISTRY}checksum = \"00\"\n\n"
+        )
+    }
+
+    /// A tree that passes every rule, with `Cargo.lock` set to `lock` and
+    /// every name of it in the W1 baseline, so that only W4 can object.
+    fn tree(lock: &str, names: &[&str]) -> MemTree {
+        let mut baseline = String::from("# spec 0002\n");
+        for name in names {
+            baseline.push_str(name);
+            baseline.push('\n');
+        }
+        let mut tree = MemTree::of(&[
+            (
+                "Cargo.toml",
+                "[workspace]\nmembers = [\"apps/pool\", \"crates/pool-config\"]\n\n[workspace.lints.rust]\nunsafe_code = \"forbid\"\n",
+            ),
+            (
+                "apps/pool/Cargo.toml",
+                "[package]\nname = \"pool\"\n\n[dependencies]\npool-config.workspace = true\n\n[lints]\nworkspace = true\n",
+            ),
+            (
+                "crates/pool-config/Cargo.toml",
+                "[package]\nname = \"pool-config\"\n\n[lints]\nworkspace = true\n",
+            ),
+            (
+                SPEC_0001,
+                "# 0001\n\n### Linux build\n\n```bash\nrun\n```\n",
+            ),
+            (
+                LINUX_BUILD_SCRIPT,
+                "#!/bin/sh\n# --- spec 0001, Linux build ---\nrun\n",
+            ),
+            (
+                "tools/repo-check/baseline/fuzz-lock-packages.txt",
+                "# spec 0002\npool-config\n",
+            ),
+            (
+                "tools/repo-check/baseline/tool-lock-packages.txt",
+                "# spec 0002\npool-repo-check\n",
+            ),
+            (
+                "tools/repo-check/baseline/forbidden-paths.txt",
+                "# spec 0002\n",
+            ),
+            (
+                "tools/repo-check/baseline/forbidden-source-patterns.txt",
+                "# spec 0002\nstd::thread\n",
+            ),
+            (
+                "tools/repo-check/baseline/internal-dependencies.txt",
+                "# spec 0002\npool -> pool-config\n",
+            ),
+            (
+                "crates/pool-config/fuzz/Cargo.lock",
+                "[[package]]\nname = \"pool-config\"\n",
+            ),
+            (
+                "tools/repo-check/Cargo.lock",
+                "[[package]]\nname = \"pool-repo-check\"\n",
+            ),
+        ]);
+        tree.set("tools/repo-check/baseline/lock-packages.txt", &baseline);
+        tree.set("Cargo.lock", lock);
+        tree
+    }
+
+    fn w4_lines(tree: &MemTree) -> Vec<String> {
+        let report = check(tree);
+        assert!(report.faults.is_empty(), "{}", report.dump());
+        report
+            .problems
+            .iter()
+            .map(ToString::to_string)
+            .inspect(|line| assert!(line.starts_with("W4"), "only W4 may object: {line}"))
+            .collect()
+    }
+
+    const GHOST: &str = "W4: Cargo.lock: package ghost has no source line but is not a member written in members of Cargo.toml";
+
+    #[test]
+    fn w4_a_local_entry_that_is_not_a_member_is_found_at_the_start_middle_and_end() {
+        let names = ["ghost", "pool", "pool-config", "serde", "syn"];
+        let start = format!(
+            "version = 4\n\n{}{}{}{}{}",
+            local("ghost"),
+            local("pool"),
+            local("pool-config"),
+            registry("serde"),
+            registry("syn")
+        );
+        let middle = format!(
+            "version = 4\n\n{}{}{}{}{}",
+            local("pool"),
+            registry("serde"),
+            local("ghost"),
+            registry("syn"),
+            local("pool-config")
+        );
+        let end = format!(
+            "version = 4\n\n{}{}{}{}{}",
+            local("pool"),
+            local("pool-config"),
+            registry("serde"),
+            registry("syn"),
+            local("ghost").trim_end()
+        );
+        for lock in [start, middle, end] {
+            assert_eq!(
+                local_packages(&lock)
+                    .iter()
+                    .filter(|n| *n == "ghost")
+                    .count(),
+                1
+            );
+            assert_eq!(w4_lines(&tree(&lock, &names)), [GHOST], "{lock}");
+        }
+    }
+
+    #[test]
+    fn w4_members_without_source_pass_wherever_they_sit() {
+        let names = ["pool", "pool-config", "serde"];
+        for lock in [
+            format!(
+                "{}{}{}",
+                local("pool"),
+                local("pool-config"),
+                registry("serde")
+            ),
+            format!(
+                "{}{}{}",
+                registry("serde"),
+                local("pool"),
+                local("pool-config")
+            ),
+            format!(
+                "{}{}{}",
+                local("pool"),
+                registry("serde"),
+                local("pool-config")
+            ),
+        ] {
+            assert_eq!(
+                w4_lines(&tree(&lock, &names)),
+                Vec::<String>::new(),
+                "{lock}"
+            );
+        }
+    }
+
+    #[test]
+    fn w4_reads_an_entry_line_by_line() {
+        // The source line before the name, CRLF line ends, indented lines,
+        // and a dependency list that holds member names all keep their
+        // meaning.
+        assert_eq!(
+            local_packages(&format!(
+                "[[package]]\n{REGISTRY}name = \"serde\"\n\n[[package]]\r\nname = \"ghost\"\r\nversion = \"0.1.0\"\r\ndependencies = [\r\n \"pool\",\r\n \"source\",\r\n]\r\n\r\n  [[package]]\n  name = \"spaced\"\n"
+            )),
+            ["ghost", "spaced"]
+        );
+        // An entry without a name line is not reported; the first name wins.
+        assert_eq!(
+            local_packages(
+                "[[package]]\nversion = \"0.1.0\"\n\n[[package]]\nname = \"first\"\nname = \"second\"\n"
+            ),
+            ["first"]
+        );
+        // Text before the first entry is not part of any entry.
+        assert_eq!(
+            local_packages(&format!("version = 4\n{REGISTRY}\n{}", local("ghost"))),
+            ["ghost"]
+        );
+        assert_eq!(local_packages(""), Vec::<String>::new());
+    }
+
+    #[test]
+    fn w4_a_table_after_the_last_entry_counts_as_part_of_it() {
+        // Pins the behaviour that the spec text defines: the last entry runs
+        // to the end of the file. Cargo writes `[[patch.unused]]` tables
+        // after the packages, with their own `source` line. Such a table
+        // after a local last entry hides that entry from W4; this is the
+        // gap the developer's verification record names. A local last entry
+        // followed by a table without `source` is still found.
+        let unused =
+            format!("\n[[patch.unused]]\nname = \"other\"\nversion = \"1.0.0\"\n{REGISTRY}");
+        let names = ["pool", "pool-config", "serde", "ghost"];
+        let hidden = format!(
+            "{}{}{}{}{unused}",
+            local("pool"),
+            local("pool-config"),
+            registry("serde"),
+            local("ghost")
+        );
+        assert_eq!(local_packages(&hidden), ["pool", "pool-config"]);
+        assert_eq!(w4_lines(&tree(&hidden, &names)), Vec::<String>::new());
+
+        let metadata = format!(
+            "{}{}{}{}\n[metadata]\nnote = \"no source here\"\n",
+            local("pool"),
+            local("pool-config"),
+            registry("serde"),
+            local("ghost")
+        );
+        assert_eq!(w4_lines(&tree(&metadata, &names)), [GHOST]);
+
+        // After a registry last entry the table changes nothing.
+        let after_registry = format!(
+            "{}{}{}{unused}",
+            local("pool"),
+            local("pool-config"),
+            registry("serde")
+        );
+        assert_eq!(local_packages(&after_registry), ["pool", "pool-config"]);
+    }
+
+    #[test]
+    fn w4_one_line_per_local_package_that_is_not_a_member() {
+        let lock = format!(
+            "{}{}{}{}",
+            local("pool"),
+            local("ghost"),
+            local("pool-config"),
+            local("extra")
+        );
+        let lines = w4_lines(&tree(&lock, &["pool", "ghost", "pool-config", "extra"]));
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert_eq!(lines[0], GHOST);
+        assert!(
+            lines[1].contains("package extra has no source line"),
+            "{}",
+            lines[1]
+        );
+        // A member name that only differs in case is not a member.
+        let lock = format!("{}{}", local("Pool"), local("pool-config"));
+        let lines = w4_lines(&tree(&lock, &["Pool", "pool-config"]));
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("package Pool has no source line")),
+            "{lines:?}"
+        );
+    }
+}

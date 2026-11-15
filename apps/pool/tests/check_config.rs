@@ -2148,3 +2148,268 @@ fn ac4_check_config_opens_no_file_the_configuration_names() {
     assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
     assert_run(&check(path, "json"), 0, VALID_JSON, "");
 }
+
+// Made topology files through the binary, added by /test: the fourth
+// location shape, the key only shape for [control], every new code in one
+// run, the canary in topology values, and the exit status (0003 AC-1 to
+// AC-4).
+
+#[test]
+fn ac2_a_control_finding_prints_its_key_without_a_position() {
+    // covers: 0003 AC-2. Findings about [control] use Location::Key.
+    let made = made_file(
+        "topology-control-authority-id.toml",
+        b"config_version = 1\n[control]\nstate_directory = \"/p\"\nauthority_id = \"0123456789ABCDEF0123456789abcdef\"\n",
+    );
+    let path = made.to_str().expect("utf-8 path");
+    let finding = (
+        "config.invalid_value",
+        "control.authority_id",
+        None,
+        INVALID_VALUE,
+    );
+    assert_run(&check(path, "human"), 1, &topology_human(&[finding]), "");
+    assert_run(&check(path, "json"), 1, &topology_json(&[finding]), "");
+}
+
+#[test]
+fn ac2_an_inline_entry_missing_keys_is_reported_at_its_brace_in_both_formats() {
+    // covers: 0003 AC-2. Every missing key of an inline entry is at its `{`.
+    let made = made_file(
+        "topology-inline-missing.toml",
+        b"config_version = 1\nnode = [ {} ]\n",
+    );
+    let path = made.to_str().expect("utf-8 path");
+    let findings: Vec<Expected> = ["node.id", "node.cluster", "node.host", "node.port"]
+        .into_iter()
+        .map(|key| ("config.missing_key", key, Some((2, 10)), MISSING_KEY))
+        .collect();
+    assert_run(&check(path, "human"), 1, &topology_human(&findings), "");
+    assert_run(&check(path, "json"), 1, &topology_json(&findings), "");
+}
+
+#[test]
+fn ac2_ac3_every_new_code_in_one_run_in_the_validation_order() {
+    // covers: 0003 AC-2, AC-3. One file with each of the six new codes, plus
+    // a missing key, through the binary in both formats.
+    let text = "\
+config_version = 1
+[control]
+state_directory = \"relative\"
+
+[[cluster]]
+id = \"main\"
+system_identifier = \"1\"
+expected_writer = \"pg9\"
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"h\"
+port = 1
+
+[[node]]
+id = \"pg1\"
+cluster = \"main\"
+host = \"H\"
+port = 1
+
+[[identity]]
+id = \"a\"
+principal = \"p\"
+database = \"d\"
+cluster = \"main\"
+backend_login = \"l\"
+credential_file = \"/c\"
+routing_profile = \"replica\"
+
+[[identity]]
+id = \"b\"
+principal = \"p\"
+database = \"d\"
+cluster = \"main\"
+credential_file = \"/c\"
+";
+    let made = made_file("topology-every-code.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    let findings: [Expected; 7] = [
+        (
+            "config.invalid_value",
+            "control.state_directory",
+            None,
+            INVALID_VALUE,
+        ),
+        (
+            "config.unsupported_value",
+            "identity.routing_profile",
+            Some((29, 19)),
+            "this value is not supported by this build",
+        ),
+        (
+            "config.missing_key",
+            "identity.backend_login",
+            Some((31, 1)),
+            MISSING_KEY,
+        ),
+        (
+            "config.duplicate_id",
+            "node.id",
+            Some((17, 6)),
+            "an id is used more than once",
+        ),
+        (
+            "config.unknown_reference",
+            "cluster.expected_writer",
+            Some((8, 19)),
+            "a reference does not name a matching entry",
+        ),
+        (
+            "config.duplicate_endpoint",
+            "node.host",
+            Some((19, 8)),
+            "two nodes have the same host and port",
+        ),
+        (
+            "config.duplicate_identity",
+            "identity.principal",
+            Some((33, 13)),
+            "two identity entries have the same principal and database",
+        ),
+    ];
+    assert_run(&check(path, "human"), 1, &topology_human(&findings), "");
+    assert_run(&check(path, "json"), 1, &topology_json(&findings), "");
+}
+
+#[test]
+fn ac4_a_canary_in_any_topology_value_never_reaches_the_output() {
+    // covers: 0003 AC-4. The canary sits in values that are refused and in
+    // values that are accepted; neither format prints it, on exit 0 or 1.
+    let refused = format!(
+        "config_version = 1\n[control]\nstate_directory = \"{CANARY}\"\nauthority_id = \"{CANARY}\"\n\n[[cluster]]\nid = \"{CANARY}\"\nsystem_identifier = \"{CANARY}\"\nexpected_writer = \"{CANARY}\"\n\n[[node]]\nid = \"{CANARY}\"\ncluster = \"{CANARY}\"\nhost = \"{CANARY}_x\"\nport = 1\n\n[[identity]]\nid = \"{CANARY}\"\nprincipal = \"{CANARY}\\n\"\ndatabase = \"{CANARY}\"\ncluster = \"{CANARY}\"\nbackend_database = \"{CANARY}\\u0000\"\nbackend_login = \"{CANARY}\"\ncredential_file = \"{CANARY}\"\nrouting_profile = \"{CANARY}\"\n"
+    );
+    let accepted = format!(
+        "config_version = 1\n# {CANARY}\n[control]\nstate_directory = \"/{CANARY}\"\n\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"1\"\nexpected_writer = \"pg1\"\n\n[[node]]\nid = \"pg1\"\ncluster = \"main\"\nhost = \"{CANARY}\"\nport = 1\n\n[[identity]]\nid = \"a\"\nprincipal = \"{CANARY}\"\ndatabase = \"{CANARY}\"\ncluster = \"main\"\nbackend_login = \"{CANARY}\"\ncredential_file = \"/{CANARY}\"\n"
+    );
+    for (name, text, code) in [
+        ("topology-canary-refused.toml", refused, 1),
+        ("topology-canary-accepted.toml", accepted, 0),
+    ] {
+        let made = made_file(name, text.as_bytes());
+        let path = made.to_str().expect("utf-8 path");
+        for format in ["human", "json"] {
+            let run = check(path, format);
+            assert_eq!(run.code, code, "{name} {format}: {}", run.stdout);
+            assert!(!run.stdout.contains(CANARY), "{}", run.stdout);
+            assert!(!run.stderr.contains(CANARY), "{}", run.stderr);
+            assert!(!run.stdout.contains("9f2c7b1e"), "{}", run.stdout);
+        }
+    }
+}
+
+#[test]
+fn ac1_made_topology_files_at_the_edges_report_exactly_the_valid_report() {
+    // covers: 0003 AC-1. Empty arrays, an empty [control], and values at the
+    // edge of their syntax are valid, with the unchanged valid report.
+    let id63 = "a".repeat(63);
+    let path4096 = format!("/{}", "p".repeat(4095));
+    let host253 = "h".repeat(253);
+    let texts = [
+        "config_version = 1\ncluster = []\nnode = []\nidentity = []\n".to_owned(),
+        "config_version = 1\n[control]\n".to_owned(),
+        format!(
+            "config_version = 1\n[control]\nstate_directory = \"{path4096}\"\nauthority_id = \"ffffffffffffffffffffffffffffffff\"\n[[cluster]]\nid = \"{id63}\"\nsystem_identifier = \"18446744073709551615\"\nexpected_writer = \"{id63}\"\n[[node]]\nid = \"{id63}\"\ncluster = \"{id63}\"\nhost = \"{host253}\"\nport = 65535\n"
+        ),
+    ];
+    for (index, text) in texts.iter().enumerate() {
+        let made = made_file(&format!("topology-edge-{index}.toml"), text.as_bytes());
+        let path = made.to_str().expect("utf-8 path");
+        assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
+        assert_run(&check(path, "json"), 0, VALID_JSON, "");
+    }
+    // One byte past each edge is exit 1.
+    for (index, text) in [
+        texts[2].replace("port = 65535", "port = 0"),
+        texts[2].replace(&host253, &format!("{host253}h")),
+        texts[2].replace(&path4096, &format!("{path4096}p")),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let made = made_file(&format!("topology-past-edge-{index}.toml"), text.as_bytes());
+        let path = made.to_str().expect("utf-8 path");
+        let run = check(path, "human");
+        assert_eq!(run.code, 1, "{}", run.stdout);
+        assert!(
+            run.stdout.contains("config.invalid_value"),
+            "{}",
+            run.stdout
+        );
+        assert_eq!(run.stderr, "");
+    }
+}
+
+/// Made input 3 of the text proposed for `0003 AC-15`: every entry inline on
+/// line 2 with port 0, as many as fit in 1 MiB.
+fn ac15_input_3() -> (String, usize) {
+    let tail = "]\n\n[control]\nstate_directory = \"/var/lib/pool\"\n\n[[cluster]]\nid = \"main\"\nsystem_identifier = \"7412345678901234567\"\nexpected_writer = \"n0\"\n";
+    let mut text = String::from("config_version = 1\nnode = [");
+    let mut count = 0;
+    loop {
+        let comma = if count == 0 { "" } else { "," };
+        let entry = format!(
+            "{comma}{{id=\"n{count}\",cluster=\"main\",host=\"h{count}.db.internal\",port=0}}"
+        );
+        if text.len() + entry.len() + tail.len() > 1_048_576 {
+            text.push_str(tail);
+            return (text, count);
+        }
+        text.push_str(&entry);
+        count += 1;
+    }
+}
+
+#[test]
+fn ac15_the_binary_reports_every_finding_of_input_3_within_ten_seconds() {
+    // covers: 0003 AC-15 (proposed), 0003 AC-2. Each run is timed from
+    // start to exit and checked before the next one starts.
+    let (text, count) = ac15_input_3();
+    assert_eq!((count, text.len()), (17_268, 1_048_559));
+    let made = made_file("ac15-input-3.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    let limit = std::time::Duration::from_secs(10);
+
+    let started = std::time::Instant::now();
+    let human = check(path, "human");
+    let elapsed = started.elapsed();
+    assert!(elapsed < limit, "human run took {elapsed:?}");
+    assert_eq!(human.code, 1);
+    assert_eq!(human.stderr, "");
+    let lines: Vec<&str> = human.stdout.lines().collect();
+    assert_eq!(lines[..2], ["configuration invalid", "findings: 17268"]);
+    assert_eq!(lines.len(), 2 + count);
+    assert_eq!(
+        lines[2],
+        format!("config.invalid_value at node.port, line 2, column 60: {INVALID_VALUE}")
+    );
+    let prefix = "config.invalid_value at node.port, line 2, column ";
+    assert!(lines[2..].iter().all(|line| line.starts_with(prefix)));
+
+    let started = std::time::Instant::now();
+    let json = check(path, "json");
+    let elapsed = started.elapsed();
+    assert!(elapsed < limit, "json run took {elapsed:?}");
+    assert_eq!(json.code, 1);
+    assert_eq!(json.stderr, "");
+    assert!(json.stdout.starts_with(
+        "{\"output_version\":1,\"command\":\"check-config\",\"result\":\"invalid\",\"config_version\":null,\"capabilities\":null,\"findings\":[{\"code\":\"config.invalid_value\",\"key\":\"node.port\",\"line\":2,\"column\":60,"
+    ));
+    assert_eq!(json.stdout.matches("{\"code\":").count(), count);
+    assert_eq!(
+        json.stdout
+            .matches("\"code\":\"config.invalid_value\",\"key\":\"node.port\",\"line\":2,")
+            .count(),
+        count
+    );
+    assert!(json.stdout.ends_with("}]}\n"));
+    assert_eq!(json.stdout.lines().count(), 1);
+}
