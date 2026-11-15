@@ -120,15 +120,17 @@ impl StateDirectory {
         self.path.join(JOURNAL_FILE)
     }
 
-    /// Creates the empty journal file with mode `0600`, unless an empty one
-    /// is there already (what an interrupted bootstrap leaves, which the
-    /// reader counts as absent). The check of [`StateDirectory::open`]
+    /// Creates the empty journal file with mode `0600`, unless a file is
+    /// there already. A file that exists is what an interrupted bootstrap
+    /// leaves: 0 bytes, or one page with no mark and no table after the WAL
+    /// mode was set. The reader counted it as absent, and `Journal::create`
+    /// applies the same rule for an empty database and refuses anything
+    /// else (spec 0004, decision 59). The check of [`StateDirectory::open`]
     /// already holds for a file that exists.
     pub fn create_empty_journal(&self) -> Result<PathBuf, StateError> {
         let path = self.journal();
         match std::fs::symlink_metadata(&path) {
-            Ok(metadata) if metadata.len() == 0 => Ok(path),
-            Ok(_) => Err(StateError::Permissions),
+            Ok(_) => Ok(path),
             Err(error) if error.kind() == io::ErrorKind::NotFound => {
                 create_protected(&path)?;
                 Ok(path)

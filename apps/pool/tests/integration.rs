@@ -1713,3 +1713,47 @@ fn it_messages_of_a_real_server_pass_through_or_end_as_the_spec_says() {
     select_one_works(port);
     assert_eq!(daemon.stop(), 0);
 }
+
+/// The main file that a bootstrap leaves when it stops after setting the WAL
+/// mode and before its transaction: one page of 4096 bytes with the header
+/// of SQLite, no mark (`application_id` and `user_version` 0) and no table.
+/// These are the bytes SQLite 3.54 writes for it.
+fn one_empty_page() -> Vec<u8> {
+    let mut page = vec![0u8; 4096];
+    page[..16].copy_from_slice(b"SQLite format 3\0");
+    page[16..18].copy_from_slice(&4096u16.to_be_bytes());
+    page[18] = 2; // write version: WAL
+    page[19] = 2; // read version: WAL
+    page[21] = 64;
+    page[22] = 32;
+    page[23] = 32;
+    page[27] = 1; // file change counter
+    page[31] = 1; // size of the database in pages
+    page[95] = 1; // version-valid-for
+    page[96..100].copy_from_slice(&3_054_000u32.to_be_bytes());
+    page[100] = 13; // leaf table b-tree page
+    page[105] = 16; // cell content area at 4096
+    page
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next() {
+    // covers: 0004 AC-10, AC-11 (decision 59, found by the verification of
+    // milestone 3): the file left behind is an empty database.
+    let case = Case::new("stopped-bootstrap");
+    case.write(&case.settings(), &[primary_node()]);
+    let journal = case.journal();
+    fs::write(&journal, one_empty_page()).expect("write the page");
+    fs::set_permissions(&journal, fs::Permissions::from_mode(0o600)).expect("chmod");
+    let run = pool("show-authority", &case.config, "human");
+    assert_eq!(run.code, 0, "{}", run.stderr);
+    assert_eq!(run.stdout, "authority state: uninitialized\n");
+    let id = bootstrap(&case);
+    assert_eq!(Journal::read(&journal).authority_id(), Some(id));
+    let run = pool("show-authority", &case.config, "human");
+    assert_eq!(
+        run.stdout,
+        format!("authority state: unconfirmed\nauthority_id: {id}\n")
+    );
+}
