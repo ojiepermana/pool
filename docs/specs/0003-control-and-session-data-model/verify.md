@@ -396,3 +396,42 @@ Recorded by the checker session `chk-f3-verify` on 2026-11-15 at revision `d2601
 | `0003 AC-7` to `0003 AC-12` | met on the workstation, as recorded under milestone 3, on the same revision |
 | `0003 AC-13` | the commands of step 7 pass on the workstation, and the Linux build ran in Docker inside case 20. CI evidence waits for the pull request |
 | `0003 AC-1` to `0003 AC-6` | not run again by hand here. Their tests are part of the 385 that passed. The full verification after the fix to `validate` runs their steps again |
+
+## Milestone 5: Validation time
+
+Build plan step 8, code part, on 2026-11-15, on macOS (workstation, not Linux and not CI). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`. No dependency was added, and `Cargo.toml` and `Cargo.lock` are unchanged.
+
+**Revision under test: `e79f8b2`** (`fix(config): spec 0003 step 8, positions are worked out without rescanning the file`), on top of `79de174` on `main`. The old code is `79de174`. It changes only `crates/pool-config/src/lib.rs` and `crates/pool-config/src/topology.rs`, outside every `#[cfg(test)]` module. The `ac15_` tests of step 8 are not part of this revision. The tester session `tst-f3-test` writes them on its own branch. Their run is recorded when that branch is merged.
+
+**What changed.** `topology::Checker` turned the span of every entry and every string value into a line and a column with `line_column`, which counts from the top of the file. A `LineIndex` is now built once, in time linear in the file. It holds where each line starts and the number of Unicode scalar values before every 256th byte. A lookup is a binary search over the line starts, plus a scan of fewer than 256 bytes from the nearest stored count, once for the offset and once for the start of its line. So nothing counts from the top of the file or from the start of a line, and the work is at most n log n, as [Validation time](index.md#validation-time) asks ("any other way with the same bound"). The one position of a syntax or schema error still uses `line_column`, at most once per run.
+
+### UI / manual
+
+None for this milestone.
+
+### Commands
+
+The made inputs were built by a probe script outside the repository, as [Validation time](index.md#validation-time) describes them. Times are wall clock from the start of `pool check-config` to its exit, one run each, on the workstation. They are not a benchmark.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| Made inputs 1, 2 and 3: entries and bytes | 13217 / 1048511, 16471 / 1048558, 17268 / 1048559 | the same | pass |
+| `pool check-config` on inputs 1, 2 and 3, debug build of `e79f8b2`, `human` and `json` | each run within 10 s; exit 0, 0, 1 | 0.62 s, 0.62 s, 0.77 s at most; exit 0, 0, 1 | pass |
+| The same, release build of `e79f8b2` | within 10 s | 0.08 s, 0.08 s, 0.12 s at most | pass |
+| The same, release build of the old code | (for comparison) | 4.7 s, 39 to 44 s, 39 to 41 s | the fault |
+| Input 3, findings | 17268 `config.invalid_value` at `node.port`, all on line 2, the first at column 60 | the same; output byte for byte equal to the old code in both formats | pass |
+| Made input 4 | `node.port` line 21 column 8, then `node.id` line 18 column 6 | the same, equal to the old code | pass |
+| Probe files of the checker's finding, debug, old code → `e79f8b2` | (for comparison) | 4000 nodes 15.92 → 0.49 s; 8000 nodes 70.16 → 0.52 s; 16000 nodes (938 KB) 284.63 → 0.67 s; 12000 nodes on one line 436.01 → 0.43 s; 1000 nodes after a 974 KB comment 42.65 → 0.14 s | pass |
+| The 28 fixtures and the 6 probe files, binary of the old code against `e79f8b2`, `human` and `json` | stdout, stderr and exit equal | 68 comparisons, 0 differences | pass |
+| Four large invalid files (duplicate id and bad host deep in the file, an entry after a 900 KB comment with a multi byte id, one long inline line with a column of 571793, CRLF line ends with `é€😀` and a tab), old code against `e79f8b2`, both formats | equal | equal | pass |
+| `LineIndex::line_column` against `line_column`, every offset (also past the end) of random texts with CRLF, tabs and multi byte scalars, on and around 256 byte boundaries, and a 200 KB line | equal | equal | pass |
+| `scripts/check.sh all` | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs `ok` | pass |
+| `scripts/check.sh fuzz` | exit 0 | exit 0 | pass |
+| `cargo test -p pool-config --locked ac15_`, `cargo test -p pool --locked ac15_` | the step 8 tests pass | not run here: the tests are on the tester's branch | not run |
+
+### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0003 AC-15` | the code of `e79f8b2` and the probe rows above | pass on the workstation for the code. The `ac15_` tests and their run come from `tst-f3-test` |
+| `0003 AC-2`, `0003 AC-3` (positions) | the fixture and large file comparisons above: no position changed | pass; the checker repeats them |
