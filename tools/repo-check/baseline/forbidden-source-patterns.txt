@@ -1,4 +1,8 @@
-# Baseline of spec 0002 (docs/specs/0002-standards-and-tooling/index.md), rule W3: plain text that no .rs file under apps/ or crates/ may contain
+# Baseline of rule W3, spec 0002 (docs/specs/0002-standards-and-tooling/index.md), in the format of spec 0004
+# (docs/specs/0004-one-real-primary-path/index.md, "Source guard"). Three kinds of line:
+#   <text>               forbidden in every .rs file under apps/ and crates/
+#   deny <path> <text>   also forbidden in every .rs file at or under <path>
+#   allow <path> <text>  allowed in every .rs file at or under <path>
 std::net
 TcpListener
 TcpStream
@@ -7,3 +11,27 @@ UnixListener
 UnixStream
 tokio
 std::thread
+StoredAuthority
+StoreProbe
+classify_startup
+plan_bootstrap
+writer_admission
+allow crates/pool-core std::net
+allow crates/pool-core TcpListener
+allow crates/pool-core TcpStream
+allow crates/pool-core tokio
+allow apps/pool std::net
+allow apps/pool TcpListener
+allow apps/pool TcpStream
+allow apps/pool tokio
+allow crates/pool-control StoredAuthority
+allow crates/pool-control StoreProbe
+allow crates/pool-control classify_startup
+allow crates/pool-control plan_bootstrap
+allow crates/pool-control writer_admission
+deny crates/pool-control/src Instant::now
+deny crates/pool-control/src SystemTime
+deny crates/pool-control/src std::fs
+deny crates/pool-control/src std::env
+deny crates/pool-control/src rusqlite
+allow crates/pool-control/src/journal.rs rusqlite

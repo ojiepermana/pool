@@ -402,6 +402,37 @@ append "$C/tools/repo-check/baseline/lock-packages.txt" 'pool-prove-ghost'
 expect 29 guards 'W4' 'pool-prove-ghost'
 restore
 
+# Cases 30 to 35: one per group of the source guard of spec 0004 (0004 AC-2, "Source guard").
+# 30: a socket or the runtime outside pool-core and apps/pool.
+append "$C/crates/pool-control/src/lib.rs" '// TcpStream'
+expect 30 guards 'W3' 'crates/pool-control/src/lib.rs' 'TcpStream'
+restore
+
+# 31: a thread or a socket kind that no path allows, also where sockets are allowed.
+append "$C/apps/pool/src/main.rs" '// UnixStream'
+expect 31 guards 'W3' 'apps/pool/src/main.rs' 'UnixStream'
+restore
+
+# 32: a clock, a file call or an environment read in pool-control (0003 AC-11, Follow-up 4 point t6).
+append "$C/crates/pool-control/src/lib.rs" '// Instant::now'
+expect 32 guards 'W3' 'crates/pool-control/src/lib.rs' 'Instant::now'
+restore
+
+# 33: rusqlite in pool-control outside journal.rs.
+append "$C/crates/pool-control/src/lib.rs" '// rusqlite'
+expect 33 guards 'W3' 'crates/pool-control/src/lib.rs' 'rusqlite'
+restore
+
+# 34: a journal value named outside pool-control (point m2, 0003 AC-19).
+append "$C/apps/pool/src/main.rs" '// StoreProbe'
+expect 34 guards 'W3' 'apps/pool/src/main.rs' 'StoreProbe'
+restore
+
+# 35: writer admission called outside pool-control (point m3, the guard half of 0003 AC-18).
+append "$C/crates/pool-config/src/lib.rs" '// writer_admission'
+expect 35 guards 'W3' 'crates/pool-config/src/lib.rs' 'writer_admission'
+restore
+
 if [ -n "$failed" ]; then
   echo "prove-checks: these cases were not rejected as expected:$failed"
   exit 1
