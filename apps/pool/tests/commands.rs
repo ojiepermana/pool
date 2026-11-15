@@ -954,3 +954,96 @@ fn ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_
         assert_eq!(mode & 0o7777, 0o600, "round {round}");
     }
 }
+
+/// A real journal for the layout, made with the library the way `pool bootstrap` makes it.
+fn real_journal(layout: &Layout) {
+    use pool_control::{
+        Journal, MonotonicTime, NodeFacts, Observation, ObservationBoard, ObservationOutcome,
+        TimelineId,
+    };
+    let text = fs::read(&layout.config).expect("read the configuration");
+    let config = pool_config::validate(&text).expect("a valid configuration");
+    let mut board = ObservationBoard::new();
+    board.record(Observation::new(
+        pool_config::NodeId::parse("pg1").expect("node id"),
+        MonotonicTime::from_origin(Duration::from_millis(99_900)),
+        ObservationOutcome::Reached(NodeFacts {
+            system_identifier: pool_config::SystemIdentifier::parse("7412345678901234567")
+                .expect("system identifier"),
+            timeline: TimelineId::from_observed(1).expect("timeline"),
+            in_recovery: false,
+        }),
+    ));
+    let path = layout.journal();
+    write_mode(&path, b"", 0o600);
+    let plan = Journal::read(&path)
+        .bootstrap_plan(
+            &config,
+            &board,
+            MonotonicTime::from_origin(Duration::from_secs(100)),
+        )
+        .expect("bootstrap is allowed");
+    Journal::create(
+        &path,
+        &plan,
+        pool_config::AuthorityId::parse(X).expect("id"),
+        1_763_200_000_000,
+    )
+    .expect("create the journal");
+}
+
+#[test]
+fn ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_left_as_it_is() {
+    // covers: 0004 AC-10, AC-11. In front of `pool bootstrap`: the journal cut
+    // to one page, with its application ID changed, and with a newer schema
+    // version. Each is unreadable: bootstrap is refused, show-authority says
+    // so, and the bytes of the file do not change.
+    type Damage = fn(&mut Vec<u8>);
+    let cases: [(&str, Damage); 3] = [
+        ("cut-to-one-page", |bytes| bytes.truncate(4096)),
+        ("application-id", |bytes| {
+            bytes[68..72].copy_from_slice(&[0, 0, 0, 1])
+        }),
+        ("newer-version", |bytes| {
+            bytes[60..64].copy_from_slice(&[0, 0, 0, 2])
+        }),
+    ];
+    for (name, damage) in cases {
+        let layout = Layout::new(&format!("damaged-{name}"));
+        real_journal(&layout);
+        let mut bytes = fs::read(layout.journal()).expect("read");
+        assert!(
+            bytes.len() > 4096,
+            "{name}: a journal of more than one page"
+        );
+        damage(&mut bytes);
+        fs::write(layout.journal(), &bytes).expect("write");
+        for file in layout.entries() {
+            if file.starts_with("journal.sqlite3-") {
+                fs::remove_file(layout.state.join(file)).expect("remove a side file");
+            }
+        }
+        let run = command("bootstrap", &layout.config, "human");
+        assert_eq!(run.code, 1, "{name}: {}", run.stderr);
+        assert_eq!(
+            run.stdout,
+            format!(
+                "bootstrap refused\nfindings: 2\nbootstrap.store_present: {REFUSED}\nbootstrap.evidence_missing: {REFUSED}\n"
+            ),
+            "{name}"
+        );
+        let show = command("show-authority", &layout.config, "human");
+        assert_eq!(show.code, 0, "{name}: {}", show.stderr);
+        assert!(
+            show.stdout.starts_with("authority state: unreadable\n"),
+            "{name}: {}",
+            show.stdout
+        );
+        assert_eq!(
+            fs::read(layout.journal()).expect("read"),
+            bytes,
+            "{name}: unchanged"
+        );
+        assert_no_path(&run, &layout);
+    }
+}
