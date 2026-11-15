@@ -1,13 +1,16 @@
 //! The `pool` daemon executable.
 //!
-//! This build has three commands. `check-config` validates a configuration
+//! This build has four commands. `check-config` validates a configuration
 //! file offline. `bootstrap` probes every node once and creates the journal.
-//! `show-authority` reads the journal and prints its state and ID. The two
-//! new ones check and lock the state directory first. The daemon itself,
-//! `pool run`, comes in Build plan step 10 of spec 0004.
+//! `show-authority` reads the journal and prints its state and ID. `run` is
+//! the daemon: it serves clients until SIGTERM or SIGINT. The three last
+//! ones check and lock the state directory first.
 
 mod cli;
 mod commands;
+mod control;
+mod daemon;
+mod log;
 mod output;
 mod probe;
 mod report;
@@ -32,6 +35,7 @@ Usage:
   pool check-config   --config <PATH> [--format <human|json>]
   pool bootstrap      --config <PATH> [--format <human|json>]
   pool show-authority --config <PATH> [--format <human|json>]
+  pool run            --config <PATH>
   pool --help
   pool --version
 
@@ -39,10 +43,11 @@ Commands:
   check-config    Validate a configuration file offline and exit
   bootstrap       Probe every node once and create the journal
   show-authority  Print the authority state and the journal ID
+  run             Serve clients until SIGTERM or SIGINT
 
 Options:
   --config <PATH>          Configuration file (TOML)
-  --format <human|json>    Output format (default: human)
+  --format <human|json>    Output format (default: human); not for run
 
 Exit status:
   0  success
@@ -110,6 +115,10 @@ fn run_command(command: Command, path: &Path, format: Format) -> io::Result<u8> 
     let report = match command {
         Command::Bootstrap => commands::bootstrap_file(path),
         Command::ShowAuthority => commands::show_authority_file(path),
+        Command::Run => match daemon::run_file(path) {
+            Some(report) => report,
+            None => return Ok(0),
+        },
         Command::CheckConfig => return check_config(path, format),
     };
     let mut stdout = BufWriter::new(io::stdout().lock());

@@ -446,3 +446,369 @@ fn it_the_second_server_is_another_identity() {
     );
     assert!(!case.journal().exists());
 }
+
+// Build plan step 10: `pool run` on the walking fixture (`0004 AC-13`,
+// `AC-14`, `AC-18`, `AC-19`, `AC-24`, `AC-25`). The daemon writes its log to
+// a file of the test, which the test reads; nothing in it may name a
+// principal, a login, a database, a host, a path, a password or SQL.
+
+/// The SQL of AC-18: the same file, straight to PostgreSQL and through POOL.
+const WALKING_SQL: &str = "TRUNCATE pz7_items;
+BEGIN;
+INSERT INTO pz7_items (key, value) VALUES (1, 'one'), (2, 'two'), (3, 'three');
+COMMIT;
+SELECT key, value FROM pz7_items ORDER BY key;
+SELECT 1 / 0;
+";
+
+fn password(name: &str) -> String {
+    fs::read_to_string(fixture_dir().join(name))
+        .expect("a password file of the fixture")
+        .trim_end()
+        .to_owned()
+}
+
+/// A port on the listen host that is free now.
+fn free_port(host: &str) -> u16 {
+    let listener = TcpListener::bind((host, 0)).expect("bind");
+    listener.local_addr().expect("address").port()
+}
+
+impl Case {
+    /// The configuration of the walking fixture: the cluster and the node of
+    /// container 1, a listener, the principal and the identity entry.
+    fn write_serving(&self, witness: Option<&str>, listen_port: u16) {
+        let dir = fixture_dir();
+        let mut settings = self.settings();
+        settings.witness = witness;
+        self.write(&settings, &[primary_node()]);
+        let mut text = fs::read_to_string(&self.config).expect("read");
+        text.push_str(&format!(
+            "\n[listener]\nhost = \"{host}\"\nport = {listen_port}\n\
+             tls_certificate_file = \"{certs}/host.docker.internal.pem\"\ntls_private_key_file = \"{dir}/pool.key\"\n\n\
+             [probe]\nperiod_ms = 200\ntimeout_ms = 1000\nobservation_expiry_ms = 3000\n\n\
+             [[principal]]\nid = \"it-principal\"\nname = \"pz7_principal\"\nverifier_file = \"{dir}/principal.verifier\"\n\n\
+             [[identity]]\nid = \"it-identity\"\nprincipal = \"pz7_principal\"\ndatabase = \"pz7_db\"\ncluster = \"main\"\n\
+             backend_database = \"pz7_appdb\"\nbackend_login = \"pz7_rw\"\ncredential_file = \"{dir}/rw.password\"\n",
+            host = var("POOL_IT_LISTEN_HOST"),
+            certs = dir.join("certs").display(),
+            dir = dir.display(),
+        ));
+        fs::write(&self.config, text).expect("write");
+    }
+
+    fn log_file(&self) -> PathBuf {
+        self.root.join("pool.log")
+    }
+}
+
+/// Waits 50 ms. The source guard keeps threads out of the binary and its
+/// tests, so a small runtime of the test does the waiting.
+fn pause() {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .expect("a runtime for the test")
+        .block_on(async { tokio::time::sleep(std::time::Duration::from_millis(50)).await });
+}
+
+/// Asks `check` every 50 ms, for at most `seconds`, until it is true.
+fn eventually(seconds: u64, what: &str, mut check: impl FnMut() -> bool) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+    while !check() {
+        assert!(std::time::Instant::now() < deadline, "never true: {what}");
+        pause();
+    }
+}
+
+/// A running `pool run`, killed when it is dropped without `stop`.
+struct Daemon {
+    child: std::process::Child,
+    log: PathBuf,
+}
+
+impl Daemon {
+    fn start(case: &Case) -> Daemon {
+        let log = case.log_file();
+        let stderr = fs::File::create(&log).expect("log file");
+        let stdout = fs::File::create(case.root.join("pool.stdout")).expect("stdout file");
+        let child = Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(["run", "--config", case.config.to_str().expect("utf-8")])
+            .stdin(Stdio::null())
+            .stdout(stdout)
+            .stderr(stderr)
+            .spawn()
+            .expect("start pool run");
+        Daemon { child, log }
+    }
+
+    fn log(&self) -> String {
+        fs::read_to_string(&self.log).unwrap_or_default()
+    }
+
+    /// Waits, asking every 50 ms, until a log line holds every part.
+    fn wait_for(&self, parts: &[&str], seconds: u64) -> String {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+        loop {
+            let log = self.log();
+            if let Some(line) = log
+                .lines()
+                .find(|line| parts.iter().all(|part| line.contains(part)))
+            {
+                return line.to_owned();
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "no line with {parts:?} in:\n{log}"
+            );
+            pause();
+        }
+    }
+
+    /// Sends SIGTERM and waits for the exit status.
+    fn stop(mut self) -> i32 {
+        let status = Command::new("kill")
+            .args(["-TERM", &self.child.id().to_string()])
+            .status()
+            .expect("kill");
+        assert!(status.success());
+        let code = self
+            .child
+            .wait()
+            .expect("wait")
+            .code()
+            .expect("an exit status");
+        std::mem::forget(self);
+        code
+    }
+}
+
+impl Drop for Daemon {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
+}
+
+/// `psql` of the image inside container 1, as a client, with the SQL file on
+/// its standard input. Returns the exit status, stdout and stderr.
+fn client(conninfo: &str, password: &str, sql: &str) -> (i32, String, String) {
+    use std::io::Write;
+    let mut child = Command::new("docker")
+        .args([
+            "exec",
+            "-i",
+            "-e",
+            &format!("PGPASSWORD={password}"),
+            &var("POOL_IT_CONTAINER"),
+            "psql",
+            "-X",
+            conninfo,
+            "-f",
+            "-",
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("docker exec psql");
+    child
+        .stdin
+        .take()
+        .expect("stdin")
+        .write_all(sql.as_bytes())
+        .expect("send the SQL");
+    let output = child.wait_with_output().expect("psql");
+    (
+        output.status.code().unwrap_or(-1),
+        String::from_utf8(output.stdout).expect("utf-8"),
+        String::from_utf8(output.stderr).expect("utf-8"),
+    )
+}
+
+fn direct_conninfo() -> String {
+    "host=pg.pool.test hostaddr=127.0.0.1 port=5432 dbname=pz7_appdb user=pz7_rw \
+     sslmode=verify-full sslrootcert=/certs/ca.pem"
+        .to_owned()
+}
+
+fn pool_conninfo(port: u16) -> String {
+    format!(
+        "host={} port={port} dbname=pz7_db user=pz7_principal sslmode=verify-full sslrootcert=/certs/ca.pem",
+        var("POOL_IT_CLIENT_HOST")
+    )
+}
+
+/// Bootstraps a case and writes the witness into its serving configuration.
+fn ready_case(name: &str) -> (Case, u16, AuthorityId) {
+    let case = Case::new(name);
+    let port = free_port(&var("POOL_IT_LISTEN_HOST"));
+    case.write_serving(None, port);
+    let id = bootstrap(&case);
+    let id_text = id.to_string();
+    case.write_serving(Some(&id_text), port);
+    (case, port, id)
+}
+
+/// Every line of the log is one JSON object with `ts`, `level` and `event`
+/// first, and nothing in the whole log names what it must not.
+fn assert_log_is_clean(case: &Case, log: &str) {
+    for line in log.lines() {
+        assert!(line.starts_with("{\"ts\":\""), "{line}");
+        let after_ts = &line[32..];
+        assert!(after_ts.starts_with(",\"level\":\""), "{line}");
+        assert!(line.contains(",\"event\":\""), "{line}");
+        let value: serde_json::Value = serde_json::from_str(line).expect("one JSON object");
+        assert!(value["event"].is_string(), "{line}");
+        assert_ne!(value["event"], "log.unnamed", "{line}");
+    }
+    let root = case.root.to_str().expect("utf-8").to_owned();
+    let dir = fixture_dir().to_str().expect("utf-8").to_owned();
+    let secrets = [
+        password("principal.password"),
+        password("rw.password"),
+        password("monitor.password"),
+    ];
+    let mut forbidden: Vec<&str> = vec![
+        &root,
+        &dir,
+        "pz7",
+        "127.0.0.1",
+        "pg.pool.test",
+        "host.docker.internal",
+        "TRUNCATE",
+        "SELECT",
+        "INSERT",
+        "SCRAM-SHA-256$",
+    ];
+    forbidden.extend(secrets.iter().map(String::as_str));
+    for leak in forbidden {
+        assert!(!log.contains(leak), "{leak:?} reached the log:\n{log}");
+    }
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_the_walking_fixture_gives_the_same_answers_through_pool() {
+    // covers: 0004 AC-14, AC-18, AC-19, AC-24, AC-25, AC-10 (the advance).
+    let (case, port, id) = ready_case("walking");
+    let daemon = Daemon::start(&case);
+    let started = daemon.wait_for(&["\"event\":\"daemon.started\""], 20);
+    assert!(started.contains("\"start_sequence\":1"), "{started}");
+    assert!(
+        started.contains(&format!("\"authority_id\":\"{id}\"")),
+        "{started}"
+    );
+    assert!(
+        started.contains("\"configuration_generation\":1"),
+        "{started}"
+    );
+    daemon.wait_for(
+        &[
+            "\"event\":\"admission.changed\"",
+            "\"state\":\"open\"",
+            "\"node_id\":\"pg1\"",
+        ],
+        20,
+    );
+
+    // The same SQL file, straight to PostgreSQL and through POOL.
+    let direct = client(&direct_conninfo(), &password("rw.password"), WALKING_SQL);
+    let pg_log_before = logs(&var("POOL_IT_CONTAINER")).len();
+    let through = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        WALKING_SQL,
+    );
+    assert_eq!(direct.0, 0, "{}", direct.2);
+    assert!(direct.1.contains(" one"), "{}", direct.1);
+    assert!(direct.2.contains("division by zero"), "{}", direct.2);
+    assert_eq!(through, direct, "the answers through POOL differ");
+
+    // The mapped login: the session reached PostgreSQL as pz7_rw on
+    // pz7_appdb, and the principal is no role of PostgreSQL.
+    let pg_log = logs(&var("POOL_IT_CONTAINER"));
+    let new = &pg_log[pg_log_before.min(pg_log.len())..];
+    assert!(
+        new.contains("connection authorized: user=pz7_rw database=pz7_appdb"),
+        "{new}"
+    );
+    assert_eq!(
+        psql(
+            &var("POOL_IT_CONTAINER"),
+            "SELECT count(*) FROM pg_roles WHERE rolname = 'pz7_principal'"
+        ),
+        "0"
+    );
+
+    // Teardown: the backend of the session is gone soon after the client.
+    eventually(2, "the backend of the session closed", || {
+        psql(
+            &var("POOL_IT_CONTAINER"),
+            "SELECT count(*) FROM pg_stat_activity WHERE usename = 'pz7_rw'",
+        ) == "0"
+    });
+    daemon.wait_for(
+        &[
+            "\"event\":\"session.ended\"",
+            "\"reason\":\"client_terminate\"",
+        ],
+        5,
+    );
+
+    // A clean stop.
+    let log_path = daemon.log.clone();
+    assert_eq!(daemon.stop(), 0);
+    let log = fs::read_to_string(&log_path).expect("log");
+    let last = log.lines().last().expect("a last line");
+    assert!(last.contains("\"event\":\"daemon.stopped\""), "{last}");
+    assert!(log.contains("\"event\":\"session.started\""), "{log}");
+    assert!(log.contains("\"principal_id\":\"it-principal\""), "{log}");
+    assert!(log.contains("\"identity_id\":\"it-identity\""), "{log}");
+    assert_eq!(
+        fs::read_to_string(case.root.join("pool.stdout")).expect("stdout"),
+        "",
+        "nothing on stdout while serving"
+    );
+    assert_log_is_clean(&case, &log);
+
+    // The start advanced the start sequence once, before it listened.
+    let config = pool_config::validate(&fs::read(&case.config).expect("config")).expect("valid");
+    match Journal::read(&case.journal()).classify(&config) {
+        AuthorityState::Ready(authority) => assert_eq!(authority.start_sequence().get(), 1),
+        other => panic!("expected ready, got {}", other.name()),
+    }
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds() {
+    // covers: 0004 AC-13, AC-10 (the content does not change).
+    let case = Case::new("run-not-ready");
+    let port = free_port(&var("POOL_IT_LISTEN_HOST"));
+    case.write_serving(None, port);
+    bootstrap(&case);
+    let before = fs::read(case.journal()).expect("read");
+    for (witness, code) in [
+        (None, "authority.unconfirmed"),
+        (
+            Some("fedcba9876543210fedcba9876543210"),
+            "authority.mismatch",
+        ),
+    ] {
+        case.write_serving(witness, port);
+        let run = Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(["run", "--config", case.config.to_str().expect("utf-8")])
+            .stdin(Stdio::null())
+            .output()
+            .expect("run");
+        assert_eq!(run.status.code(), Some(1));
+        assert_eq!(
+            String::from_utf8_lossy(&run.stdout),
+            format!("run refused\nfindings: 1\n{code}: the journal state does not allow serving\n")
+        );
+        assert_eq!(fs::read(case.journal()).expect("read"), before, "{code}");
+        TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
+            .expect("the listener was never bound");
+    }
+}

@@ -43,7 +43,7 @@ pub fn show_authority_file(path: &Path) -> Report {
 }
 
 /// Reads and validates the file, as `check-config` does.
-fn load_config(path: &Path) -> Result<ValidatedConfig, Report> {
+pub(crate) fn load_config(path: &Path) -> Result<ValidatedConfig, Report> {
     let bytes = crate::read_bounded(path).map_err(|error| {
         let finding = IoFinding::from_kind(error.kind());
         Report::Error(Item::plain(finding.code(), finding.message()))
@@ -51,11 +51,11 @@ fn load_config(path: &Path) -> Result<ValidatedConfig, Report> {
     pool_config::validate(&bytes).map_err(|rejection| Report::invalid(&rejection))
 }
 
-fn state_error(error: StateError) -> Report {
+pub(crate) fn state_error(error: StateError) -> Report {
     Report::Error(Item::plain(error.code(), error.message()))
 }
 
-fn secret_error(error: SecretError, key: &'static str) -> Report {
+pub(crate) fn secret_error(error: SecretError, key: &'static str) -> Report {
     Report::Error(Item::at_key(error.code(), key, error.message()))
 }
 
@@ -172,7 +172,7 @@ fn new_authority_id() -> Result<AuthorityId, RandomError> {
 }
 
 /// The wall clock in milliseconds since 1970, for display in the journal.
-fn unix_ms() -> u64 {
+pub(crate) fn unix_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| {

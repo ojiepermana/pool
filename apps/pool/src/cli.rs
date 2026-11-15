@@ -11,6 +11,8 @@ pub enum Command {
     Bootstrap,
     /// `show-authority`: read the journal and print its state.
     ShowAuthority,
+    /// `run`: serve clients until SIGTERM or SIGINT. It takes no `--format`.
+    Run,
 }
 
 impl Command {
@@ -20,6 +22,7 @@ impl Command {
             Command::CheckConfig => "check-config",
             Command::Bootstrap => "bootstrap",
             Command::ShowAuthority => "show-authority",
+            Command::Run => "run",
         }
     }
 }
@@ -75,6 +78,7 @@ pub fn parse(args: impl IntoIterator<Item = OsString>) -> Invocation {
         Some("check-config") => parse_command(Command::CheckConfig, args),
         Some("bootstrap") => parse_command(Command::Bootstrap, args),
         Some("show-authority") => parse_command(Command::ShowAuthority, args),
+        Some("run") => parse_command(Command::Run, args),
         _ => Invocation::Usage(UNKNOWN_COMMAND),
     }
 }
@@ -113,7 +117,7 @@ fn parse_command(command: Command, mut args: impl Iterator<Item = OsString>) -> 
                 };
                 config = Some(value);
             }
-            "--format" => {
+            "--format" if command != Command::Run => {
                 if format.is_some() {
                     return Invocation::Usage(GIVEN_TWICE);
                 }
@@ -196,7 +200,15 @@ mod tests {
         }
         assert_eq!(
             run(&["run", "--config", "p"]),
-            Invocation::Usage(UNKNOWN_COMMAND)
+            Invocation::Command {
+                command: Command::Run,
+                config: OsString::from("p"),
+                format: Format::Human,
+            }
+        );
+        assert_eq!(
+            run(&["run", "--config", "p", "--format", "json"]),
+            Invocation::Usage(UNKNOWN_OPTION)
         );
     }
 
