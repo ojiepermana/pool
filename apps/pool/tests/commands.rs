@@ -36,6 +36,18 @@ struct Run {
 /// after the exec, which closes the copy, so the next start sees none.
 static SPAWN: Mutex<()> = Mutex::new(());
 
+/// Starts a child under `SPAWN` and returns it running.
+fn start(program: &str, args: &[&str]) -> std::process::Child {
+    let _no_other_child_starts = SPAWN.lock().unwrap_or_else(PoisonError::into_inner);
+    Command::new(program)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start a child")
+}
+
 fn pool(args: &[&str]) -> Run {
     let child = {
         let _no_other_child_starts = SPAWN.lock().unwrap_or_else(PoisonError::into_inner);
@@ -687,4 +699,82 @@ fn ac13_run_reports_the_configuration_the_view_and_the_state_directory_first() {
         run.stderr,
         "error: io.not_found: the configuration file does not exist\n"
     );
+}
+
+/// How many rounds of eight commands the lock race runs.
+const RACE_ROUNDS: usize = 25;
+
+#[test]
+fn ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked() {
+    // covers: 0004 AC-9 (the second finding of the verification of
+    // milestone 3). Eight `show-authority` on a state directory without
+    // `pool.lock`. Children start one at a time, so each reads its
+    // configuration from a named pipe of its own, and the test releases all
+    // eight together: they reach the lock file at the same moment. Each must
+    // exit 0 or 3 with `state.locked`, never with `state.permissions`.
+    use std::io::Write;
+    let mut locked = 0;
+    for round in 0..RACE_ROUNDS {
+        let layout = Layout::new(&format!("lock-race-{round}"));
+        let text = fs::read(&layout.config).expect("read the configuration");
+        let pipes: Vec<PathBuf> = (0..8)
+            .map(|index| layout.root.join(format!("pool-{index}.toml")))
+            .collect();
+        for pipe in &pipes {
+            let made = start("mkfifo", &[pipe.to_str().expect("utf-8")])
+                .wait()
+                .expect("mkfifo");
+            assert!(made.success());
+        }
+        let children: Vec<_> = pipes
+            .iter()
+            .map(|pipe| {
+                start(
+                    env!("CARGO_BIN_EXE_pool"),
+                    &["show-authority", "--config", pipe.to_str().expect("utf-8")],
+                )
+            })
+            .collect();
+        // Opening a writer waits for its reader, so all eight are now
+        // blocked in their read. Then all are released together.
+        let mut writers: Vec<fs::File> = pipes
+            .iter()
+            .map(|pipe| {
+                fs::OpenOptions::new()
+                    .write(true)
+                    .open(pipe)
+                    .expect("open the pipe")
+            })
+            .collect();
+        for writer in &mut writers {
+            writer.write_all(&text).expect("write the configuration");
+        }
+        drop(writers);
+        for child in children {
+            let output = child.wait_with_output().expect("wait");
+            let code = output.status.code().expect("an exit status");
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            match code {
+                0 => assert_eq!(stdout, "authority state: uninitialized\n"),
+                3 => {
+                    assert_eq!(
+                        stderr,
+                        "error: state.locked: another process is using the state directory\n",
+                        "round {round}"
+                    );
+                    locked += 1;
+                }
+                other => panic!("round {round}: exit {other}: {stdout} {stderr}"),
+            }
+        }
+        let mode = fs::metadata(layout.state.join("pool.lock"))
+            .expect("the lock file")
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o7777, 0o600, "round {round}");
+    }
+    // The number for the verification record.
+    let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("pool-cmd-lock-race-locked.txt");
+    fs::write(path, format!("{locked}\n")).expect("write");
 }

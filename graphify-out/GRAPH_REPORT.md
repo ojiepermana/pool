@@ -1,12 +1,12 @@
 # Graph Report - pool  (2026-11-15)
 
 ## Corpus Check
-- 2 files · ~444,180 words
+- 2 files · ~445,246 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5384 nodes · 16925 edges · 126 communities (100 shown, 26 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1493 edges (avg confidence: 0.88)
+- 5389 nodes · 16943 edges · 126 communities (100 shown, 26 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1494 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -391,7 +391,7 @@ Nodes (32): State of the first pass findings (table in the second review), Nits 
 
 ### Community 37 - "cli.rs Parsing and Test Count Evidence"
 Cohesion: 0.06
-Nodes (46): Format, Invocation, parse(), parse_command(), Item, Iterator, Option, run() (+38 more)
+Nodes (48): Format, Invocation, parse(), parse_command(), Item, Iterator, Option, run() (+40 more)
 
 ### Community 38 - "Leases, Cancellation and Login Routing"
 Cohesion: 0.08
@@ -623,7 +623,7 @@ Nodes (78): Spec 0004: AuthenticationOk is not sent after the SCRAM exchange; it
 
 ### Community 123 - "crates/pool-protocol/src/lib.rs"
 Cohesion: 0.01
-Nodes (607): the_conflict_reasons_are_the_six_of_the_spec(), Prepared, recv(), Arc, Instant, Option, Sender, String (+599 more)
+Nodes (610): the_conflict_reasons_are_the_six_of_the_spec(), Prepared, recv(), Arc, Instant, Option, Sender, String (+602 more)
 
 ### Community 125 - "scripts/integration/run.sh"
 Cohesion: 0.18
@@ -638,11 +638,11 @@ Nodes (9): fail(), POOL_IT_CLIENT_HOST, POOL_IT_CONTAINER, POOL_IT_CONTAINER_2, 
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `tst-f3-test reused (tester, opus-5-5 high; F3 Test it, AC-1 to AC-13, range ca9a897..a92bee7; done 2026-11-15: 32a7b24 tests for steps 1 to 8, 26210ce ac16_ tests, tip f75a0ed; 59 new test functions (198 to 257), check.sh all 385 to 448 tests, 111 of 112 mutations caught; no production code change; merged as aaad537, addition 8a5f2dc merged as 4c61e3b)` connect `Scope 003 Coordination Brief, Log and Manual Steps` to `check-config Integration Tests`, `pool-config Validation Tests`, `workspace.rs: src/workspace.rs: src/workspace.rs`, `pool-config Validation Library`, `Spec 0003 Authority Model: Startup States and Bootstrap`?**
-  _High betweenness centrality (0.073) - this node is a cross-community bridge._
-- **Why does `Tree` connect `ids.rs` to `workspace.rs: src/workspace.rs: src/workspace.rs`, `Doc`, `pool CLI Entry and Argument Parsing: cli.rs: ci.rs`, `Review Clarifications and check-config Usage Rules`, `workspace.rs: src/workspace.rs`?**
-  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+  _High betweenness centrality (0.067) - this node is a cross-community bridge._
+- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Glossary and Routing Profiles`, `Scope 002 Brief Rules: apps/pool agent guide`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Linux Build Evidence, AC-2 and VM Architecture`, `Standards, Tooling and Release Qualification`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Scope 001 Coordination Log, Closing and Blockers`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Leases, Cancellation and Login Routing`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Security Requirements and Features F-100 to F-108`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Topology Administration, Promotion and Operation Records`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack`, `Spec 0003 Records Table and Node Naming`, `pool-config Validation Library: pool/src/report.rs`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `High Availability PRD and Multi Proxy Authority`, `Spec 0003 Identifier and Generation Types`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Query Cache PRD and V2 Deferred Features`, `Spec 0004 Requirements, Decision and Consequences`?**
+  _High betweenness centrality (0.067) - this node is a cross-community bridge._
 - **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Spec 0003 Delegated Decisions and Workspace Guards`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`, `Spec 0004 Requirements, Decision and Consequences`?**
-  _High betweenness centrality (0.054) - this node is a cross-community bridge._
+  _High betweenness centrality (0.067) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Spec 0001. POOL initial architecture` (e.g. with `Planning ledger: the assembled foundation was ratified by the user on 2026-11-14 ('Accept, looks solid'); scope feature 1 design checked, execution queued, the governing spec Proposed until built` and `Linux builder image rust:1.100.0-slim-bookworm by index digest`) actually correct?**
   _`Spec 0001. POOL initial architecture` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 9 inferred relationships involving `4. One real primary path (in-progress)` (e.g. with `Features 1, 2 and 3 are done; their evidence is in the verification records of spec 0001, spec 0002 and spec 0003; the next queued feature is 4, the first walking slice whose acceptance is in docs/testing/strategy.md` and `1. Stack and workspace (done)`) actually correct?**
