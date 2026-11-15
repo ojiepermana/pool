@@ -198,6 +198,8 @@ What the tests hold:
 | `0004 AC-16`, byte level half | `AuthenticationSASL` offers `SCRAM-SHA-256` only in the golden message; the client-first parser refuses `p=`, an authorization identity and extensions; the 1024 byte limit; the SCRAM crypto and the full exchange are step 7 | pass for the byte level half; the rest not run |
 | `0004 AC-23`, byte level half | `classify_frontend` and `classify_backend` with every tag of the tables; `BackendKeyData` prints `[REDACTED]`; the session that uses them is step 9 | pass for the byte level half; the rest not run |
 
+**Changes of 2026-11-15 (decisions 52 to 56 of the spec).** Commit `87a068a`. `classify_frontend` refuses `X` with a length field other than 4 with `08P01`, and `FrontendAction::Terminate` has no body (unit test `frontend_rows`, golden test `terminate_has_no_body`). `parse_client_first` reads the user name up to the next comma and ignores it, whatever it holds; a message that is not UTF-8 is still `Malformed` (`client_first_refusals`). `FirstPacketReader` keeps the `Handshake` of its connection and decides on the eight header bytes: a startup packet without TLS gives `28000` after 8 bytes with its parameters unread (`first_packets_give_their_rows`, `one_reader_follows_the_connection_and_never_reads_a_body_before_tls`); the golden split tests feed the packets that come over TLS after an `SSLRequest` on the same reader, and still give the same result for every split. `cargo test -p pool-protocol --locked`: 22 unit and 10 golden tests passed. `scripts/check.sh all` at `87a068a`: exit 0.
+
 ### Checker run
 
 Build plan step 5 only, on 2026-11-15 at 17:14 WIB, by the checker session, on the merged tree `d8797a5` (macOS 27.0.1, arm64; a workstation, not Linux and not CI). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2` with `nightly-2026-10-17`. "The old binary" is `pool` built from `6ad02c0`, the tree before step 5, in a folder of its own. "The new binary" is `pool` built from `d8797a5`. Every command below was run in this session. The probes wrote their inputs outside the repository.
@@ -347,6 +349,17 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 
 **One reading.** When the snapshot generation cannot advance, `Controller::round` returns every cluster closed, as the spec says, but the spec names no reason for that case. The round builds its snapshot from the state `Unreadable`, so each cluster is closed with the existing `authority.unreadable` and no new reason name is added. The generation stays at 9223372036854775807. At one round per millisecond, it takes about 292 million years to get there. The unit test `a_round_whose_generation_cannot_advance_closes_every_cluster` locks it.
 
+#### Follow up of decisions 57, 59 and 61
+
+On 2026-11-15, by the developer of step 6, during step 8. Commits `4d7f0d6` (decision 57: `JournalRead::plan_bootstrap` renamed `bootstrap_plan`, so no method that other crates call holds a guarded text), `a2a6a6d` (decision 59: one rule for an empty database in the reader and in `Journal::create`, and `PRAGMA wal_checkpoint(TRUNCATE)` after the commit of `create`) and `6a9f23d` (decision 61: `AuthorityState::latch_recorded` takes a revision only when it is higher). Run on the tree `ae729d5` on macOS (workstation, not Linux and not CI).
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-control --locked` | exit 0 | exit 0: 5 unit, 3 in `tests/admission_model.rs`, 12 in `tests/controller.rs`, 19 in `tests/journal.rs`, 28 in `tests/walkthroughs.rs`, 6 and 6 doc tests, 0 failed | pass |
+| New tests of decision 59 in `tests/journal.rs` | a file left after only `journal_mode = WAL` is `Absent` and `create` succeeds on it; a journal cut to one or two pages, one with its marks set to zero and one with its first 100 bytes set to zero are `Unreadable`; after `create` the main file alone reads as the journal | `ac10_a_file_left_after_only_the_wal_mode_is_absent_and_can_be_created`, `ac10_a_journal_cut_to_one_or_two_pages_is_unreadable`, `ac10_a_journal_without_its_marks_or_its_header_is_unreadable`, `ac10_after_create_the_main_file_alone_is_the_journal`: ok | pass |
+| New test of decision 61 in `tests/controller.rs` | two receipts (revisions 2 and 3) handed over in reverse leave the state at 3 | `ac17_receipts_handed_over_in_reverse_keep_the_higher_revision`: ok | pass |
+| `scripts/check.sh all` | exit 0, `guards` included | exit 0, all six `ok` | pass |
+
 #### Checker run
 
 Build plan step 6 only, on 2026-11-15 at 18:07 WIB, by the checker session, on the merged tree `59b7e2c` (macOS 27.0.1, arm64, with Docker 29.9.2 running; the Linux build ran in the pinned image, the rest on the workstation, and none of it is CI). Tools: `rustc 1.100.0`, SQLite 3.54.1 through `rusqlite 0.42.0`. Every command below was run in this session. The probes are a small program outside the repository that calls the public functions of `pool-control` on real journal files in a folder of its own, and reads those files back with its own SQLite connection. Its expected values are written from the text of spec 0003 and spec 0004.
@@ -438,6 +451,23 @@ What the tests hold:
 | `0004 AC-15`, library half | the TLS and backend tests above: no startup packet unless the node answered `S`, the chain leads to the configured CA and the name matches | pass for the library half; the listener side and `psql` are steps 9 and 10 |
 | `0004 AC-16`, library half | the SCRAM tests above: the right password passes, a wrong one and an unknown name fail after the same exchange; the backend password and the frontend verifier are separate types | pass for the library half; the message sequence over the listener is step 9 |
 
+#### Changes after the verification of step 7 (decisions 62 to 69)
+
+On 2026-11-15, one commit per decision, on top of `main` at `8458624`:
+
+| Commit | Decision | Change | Test |
+|---|---|---|---|
+| `da0931f` | 66 | The last report of `in_hot_standby` before `ReadyForQuery` decides (`0004 AC-14`) | `the_last_report_of_in_hot_standby_decides`: `off` then `on` is `NotPrimary`, `on` then `off` passes |
+| `e9bcacd` | 69 | `Debug` by hand on `ServerExchange`, `ClientExchange`, `ServerCredential`, `CertificateChain` and `TrustRoots` (`0004 AC-24`) | `the_exchange_types_print_no_nonce_and_no_client_message`; the counts of `CertificateChain` and `TrustRoots` in `files_are_read_through_their_limit` |
+| `ca17e89` | 64 | One derivation at a time per credential: the cache is behind an async lock held across PBKDF2 | `eight_logins_at_a_cold_start_derive_the_keys_once` (one derivation), `a_waiter_goes_on_when_the_login_that_derives_is_cancelled` |
+| `614eb24` | 68 | `derive_keys` and `verifier_text` take a `NonZeroU32`; the backend turns its parsed count (1 to 600000) into one | every SCRAM test |
+| `251d840` | 67 | Protected files: the path is looked at only to refuse what is not a regular file, then type, mode and owner are checked on the open file and the content is read from it | `a_named_pipe_is_refused_without_waiting` (a pipe and a link to it: `secret.permissions` for a secret, `secret.invalid` for a certificate or CA file, within 5 s); the link to a good file in `secret_files_need_owner_only_mode_a_regular_file_and_the_owner` still passes |
+| `def82a0` | 62 | The first line of `tests/fixtures/node.key` is the text `test key for node.test, used only by the tests of pool-core; it protects nothing`; the PEM reader skips it | every test that loads the key |
+
+**The trace of `#[derive(Debug)]` in `pool-core` against the definition under "Log events".** Changed by hand, because they hold a nonce, a client message, a salt made from a name, or certificates from a file: the five types above. Judged safe, because they hold only IDs, generations, counts, durations or constant names: `Route`, `RouteState`, `RouteView` (`route.rs`: node and cluster IDs, epoch, revision, a duration); `LeaseGeneration`, `SessionId`, `StartupProfile` (`records.rs`); `Refusal`, `EndReason`, `Counters` (`report.rs`: reasons, node IDs, constant classes and SQLSTATEs, counts); `Phase`, `ServerError`, `Tracker` (`session.rs`); `WireError` (`wire.rs`); `BackendError`, `Purpose`, `TcpConnector`, `SecretError`, `ScramFault`, `RandomError`, `TlsPolicy`. Already by hand before: `Password`, `Verifier`, `PrivateKey`, `ScramKeys`, `MockKey`, `ExpectedSignature`, `Credential`, `Node`, `Login`, `BackendConnection`, `NodeTls`, `VerifiedPrincipal`, `PoolKey`, `Lease`, `Server`, `ServerParts`. Outside `pool-core`, several types of `pool-protocol` still derive `Debug` over content (`Message`, `ParameterStatus`, `SaslInitialResponse`, `ClientFirst`, `ServerFirst`, `ClientFinal`, `Forwarded`, `NegotiateProtocolVersion`); they are not part of this item.
+
+Results on the final tree: `cargo test -p pool-core --locked` 37 unit and 27 session tests passed; `cargo test -p pool --locked` passed (7, 84, 10; the 6 integration tests run under `integration`); `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6, with Docker) exit 0.
+
 #### Checker run
 
 Build plan step 7 only, on 2026-11-15 at 18:20 WIB, by the checker session, on the merged tree `77ca71f` (macOS 27.0.1, arm64, with Docker 29.9.2 running; the Linux build ran in the pinned image, the rest on the workstation, and none of it is CI). Tools: `rustc 1.100.0`, OpenSSL 4.0.3 for the certificates of the probes, Python 3.9 for one cross check. Every command below was run in this session. The probes are a small program outside the repository that calls the public functions of `pool-core`. Its node is a scripted peer of its own over an in memory stream. Its certificates are a CA and three node certificates (valid, expired, not yet valid) made for this run in a folder outside the repository, so they are not the ones of `crates/pool-core/tests/fixtures/`.
@@ -504,6 +534,42 @@ Notes that are not failures:
 - `derive_keys` is public and panics for a count of 0. Every caller in the crate passes a count that a parser has checked.
 - `Debug` of a `ServerExchange` prints the text of the client-first message, which holds whatever user name the client wrote there. Nothing logs it today.
 - CI evidence does not exist yet. It waits for the pull request.
+### Build plan step 8: bootstrap, the authority command and the first run against PostgreSQL
+
+On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commits `0e93678` (step 8) and `7231266` (the finding `random.failed` with the random bytes of step 9), on the tree `ae729d5`. Image `postgres:18.7-bookworm`, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, `arm64` variant. Observed in it: `postgres --version` and `psql --version` print 18.7 (Debian 18.7-1.pgdg12+2), and `openssl version` prints OpenSSL 3.0.22.
+
+#### UI / manual
+
+- [ ] The CI job `integration` on the hosted runner → `NOT_RUN`, owner: user. It enters the workflow with manual step M2 (after Build plan step 12), and its Linux evidence waits for a pull request.
+- [ ] A Docker daemon on the machine that runs the check (manual step M4) → met on this workstation; elsewhere the check exits 3 without it.
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool --locked` | exit 0 | exit 0: 7 unit, 84 in `tests/check_config.rs`, 10 in `tests/commands.rs`, 6 ignored in `tests/integration.rs`, 0 failed | pass |
+| `scripts/check.sh integration` | exit 0, two containers started and removed | exit 0: 6 tests of `tests/integration.rs` passed against PostgreSQL 18.7; `docker ps -a`, `docker volume ls` and `docker network ls` the same before and after, no temporary directory left | pass |
+| `scripts/check.sh integration` with one assertion changed to fail | exit 1, the containers removed | exit 1, `5 passed; 1 failed`; no `pool-it-` container, no new volume, no temporary directory left; the test file restored afterwards | pass |
+| `scripts/integration/run.sh` stopped with SIGTERM once both containers ran | exit 1, the containers removed | exit 1; no `pool-it-` container and no temporary directory left | pass |
+| `DOCKER_HOST=unix:///nonexistent/docker.sock scripts/check.sh integration` | exit 3 | exit 3, `integration: the Docker daemon is not running; start it and run scripts/check.sh integration again` | pass |
+| `scripts/check.sh all` | exit 0 | exit 0, all six `ok` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0, `linux build check passed` | pass |
+| `scripts/prove-checks.sh` | every case rejects its change | exit 0, `all checks reject their bad change (linux-build not proven)` | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | exit 0 | exit 0, the valid report | pass |
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0004 AC-9` | `apps/pool/src/state.rs`; in `tests/commands.rs`: `ac9_a_state_directory_that_does_not_exist_is_state_not_found`, `ac9_a_state_directory_of_the_wrong_type_or_mode_is_state_permissions` (seven modes, a regular file, a link), `ac9_a_journal_file_of_the_wrong_type_or_mode_is_state_permissions` (each of the four files with five modes, as a folder and as a link; other entries not looked at), `ac9_a_second_command_while_the_lock_is_held_is_state_locked_and_changes_nothing`, `ac9_a_secret_or_ca_file_that_cannot_be_used_ends_bootstrap_with_its_key`; `pool run` comes with step 10 | pass on the workstation for `bootstrap` and `show-authority` |
+| `0004 AC-10`, completed | `it_bootstrap_writes_the_journal_and_show_authority_reads_it_back`: the file of a real bootstrap has mode 0600, the SQLite header, WAL mode, `user_version` 1 and `application_id` 1347374924, and the reader gives revision 1 and start sequence 0; `show-authority` leaves its bytes as they were; the advance at `pool run` comes with step 10 | pass on the workstation |
+| `0004 AC-11` | `it_bootstrap_writes_the_journal_and_show_authority_reads_it_back` (exit 0 with a new ID, a second bootstrap refused with `bootstrap.store_present`, `show-authority` prints the same ID as `unconfirmed` and, with the witness, `ready`), `it_bootstrap_json_prints_the_new_id`, `it_a_node_that_cannot_be_reached_refuses_bootstrap_and_writes_no_file`; `show_authority_reports_each_state_it_can_reach_without_a_journal` and `ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal` in `tests/commands.rs`; every output is searched for the paths, `pz7_`, `pz7-`, `127.0.0.1` and `pg.pool.test` | pass on the workstation |
+| `0004 AC-12` | `it_the_probe_logs_in_as_the_monitor_login_over_tls_and_asks_one_question` (`pz7_monitor` has LOGIN and nothing else and no membership; the log shows `connection authorized: user=pz7_monitor database=postgres application_name=pool-probe SSL enabled` and the query), `it_a_wrong_password_ca_or_server_name_is_a_failed_probe`, `it_the_second_server_is_another_identity` (`bootstrap.identity_mismatch`), and the closed port and the silent listener of `tests/commands.rs` within the timeout | pass on the workstation |
+| `0004 AC-26` | `scripts/check.sh integration` with `scripts/integration/run.sh` and `scripts/integration/initdb/10-pool-fixture.sh`: the rows above for a pass, a failing test, a stop part way and no daemon | pass on the workstation; the CI job is manual step M2 |
+
+**Readings.** The JSON of `bootstrap` when it is refused uses the shape of spec 0001 (`config_version` and `capabilities` `null`, `result` `refused`), since the spec gives its fields only for exit 0. The state directory and the four journal files are checked without following links, so a link in their place is `state.permissions`. A bootstrap whose runtime could not start has no sample and is refused with `bootstrap.evidence_missing`, writing nothing.
 
 #### Checker run of the additions to step 7
 
@@ -556,9 +622,9 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `0004 AC-25`, hermetic half | `shutdown_ends_idle_sessions_with_57p01_and_waits_for_the_others` (idle: `57P01`; in a transaction: goes on until idle, then `57P01`; no accept after), `at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01`, `shutdown_closes_connections_before_their_session_started` | pass for the hermetic half; signals and the exit status are step 10 |
 
 **Readings.**
-- Before TLS the session reads only the eight header bytes and asks `Handshake`; a body is read only for `CancelRequest` and, over TLS, for `StartupMessage`. `FirstPacketReader` is not used on the session path, so a startup packet without TLS gets `28000` before its parameters are read.
+- Since `cc77c34` the session reads the first packets with one `FirstPacketReader` before and after TLS. The reader decides on the eight header bytes, so a startup packet without TLS gets `28000` before its parameters are read, and a body is read only for `CancelRequest` and, over TLS, for `StartupMessage`. `scripts/check.sh all` and `scripts/check.sh linux-build` at `cc77c34`: exit 0.
 - Each message of the node from SCRAM up to `ReadyForQuery` has a body of at most 16384 bytes (`BACKEND_STARTUP_MESSAGE_MAX_BYTES`); the one row query of the probe keeps 65536.
-- `Terminate` is classified by its tag only, as `pool-protocol` does today; the rule for a length other than 4 and the user name rule of SCRAM change in `pool-protocol` in a later item, and the session follows without change.
+- `Terminate` with a length other than 4 ends the session with `08P01` (`unsupported_and_broken_frontend_messages_end_the_session`), from the change in `pool-protocol` of `87a068a`.
 - Refusals and backend failures are counted in `Counters` and written by `Counters::flush`, which the daemon calls once a second (step 10).
 
 **Also in this item, from the spec text of 2026-11-15.** Commit `ca122c2` adds `crates/pool-core/src/random.rs` with `fill_random` and `RandomError` (unit test `two_fills_differ_and_the_error_prints_its_name`), makes it the one source of random bytes of the crate (`MockKey::generate` returns `RandomError`, for `random.failed`), ends a login without a message under `random_failed` when no nonce can be made, and stops the one row query of the probe at 4096 bytes of answer (`a_probe_answer_over_4096_bytes_is_not_read_on`). The limit of 16384 bytes per node message during startup has its test too (`a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt`). `cargo test -p pool-core --locked`: 32 unit and 27 session tests passed. `scripts/check.sh all` and `scripts/check.sh linux-build` at `ca122c2`: exit 0.
@@ -632,3 +698,61 @@ Notes that are not failures:
 - The lease generation is taken before the greeting is written, so a greeting that fails uses up a generation. Nothing depends on a gap.
 - Once in five runs the probe read the count of closed backends in the same instant in which `shutdown` returned and saw one fewer than opened. The node of the probe notices the close a moment later, and the read did not wait. In the other runs, and wherever the probe waits 80 ms first, the counts are equal.
 - CI evidence does not exist yet. It waits for the pull request.
+
+#### Fix: a client that stops reading (from the verification of step 9)
+
+The verification of step 9 found that a relay waiting on a write toward a client that no longer read was never ended by the shutdown deadline or by a positive conflict (`0004 AC-25`, `0004 AC-14`). Commit `da51f43` races every write of the relay, toward the client and toward the backend, against the cut: a write that fits still completes, a write that waits is abandoned when the cut comes, and mid message the connection is closed without a message. The close of the client stream at the end of a session is bounded by one second (`CLOSE_TIMEOUT`).
+
+| Test in `tests/session.rs` | What it holds | Old code | Now |
+|---|---|---|---|
+| `the_shutdown_deadline_ends_a_session_whose_client_stopped_reading` | A client asks for 8 MB of rows and reads nothing more; with `shutdown_timeout_ms = 300`, `shutdown()` returns within 5 s, after the deadline, with no session and no connection left, and the backend closed | failed | pass |
+| `a_positive_conflict_ends_a_session_whose_client_stopped_reading` | The same client; a positive conflict ends the session within 3 s and closes the backend | failed | pass |
+
+`cargo test -p pool-core --locked`: 37 unit and 29 session tests passed. `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6) at `da51f43`: exit 0.
+
+### Build plan step 10: the daemon
+
+On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commit `fef8023` (step 10), merged with `main` at `b8818f9` in `77c1817`, which holds the protocol fixes of step 9. Image `postgres:18.7-bookworm` by the digest of step 8; PostgreSQL 18.7 and `psql` 18.7 (Debian 18.7-1.pgdg12+2).
+
+#### UI / manual
+
+- [ ] The CI job `integration` on the hosted runner → `NOT_RUN`, owner: user (manual step M2).
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool --locked` on `77c1817` | exit 0 | exit 0: 13 unit, 84 in `tests/check_config.rs`, 12 in `tests/commands.rs`, 8 ignored in `tests/integration.rs`, 0 failed | pass |
+| `scripts/check.sh integration` on `77c1817` | exit 0, nothing left behind | exit 0, 8 of 8, among them `it_the_walking_fixture_gives_the_same_answers_through_pool`; no `pool-it-` container, no new volume or network, no temporary directory | pass |
+| `cargo build --workspace --locked` | no dependency warning | exit 0, no warning at all | pass |
+| The use check of [Adopted dependencies](index.md#adopted-dependencies) | no line | no line: `tracing` of `apps/pool` is named by `tracing::subscriber`, `tracing::field` and the event macros of `src/log.rs`, `src/probe.rs`, `src/control.rs` and `src/daemon.rs`, all in code | pass |
+| `scripts/check.sh all` | exit 0 | exit 0, all six `ok` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0, `linux build check passed` | pass |
+
+The log of the walking fixture, as the daemon wrote it on that run (the authority ID and the times are of that run):
+
+```text
+{"ts":"2026-11-15T11:39:20.296Z","level":"info","event":"daemon.started","start_sequence":1,"configuration_generation":1,"authority_id":"9497d54313baf4069d186bf77cbcd122"}
+{"ts":"2026-11-15T11:39:20.299Z","level":"info","event":"admission.changed","cluster_id":"main","state":"closed","reasons":"evidence.writer_missing","snapshot_generation":1}
+{"ts":"2026-11-15T11:39:20.381Z","level":"info","event":"admission.changed","cluster_id":"main","state":"open","node_id":"pg1","snapshot_generation":2}
+{"ts":"2026-11-15T11:39:20.834Z","level":"info","event":"session.started","session":"00000000000000010000000000000001","principal_id":"it-principal","identity_id":"it-identity","cluster_id":"main","node_id":"pg1","lease_generation":1,"topology_epoch":1}
+{"ts":"2026-11-15T11:39:20.849Z","level":"info","event":"session.ended","session":"00000000000000010000000000000001","reason":"client_terminate","status":"idle","duration_ms":15}
+{"ts":"2026-11-15T11:39:21.034Z","level":"info","event":"daemon.stopping","sessions":0}
+{"ts":"2026-11-15T11:39:21.034Z","level":"info","event":"daemon.stopped"}
+```
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0004 AC-13` | `prepare` in `apps/pool/src/daemon.rs` classifies once and returns before reading a file or binding; `ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds` (uninitialized, an empty journal file, missing, unreadable; the port is free after each) and `ac13_run_reports_the_configuration_the_view_and_the_state_directory_first` in `tests/commands.rs`; `it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds` (unconfirmed, mismatch; the journal bytes unchanged) in `tests/integration.rs` | pass on the workstation |
+| `0004 AC-18` | `it_the_walking_fixture_gives_the_same_answers_through_pool`: the same SQL file (TRUNCATE, a transaction of three inserts, a SELECT in key order, a division by zero) through `psql -X` of the image, once straight to PostgreSQL as `pz7_rw` on `pz7_appdb` and once through POOL as `pz7_principal` on `pz7_db`; exit status, stdout and stderr are equal byte for byte | pass on the workstation |
+| `0004 AC-19` | the same test: the PostgreSQL log shows `connection authorized: user=pz7_rw database=pz7_appdb` for the session through POOL, no role `pz7_principal` exists, and `pg_stat_activity` has no `pz7_rw` session within 2 seconds after the client left (asked every 50 ms); the log has `session.ended` with `client_terminate` | pass on the workstation |
+| `0004 AC-24` | the same test reads the whole log of the run: every line is one JSON object with `ts`, `level` and `event` first, no `log.unnamed`, and none of the paths of the test and of the fixture, `pz7`, the three passwords, `127.0.0.1`, `pg.pool.test`, `host.docker.internal`, `TRUNCATE`, `SELECT`, `INSERT` or a verifier; stdout is empty while serving; `src/log.rs` unit tests for the order, the escaping, `log.unnamed` and `log.dropped` | pass on the workstation |
+| `0004 AC-25` | the same test: SIGTERM gives exit 0, `daemon.stopping` and `daemon.stopped` as the last line; the start advanced the start sequence to 1 (`daemon.started` and the journal read afterwards) | pass on the workstation for an idle stop; the stop with sessions in flight is step 11 |
+| `0004 AC-14`, completed | the walking fixture admits only after `admission.changed` reports `open` for `pg1`; the first round is closed with `evidence.writer_missing` until a sample arrives; the wrong identity on the fixture is step 11 | pass on the workstation for the open path |
+| `0004 AC-1`, completed | the build and the use check above | pass on the workstation |
+
+**Readings.** A runtime that cannot be built is `listener.failed`, since nothing can listen without it and the spec has no code for it. A `Server` that cannot be built names the key whose file is missing (`principal.verifier_file`, `identity.credential_file` or `node.tls_ca_file`); the serving view and step 4 make it unreachable. The two tests of spec 0001 that used `run` as the example of an unknown command now use `serve`, since `run` is a command. The walking fixture writes `principal.password` (mode 0600) for the client; POOL never reads it.

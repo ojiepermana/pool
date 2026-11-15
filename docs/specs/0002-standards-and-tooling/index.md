@@ -265,6 +265,8 @@ Rules for changing it:
 
 Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#dependency-policy): from Build plan step 3 of spec 0004 on, `deny.toml` has five more `[[licenses.exceptions]]` entries, for `aws-lc-rs`, `aws-lc-sys`, `rustls-webpki`, `untrusted` and `subtle`. They allow `ISC` and `BSD-3-Clause` for those packages only. The general list stays as above. A person decides them first (manual step M1 of spec 0004), as the rules for changing this file ask. The block above is the file of the first build, and the file in the repository is the current statement.
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#dependency-policy), on the fuzz lockfiles: from Build plan step 12 of spec 0004 on, the check `deny` runs three commands, one for each lockfile that holds third party packages, and the two for the fuzz lockfiles end with `check -A license-not-encountered`. The row for `deny` under [Required checks](#required-checks) shows the two commands of the first build. The reason is in the second point of the list above: a license in the list that no package needs fails the check. That is meant for the product lockfile, where it still holds. A fuzz lockfile holds only a part of the product, and the one for `pool-protocol` holds no package under `Unicode-3.0`. `deny.toml` does not change, and a license that is not allowed still fails on every lockfile.
+
 ### Lint rules
 
 Add this table to the root `Cargo.toml`, after `[workspace.lints.rust]`. Change nothing else in that file. Spec 0001 lists the content of that file as the contract of the first build; this table is the one addition since, and no criterion of spec 0001 depends on its absence.

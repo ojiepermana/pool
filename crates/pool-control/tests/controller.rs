@@ -119,7 +119,7 @@ fn ready_journal(name: &str) -> (PathBuf, AuthorityState, Journal) {
     let path = folder.join("journal.sqlite3");
     std::fs::File::create_new(&path).expect("create the empty journal file");
     let plan = Journal::read(&path)
-        .plan_bootstrap(&config(None), &board_of(healthy(98)), at(100))
+        .bootstrap_plan(&config(None), &board_of(healthy(98)), at(100))
         .expect("bootstrap is allowed");
     Journal::create(
         &path,
@@ -479,7 +479,7 @@ fn ac19_journal_read_plans_bootstrap_with_the_board_and_the_configuration() {
     let config = config(None);
     // Samples dated after now still count: the now is the latest sample.
     let plan = read
-        .plan_bootstrap(&config, &board_of(healthy(120)), at(100))
+        .bootstrap_plan(&config, &board_of(healthy(120)), at(100))
         .expect("plan");
     let writers: Vec<&str> = plan
         .clusters()
@@ -493,13 +493,13 @@ fn ac19_journal_read_plans_bootstrap_with_the_board_and_the_configuration() {
         "\n[probe]\nperiod_ms = 100\ntimeout_ms = 100\nobservation_expiry_ms = 1000\n",
     );
     let refused = read
-        .plan_bootstrap(&short, &board_of(healthy(98)), at(100))
+        .bootstrap_plan(&short, &board_of(healthy(98)), at(100))
         .expect_err("stale");
     let names: Vec<&str> = refused.reasons().iter().map(|r| r.as_str()).collect();
     assert_eq!(names, ["bootstrap.evidence_missing"]);
     // An empty board is no evidence.
     assert!(
-        read.plan_bootstrap(&config, &ObservationBoard::new(), at(100))
+        read.bootstrap_plan(&config, &ObservationBoard::new(), at(100))
             .is_err()
     );
 }
@@ -526,5 +526,51 @@ fn authority_state_names_are_stable() {
         (AuthorityState::Held, "restore_pending"),
     ] {
         assert_eq!(state.name(), name);
+    }
+}
+
+#[test]
+fn ac17_receipts_handed_over_in_reverse_keep_the_higher_revision() {
+    // covers: 0003 AC-17 (decision 61). `main` is written first (revision
+    // 2), `side` second (revision 3); the receipts reach the state the
+    // other way round.
+    let config = config(Some(X));
+    let (_path, state, mut journal) = ready_journal("reverse-receipts");
+    let mut controller = Controller::new(state);
+    for observation in healthy(98) {
+        controller.record(observation);
+    }
+    controller.record(reached("pg2", 99, 1, false));
+    controller.record(reached("sd2", 99, 1, false));
+    let snapshot = controller.round(&config, at(100));
+    for name in ["main", "side"] {
+        assert_eq!(
+            reasons(&snapshot, name),
+            ["authority.conflict_latched", "evidence.second_primary"]
+        );
+    }
+    assert_eq!(
+        controller.unrecorded_latches(),
+        [cluster("main"), cluster("side")]
+    );
+    let main = journal
+        .set_conflict_latch(&cluster("main"), 0)
+        .expect("main");
+    let side = journal
+        .set_conflict_latch(&cluster("side"), 0)
+        .expect("side");
+    assert_eq!(
+        (
+            main.authority_revision().get(),
+            side.authority_revision().get()
+        ),
+        (2, 3)
+    );
+    controller.latch_recorded(&side);
+    controller.latch_recorded(&main);
+    assert!(controller.unrecorded_latches().is_empty());
+    match controller.state() {
+        AuthorityState::Ready(authority) => assert_eq!(authority.authority_revision().get(), 3),
+        other => panic!("{}", other.name()),
     }
 }

@@ -12,6 +12,7 @@ Keputusan yang diambil atas namamu ada di `004-one-real-primary-path.log.md` bag
 | `F4-2` | Keputusan lisensi (spec 0004 M1): bolehkah `ISC` dan `BSD-3-Clause` masuk pohon dependensi, hanya untuk `aws-lc-rs 1.19.0`, `aws-lc-sys 0.47.0`, `rustls-webpki 0.103.17`, `untrusted 0.9.0`, dan `subtle 2.6.1` | `0004 AC-3` | belum ada; menahan merge Build plan langkah 3 | sekarang | `PASS` 2026-11-15: user menjawab "Ya, izinkan" untuk `ISC` dan `BSD-3-Clause`, hanya untuk lima paket itu |
 | `F4-3` | Job CI dan file ruleset (spec 0004 M2): tambah job `integration` dan `fuzz` ke `.github/workflows/ci.yml` dan dua context ke `.github/rulesets/main.json` dalam satu commit | `0004 AC-26`, `AC-27` (bukti CI) | belum ada | Build plan langkah 12 di `main` | `NOT_RUN` |
 | `F4-4` | Docker berjalan (spec 0004 M4) untuk `scripts/check.sh integration`, `linux-build`, dan `prove-checks.sh --with-linux-build` | semua kriteria yang dibuktikan di fixture (`0004 AC-9` sampai `AC-26`) | belum ada | kapan saja | berjalan pada 2026-11-15 (`docker info` exit 0); tetap tanggung jawabmu |
+| `F4-5` | Laporan pemindai secret atau review otomatis di remote atas `crates/pool-core/tests/fixtures/node.key` (kunci privat test yang sengaja di-commit, keputusan 62): menutup laporan itu | `0004 AC-15` (cek TLS hermetic) | belum ada | saat pull request scope 004 dibuka | `NOT_RUN`; jawabannya ada di spec 0004 "Tests and who owns them", paragraf "One test key is committed" |
 
 ## Nilai dari user
 

@@ -1,12 +1,12 @@
 # Graph Report - pool  (2026-11-15)
 
 ## Corpus Check
-- 10 files · ~402,024 words
+- 2 files · ~426,867 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4967 nodes · 15641 edges · 124 communities (99 shown, 25 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1474 edges (avg confidence: 0.88)
+- 5286 nodes · 16554 edges · 126 communities (100 shown, 26 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1483 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -131,6 +131,8 @@
 - Spec 0004 Journal, Probe and Control Loop
 - Spec 0004 Wire Subset and Session Lifecycle
 - crates/pool-protocol/src/lib.rs
+- scripts/integration/initdb/10-pool-fixture.sh
+- scripts/integration/run.sh
 
 ## God Nodes (most connected - your core abstractions)
 1. `Spec 0002: Standards and tooling (Status: Accepted)` - 131 edges
@@ -237,11 +239,11 @@
 - **Restricted replica read routing: login selection, eligibility, pinned admission, no fallback** — docs_plan_decision_ledger_routing_decision, docs_prd_003_sql_routing_select_backend, docs_prd_003_sql_routing_admit_on_pinned_backend, docs_prd_003_sql_routing_restricted_replica_profile, docs_prd_004_load_balancing_eligibility_filter, docs_prd_004_load_balancing_weighted_round_robin, docs_prd_004_load_balancing_primary_fallback_disabled, docs_prd_005_health_monitoring_unknown_lag [INFERRED 0.85]
 - **Automatic failover and result caching disabled by default** — agents_automatic_failover_and_result_caching_disabled, docs_feature_matrix_f_088_optional_memory_cache, docs_security_security_requirements_sec_10_disable_automatic_promotion_and_caching, docs_feature_matrix_initial_exclusions [INFERRED 0.95]
 
-## Communities (124 total, 25 thin omitted)
+## Communities (126 total, 26 thin omitted)
 
 ### Community 0 - "check-config Integration Tests"
-Cohesion: 0.06
-Nodes (116): a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read(), ac11_a_file_that_cannot_be_opened_is_permission_denied() (+108 more)
+Cohesion: 0.05
+Nodes (118): Command, a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read() (+110 more)
 
 ### Community 1 - "repo_check/docs.rs"
 Cohesion: 0.05
@@ -277,7 +279,7 @@ Nodes (66): F-030 Validation and reset (close uncertain sessions), F-033 SQL AST
 
 ### Community 9 - "pool-config Validation Library"
 Cohesion: 0.01
-Nodes (521): ClusterId, ac6_authority_id_counts_bytes_and_round_trips_every_byte(), authority_id_round_trips(), AuthorityId, is_name_id(), lower_hex_value(), Display, Formatter (+513 more)
+Nodes (623): bootstrap(), bootstrap_file(), load_config(), new_authority_id(), Path, Report, Result, ValidatedConfig (+615 more)
 
 ### Community 10 - "Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories"
 Cohesion: 0.09
@@ -297,7 +299,7 @@ Nodes (58): SEC-10 Disable automatic promotion and result caching by default, SE
 
 ### Community 14 - "pool CLI Entry and Argument Parsing: cli.rs: ci.rs"
 Cohesion: 0.09
-Nodes (51): BTreeSet, LatchReceipt, ClusterId, assert_ok(), assert_problem(), c1_checks_every_workflow_file(), c1_hash_without_version_comment(), c1_tag_instead_of_hash() (+43 more)
+Nodes (52): Result, BTreeSet, LatchReceipt, ClusterId, assert_ok(), assert_problem(), c1_checks_every_workflow_file(), c1_hash_without_version_comment() (+44 more)
 
 ### Community 15 - "Spec 0003 Authority Model: Startup States and Bootstrap"
 Cohesion: 0.04
@@ -312,8 +314,8 @@ Cohesion: 0.06
 Nodes (46): Audit of reused pgwire components in frontend authentication, Allowed downloads and installs (crates adopted by spec 0002, pinned toolchain, cargo-deny, cargo-fuzz), Single rustls crypto provider (aws-lc-rs feature family), actions/cache v6.1.0 pinned by commit (keeps built cargo-deny), actions/checkout v7.0.1 pinned by commit, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Adopted in scope 002 (tools, not product dependencies; pool and pool-config gain none), axum 0.8.9 (administration endpoints) (+38 more)
 
 ### Community 18 - "ids.rs"
-Cohesion: 0.11
-Nodes (43): heading(), assert_ok(), assert_problem(), check(), citation_at(), citations(), citations_are_parsed(), criterion() (+35 more)
+Cohesion: 0.08
+Nodes (51): JsonLog, AtomicU64, AtomicUsize, Attributes, Event, Metadata, Record, Subscriber (+43 more)
 
 ### Community 19 - "Spec 0002: Standards and tooling"
 Cohesion: 0.10
@@ -372,8 +374,8 @@ Cohesion: 0.12
 Nodes (32): position_counts_lines_and_scalars(), ac7_column_counts_characters_not_bytes_before_the_error(), Status of each finding: Major closed, Minor 1 to 4 closed, Minor 5 closed in part, Minor 6 open, first review Nits closed, Review known open items: --format=<bytes> unexpected argument needs a spec sentence, config_version constant, Linux tests never ran, stale Decision sentence, Minor 1: ValidatedConfig::config_version() returns the constant SUPPORTED_CONFIG_VERSION, not the parsed number (value sourcing deviation), Minor 3: the io.permission_denied arm of IoFinding::from_kind (report.rs:30) has no test, although the workstation suite runs as a user that is not root, Minor 4: the column test cannot fail for a byte count (multibyte key is the unknown key, column 1 either way), Minor 6: verify.md records only revision 5f44d88 and not the merged tree with the tester's tests (+24 more)
 
 ### Community 33 - "check.sh"
-Cohesion: 0.10
-Nodes (40): Concurrency group per event name and ref; only pull request runs are cancelled, Job clippy: runs scripts/check.sh clippy, Job deny: runs scripts/check.sh deny, Job docs: runs scripts/check.sh docs, Job fmt: runs scripts/check.sh fmt, Job guards: runs scripts/check.sh guards, Job linux-build: runs scripts/check.sh linux-build, Job test: runs scripts/check.sh test (+32 more)
+Cohesion: 0.09
+Nodes (41): Concurrency group per event name and ref; only pull request runs are cancelled, Job clippy: runs scripts/check.sh clippy, Job deny: runs scripts/check.sh deny, Job docs: runs scripts/check.sh docs, Job fmt: runs scripts/check.sh fmt, Job guards: runs scripts/check.sh guards, Job linux-build: runs scripts/check.sh linux-build, Job test: runs scripts/check.sh test (+33 more)
 
 ### Community 34 - "Spec 0003 Decision, Rationale and Scope 004 Handoff"
 Cohesion: 0.06
@@ -388,8 +390,8 @@ Cohesion: 0.13
 Nodes (32): State of the first pass findings (table in the second review), Nits of the first pass (placeholders, rustup self-update, missing rustfmt component exit 1, concurrency group, W7 before the marker, ...), Strengths of the first pass: safe ruleset payload, tight CI security, correct runner label, strict deny.toml, honest verify.md, Summary of the first pass: seven required checks behind scripts/check.sh, guards that pass while the protected thing is broken, The fragile points the lead asked about (table): second workflow file, job without runs-on, secrets["X"], shell:, W5 rename, W4 comment, --base hyphen, W7 message, CDPATH, check_sbom, stale sentence, docs --base parent repo, M1 (major): the branch rule goes live before any check has run on a GitHub runner, M2 (major): the steps after the merge are not written down, M5 (major): rule D6 passes when the base revision cannot be read (+24 more)
 
 ### Community 37 - "cli.rs Parsing and Test Count Evidence"
-Cohesion: 0.12
-Nodes (26): Format, Invocation, parse(), parse_check_config(), Item, Iterator, Option, run() (+18 more)
+Cohesion: 0.06
+Nodes (45): Format, Invocation, parse(), parse_command(), Item, Iterator, Option, run() (+37 more)
 
 ### Community 38 - "Leases, Cancellation and Login Routing"
 Cohesion: 0.08
@@ -464,8 +466,8 @@ Cohesion: 0.19
 Nodes (10): Into, Problem, Report, Display, Fn, Formatter, Option, Result (+2 more)
 
 ### Community 56 - "pool-config Validation Library: pool/src/report.rs"
-Cohesion: 0.14
-Nodes (16): IoFinding, JsonCapabilities, JsonFinding, JsonReport, Outcome, Option, Result, Self (+8 more)
+Cohesion: 0.13
+Nodes (17): IoFinding, JsonCapabilities, JsonFinding, JsonReport, Outcome, Box, Option, Result (+9 more)
 
 ### Community 57 - "Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende"
 Cohesion: 0.14
@@ -597,7 +599,7 @@ Nodes (6): Unreleased, Changed section (scope 002 and scope 003), Changed: root 
 
 ### Community 116 - "pool-control Authority Model Crate"
 Cohesion: 0.08
-Nodes (23): Closed, ClosedReason, EligiblePrimary, AuthorityRevision, NodeId, TopologyEpoch, state_reason(), Authority (+15 more)
+Nodes (24): is_conflict(), Closed, ClosedReason, EligiblePrimary, AuthorityRevision, NodeId, TopologyEpoch, state_reason() (+16 more)
 
 ### Community 117 - "Spec 0004 Requirements, Decision and Consequences"
 Cohesion: 0.03
@@ -621,27 +623,31 @@ Nodes (78): Spec 0004: AuthenticationOk is not sent after the SCRAM exchange; it
 
 ### Community 123 - "crates/pool-protocol/src/lib.rs"
 Cohesion: 0.01
-Nodes (478): AtomicU32, CertificateDer, ClientConfig, Clone, Arc, Debug, Display, Error (+470 more)
+Nodes (565): the_conflict_reasons_are_the_six_of_the_spec(), Prepared, recv(), Arc, Instant, Option, Sender, String (+557 more)
+
+### Community 125 - "scripts/integration/run.sh"
+Cohesion: 0.18
+Nodes (9): fail(), POOL_IT_CLIENT_HOST, POOL_IT_CONTAINER, POOL_IT_CONTAINER_2, POOL_IT_DIR, POOL_IT_LISTEN_HOST, POOL_IT_PG_PORT, POOL_IT_PG_PORT_2 (+1 more)
 
 ## Knowledge Gaps
-- **142 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+137 more)
+- **150 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+145 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **25 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Spec 0003 Delegated Decisions and Workspace Guards`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`, `Spec 0004 Requirements, Decision and Consequences`?**
-  _High betweenness centrality (0.097) - this node is a cross-community bridge._
-- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Glossary and Routing Profiles`, `Scope 002 Brief Rules: apps/pool agent guide`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Linux Build Evidence, AC-2 and VM Architecture`, `Standards, Tooling and Release Qualification`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Scope 001 Coordination Log, Closing and Blockers`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Leases, Cancellation and Login Routing`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Security Requirements and Features F-100 to F-108`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Topology Administration, Promotion and Operation Records`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack`, `Spec 0003 Records Table and Node Naming`, `pool-config Validation Library: pool/src/report.rs`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `High Availability PRD and Multi Proxy Authority`, `Spec 0003 Identifier and Generation Types`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Query Cache PRD and V2 Deferred Features`, `Spec 0004 Requirements, Decision and Consequences`?**
-  _High betweenness centrality (0.059) - this node is a cross-community bridge._
+  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+- **Why does `tst-f3-test reused (tester, opus-5-5 high; F3 Test it, AC-1 to AC-13, range ca9a897..a92bee7; done 2026-11-15: 32a7b24 tests for steps 1 to 8, 26210ce ac16_ tests, tip f75a0ed; 59 new test functions (198 to 257), check.sh all 385 to 448 tests, 111 of 112 mutations caught; no production code change; merged as aaad537, addition 8a5f2dc merged as 4c61e3b)` connect `Scope 003 Coordination Brief, Log and Manual Steps` to `check-config Integration Tests`, `pool-config Validation Tests`, `workspace.rs: src/workspace.rs: src/workspace.rs`, `pool-config Validation Library`, `Spec 0003 Authority Model: Startup States and Bootstrap`?**
+  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+- **Why does `3. Control and session data model (done)` connect `Scope 003 Coordination Brief, Log and Manual Steps` to `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Spec 0003 Build Plan and Scope 003 Milestones`, `pool-config Validation Library`, `Spec 0003 Delegated Decisions and Workspace Guards`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Identifier and Generation Types`, `Spec 0003 Authority Model: Startup States and Bootstrap`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Topology Administration, Promotion and Operation Records`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Feature Inventory and Parity Matrix: Feature inventory and parity matrix`?**
+  _High betweenness centrality (0.061) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Spec 0001. POOL initial architecture` (e.g. with `Planning ledger: the assembled foundation was ratified by the user on 2026-11-14 ('Accept, looks solid'); scope feature 1 design checked, execution queued, the governing spec Proposed until built` and `Linux builder image rust:1.100.0-slim-bookworm by index digest`) actually correct?**
   _`Spec 0001. POOL initial architecture` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 9 inferred relationships involving `4. One real primary path (in-progress)` (e.g. with `Features 1, 2 and 3 are done; their evidence is in the verification records of spec 0001, spec 0002 and spec 0003; the next queued feature is 4, the first walking slice whose acceptance is in docs/testing/strategy.md` and `1. Stack and workspace (done)`) actually correct?**
   _`4. One real primary path (in-progress)` has 9 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165` to the rest of the system?**
-  _142 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _150 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**
-  _Cohesion score 0.05688181550250516 - nodes in this community are weakly interconnected._
-- **Should `repo_check/docs.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.054481792717086835 - nodes in this community are weakly interconnected._

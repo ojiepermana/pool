@@ -1,10 +1,10 @@
 //! The first packets of a connection, which carry no tag (spec 0004, "Startup").
 //!
-//! The caller reads the first eight bytes (a length and a code) with exact
-//! reads, decodes them with [`decode_first_header`], asks [`Handshake`]
-//! what to do with that packet, and only then reads the body, whose length
-//! the header has already checked. [`FirstPacketReader`] puts the two reads
-//! together for callers that take bytes in pieces.
+//! [`FirstPacketReader`] reads the first packets of one connection: it
+//! decodes the eight header bytes (a length and a code) with
+//! [`decode_first_header`], asks the [`Handshake`] of the connection what to
+//! do with that packet, and only then reads a body, whose length the header
+//! has already checked. The two functions can also be called on their own.
 
 use crate::sqlstate::PoolError;
 use crate::{be_u32, take_cstr};
@@ -261,41 +261,54 @@ pub fn parse_startup(minor: u16, body: &[u8]) -> Result<StartupRequest, PoolErro
 /// What [`FirstPacketReader`] gives for one first packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FirstPacket {
-    /// `SSLRequest`.
+    /// `SSLRequest`: answer `S`, run the TLS handshake, then feed the same reader the bytes that come over TLS.
     SslRequest,
-    /// `GSSENCRequest`.
+    /// `GSSENCRequest`: answer `N`, then feed the same reader the next packet.
     GssEncRequest,
-    /// `CancelRequest`, whose body was read and dropped.
+    /// `CancelRequest`, whose body was read and dropped: close with no answer.
     CancelRequest,
-    /// A `StartupMessage` that [`parse_startup`] accepted.
+    /// A `StartupMessage` over TLS that [`parse_startup`] accepted.
     Startup(StartupRequest),
 }
 
-/// Reads one first packet from pieces of any size: the header, then the body.
+/// Reads the first packets of one connection, before and after its TLS handshake, from pieces of any size.
 ///
-/// The body of a `StartupMessage` is reserved only after the header checked
-/// its length against the limit. The body of a `CancelRequest` is counted
-/// and dropped, never stored. The reader takes no byte after the packet.
+/// The reader keeps the [`Handshake`] of the connection and asks it as soon
+/// as the eight header bytes are there. A refusal or a packet without a body
+/// (`SSLRequest`, `GSSENCRequest`) is returned at that moment, so a
+/// `StartupMessage` that came without TLS gets `28000` and its parameters
+/// are never read. A body is read only for a `StartupMessage` over TLS,
+/// which is reserved after the header checked its length against the limit,
+/// and for a `CancelRequest`, which is counted and dropped, never stored.
+/// The reader never takes a byte after the packet it is reading. After an
+/// error or a final packet it accepts nothing more.
 #[derive(Debug, Clone)]
 pub struct FirstPacketReader {
     max_len: u32,
+    handshake: Handshake,
     header: [u8; FIRST_HEADER_LEN],
     filled: usize,
     body: Option<(FirstKind, Vec<u8>, usize)>,
 }
 
 impl FirstPacketReader {
-    /// A reader for packets of at most `max_len` bytes, `limits.startup_packet_max_bytes`.
+    /// A reader for a new connection, for packets of at most `max_len` bytes (`limits.startup_packet_max_bytes`).
     pub fn new(max_len: u32) -> Self {
         Self {
             max_len,
+            handshake: Handshake::new(),
             header: [0; FIRST_HEADER_LEN],
             filled: 0,
             body: None,
         }
     }
 
-    /// How many more bytes the packet needs, as far as known now.
+    /// Reports whether the connection has agreed on TLS.
+    pub fn is_tls(&self) -> bool {
+        self.handshake.is_tls()
+    }
+
+    /// How many more bytes the current packet needs, as far as known now.
     pub fn wanted(&self) -> usize {
         match &self.body {
             Some((FirstKind::CancelRequest, _, left)) => *left,
@@ -304,7 +317,7 @@ impl FirstPacketReader {
         }
     }
 
-    /// Takes bytes from the start of `input`; returns how many and, once the packet is complete, the result.
+    /// Takes bytes from the start of `input`; returns how many and, once a packet is decided, the result.
     pub fn feed(&mut self, input: &[u8]) -> (usize, Option<Result<FirstPacket, PoolError>>) {
         let mut used = 0;
         if self.body.is_none() {
@@ -315,16 +328,23 @@ impl FirstPacketReader {
             if self.filled < FIRST_HEADER_LEN {
                 return (used, None);
             }
-            let header = match decode_first_header(self.header, self.max_len) {
-                Ok(header) => header,
+            self.filled = 0;
+            let decided = decode_first_header(self.header, self.max_len)
+                .and_then(|header| self.handshake.next(header.kind).map(|step| (header, step)));
+            let (header, step) = match decided {
+                Ok(decided) => decided,
                 Err(error) => return (used, Some(Err(error))),
             };
             let len = header.body_len as usize;
-            let buffer = match header.kind {
-                FirstKind::Startup { .. } => Vec::with_capacity(len),
-                _ => Vec::new(),
-            };
-            self.body = Some((header.kind, buffer, len));
+            match step {
+                HandshakeStep::AnswerSsl => return (used, Some(Ok(FirstPacket::SslRequest))),
+                HandshakeStep::AnswerGssEnc => return (used, Some(Ok(FirstPacket::GssEncRequest))),
+                HandshakeStep::DropCancel => self.body = Some((header.kind, Vec::new(), len)),
+                HandshakeStep::ReadStartup => {
+                    // The length was checked against the limit above.
+                    self.body = Some((header.kind, Vec::with_capacity(len), len));
+                }
+            }
         }
         let rest = &input[used..];
         let Some((kind, body, len)) = self.body.as_mut() else {
@@ -346,13 +366,10 @@ impl FirstPacketReader {
             }
         }
         let packet = match *kind {
-            FirstKind::SslRequest => Ok(FirstPacket::SslRequest),
-            FirstKind::GssEncRequest => Ok(FirstPacket::GssEncRequest),
-            FirstKind::CancelRequest => Ok(FirstPacket::CancelRequest),
             FirstKind::Startup { minor } => parse_startup(minor, body).map(FirstPacket::Startup),
+            _ => Ok(FirstPacket::CancelRequest),
         };
         self.body = None;
-        self.filled = 0;
         (used, Some(packet))
     }
 }
@@ -609,5 +626,58 @@ mod tests {
         let mut ssl = encode_ssl_request().to_vec();
         ssl.push(0x16);
         assert_eq!(reader.feed(&ssl), (8, Some(Ok(FirstPacket::SslRequest))));
+    }
+
+    #[test]
+    fn one_reader_follows_the_connection_and_never_reads_a_body_before_tls() {
+        let startup = encode_startup(&[("user", b"alice")]);
+        // Without TLS: 28000 after the eight header bytes, the parameters unread.
+        let mut reader = FirstPacketReader::new(8192);
+        assert_eq!(
+            reader.feed(&startup),
+            (8, Some(Err(PoolError::TlsRequired)))
+        );
+        // GSSENCRequest, SSLRequest, then the startup packet over TLS, on one reader.
+        let mut reader = FirstPacketReader::new(8192);
+        let gss = header(8, GSSENC_REQUEST_CODE);
+        assert_eq!(reader.feed(&gss), (8, Some(Ok(FirstPacket::GssEncRequest))));
+        assert!(!reader.is_tls());
+        assert_eq!(
+            reader.feed(&encode_ssl_request()),
+            (8, Some(Ok(FirstPacket::SslRequest)))
+        );
+        assert!(reader.is_tls());
+        let (used, packet) = reader.feed(&startup);
+        assert_eq!(used, startup.len());
+        assert!(matches!(packet, Some(Ok(FirstPacket::Startup(_)))));
+        // Nothing after a final packet.
+        assert_eq!(
+            reader.feed(&startup).1,
+            Some(Err(PoolError::ProtocolViolation))
+        );
+        // A second SSLRequest and a GSSENCRequest after TLS are refused at their header.
+        for second in [encode_ssl_request(), header(8, GSSENC_REQUEST_CODE)] {
+            let mut reader = FirstPacketReader::new(8192);
+            reader.feed(&encode_ssl_request());
+            assert_eq!(
+                reader.feed(&second),
+                (8, Some(Err(PoolError::ProtocolViolation)))
+            );
+        }
+        // A CancelRequest after TLS is read and dropped; after GSSENCRequest it is refused.
+        let mut cancel = header(16, CANCEL_REQUEST_CODE).to_vec();
+        cancel.extend_from_slice(&[0; 8]);
+        let mut reader = FirstPacketReader::new(8192);
+        reader.feed(&encode_ssl_request());
+        assert_eq!(
+            reader.feed(&cancel),
+            (16, Some(Ok(FirstPacket::CancelRequest)))
+        );
+        let mut reader = FirstPacketReader::new(8192);
+        reader.feed(&gss);
+        assert_eq!(
+            reader.feed(&cancel),
+            (8, Some(Err(PoolError::ProtocolViolation)))
+        );
     }
 }

@@ -166,7 +166,7 @@ The two native libraries and their boundary review are under [native code](../sp
 
 Licenses decided in manual step M1: on 2026-11-15 the Release maintainer allowed `ISC` and `BSD-3-Clause` for these packages only: `aws-lc-rs` 1.19.0 (`ISC`), `aws-lc-sys` 0.47.0 (`ISC`, `BSD-3-Clause`), `rustls-webpki` 0.103.17 (`ISC`), `untrusted` 0.9.0 (`ISC`) and `subtle` 2.6.1 (`BSD-3-Clause`). They are five exceptions by crate in `deny.toml`. The general list stays `Apache-2.0`, `MIT`, `Unicode-3.0`.
 
-The PostgreSQL image for the integration check is pinned by Build plan step 8, which records its tag and digest here.
+The PostgreSQL image for the integration check is pinned by Build plan step 8. Tag `postgres:18.7-bookworm`, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, written once in `scripts/check.sh` as `POSTGRES_IMAGE`. Observed on 2026-11-15 on the workstation (Docker Desktop, `arm64` variant of the image): `postgres --version` and `psql --version` print 18.7 (Debian 18.7-1.pgdg12+2), and `openssl version` prints OpenSSL 3.0.22, which the check uses to make the test certificates.
 
 ## Adoption gate
 

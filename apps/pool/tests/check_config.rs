@@ -22,16 +22,22 @@ const HELP: &str = "\
 POOL daemon
 
 Usage:
-  pool check-config --config <PATH> [--format <human|json>]
+  pool check-config   --config <PATH> [--format <human|json>]
+  pool bootstrap      --config <PATH> [--format <human|json>]
+  pool show-authority --config <PATH> [--format <human|json>]
+  pool run            --config <PATH>
   pool --help
   pool --version
 
 Commands:
-  check-config  Validate a configuration file offline and exit
+  check-config    Validate a configuration file offline and exit
+  bootstrap       Probe every node once and create the journal
+  show-authority  Print the authority state and the journal ID
+  run             Serve clients until SIGTERM or SIGINT
 
-Options for check-config:
-  --config <PATH>          Configuration file to validate (TOML)
-  --format <human|json>    Output format (default: human)
+Options:
+  --config <PATH>          Configuration file (TOML)
+  --format <human|json>    Output format (default: human); not for run
 
 Exit status:
   0  success
@@ -390,7 +396,7 @@ fn help_and_version() {
 fn usage_errors_exit_2_with_two_lines_on_stderr() {
     let cases: &[(&[&str], &str)] = &[
         (&[], "a command is required"),
-        (&["run"], "unknown command"),
+        (&["serve"], "unknown command"),
         (&["check-config", "--bogus"], "unknown option"),
         (&["check-config", "--bogus", "--help"], "unknown option"),
         (&["check-config", "--bogus=1"], "unknown option"),
@@ -606,7 +612,7 @@ fn ac11_no_argument_at_all_needs_a_command() {
 fn ac11_a_first_argument_that_is_not_a_command_is_unknown() {
     assert_usage(
         &[
-            &["run"],
+            &["serve"],
             &[""],
             &["check"],
             &["Check-Config"],

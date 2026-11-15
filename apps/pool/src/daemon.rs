@@ -1,0 +1,309 @@
+//! `pool run` (spec 0004, "pool run"): the ten steps from the file to a
+//! serving daemon, and the shutdown.
+//!
+//! Until step 8 every failure is a finding with exit 1 or 3, written as
+//! spec 0001 says. From step 8 on every line on stderr is a log event, and
+//! nothing is written to stdout while the daemon serves.
+
+use std::path::Path;
+use std::sync::Arc;
+use std::time::Duration;
+
+use pool_config::{ConfigurationGeneration, ValidatedConfig};
+use pool_control::{AuthorityState, Controller, Journal};
+use pool_core::backend::{Login, TcpConnector};
+use pool_core::route::RouteView;
+use pool_core::scram::MockKey;
+use pool_core::secret::{self, SecretError};
+use pool_core::session::{Server, ServerError, ServerParts};
+use pool_core::{load, tls};
+use tokio::net::TcpListener;
+use tokio::signal::unix::{SignalKind, signal};
+use tokio::sync::{mpsc, watch};
+use tokio::time::Instant;
+
+use crate::commands::{load_config, secret_error, state_error};
+use crate::control::ControlLoop;
+use crate::log;
+use crate::output::{Item, Report};
+use crate::probe::{self, Target};
+use crate::state::StateDirectory;
+
+const NOT_SERVING: &str = "the journal state does not allow serving";
+const JOURNAL_FAILED: &str = "journal.failed";
+const JOURNAL_FAILED_MESSAGE: &str = "the journal could not be written";
+const LISTENER_FAILED: &str = "listener.failed";
+const LISTENER_FAILED_MESSAGE: &str = "the listener address could not be bound";
+const RANDOM_FAILED: &str = "random.failed";
+const RANDOM_FAILED_MESSAGE: &str = "random bytes could not be obtained";
+
+/// How often the counters of `session.refused` and `backend.failed` are written.
+const COUNTER_FLUSH: Duration = Duration::from_secs(1);
+
+/// The finding code of a start that was not classified `Ready`.
+fn not_ready(state: &AuthorityState) -> &'static str {
+    match state.name() {
+        "uninitialized" => "authority.uninitialized",
+        "unconfirmed" => "authority.unconfirmed",
+        "missing" => "authority.missing",
+        "mismatch" => "authority.mismatch",
+        "restore_pending" => "authority.restore_pending",
+        _ => "authority.unreadable",
+    }
+}
+
+/// Everything steps 1 to 5 read, ready for the runtime.
+struct Prepared {
+    config: Arc<ValidatedConfig>,
+    _state: StateDirectory,
+    server_parts: ServerParts<TcpConnector>,
+    targets: Vec<Target>,
+    journal: Journal,
+    controller: Controller,
+    routes: watch::Sender<RouteView>,
+    origin: Instant,
+    start_sequence: u64,
+    authority_id: String,
+}
+
+/// Runs `pool run` on the file at `path`. Returns the report of a failure
+/// before step 8, or `None` when the daemon served and stopped cleanly.
+pub fn run_file(path: &Path) -> Option<Report> {
+    let prepared = match prepare(path) {
+        Ok(prepared) => prepared,
+        Err(report) => return Some(report),
+    };
+    // 6. The runtime, with at most four threads for blocking work.
+    let Ok(runtime) = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .max_blocking_threads(4)
+        .build()
+    else {
+        return Some(Report::Error(Item::plain(
+            LISTENER_FAILED,
+            LISTENER_FAILED_MESSAGE,
+        )));
+    };
+    runtime.block_on(serve(prepared))
+}
+
+/// Steps 1 to 5: nothing listens and nothing runs yet.
+fn prepare(path: &Path) -> Result<Prepared, Report> {
+    // 1. The file, the view for serving and the configuration generation.
+    let config = load_config(path)?;
+    let view = config
+        .serving()
+        .map_err(|rejection| Report::invalid(&rejection))?;
+    // 2. The state directory and its lock, kept until the process ends.
+    let state = StateDirectory::open(view.state_directory()).map_err(state_error)?;
+    let owner = state.owner();
+    // 3. The journal, read without writing, and classified once.
+    let classified = Journal::read(&state.journal()).classify(&config);
+    let AuthorityState::Ready(authority) = &classified else {
+        return Err(Report::Refused(vec![Item::plain(
+            not_ready(&classified),
+            NOT_SERVING,
+        )]));
+    };
+    // 4. Every protected file, and the key of the made up verifiers.
+    let listener = view.listener();
+    let chain = secret::read_certificate_chain(listener.tls_certificate_file())
+        .map_err(|error| secret_error(error, "listener.tls_certificate_file"))?;
+    let key = secret::read_private_key(listener.tls_private_key().path(), owner)
+        .map_err(|error| secret_error(error, "listener.tls_private_key_file"))?;
+    let tls = tls::server_config(&chain, &key)
+        .map_err(|error| secret_error(error, "listener.tls_private_key_file"))?;
+    let mut verifiers = Vec::new();
+    for principal in config.principals() {
+        let verifier = load::verifier(principal, owner)
+            .map_err(|error| secret_error(error, "principal.verifier_file"))?;
+        verifiers.push((principal.id().clone(), verifier));
+    }
+    let mut credentials = Vec::new();
+    for identity in config.identities() {
+        let credential = load::credential(identity.credential(), owner)
+            .map_err(|error| secret_error(error, "identity.credential_file"))?;
+        credentials.push((identity.id().clone(), credential));
+    }
+    let mut nodes = Vec::new();
+    for node in config.nodes() {
+        let loaded = load::node(node).map_err(|error| secret_error(error, "node.tls_ca_file"))?;
+        nodes.push((node.id().clone(), loaded));
+    }
+    let mut targets = Vec::new();
+    for cluster in config.clusters() {
+        let reference = cluster.monitor_credential().ok_or_else(|| {
+            secret_error(SecretError::NotFound, "cluster.monitor_credential_file")
+        })?;
+        let credential = load::credential(reference, owner)
+            .map_err(|error| secret_error(error, "cluster.monitor_credential_file"))?;
+        let user = cluster.monitor_login().unwrap_or_default();
+        let login = Login::new(user, cluster.monitor_database(), credential);
+        for (id, node) in &nodes {
+            let belongs = config
+                .nodes()
+                .iter()
+                .any(|entry| entry.id() == id && entry.cluster() == cluster.id());
+            if belongs {
+                targets.push(Target::new(id.clone(), node.clone(), login.clone()));
+            }
+        }
+    }
+    let mock_key = MockKey::generate()
+        .map_err(|_| Report::Error(Item::plain(RANDOM_FAILED, RANDOM_FAILED_MESSAGE)))?;
+    // 5. The journal, opened for writing, with its start sequence advanced.
+    let (journal, start_sequence) = Journal::open_ready(&state.journal(), authority)
+        .map_err(|_| Report::Error(Item::plain(JOURNAL_FAILED, JOURNAL_FAILED_MESSAGE)))?;
+    let cluster_ids: Vec<_> = config.clusters().iter().map(|c| c.id().clone()).collect();
+    let (routes, receiver) = watch::channel(RouteView::closed(&cluster_ids));
+    let origin = Instant::now();
+    let authority_id = authority.authority_id().to_string();
+    let config = Arc::new(config);
+    let server_parts = ServerParts {
+        config: Arc::clone(&config),
+        tls,
+        verifiers,
+        credentials,
+        nodes,
+        mock_key,
+        connector: TcpConnector,
+        routes: receiver,
+        origin,
+        start_sequence: start_sequence.get(),
+    };
+    let controller = Controller::new(classified.clone());
+    Ok(Prepared {
+        config,
+        _state: state,
+        server_parts,
+        targets,
+        journal,
+        controller,
+        routes,
+        origin,
+        start_sequence: start_sequence.get(),
+        authority_id,
+    })
+}
+
+/// The finding of a server that could not be built: the key whose file it
+/// misses. The serving view and step 4 make this unreachable.
+fn server_error(error: ServerError) -> Report {
+    let key = match error {
+        ServerError::MissingVerifier => "principal.verifier_file",
+        ServerError::MissingCredential => "identity.credential_file",
+        ServerError::MissingNode => "node.tls_ca_file",
+    };
+    secret_error(SecretError::Invalid, key)
+}
+
+/// Steps 7 to 10, inside the runtime.
+async fn serve(prepared: Prepared) -> Option<Report> {
+    let Prepared {
+        config,
+        _state,
+        server_parts,
+        targets,
+        journal,
+        controller,
+        routes,
+        origin,
+        start_sequence,
+        authority_id,
+    } = prepared;
+    let server = match Server::new(server_parts) {
+        Ok(server) => server,
+        Err(error) => return Some(server_error(error)),
+    };
+    // 7. The listener: the first address of `listener.host` that binds.
+    let Some(listener_config) = config.listener() else {
+        return Some(Report::Error(Item::plain(
+            LISTENER_FAILED,
+            LISTENER_FAILED_MESSAGE,
+        )));
+    };
+    let listener = match TcpListener::bind((listener_config.host(), listener_config.port())).await {
+        Ok(listener) => listener,
+        Err(_) => {
+            return Some(Report::Error(Item::plain(
+                LISTENER_FAILED,
+                LISTENER_FAILED_MESSAGE,
+            )));
+        }
+    };
+    let mut terminate = signal(SignalKind::terminate()).ok();
+    let mut interrupt = signal(SignalKind::interrupt()).ok();
+    // 8. From here every line on stderr is a log event.
+    let log = log::install();
+    // 9. The control loop with an empty board, the first view (every
+    //    cluster closed, published at creation), the probes and the listener.
+    let (stop, stopped) = watch::channel(false);
+    let (samples, received) = mpsc::channel(targets.len().saturating_mul(2).max(1));
+    let probe = config.probe();
+    for target in targets {
+        tokio::spawn(probe::run(
+            target,
+            probe.period(),
+            probe.timeout(),
+            origin,
+            samples.clone(),
+            stopped.clone(),
+        ));
+    }
+    drop(samples);
+    let control = tokio::spawn(
+        ControlLoop::new(Arc::clone(&config), controller, journal, routes, origin)
+            .run(received, stopped.clone()),
+    );
+    let serving = tokio::spawn({
+        let server = Arc::clone(&server);
+        async move { server.serve(listener).await }
+    });
+    let flushing = tokio::spawn({
+        let server = Arc::clone(&server);
+        let mut stopped = stopped.clone();
+        async move {
+            let mut tick = tokio::time::interval(COUNTER_FLUSH);
+            loop {
+                tokio::select! {
+                    _ = tick.tick() => server.counters().flush(),
+                    _ = stopped.changed() => return,
+                }
+            }
+        }
+    });
+    tracing::info!(
+        event = "daemon.started",
+        start_sequence,
+        configuration_generation = ConfigurationGeneration::FIRST.get(),
+        authority_id = authority_id.as_str()
+    );
+    // 10. SIGTERM or SIGINT. A second signal does nothing more.
+    tokio::select! {
+        _ = recv(&mut terminate) => {}
+        _ = recv(&mut interrupt) => {}
+    }
+    tracing::info!(event = "daemon.stopping", sessions = server.sessions());
+    server.shutdown().await;
+    let _ = serving.await;
+    let _ = stop.send(true);
+    let journal = control.await.ok().flatten();
+    drop(journal);
+    let _ = flushing.await;
+    server.counters().flush();
+    tracing::info!(event = "daemon.stopped");
+    if let Some(log) = log {
+        log.flush().await;
+    }
+    None
+}
+
+/// Waits for one signal, or forever when the handler could not be installed.
+async fn recv(handler: &mut Option<tokio::signal::unix::Signal>) {
+    match handler {
+        Some(handler) => {
+            handler.recv().await;
+        }
+        None => std::future::pending::<()>().await,
+    }
+}
