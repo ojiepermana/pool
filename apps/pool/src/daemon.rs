@@ -227,7 +227,7 @@ async fn serve(prepared: Prepared) -> Outcome {
         start_sequence,
         authority_id,
     } = prepared;
-    let server = match Server::new(server_parts) {
+    let server = match Server::with_identity_query(server_parts, pool_control::PROBE_QUERY) {
         Ok(server) => server,
         Err(error) => return Outcome::Report(server_error(error)),
     };
