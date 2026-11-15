@@ -20904,7 +20904,7 @@
       "file_type": "code",
       "norm_label": "check_protected()",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L143"
+      "source_location": "L145"
     },
     {
       "id": "apps_pool_src_state_create_protected",
@@ -20915,7 +20915,18 @@
       "file_type": "code",
       "norm_label": "create_protected()",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L162"
+      "source_location": "L164"
+    },
+    {
+      "id": "apps_pool_src_state_rs_file",
+      "label": "File",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "cli.rs Parsing and Test Count Evidence",
+      "file_type": "code",
+      "norm_label": "file",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "apps_pool_src_state_rs_path",
@@ -20970,7 +20981,7 @@
       "file_type": "code",
       "norm_label": ".create_empty_journal()",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L127"
+      "source_location": "L130"
     },
     {
       "id": "apps_pool_src_state_statedirectory_journal",
@@ -25160,6 +25171,17 @@
       "source_location": "L474"
     },
     {
+      "id": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "label": "it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1741"
+    },
+    {
       "id": "apps_pool_tests_integration_it_a_lost_commit_answer_gives_08007_and_is_never_replayed",
       "label": "it_a_lost_commit_answer_gives_08007_and_is_never_replayed()",
       "_origin": "ast",
@@ -25400,6 +25422,17 @@
       "norm_label": "nodeat",
       "source_file": "apps/pool/tests/integration.rs",
       "source_location": "L119"
+    },
+    {
+      "id": "apps_pool_tests_integration_one_empty_page",
+      "label": "one_empty_page()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "one_empty_page()",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1721"
     },
     {
       "id": "apps_pool_tests_integration_password",
@@ -73048,7 +73081,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L128",
+      "source_location": "L131",
       "weight": 1.0
     },
     {
@@ -73060,7 +73093,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L133",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -77177,6 +77210,102 @@
       "context": "call",
       "source_file": "apps/pool/tests/integration.rs",
       "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_case_new",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1744",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_case_settings",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1745",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_case_write",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1745",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_primary_node",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1745",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_case_journal",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1746",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_one_empty_page",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1747",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_pool",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1749",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "target": "apps_pool_tests_integration_bootstrap",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1752",
       "weight": 1.0
     },
     {
@@ -102909,7 +103038,7 @@
     },
     {
       "source": "apps_pool_src_state_statedirectory",
-      "target": "file",
+      "target": "apps_pool_src_state_rs_file",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -107056,7 +107185,19 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L143",
+      "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_src_state_create_protected",
+      "target": "apps_pool_src_state_rs_file",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "generic_arg",
+      "source_file": "apps/pool/src/state.rs",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -107068,19 +107209,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L162",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_pool_src_state_create_protected",
-      "target": "file",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "generic_arg",
-      "source_file": "apps/pool/src/state.rs",
-      "source_location": "L162",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -107092,7 +107221,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L127",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -107104,7 +107233,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L127",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -118000,7 +118129,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L143",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -118012,7 +118141,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L162",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -124888,7 +125017,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L143",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -124900,7 +125029,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L162",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -124912,7 +125041,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L127",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -125381,6 +125510,18 @@
       "context": "return_type",
       "source_file": "apps/pool/tests/integration.rs",
       "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration_one_empty_page",
+      "target": "apps_pool_tests_integration_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1721",
       "weight": 1.0
     },
     {
@@ -134443,7 +134584,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L143",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -134454,7 +134595,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L162",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -136149,6 +136290,28 @@
       "confidence_score": 1.0,
       "source_file": "apps/pool/tests/integration.rs",
       "source_location": "L1596",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_one_empty_page",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1721",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_pool_tests_integration",
+      "target": "apps_pool_tests_integration_it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/pool/tests/integration.rs",
+      "source_location": "L1741",
       "weight": 1.0
     },
     {
@@ -151537,7 +151700,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/pool/src/state.rs",
-      "source_location": "L127",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -264731,5 +264894,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "6b982f9e48fad67c1a27b61ed3f1732f73b4ebd4"
+  "built_at_commit": "40d156a21cfcc3448a104235b4f8073a2b8d92e2"
 }
