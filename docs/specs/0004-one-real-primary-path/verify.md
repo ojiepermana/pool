@@ -935,6 +935,36 @@ The fix `da51f43` for the finding of the checker run above, on 2026-11-15 at 19:
 | Probe, a positive conflict with the same client | the session is ended and the backend closed | 1.5 s later: no session, the backend closed | pass |
 | Probe, the rest of the program on this tree | as in the checker run above | 101 checks. The two that do not match are mistakes of the probe, the same as before: one expects one closed backend where two sessions were running on the cluster and both were ended, and one compares a lease generation in decimal with a session counter in hex. The rows of the table above state what was seen | pass |
 
+#### Fix: a node that stops in the middle of a message (review finding c1)
+
+The independent review of scope 004 (`docs/reviews/2026-11-16-scope-004-one-real-primary-path.md`, finding c1) showed that the read of the status byte of `ReadyForQuery` was the one wait of the relay that was not raced against the cut: a node that sent the five header bytes and stopped kept its session through a positive conflict (`0004 AC-14`), and `Server::shutdown` did not return (`0004 AC-25`). The fix closes the class. Every wait of a session after login was traced, in `crates/pool-core/src/session.rs`:
+
+| Wait | Before | Now |
+|---|---|---|
+| The greeting toward the client (`AuthenticationOk`, the parameters, `ReadyForQuery`) | not raced | raced against the cut; on a cut the greeting may be partial, so nothing more is sent |
+| The relay loop: a header from the client or from the backend, and a change of the route view or the phase | raced | unchanged |
+| The body of a message, read and written through the relay buffer (`copy_exact`) | raced | unchanged |
+| A header toward the client, a flush, a write toward the backend (`write_client`, `write_backend`) | raced since `da51f43` | unchanged |
+| The status byte of `ReadyForQuery` | **not raced** | raced; the header is not forwarded yet, so a cut there is at a message boundary and sends `08007` with a query in flight, `57P01` without |
+| A generated error and its close (`send`) | raced | unchanged |
+| The close of the client stream at the end | bounded by `CLOSE_TIMEOUT` (1 s) | unchanged |
+| The wait of `shutdown` after `Phase::Ending` | no limit | bounded by `END_TIMEOUT` (2 s); after it every connection task left is dropped, which drops its lease and closes its backend. With the rows above no session reaches it; it is the last limit against a defect |
+
+The waits before login (the first packets, TLS, SCRAM, step 7, step 8 and a refusal) are not raced against a conflict, because no session runs yet; they end when shutdown starts (`connection` races `admit` against the phase). They are not changed. Out of this fix and in `apps/pool`: a signal handler that cannot be installed (finding c1, `apps/pool/src/daemon.rs:234`). A peer that is gone without closing (M1) is decided separately.
+
+| Test in `tests/session.rs` | What it holds | Old code | Now |
+|---|---|---|---|
+| `c1_a_positive_conflict_ends_a_session_whose_node_stopped_before_the_status_byte` | The node sends `CommandComplete` and the five header bytes of `ReadyForQuery`, then nothing. After a positive conflict the client gets the `CommandComplete`, then `08007`, then the end; no session, the backend closed, one backend opened | failed: no error, the session stayed | pass |
+| `c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_before_the_status_byte` | The same node, `shutdown_timeout_ms = 200`: `shutdown()` returns within 5 s, then the same end | failed: no error | pass |
+| `c1_a_positive_conflict_ends_a_session_whose_node_stopped_in_a_header` | The node stops after three header bytes of a `DataRow`: the client gets the `RowDescription`, then `08007` | pass (the header read was raced) | pass |
+| `c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_in_a_header` | The same through the shutdown deadline | pass | pass |
+| `c1_a_positive_conflict_ends_a_session_whose_node_stopped_in_a_body` | The node stops in the body of a `DataRow`: the client gets exactly the bytes of the node and no error, the backend is closed | pass (the body read was raced) | pass |
+| `c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_in_a_body` | The same through the shutdown deadline | pass | pass |
+
+"Old code" is the fixed tree with only the status byte read put back to an unguarded `read_exact`. Every one of the six tests runs inside its own limit of 15 s, and each wait inside it has a shorter one, so a regression fails with a test name instead of hanging the run (finding t4). The drop after `END_TIMEOUT` has no test: no wait of a session reaches it any more.
+
+`cargo test -p pool-core --locked`: 50 unit and 53 session tests passed. `scripts/check.sh all`, `scripts/check.sh integration` (26 of 26) and `scripts/check.sh linux-build` (on the committed tree of this fix): exit 0, each on its first run.
+
 ### Build plan step 10: the daemon
 
 On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commit `fef8023` (step 10), merged with `main` at `b8818f9` in `77c1817`, which holds the protocol fixes of step 9. Image `postgres:18.7-bookworm` by the digest of step 8; PostgreSQL 18.7 and `psql` 18.7 (Debian 18.7-1.pgdg12+2).
