@@ -752,6 +752,29 @@ No mutation run was done for the code of step 8 in this item. Test gaps seen:
 - No test puts a journal that was cut or whose marks were changed in front of `pool bootstrap`. The tests use a file of plain text for the state `unreadable`, and only with `show-authority` and `pool run`. The probe compared the files before and after.
 - The lock test holds the lock inside the test process. A helper process that holds it would test the product the way two daemons meet it.
 
+### Checker run of the fix for finding 2 (the race to create `pool.lock`)
+
+On 2026-11-15 at 21:50 WIB, by the checker session, after the developer of step 8 reported the fix. Commit `fd62cf4` (`fix(pool): spec 0004 step 8, a lock file made by another process at the same moment is state.locked`). The Linux probe ran on `fd62cf4`, the workstation runs on `8242a1a` in a private clone, and the two checks at the end on `aa10007`, the tip of `main`, which holds the same `apps/pool/src/state.rs` and `apps/pool/tests/commands.rs`. The probe is a new program of the checker, outside the repository, with the standard library only. It starts eight commands from eight threads that wait on one barrier, and it has its own listener that accepts and never answers, so a bootstrap holds the lock for 0.6 seconds. In the pinned build image it ran as a user that is not root, against a release `pool` built there.
+
+**Verdict: the fix PASSES, and with it milestone 3 PASSES.** `0004 AC-9` is met: a command that loses the race gets `state.locked`. No other finding of milestone 3 is open.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| Linux, `fd62cf4`: 40 rounds of eight bootstraps on a new state directory with no `pool.lock`, 320 commands | one holder in each round, `state.locked` for the seven others | 40 holders, 280 times `state.locked`, 0 rounds with two holders, 0 with none, 0 other results; `show-authority` right after each round exits 0 in 40 of 40 | pass |
+| The same on a state directory where `pool.lock` exists | the same | 40 holders, 280 times `state.locked`, 0 other results | pass |
+| Linux, `fd62cf4`: 200 rounds of eight `show-authority` on a new state directory, 1600 commands | exit 0 or `state.locked`, nothing else | 1533 times exit 0, 67 times `state.locked`, 0 other results; after each round the directory holds `pool.lock` with mode 0600 and nothing else | pass |
+| Control, the same probe on `ecd0ee5` (before the fix) | the probe shows the fault | 34 of 320 bootstraps and 126 of 1600 `show-authority` ended with `state.permissions`; with `pool.lock` there, 0 | the fault, as found |
+| What must stay `state.permissions`: `pool.lock` with mode 0644, 0400 or 0660, as a directory, as a link to a good file, as a link to nothing, as a named pipe, each with `bootstrap` and `show-authority` (14 runs on Linux, 14 on macOS) | exit 3 with `state.permissions`, no hang, nothing changed, the target of the link not made | all 28 as expected | pass |
+| macOS, `8242a1a`: the same probe with 30 rounds | as on Linux | 30 holders and 210 times `state.locked` in both forms; 964 times exit 0 and 236 times `state.locked` of 1200 `show-authority`; 0 other results | pass |
+| macOS, `8242a1a`: the command probe of the first run, 100 checks | 0 mismatches | 0 mismatches | pass |
+| `scripts/check.sh all` on `8242a1a` | exit 0 | exit 0, all six `ok`, with `ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked ... ok` | pass |
+| `scripts/check.sh integration` on `aa10007` | exit 0, nothing left behind | exit 0, 21 of 21; 89 volumes before and after, no container of this run, no temporary directory | pass |
+| `scripts/check.sh linux-build` on `aa10007` | exit 0 | exit 0, 22 test results `ok`, none failed, with the new test and the lock test `ok`, `linux build check passed` | pass |
+
+**What I read in the fix.** When `create_new` says the file exists, the command opens the file the other command made and lets `try_lock` decide. The file is then checked on the open descriptor: a regular file, mode 0600, the owner of the directory, and the same device and inode as the path read without following a link. A link at the path is still refused: the path is read without following a link before the open and again after it, and a link to nothing ends in `state.permissions` because `create_new` does not follow it. `create_protected` now sets the mode on the open file and not on the path.
+
+**For the tester.** The new test accepts exit 0 or `state.locked` for eight `show-authority`. It has no bootstrap case, where one command holds the lock for a while, and it does not look at the files afterwards. The probe did both.
+
 ## Milestone 4: The session path
 
 Build plan steps 9 to 11. Each step keeps its own part of this section.
