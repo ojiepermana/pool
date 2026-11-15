@@ -2611,6 +2611,12 @@ fn spec_0004_ac5_each_invalid_serving_fixture_gives_its_finding() {
             "probe.observation_expiry_ms",
             INVALID_VALUE,
         ),
+        (
+            "invalid-serving-node-loss.toml",
+            "config.invalid_value",
+            "probe.node_loss_timeout_ms",
+            INVALID_VALUE,
+        ),
     ] {
         assert_key_rejection(&fixture(name), code, key, message);
     }
@@ -2835,14 +2841,14 @@ fn ac5_each_new_number_key_takes_its_range_edges_and_refuses_one_past_them() {
             "period_ms",
             100,
             30_000,
-            "timeout_ms = 100\nobservation_expiry_ms = 60000\n",
+            "timeout_ms = 100\nobservation_expiry_ms = 60000\nnode_loss_timeout_ms = 90000\n",
         ),
         (
             "probe",
             "timeout_ms",
             100,
             30_000,
-            "period_ms = 100\nobservation_expiry_ms = 60000\n",
+            "period_ms = 100\nobservation_expiry_ms = 60000\nnode_loss_timeout_ms = 90000\n",
         ),
         ("probe", "observation_expiry_ms", 1000, 60_000, probe_room),
     ];

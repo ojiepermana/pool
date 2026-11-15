@@ -423,3 +423,56 @@ New points from this range, all minor or less:
 - ⚪ The section on the integration check now says the watchdog has a process group of its own and that nothing of a run outlives the script (`index.md:1300`). Under `dash` with no terminal that is not true, which is r1. So r1 is now also a place where the spec says more than the script does.
 
 The rationale counts 108 decisions, 40 of them heavy. That fits the table.
+
+## Third look, the fix of r1, 2026-11-16
+
+**Reviewed by**: `claude-fable-5-2`, the session that wrote the two reviews above (author of the script on `claude-opus-5-5`). No second reader this time: the change is one shell script, and every claim below comes from a run of mine.
+**Scope**: `git diff a59530a..6f69ae2 -- scripts/integration/run.sh` (commit `f24ed57`). The rest of that range is documents (decisions 109 to 113 of spec 0004 and notes in its verification record), which I did not review here, apart from the two paragraphs on the script.
+**Verdict**: Approved, for the changes I was asked to review. r1 is closed, and no blocker and no major finding is open. One new minor finding came with the fix (r6). The minor findings r2 to r5 and a1 to a3 have decisions or an owner now, and their builds and texts were not all on `main` when I looked, so I have not confirmed them. They did not hold the verdict before and do not hold it now.
+
+### What changed
+
+The script no longer uses job control. It finds every process under the test command, and under the watchdog, by parent process IDs (`ps -A -o pid= -o ppid=`, or `/proc/*/stat` where there is no `ps`), stops that tree until no new process appears in it, sends SIGTERM and then SIGCONT, and after 5 seconds SIGKILL. A process that still runs is named on stderr and the script exits 1 (`scripts/integration/run.sh:102` to `:137`).
+
+### What I ran
+
+No input, output or error stream was a terminal in any run.
+
+| Run | Result |
+|---|---|
+| The whole script as `/bin/dash scripts/integration/run.sh` on this workstation (macOS, Docker Desktop, the pinned image), output through a pipe | exit 0 after 81 seconds, 30 of 30 tests, no container and no process left. The 1800 seconds of r1 are gone |
+| The functions of the script, taken from `run.sh` with `sed` into a harness with a stand in for the test command, under `/bin/dash` and `/bin/bash` of macOS, and under `sh` in a container of the pinned PostgreSQL image (`/usr/bin/dash`, no `ps`, so the `/proc` path), removed afterwards. Seven cases each | see the next table. The three shells agree in every case |
+
+| Case | Expected | Observed in the pinned image |
+|---|---|---|
+| The tests end by themselves and pass | exit 0, at once | exit 0 after 2 seconds for a test of 2 seconds, nothing left |
+| The tests fail | exit 1 | exit 1, nothing left |
+| No test passed | exit 1 and `no test ran` | as expected |
+| The watchdog fires on a tree of three levels that never ends | exit 1, the line of the watchdog, nothing left | exit 1 after 3 seconds with a limit of 3, the line is there, nothing left |
+| The watchdog fires on a tree that ignores SIGTERM | SIGKILL after 5 seconds, nothing left | exit 1 after 3 seconds, and 4 processes left (r6) |
+| SIGTERM to the script alone while the tests run | exit 1 at once, nothing left | exit 1 after 2 seconds, nothing left |
+| SIGTERM to the script alone while a tree that ignores SIGTERM runs | SIGKILL after 5 seconds, nothing left | exit 1 after 7 seconds, nothing left |
+
+### The four questions of the lead
+
+**1. Is r1 closed?** Yes. Under `dash` with no terminal, on macOS and in the pinned Linux image, a run that ends by itself returns at once, the watchdog ends a tree, and a signal to the script ends the test command and leaves nothing. That is each of the three things r1 named.
+
+**2. New defects of the fix.** One minor finding and three nits.
+
+#### 🟡 r6. When the watchdog fires, a process that does not end on SIGTERM at once is left behind, `scripts/integration/run.sh:291` to `:300`
+
+**Problem**: The watchdog is a child shell, and the list of the processes it stopped lives in that child. It sends SIGTERM to the tree and then waits up to 5 seconds before SIGKILL. The first process to die is the shell of the test command, which the main script waits for at line 298. The main script then ends the watchdog at line 300, in the middle of those 5 seconds. So SIGKILL is never sent, and the line "could not be ended" is never written. Whatever ignores SIGTERM, or takes longer than a moment to end, stays, with process 1 as its parent. I ran it in all three shells with a tree of four processes that ignore SIGTERM: all four were left, and the script exited 1 after 3 seconds. The same tree is ended by SIGKILL when the script itself gets the signal, because there the main script holds the list.
+**Why it matters**: The watchdog is for a run that hangs, and a daemon that does not stop on SIGTERM is one of the things that can hang it. The spec says nothing of a run outlives the script. The run still fails with exit 1 and the containers are removed, so nothing wrong is reported as right, which keeps this minor.
+**Suggested fix**: Let the main script do the ending. The watchdog only tells it that the time is over (a signal to the main script, or a file it writes before it ends the tree), and the main script waits for the watchdog to finish when the watchdog has fired. Add the case to the stand in checks. Owner: the developer.
+
+Nits:
+
+- ⚪ `scripts/integration/run.sh:128` to `:130`, after SIGTERM the script decides by process ID alone whether a process still runs, for up to 5 seconds, and then sends SIGKILL to that ID. A process ID that the kernel gave to another process of the same user in that time would be hit. It needs the IDs to wrap within seconds, so it is a remote case. Comparing the start time of the process would close it.
+- ⚪ `run.sh:104` to `:111`, on a host with neither `ps` nor `/proc`, `running` says "not running" first, so `end_tree` returns 0 and the line about `ps` and `/proc` at `:109` is never reached. No declared target is such a host.
+- ⚪ `docs/specs/0004-one-real-primary-path/index.md:1301` and `:1304` still say the test command and the watchdog each have a process group of their own. The script has none now.
+
+On the three things the lead named. A process that appears while the tree is being read is caught by the next pass, because a stopped parent cannot start one, and the passes go on until none is new. Only a process whose parent ended between one reading and its own stop escapes, and no test of this fixture starts a process that way. SIGSTOP goes only to the process the script started and to what a reading of that moment shows under it, and the root cannot be another process, because the script has not waited for it yet. So I see no way for it to reach a process outside the run.
+
+**3. Does the full run on Linux, which is `NOT_RUN`, still hold the verdict as a major finding?** No. r1 was a fault of the shell on Linux, and that fault is shown gone in the shell of the pinned image with the real functions, and in the whole script under `dash` on macOS. What is not shown is the whole check on a Linux host: the Docker steps of the fixture there, for example the listener address taken from the bridge. That was never run, before the review or after it, and it was already named as open when the first review began (the CI job of manual step `F4-3`). It is a known manual step with an owner, not a finding of this review. Whether the feature may be called done before that job has run once is a rule of the scope and a decision of the lead and the user, not of the reviewer. My advice is to run the job once before the box is ticked, because it is the first time the fixture meets Linux.
+
+**4. Verdict.** Approved, with the notes above. M1, M2, M3 and r1 are closed, and I know of no open blocker or major finding in the range `c4d5714..6f69ae2`. Open and minor: r6 (new), and r2 to r5, a1 to a3, t8 and n15 until their fixes are on `main` and confirmed.

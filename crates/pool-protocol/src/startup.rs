@@ -256,6 +256,9 @@ pub fn parse_startup(minor: u16, body: &[u8]) -> Result<StartupRequest, PoolErro
     for (name, value) in pairs {
         match name {
             b"user" => {}
+            // An empty name counts as not sent and keeps the user name, as in PostgreSQL
+            // (spec 0004, decision 116).
+            b"database" if value.is_empty() => {}
             b"database" => request.database = value.to_vec(),
             b"application_name" | b"client_encoding" => request.forwarded.push(Forwarded {
                 name: if name == b"application_name" {
@@ -573,6 +576,9 @@ mod tests {
         )
         .expect("valid");
         assert_eq!(r.database, b"app");
+        // An empty database name counts as not sent: it takes the user name (decision 116).
+        let empty = parse_startup(0, &body(&[("database", ""), ("user", "alice")])).expect("valid");
+        assert_eq!(empty.database, b"alice");
         assert_eq!(
             r.forwarded,
             [

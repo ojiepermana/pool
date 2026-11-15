@@ -216,7 +216,8 @@ impl ProbeConfig {
 
     /// How long the approved writer of a cluster may give the probe no answer at all before
     /// its node is lost and its running sessions end, from `probe.node_loss_timeout_ms`
-    /// (spec 0004, decision 84). It has no cross rule with the other probe keys.
+    /// (spec 0004, decision 84). It is never less than twice the period plus the timeout
+    /// (decision 109).
     pub fn node_loss_timeout(&self) -> Duration {
         millis(self.node_loss_timeout_ms)
     }
@@ -625,6 +626,14 @@ fn check_probe(checker: &mut Checker<'_>, raw: Option<&RawProbe>) -> ProbeConfig
         && u64::from(expiry) < u64::from(period) + u64::from(timeout)
     {
         push_key(checker, FindingCode::InvalidValue, KEY_PROBE_EXPIRY);
+    }
+    // Then the loss time (spec 0004, decision 109): below twice the period
+    // plus the timeout, one probe that stumbles could end every session
+    // before a second probe had asked and had its whole timeout.
+    if let (Some(period), Some(timeout), Some(node_loss)) = (period, timeout, node_loss)
+        && u64::from(node_loss) < 2 * u64::from(period) + u64::from(timeout)
+    {
+        push_key(checker, FindingCode::InvalidValue, KEY_PROBE_NODE_LOSS);
     }
     ProbeConfig {
         period_ms: period.unwrap_or(default.period_ms),
