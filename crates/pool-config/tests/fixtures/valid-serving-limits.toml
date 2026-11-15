@@ -1,0 +1,84 @@
+config_version = 1
+
+[control]
+state_directory = "/var/lib/pool"
+authority_id = "0123456789abcdef0123456789abcdef"
+
+[listener]
+host = "0.0.0.0"
+port = 6432
+tls_certificate_file = "/etc/pool/tls/server.crt"
+tls_private_key_file = "/etc/pool/tls/server.key"
+
+[limits]
+session_max_count = 1
+handshake_max_count = 1
+backend_wait_max_count = 0
+node_backend_max_count = 1
+startup_timeout_ms = 100
+backend_acquire_timeout_ms = 100
+shutdown_timeout_ms = 0
+startup_packet_max_bytes = 512
+frontend_message_max_bytes = 1024
+
+[probe]
+period_ms = 100
+timeout_ms = 100
+observation_expiry_ms = 1000
+
+[[cluster]]
+id = "main"
+system_identifier = "7412345678901234567"
+expected_writer = "pg1"
+monitor_login = "pool_monitor"
+monitor_credential_file = "/etc/pool/secrets/pool_monitor"
+
+[[node]]
+id = "pg1"
+cluster = "main"
+host = "10.0.0.11"
+port = 5432
+tls_ca_file = "/etc/pool/tls/ca.crt"
+
+[[node]]
+id = "pg2"
+cluster = "main"
+host = "10.0.0.12"
+port = 5432
+tls_ca_file = "/etc/pool/tls/ca.crt"
+
+[[node]]
+id = "pg3"
+cluster = "main"
+host = "pg3.db.internal"
+port = 5433
+tls_ca_file = "/etc/pool/tls/ca.crt"
+tls_server_name = "pg3.example.internal"
+
+[[identity]]
+id = "orders-app"
+principal = "orders_app"
+database = "orders"
+cluster = "main"
+backend_login = "orders_rw"
+credential_file = "/etc/pool/secrets/orders_rw"
+
+[[identity]]
+id = "report-app"
+principal = "report_app"
+database = "orders"
+cluster = "main"
+backend_database = "orders_reporting"
+backend_login = "report_ro"
+credential_file = "/etc/pool/secrets/report_ro"
+routing_profile = "primary"
+
+[[principal]]
+id = "orders-app"
+name = "orders_app"
+verifier_file = "/etc/pool/secrets/orders_app.scram"
+
+[[principal]]
+id = "report-app"
+name = "report_app"
+verifier_file = "/etc/pool/secrets/report_app.scram"

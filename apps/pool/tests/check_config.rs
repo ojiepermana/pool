@@ -1,5 +1,6 @@
 //! The built `pool` binary: exit status, exact stdout and stderr in both
-//! formats (spec 0001 AC-3 to AC-7, AC-9 to AC-11; spec 0003 AC-1 to AC-4).
+//! formats (spec 0001 AC-3 to AC-7, AC-9 to AC-11; spec 0003 AC-1 to AC-4;
+//! spec 0004 AC-5 to AC-8).
 
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -2527,4 +2528,228 @@ fn ac4_a_canary_outside_a_value_never_reaches_the_output() {
             }
         }
     }
+}
+
+// Spec 0004: the new keys through the built binary, the closed name rule and
+// the limit on findings (0004 AC-5 to AC-8).
+
+/// The exact human and JSON output of a file with one finding inside an
+/// entry, at a key, line and column.
+fn assert_key_at_rejection(path: &str, code: &str, key: &str, at: (u32, u32), message: &str) {
+    let (line, column) = at;
+    assert_run(
+        &check(path, "human"),
+        1,
+        &format!(
+            "configuration invalid\nfindings: 1\n{code} at {key}, line {line}, column {column}: {message}\n"
+        ),
+        "",
+    );
+    assert_run(
+        &check(path, "json"),
+        1,
+        &invalid_json(&format!(
+            "{{\"code\":\"{code}\",\"key\":\"{key}\",\"line\":{line},\"column\":{column},\"message\":\"{message}\"}}"
+        )),
+        "",
+    );
+}
+
+#[test]
+fn spec_0004_ac5_valid_serving_fixtures_give_exactly_the_valid_report() {
+    // covers: 0004 AC-5, AC-8. `check-config` does not report what a
+    // command still needs: the probe only fixture is simply valid.
+    for name in [
+        "valid-serving.toml",
+        "valid-serving-limits.toml",
+        "valid-serving-probe-only.toml",
+        "secret-serving-values.toml",
+    ] {
+        let path = fixture(name);
+        assert_run(&check(&path, "human"), 0, VALID_HUMAN, "");
+        assert_run(&check(&path, "json"), 0, VALID_JSON, "");
+        assert_run(
+            &pool(["check-config", "--config", path.as_str()]),
+            0,
+            VALID_HUMAN,
+            "",
+        );
+    }
+}
+
+#[test]
+fn spec_0004_ac5_each_invalid_serving_fixture_gives_its_finding() {
+    // covers: 0004 AC-5, AC-6. The table under "Fixtures" in spec 0004.
+    for (name, code, key, message) in [
+        (
+            "invalid-serving-port.toml",
+            "config.invalid_value",
+            "listener.port",
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-serving-listener-key.toml",
+            "config.missing_key",
+            "listener.tls_private_key_file",
+            MISSING_KEY,
+        ),
+        (
+            "invalid-serving-limit.toml",
+            "config.invalid_value",
+            "limits.session_max_count",
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-serving-expiry.toml",
+            "config.invalid_value",
+            "probe.observation_expiry_ms",
+            INVALID_VALUE,
+        ),
+    ] {
+        assert_key_rejection(&fixture(name), code, key, message);
+    }
+    for (name, code, key, at, message) in [
+        (
+            "invalid-serving-duplicate-principal.toml",
+            "config.duplicate_principal",
+            "principal.name",
+            (66, 8),
+            "two principal entries have the same name",
+        ),
+        (
+            "invalid-name-c1.toml",
+            "config.invalid_value",
+            "identity.backend_login",
+            (22, 17),
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-name-direction.toml",
+            "config.invalid_value",
+            "identity.database",
+            (20, 12),
+            INVALID_VALUE,
+        ),
+    ] {
+        assert_key_at_rejection(&fixture(name), code, key, at, message);
+    }
+    let path = fixture("invalid-serving-unknown-key.toml");
+    let message = "unknown key, or a value of the wrong type or range";
+    assert_run(
+        &check(&path, "human"),
+        1,
+        &format!(
+            "configuration invalid\nfindings: 1\nconfig.schema at line 14, column 1: {message}\n"
+        ),
+        "",
+    );
+    assert_run(
+        &check(&path, "json"),
+        1,
+        &invalid_json(&format!(
+            "{{\"code\":\"config.schema\",\"key\":null,\"line\":14,\"column\":1,\"message\":\"{message}\"}}"
+        )),
+        "",
+    );
+}
+
+#[test]
+fn spec_0004_ac6_the_canary_never_reaches_the_output() {
+    // covers: 0004 AC-6, SEC-11. Valid files with the canary in every new
+    // string value, and names refused for a listed character.
+    for name in [
+        "secret-serving-values.toml",
+        "invalid-name-c1.toml",
+        "invalid-name-direction.toml",
+    ] {
+        for format in ["human", "json"] {
+            let run = check(&fixture(name), format);
+            assert!(run.code == 0 || run.code == 1, "{name}");
+            for text in [&run.stdout, &run.stderr] {
+                assert!(!text.contains(CANARY), "{name} {format}: {text}");
+            }
+        }
+    }
+}
+
+/// Made input 5 of spec 0004: `identity = [`, then empty entries on line 2,
+/// as many as fit in 1048576 bytes. Every entry lacks its six required keys.
+fn made_input_5() -> (String, usize) {
+    let mut text = String::from("config_version = 1\nidentity = [");
+    let mut count = 0;
+    loop {
+        let entry = if count == 0 { "{}" } else { ",{}" };
+        if text.len() + entry.len() + 2 > 1_048_576 {
+            text.push_str("]\n");
+            return (text, count);
+        }
+        text.push_str(entry);
+        count += 1;
+    }
+}
+
+#[test]
+fn spec_0004_ac7_the_binary_writes_twenty_thousand_findings_and_the_omitted_count() {
+    // covers: 0004 AC-7. Exactly 20000 finding lines, less than 4 MiB in each
+    // format, and the omitted count is six times the entries minus 20000.
+    let (text, count) = made_input_5();
+    let omitted = count * 6 - 20_000;
+    let made = made_file("spec-0004-made-input-5.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    let limit = 4 * 1024 * 1024;
+
+    let human = check(path, "human");
+    assert_eq!(human.code, 1);
+    assert_eq!(human.stderr, "");
+    assert!(human.stdout.len() < limit, "{} bytes", human.stdout.len());
+    let lines: Vec<&str> = human.stdout.lines().collect();
+    assert_eq!(lines.len(), 2 + 20_000 + 1);
+    assert_eq!(lines[..2], ["configuration invalid", "findings: 20000"]);
+    assert_eq!(
+        lines[2],
+        format!("config.missing_key at identity.id, line 2, column 13: {MISSING_KEY}")
+    );
+    assert!(
+        lines[2..20_002]
+            .iter()
+            .all(|line| line.starts_with("config.missing_key at identity."))
+    );
+    assert_eq!(lines[20_002], format!("findings omitted: {omitted}"));
+    assert!(
+        human
+            .stdout
+            .ends_with(&format!("findings omitted: {omitted}\n"))
+    );
+
+    let json = check(path, "json");
+    assert_eq!(json.code, 1);
+    assert_eq!(json.stderr, "");
+    assert!(json.stdout.len() < limit, "{} bytes", json.stdout.len());
+    assert_eq!(json.stdout.lines().count(), 1);
+    assert!(json.stdout.starts_with(&format!(
+        "{{\"output_version\":1,\"command\":\"check-config\",\"result\":\"invalid\",\"config_version\":null,\"capabilities\":null,\"findings_omitted\":{omitted},\"findings\":[{{\"code\":\"config.missing_key\",\"key\":\"identity.id\",\"line\":2,\"column\":13,"
+    )));
+    assert_eq!(json.stdout.matches("{\"code\":").count(), 20_000);
+    assert_eq!(json.stdout.matches("findings_omitted").count(), 1);
+    assert!(json.stdout.ends_with("}]}\n"));
+}
+
+#[test]
+fn spec_0004_ac7_a_report_of_twenty_thousand_has_no_omitted_line_or_field() {
+    // covers: 0004 AC-7. 5000 empty nodes give exactly 20000 findings.
+    let entries = vec!["{}"; 5000].join(",");
+    let text = format!("config_version = 1\nnode = [{entries}]\n");
+    let made = made_file("spec-0004-twenty-thousand.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    let human = check(path, "human");
+    assert_eq!(human.code, 1);
+    assert_eq!(human.stdout.lines().count(), 2 + 20_000);
+    assert!(!human.stdout.contains("omitted"));
+    let json = check(path, "json");
+    assert_eq!(json.code, 1);
+    assert!(!json.stdout.contains("findings_omitted"));
+    assert!(
+        json.stdout
+            .contains(",\"capabilities\":null,\"findings\":[")
+    );
 }

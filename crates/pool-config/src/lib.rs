@@ -4,19 +4,30 @@
 //! input or output: the caller reads the file and passes its bytes. A file is
 //! accepted or rejected as a whole. A [`Rejection`] holds only finding codes,
 //! static key paths and numbers, so it can never carry text from the file.
+//!
+//! A valid file can still be too small for a command. [`ValidatedConfig::probing`]
+//! and [`ValidatedConfig::serving`] say what `pool bootstrap` and `pool run`
+//! still need.
 
 use std::fmt;
 
 mod generation;
 mod identifier;
+mod serving;
 mod topology;
+mod views;
 
-pub use generation::{AuthorityRevision, StartSequence, TopologyEpoch};
-pub use identifier::{AuthorityId, ClusterId, IdentityId, NodeId, SystemIdentifier};
+pub use generation::{
+    AuthorityRevision, ConfigurationGeneration, CredentialGeneration, StartSequence, TopologyEpoch,
+};
+pub use identifier::{AuthorityId, ClusterId, IdentityId, NodeId, PrincipalId, SystemIdentifier};
+pub use serving::{Limits, ListenerConfig, PrincipalConfig, ProbeConfig};
 pub use topology::{
     ClusterConfig, ControlConfig, IdentityRoute, NodeConfig, RoutingProfile, SecretReference,
 };
+pub use views::{ProbingView, ServingView};
 
+use serving::{PrincipalIndex, RawLimits, RawListener, RawPrincipal, RawProbe, RawServing};
 use toml::Spanned;
 use topology::{IdentityIndex, RawCluster, RawControl, RawIdentity, RawNode, RawTopology};
 
@@ -25,6 +36,10 @@ use serde::de::{self, Deserialize, DeserializeSeed, Deserializer, MapAccess, Vis
 /// The largest configuration file accepted, in bytes. A file of exactly this
 /// size is still accepted.
 pub const MAX_CONFIG_BYTES: usize = 1_048_576;
+
+/// The most findings one [`Rejection`] keeps. Every finding beyond them is
+/// counted by [`Rejection::omitted`] and not stored.
+pub const MAX_FINDINGS: usize = 20_000;
 
 /// The only `config_version` this build supports.
 pub const SUPPORTED_CONFIG_VERSION: u32 = 1;
@@ -73,6 +88,11 @@ pub struct ValidatedConfig {
     nodes: Vec<NodeConfig>,
     identities: Vec<IdentityRoute>,
     identity_index: IdentityIndex,
+    listener: Option<ListenerConfig>,
+    limits: Limits,
+    probe: ProbeConfig,
+    principals: Vec<PrincipalConfig>,
+    principal_index: PrincipalIndex,
 }
 
 impl ValidatedConfig {
@@ -121,6 +141,37 @@ impl ValidatedConfig {
         let index = self.identity_index.get(principal, database)?;
         self.identities.get(index)
     }
+
+    /// The `[listener]` table, or `None` when the file has none.
+    pub fn listener(&self) -> Option<&ListenerConfig> {
+        self.listener.as_ref()
+    }
+
+    /// The `[limits]` table, with the default of each key that is left out,
+    /// and every default when the table is absent.
+    pub fn limits(&self) -> &Limits {
+        &self.limits
+    }
+
+    /// The `[probe]` table, with the default of each key that is left out,
+    /// and every default when the table is absent.
+    pub fn probe(&self) -> &ProbeConfig {
+        &self.probe
+    }
+
+    /// The `[[principal]]` entries, in file order.
+    pub fn principals(&self) -> &[PrincipalConfig] {
+        &self.principals
+    }
+
+    /// The principal with exactly this name, or `None`.
+    ///
+    /// The name is compared byte for byte: nothing is folded to lowercase or
+    /// trimmed. The lookup does not walk every entry.
+    pub fn resolve_principal(&self, name: &str) -> Option<&PrincipalConfig> {
+        let index = self.principal_index.get(name)?;
+        self.principals.get(index)
+    }
 }
 
 /// The state of a reserved capability in a validated configuration.
@@ -144,18 +195,67 @@ impl CapabilityState {
 #[derive(Debug)]
 pub struct Rejection {
     findings: Vec<Finding>,
+    omitted: u64,
 }
 
 impl Rejection {
-    /// The findings, in the order they were found. Never empty.
+    /// The findings that were kept, in the order they were found: at most
+    /// [`MAX_FINDINGS`]. Never empty.
     pub fn findings(&self) -> &[Finding] {
         &self.findings
+    }
+
+    /// The number of findings after the first [`MAX_FINDINGS`], which were
+    /// counted and not kept. It is 0 for every file with fewer.
+    pub fn omitted(&self) -> u64 {
+        self.omitted
     }
 
     fn single(code: FindingCode, location: Location) -> Self {
         Rejection {
             findings: vec![Finding { code, location }],
+            omitted: 0,
         }
+    }
+}
+
+/// Collects the findings of one run: it keeps the first [`MAX_FINDINGS`] and
+/// counts the rest, so a file at the size limit never holds millions of them.
+pub(crate) struct Findings {
+    kept: Vec<Finding>,
+    omitted: u64,
+}
+
+impl Findings {
+    pub(crate) fn new() -> Self {
+        Findings {
+            kept: Vec::new(),
+            omitted: 0,
+        }
+    }
+
+    /// Keeps the finding, or counts it when [`MAX_FINDINGS`] are kept already.
+    pub(crate) fn push(&mut self, finding: Finding) {
+        if self.kept.len() < MAX_FINDINGS {
+            self.kept.push(finding);
+        } else {
+            self.omitted = self.omitted.saturating_add(1);
+        }
+    }
+
+    /// Every finding so far, kept or counted.
+    pub(crate) fn total(&self) -> u64 {
+        u64::try_from(self.kept.len())
+            .unwrap_or(u64::MAX)
+            .saturating_add(self.omitted)
+    }
+
+    /// The rejection, or `None` when there is no finding.
+    pub(crate) fn into_rejection(self) -> Option<Rejection> {
+        (!self.kept.is_empty()).then_some(Rejection {
+            findings: self.kept,
+            omitted: self.omitted,
+        })
     }
 }
 
@@ -242,6 +342,12 @@ pub enum FindingCode {
     DuplicateIdentity,
     /// A value is known but not supported by this build.
     UnsupportedValue,
+    /// A principal has the name of an earlier principal.
+    DuplicatePrincipal,
+    /// A command needs a table or a key that the valid file does not have.
+    /// Only [`ValidatedConfig::probing`] and [`ValidatedConfig::serving`]
+    /// give it; [`validate`] never does.
+    Incomplete,
 }
 
 impl FindingCode {
@@ -261,6 +367,8 @@ impl FindingCode {
             FindingCode::DuplicateEndpoint => "config.duplicate_endpoint",
             FindingCode::DuplicateIdentity => "config.duplicate_identity",
             FindingCode::UnsupportedValue => "config.unsupported_value",
+            FindingCode::DuplicatePrincipal => "config.duplicate_principal",
+            FindingCode::Incomplete => "config.incomplete",
         }
     }
 
@@ -287,6 +395,8 @@ impl FindingCode {
                 "two identity entries have the same principal and database"
             }
             FindingCode::UnsupportedValue => "this value is not supported by this build",
+            FindingCode::DuplicatePrincipal => "two principal entries have the same name",
+            FindingCode::Incomplete => "a key that this command needs is missing",
         }
     }
 }
@@ -333,6 +443,10 @@ const RAW_CONFIG_FIELDS: &[&str] = &[
     "cluster",
     "node",
     "identity",
+    "listener",
+    "limits",
+    "probe",
+    "principal",
 ];
 const RAW_CAPABILITY_FIELDS: &[&str] = &["enabled"];
 
@@ -344,6 +458,10 @@ struct RawConfig {
     cluster: Option<Vec<Spanned<RawCluster>>>,
     node: Option<Vec<Spanned<RawNode>>>,
     identity: Option<Vec<Spanned<RawIdentity>>>,
+    listener: Option<RawListener>,
+    limits: Option<RawLimits>,
+    probe: Option<RawProbe>,
+    principal: Option<Vec<Spanned<RawPrincipal>>>,
 }
 
 impl<'de> Deserialize<'de> for RawConfig {
@@ -366,6 +484,10 @@ impl<'de> Deserialize<'de> for RawConfig {
                     cluster: None,
                     node: None,
                     identity: None,
+                    listener: None,
+                    limits: None,
+                    probe: None,
+                    principal: None,
                 };
                 while let Some(field) = map.next_key_seed(KnownField(RAW_CONFIG_FIELDS))? {
                     match field {
@@ -375,7 +497,11 @@ impl<'de> Deserialize<'de> for RawConfig {
                         3 => raw.control = Some(map.next_value()?),
                         4 => raw.cluster = Some(map.next_value()?),
                         5 => raw.node = Some(map.next_value()?),
-                        _ => raw.identity = Some(map.next_value()?),
+                        6 => raw.identity = Some(map.next_value()?),
+                        7 => raw.listener = Some(map.next_value()?),
+                        8 => raw.limits = Some(map.next_value()?),
+                        9 => raw.probe = Some(map.next_value()?),
+                        _ => raw.principal = Some(map.next_value()?),
                     }
                 }
                 Ok(raw)
@@ -453,7 +579,8 @@ impl Visitor<'_> for KnownField {
 /// Validates the bytes of a configuration file.
 ///
 /// Returns the [`ValidatedConfig`] when the file has no finding, otherwise a
-/// [`Rejection`] with every finding the last step collected.
+/// [`Rejection`] with the findings the last step collected: the first
+/// [`MAX_FINDINGS`] in the validation order, and the count of the rest.
 pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
     if bytes.len() > MAX_CONFIG_BYTES {
         return Err(Rejection::single(FindingCode::TooLarge, Location::None));
@@ -477,7 +604,7 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         }
     };
 
-    let mut findings = Vec::new();
+    let mut findings = Findings::new();
     let mut config_version = SUPPORTED_CONFIG_VERSION;
     match raw.config_version {
         None => findings.push(Finding {
@@ -507,13 +634,20 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
             clusters: raw.cluster.unwrap_or_default(),
             nodes: raw.node.unwrap_or_default(),
             identities: raw.identity.unwrap_or_default(),
+            serving: RawServing {
+                listener: raw.listener,
+                limits: raw.limits,
+                probe: raw.probe,
+                principals: raw.principal.unwrap_or_default(),
+            },
         },
         &mut findings,
     );
 
-    if !findings.is_empty() {
-        return Err(Rejection { findings });
+    if let Some(rejection) = findings.into_rejection() {
+        return Err(rejection);
     }
+    let serving = topology.serving;
     Ok(ValidatedConfig {
         config_version,
         result_cache,
@@ -523,6 +657,11 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
         nodes: topology.nodes,
         identities: topology.identities,
         identity_index: topology.identity_index,
+        listener: serving.listener,
+        limits: serving.limits,
+        probe: serving.probe,
+        principals: serving.principals,
+        principal_index: serving.principal_index,
     })
 }
 
@@ -534,7 +673,7 @@ pub fn validate(bytes: &[u8]) -> Result<ValidatedConfig, Rejection> {
 fn capability_state(
     raw: Option<&RawCapability>,
     key: &'static str,
-    findings: &mut Vec<Finding>,
+    findings: &mut Findings,
 ) -> CapabilityState {
     if raw.and_then(|capability| capability.enabled) == Some(true) {
         findings.push(Finding {

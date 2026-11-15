@@ -1,9 +1,13 @@
 //! Every fixture and in memory case through `pool_config::validate`
-//! (spec 0001 AC-4 to AC-9).
+//! (spec 0001 AC-4 to AC-9, spec 0003 AC-1 to AC-6 and AC-15, spec 0004
+//! AC-5 to AC-8).
+
+use std::path::Path;
+use std::time::Duration;
 
 use pool_config::{
-    CapabilityState, FindingCode, Location, MAX_CONFIG_BYTES, Rejection, RoutingProfile,
-    ValidatedConfig, validate,
+    CapabilityState, FindingCode, Location, MAX_CONFIG_BYTES, MAX_FINDINGS, Rejection,
+    RoutingProfile, ValidatedConfig, validate,
 };
 
 const CANARY: &str = "CANARY-9f2c7b1e";
@@ -797,13 +801,13 @@ fn ac7_any_invalid_utf8_byte_sequence_is_refused_before_syntax() {
 
 #[test]
 fn ac7_a_syntax_error_wins_over_schema_and_meaning_findings() {
-    let text = "config_version = 2\n[listener]\nport = 6432\nresult_cache.enabled = true\n[automatic_promotion\n";
+    let text = "config_version = 2\n[no_table]\nport = 6432\nresult_cache.enabled = true\n[automatic_promotion\n";
     assert_positioned(text.as_bytes(), FindingCode::Syntax, 5);
 }
 
 #[test]
 fn ac7_a_schema_error_wins_over_meaning_findings() {
-    let text = "config_version = 2\nresult_cache.enabled = true\n[listener]\nport = 6432\n";
+    let text = "config_version = 2\nresult_cache.enabled = true\n[no_table]\nport = 6432\n";
     assert_positioned(text.as_bytes(), FindingCode::Schema, 3);
 }
 
@@ -963,7 +967,12 @@ fn ac4_validated_config_debug_holds_only_states() {
     assert_eq!(
         debug,
         "ValidatedConfig { config_version: 1, result_cache: Disabled, automatic_promotion: Disabled, \
-         control: None, clusters: [], nodes: [], identities: [], identity_index: IdentityIndex { entries: 0 } }"
+         control: None, clusters: [], nodes: [], identities: [], identity_index: IdentityIndex { entries: 0 }, \
+         listener: None, limits: Limits { session_max_count: 1000, handshake_max_count: 64, \
+         backend_wait_max_count: 100, node_backend_max_count: 100, startup_timeout_ms: 5000, \
+         backend_acquire_timeout_ms: 5000, shutdown_timeout_ms: 30000, startup_packet_max_bytes: 8192, \
+         frontend_message_max_bytes: 16777216 }, probe: ProbeConfig { period_ms: 2000, timeout_ms: 1000, \
+         observation_expiry_ms: 6000 }, principals: [], principal_index: PrincipalIndex { entries: 0 } }"
     );
     assert_eq!(config.automatic_promotion().as_str(), "disabled");
     assert_eq!(config.result_cache().as_str(), "disabled");
@@ -1780,14 +1789,15 @@ fn ac2_authority_id_edges_through_validate() {
 
 #[test]
 fn ac2_name_syntax_edges() {
-    // covers: 0003 AC-2. 1 to 63 bytes of UTF-8, no character from U+0000 to
-    // U+001F and no U+007F. Bytes are counted, not characters.
+    // covers: 0003 AC-2, 0004 AC-6. 1 to 63 bytes of UTF-8, none of the
+    // characters that spec 0004 lists under "Names and paths". Bytes are
+    // counted, not characters.
     let valid = [
         "a".repeat(63),
         format!("a{}", "\u{e9}".repeat(31)),
         " ".to_owned(),
         "orders app".to_owned(),
-        "\u{85}".to_owned(),
+        "\u{a0}".to_owned(),
         "\u{1f600}".repeat(15),
     ];
     for key in ["principal", "database", "backend_database", "backend_login"] {
@@ -1803,6 +1813,11 @@ fn ac2_name_syntax_edges() {
         "a\\u007F".to_owned(),
         "a\\u001F".to_owned(),
         "a\\r".to_owned(),
+        "a\\u0085".to_owned(),
+        "a\\u009F".to_owned(),
+        "a\\u061C".to_owned(),
+        "a\\u202E".to_owned(),
+        "a\\u2028".to_owned(),
     ];
     for (key, location) in [
         ("principal", "identity.principal"),
@@ -2581,4 +2596,1053 @@ fn ac4_a_canary_outside_a_value_never_reaches_rejection_text() {
             assert!(!rendered.contains("9f2c7b1e"), "{text}\n{rendered}");
         }
     }
+}
+
+// Spec 0004: the keys [listener], [limits], [probe], [[principal]], the
+// monitor and TLS keys, the closed name rule, the limit on findings and the
+// two views (0004 AC-5 to AC-8). Positions were read from the fixture files
+// when they were made.
+
+/// The serving base of spec 0004, as text.
+fn serving_base() -> String {
+    String::from_utf8(fixture("valid-serving.toml")).expect("utf-8")
+}
+
+/// The serving base with the first `old` replaced by `new`.
+fn serving_with(old: &str, new: &str) -> String {
+    let base = serving_base();
+    assert!(base.contains(old), "{old:?} is in the serving base");
+    base.replacen(old, new, 1)
+}
+
+/// The serving base with `table` added before the first cluster.
+fn serving_with_table(table: &str) -> String {
+    serving_with("[[cluster]]", &format!("{table}\n\n[[cluster]]"))
+}
+
+fn incomplete(location: Location) -> (FindingCode, Location) {
+    (FindingCode::Incomplete, location)
+}
+
+fn view_findings(rejection: Rejection) -> Vec<(FindingCode, Location)> {
+    assert_eq!(rejection.omitted(), 0);
+    rejection
+        .findings()
+        .iter()
+        .map(|finding| (finding.code(), finding.location()))
+        .collect()
+}
+
+#[test]
+fn ac5_serving_fixtures_are_accepted() {
+    // covers: 0004 AC-5, AC-8.
+    for name in [
+        "valid-serving.toml",
+        "valid-serving-limits.toml",
+        "valid-serving-probe-only.toml",
+        "secret-serving-values.toml",
+    ] {
+        let config = accepted(&fixture(name));
+        assert_disabled(&config);
+        assert!(config.probing().is_ok(), "{name}");
+    }
+    for name in [
+        "valid-serving.toml",
+        "valid-serving-limits.toml",
+        "secret-serving-values.toml",
+    ] {
+        assert!(accepted(&fixture(name)).serving().is_ok(), "{name}");
+    }
+}
+
+#[test]
+fn ac5_each_invalid_serving_fixture_has_its_one_finding() {
+    // covers: 0004 AC-5. The table under "Fixtures" in spec 0004.
+    let cases = [
+        (
+            "invalid-serving-port.toml",
+            FindingCode::InvalidValue,
+            Location::Key("listener.port"),
+        ),
+        (
+            "invalid-serving-listener-key.toml",
+            FindingCode::MissingKey,
+            Location::Key("listener.tls_private_key_file"),
+        ),
+        (
+            "invalid-serving-limit.toml",
+            FindingCode::InvalidValue,
+            Location::Key("limits.session_max_count"),
+        ),
+        (
+            "invalid-serving-expiry.toml",
+            FindingCode::InvalidValue,
+            Location::Key("probe.observation_expiry_ms"),
+        ),
+        (
+            "invalid-serving-duplicate-principal.toml",
+            FindingCode::DuplicatePrincipal,
+            key_at("principal.name", 66, 8),
+        ),
+        (
+            "invalid-serving-unknown-key.toml",
+            FindingCode::Schema,
+            Location::Position {
+                line: 14,
+                column: 1,
+            },
+        ),
+        (
+            "invalid-name-c1.toml",
+            FindingCode::InvalidValue,
+            key_at("identity.backend_login", 22, 17),
+        ),
+        (
+            "invalid-name-direction.toml",
+            FindingCode::InvalidValue,
+            key_at("identity.database", 20, 12),
+        ),
+    ];
+    for (name, code, location) in cases {
+        assert_eq!(findings(&fixture(name)), [(code, location)], "{name}");
+    }
+}
+
+#[test]
+fn ac5_left_out_tables_and_keys_have_their_defaults() {
+    // covers: 0004 AC-5. A file of spec 0003 has none of the new tables.
+    let config = accepted(&fixture("valid-topology.toml"));
+    assert!(config.listener().is_none());
+    assert!(config.principals().is_empty());
+    assert!(config.resolve_principal("orders_app").is_none());
+    let limits = config.limits();
+    assert_eq!(limits.session_max_count(), 1000);
+    assert_eq!(limits.handshake_max_count(), 64);
+    assert_eq!(limits.backend_wait_max_count(), 100);
+    assert_eq!(limits.node_backend_max_count(), 100);
+    assert_eq!(limits.startup_timeout(), Duration::from_millis(5000));
+    assert_eq!(
+        limits.backend_acquire_timeout(),
+        Duration::from_millis(5000)
+    );
+    assert_eq!(limits.shutdown_timeout(), Duration::from_millis(30_000));
+    assert_eq!(limits.startup_packet_max_bytes(), 8192);
+    assert_eq!(limits.frontend_message_max_bytes(), 16_777_216);
+    let probe = config.probe();
+    assert_eq!(probe.period(), Duration::from_millis(2000));
+    assert_eq!(probe.timeout(), Duration::from_millis(1000));
+    assert_eq!(probe.observation_expiry(), Duration::from_millis(6000));
+    let cluster = &config.clusters()[0];
+    assert_eq!(cluster.monitor_login(), None);
+    assert_eq!(cluster.monitor_database(), "postgres");
+    assert!(cluster.monitor_credential().is_none());
+    for node in config.nodes() {
+        assert_eq!(node.tls_ca_file(), None);
+        assert_eq!(node.tls_server_name(), node.host());
+    }
+    // Empty tables are the same as absent ones.
+    let empty = accepted(format!("{}\n[limits]\n[probe]\n", serving_base()).as_bytes());
+    assert_eq!(empty.limits(), config.limits());
+    assert_eq!(empty.probe(), config.probe());
+}
+
+#[test]
+fn ac5_valid_serving_exposes_every_new_key() {
+    // covers: 0004 AC-5, AC-8.
+    let config = accepted(&fixture("valid-serving.toml"));
+    let listener = config.listener().expect("a listener");
+    assert_eq!(listener.host(), "0.0.0.0");
+    assert_eq!(listener.port(), 6432);
+    assert_eq!(
+        listener.tls_certificate_file(),
+        Path::new("/etc/pool/tls/server.crt")
+    );
+    assert_eq!(
+        listener.tls_private_key().path(),
+        Path::new("/etc/pool/tls/server.key")
+    );
+    let cluster = &config.clusters()[0];
+    assert_eq!(cluster.monitor_login(), Some("pool_monitor"));
+    assert_eq!(cluster.monitor_database(), "postgres");
+    assert_eq!(
+        cluster.monitor_credential().map(|secret| secret.path()),
+        Some(Path::new("/etc/pool/secrets/pool_monitor"))
+    );
+    for node in config.nodes() {
+        assert_eq!(node.tls_ca_file(), Some(Path::new("/etc/pool/tls/ca.crt")));
+        assert_eq!(node.tls_server_name(), node.host());
+    }
+    let ids: Vec<&str> = config
+        .principals()
+        .iter()
+        .map(|principal| principal.id().as_str())
+        .collect();
+    assert_eq!(ids, ["orders-app", "report-app"]);
+    let orders = config.resolve_principal("orders_app").expect("orders_app");
+    assert_eq!(orders.id().as_str(), "orders-app");
+    assert_eq!(
+        orders.verifier().path(),
+        Path::new("/etc/pool/secrets/orders_app.scram")
+    );
+    assert_eq!(orders.session_max_count(), 1000);
+    // Byte for byte, like `resolve_identity`.
+    for name in ["Orders_app", "orders_app ", " orders_app", "orders", ""] {
+        assert!(config.resolve_principal(name).is_none(), "{name:?}");
+    }
+}
+
+#[test]
+fn ac5_valid_serving_limits_has_every_lowest_value() {
+    // covers: 0004 AC-5.
+    let config = accepted(&fixture("valid-serving-limits.toml"));
+    let limits = config.limits();
+    assert_eq!(limits.session_max_count(), 1);
+    assert_eq!(limits.handshake_max_count(), 1);
+    assert_eq!(limits.backend_wait_max_count(), 0);
+    assert_eq!(limits.node_backend_max_count(), 1);
+    assert_eq!(limits.startup_timeout(), Duration::from_millis(100));
+    assert_eq!(limits.backend_acquire_timeout(), Duration::from_millis(100));
+    assert_eq!(limits.shutdown_timeout(), Duration::ZERO);
+    assert_eq!(limits.startup_packet_max_bytes(), 512);
+    assert_eq!(limits.frontend_message_max_bytes(), 1024);
+    let probe = config.probe();
+    assert_eq!(probe.period(), Duration::from_millis(100));
+    assert_eq!(probe.timeout(), Duration::from_millis(100));
+    assert_eq!(probe.observation_expiry(), Duration::from_millis(1000));
+    let names: Vec<&str> = config
+        .nodes()
+        .iter()
+        .map(|node| node.tls_server_name())
+        .collect();
+    assert_eq!(names, ["10.0.0.11", "10.0.0.12", "pg3.example.internal"]);
+    // The principal default follows `limits.session_max_count`.
+    for principal in config.principals() {
+        assert_eq!(principal.session_max_count(), 1);
+    }
+}
+
+/// Each number key of `[limits]` and `[probe]`: its table, its name, its
+/// lowest and its highest allowed value, from the table under "Keys".
+const NUMBER_KEYS: [(&str, &str, u64, u64); 12] = [
+    ("limits", "session_max_count", 1, 100_000),
+    ("limits", "handshake_max_count", 1, 10_000),
+    ("limits", "backend_wait_max_count", 0, 100_000),
+    ("limits", "node_backend_max_count", 1, 100_000),
+    ("limits", "startup_timeout_ms", 100, 60_000),
+    ("limits", "backend_acquire_timeout_ms", 100, 60_000),
+    ("limits", "shutdown_timeout_ms", 0, 600_000),
+    ("limits", "startup_packet_max_bytes", 512, 65_536),
+    ("limits", "frontend_message_max_bytes", 1024, 1_073_741_823),
+    ("probe", "period_ms", 100, 60_000),
+    ("probe", "timeout_ms", 100, 30_000),
+    ("probe", "observation_expiry_ms", 1000, 60_000),
+];
+
+/// The key path of a number key, as a finding names it.
+fn number_key(table: &str, key: &str) -> &'static str {
+    let path = format!("{table}.{key}");
+    [
+        "limits.session_max_count",
+        "limits.handshake_max_count",
+        "limits.backend_wait_max_count",
+        "limits.node_backend_max_count",
+        "limits.startup_timeout_ms",
+        "limits.backend_acquire_timeout_ms",
+        "limits.shutdown_timeout_ms",
+        "limits.startup_packet_max_bytes",
+        "limits.frontend_message_max_bytes",
+        "probe.period_ms",
+        "probe.timeout_ms",
+        "probe.observation_expiry_ms",
+    ]
+    .into_iter()
+    .find(|known| *known == path)
+    .expect("a known key")
+}
+
+/// A `[probe]` table that keeps the cross rule true whatever one key holds.
+fn probe_table(key: &str, value: &str) -> String {
+    let mut lines = [
+        "[probe]".to_owned(),
+        "period_ms = 100".to_owned(),
+        "timeout_ms = 100".to_owned(),
+        "observation_expiry_ms = 60000".to_owned(),
+    ];
+    let line = format!("{key} = {value}");
+    let index = lines
+        .iter()
+        .position(|existing| existing.starts_with(&format!("{key} =")))
+        .expect("a probe key");
+    lines[index] = line;
+    lines.join("\n")
+}
+
+fn number_table(table: &str, key: &str, value: &str) -> String {
+    if table == "probe" {
+        probe_table(key, value)
+    } else {
+        format!("[{table}]\n{key} = {value}")
+    }
+}
+
+#[test]
+fn ac5_number_keys_accept_their_range_and_refuse_what_is_outside() {
+    // covers: 0004 AC-5. Below or above the range is `config.invalid_value`;
+    // what the type cannot hold, or another type, is `config.schema`.
+    for (table, key, low, high) in NUMBER_KEYS {
+        let path = number_key(table, key);
+        for value in [low, high] {
+            let text = serving_with_table(&number_table(table, key, &value.to_string()));
+            if path == "probe.period_ms" && value == high {
+                // A period of 60000 passes its own range, but no expiry can
+                // cover it: the timeout is at least 100 and the expiry at
+                // most 60000. Only the cross rule speaks.
+                assert_eq!(
+                    findings(text.as_bytes()),
+                    [(
+                        FindingCode::InvalidValue,
+                        Location::Key("probe.observation_expiry_ms")
+                    )]
+                );
+                continue;
+            }
+            assert_text_valid(&text);
+        }
+        let mut outside = vec![high + 1];
+        if low > 0 {
+            outside.push(low - 1);
+        }
+        for value in outside {
+            let text = serving_with_table(&number_table(table, key, &value.to_string()));
+            assert_eq!(
+                findings(text.as_bytes()),
+                [(FindingCode::InvalidValue, Location::Key(path))],
+                "{path} = {value}"
+            );
+        }
+        for value in ["-1", "4294967296", "\"5\"", "1.5", "true"] {
+            let text = serving_with_table(&number_table(table, key, value));
+            assert_eq!(single_code(&text), FindingCode::Schema, "{path} = {value}");
+        }
+    }
+}
+
+#[test]
+fn ac5_the_expiry_must_cover_the_period_and_the_timeout() {
+    // covers: 0004 AC-5 (point n2 of spec 0003 Follow-up 4).
+    let at = |period: u32, timeout: u32, expiry: u32| {
+        serving_with_table(&format!(
+            "[probe]\nperiod_ms = {period}\ntimeout_ms = {timeout}\nobservation_expiry_ms = {expiry}"
+        ))
+    };
+    assert_text_valid(&at(5000, 2000, 7000));
+    assert_text_valid(&at(100, 100, 1000));
+    assert_eq!(
+        findings(at(5000, 2000, 6999).as_bytes()),
+        [(
+            FindingCode::InvalidValue,
+            Location::Key("probe.observation_expiry_ms")
+        )]
+    );
+    assert_eq!(
+        findings(at(60_000, 30_000, 60_000).as_bytes()),
+        [(
+            FindingCode::InvalidValue,
+            Location::Key("probe.observation_expiry_ms")
+        )]
+    );
+    // A key that failed its own check is not judged again by the cross rule.
+    assert_eq!(
+        findings(at(70_000, 2000, 6000).as_bytes()),
+        [(FindingCode::InvalidValue, Location::Key("probe.period_ms"))]
+    );
+    assert_eq!(
+        findings(at(5000, 2000, 500).as_bytes()),
+        [(
+            FindingCode::InvalidValue,
+            Location::Key("probe.observation_expiry_ms")
+        )]
+    );
+    // The defaults count when a key is left out: 2000 + 1000 > 2500.
+    assert_eq!(
+        findings(serving_with_table("[probe]\nobservation_expiry_ms = 2999").as_bytes()),
+        [(
+            FindingCode::InvalidValue,
+            Location::Key("probe.observation_expiry_ms")
+        )]
+    );
+    assert_text_valid(&serving_with_table("[probe]\nobservation_expiry_ms = 3000"));
+}
+
+#[test]
+fn ac5_listener_keys_are_required_together_and_checked_in_order() {
+    // covers: 0004 AC-5.
+    let listener = "[listener]\nhost = \"0.0.0.0\"\nport = 6432\ntls_certificate_file = \"/etc/pool/tls/server.crt\"\ntls_private_key_file = \"/etc/pool/tls/server.key\"\n";
+    assert_eq!(
+        findings(serving_with(listener, "[listener]\n").as_bytes()),
+        [
+            (FindingCode::MissingKey, Location::Key("listener.host")),
+            (FindingCode::MissingKey, Location::Key("listener.port")),
+            (
+                FindingCode::MissingKey,
+                Location::Key("listener.tls_certificate_file")
+            ),
+            (
+                FindingCode::MissingKey,
+                Location::Key("listener.tls_private_key_file")
+            ),
+        ]
+    );
+    let bad = "[listener]\nhost = \"0.0.0.0/8\"\nport = 0\ntls_certificate_file = \"server.crt\"\ntls_private_key_file = \"/etc/pool/\u{202e}key\"\n";
+    assert_eq!(
+        findings(serving_with(listener, bad).as_bytes()),
+        [
+            (FindingCode::InvalidValue, Location::Key("listener.host")),
+            (FindingCode::InvalidValue, Location::Key("listener.port")),
+            (
+                FindingCode::InvalidValue,
+                Location::Key("listener.tls_certificate_file")
+            ),
+            (
+                FindingCode::InvalidValue,
+                Location::Key("listener.tls_private_key_file")
+            ),
+        ]
+    );
+    for port in ["1", "65535"] {
+        assert_text_valid(&serving_with("port = 6432", &format!("port = {port}")));
+    }
+    for port in ["65536", "-1", "\"6432\""] {
+        let text = serving_with("port = 6432", &format!("port = {port}"));
+        assert_eq!(single_code(&text), FindingCode::Schema, "{port}");
+    }
+    let text = serving_with("port = 6432", "port = 6432\nbacklog_count = 1");
+    assert_eq!(single_code(&text), FindingCode::Schema);
+}
+
+#[test]
+fn ac5_monitor_tls_and_principal_keys_are_checked_at_their_value() {
+    // covers: 0004 AC-5. A finding inside an entry uses `Location::KeyAt`.
+    let cases = [
+        (
+            "monitor_login = \"pool_monitor\"",
+            "monitor_login = \"\"",
+            key_at("cluster.monitor_login", 17, 17),
+        ),
+        (
+            "monitor_login = \"pool_monitor\"",
+            "monitor_login = \"pool_monitor\"\nmonitor_database = \"\"",
+            key_at("cluster.monitor_database", 18, 20),
+        ),
+        (
+            "monitor_credential_file = \"/etc/pool/secrets/pool_monitor\"",
+            "monitor_credential_file = \"pool_monitor\"",
+            key_at("cluster.monitor_credential_file", 18, 27),
+        ),
+        (
+            "port = 5432\ntls_ca_file = \"/etc/pool/tls/ca.crt\"",
+            "port = 5432\ntls_ca_file = \"ca.crt\"",
+            key_at("node.tls_ca_file", 25, 15),
+        ),
+        (
+            "port = 5432\ntls_ca_file = \"/etc/pool/tls/ca.crt\"",
+            "port = 5432\ntls_ca_file = \"/etc/pool/tls/ca.crt\"\ntls_server_name = \"pg 1\"",
+            key_at("node.tls_server_name", 26, 19),
+        ),
+        (
+            "id = \"orders-app\"\nname",
+            "id = \"Orders-App\"\nname",
+            key_at("principal.id", 60, 6),
+        ),
+        (
+            "name = \"orders_app\"",
+            "name = \"orders\u{85}app\"",
+            key_at("principal.name", 61, 8),
+        ),
+        (
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+            "verifier_file = \"orders_app.scram\"",
+            key_at("principal.verifier_file", 62, 17),
+        ),
+        (
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"\nsession_max_count = 0",
+            key_at("principal.session_max_count", 63, 21),
+        ),
+        (
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"\nsession_max_count = 100001",
+            key_at("principal.session_max_count", 63, 21),
+        ),
+    ];
+    for (old, new, location) in cases {
+        let text = serving_with(old, new);
+        assert_eq!(
+            findings(text.as_bytes()),
+            [(FindingCode::InvalidValue, location)],
+            "{new}"
+        );
+    }
+    let text = serving_with(
+        "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+        "verifier_file = \"/etc/pool/secrets/orders_app.scram\"\nsession_max_count = 100000",
+    );
+    let config = accepted(text.as_bytes());
+    let session_max: Vec<u32> = config
+        .principals()
+        .iter()
+        .map(|principal| principal.session_max_count())
+        .collect();
+    assert_eq!(session_max, [100_000, 1000]);
+    let text = serving_with(
+        "monitor_login",
+        "monitor_database = \"monitor\"\nmonitor_login",
+    );
+    let config = accepted(text.as_bytes());
+    assert_eq!(config.clusters()[0].monitor_database(), "monitor");
+}
+
+#[test]
+fn ac5_a_principal_lacking_its_keys_is_reported_at_its_entry() {
+    // covers: 0004 AC-5.
+    let text = format!("{}\n[[principal]]\n", serving_base());
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::MissingKey, key_at("principal.id", 69, 1)),
+            (FindingCode::MissingKey, key_at("principal.name", 69, 1)),
+            (
+                FindingCode::MissingKey,
+                key_at("principal.verifier_file", 69, 1)
+            ),
+        ]
+    );
+    let text = format!("{}\nprincipal = 1\n", "config_version = 1");
+    assert_eq!(single_code(&text), FindingCode::Schema);
+    let text = format!(
+        "{}\n[[principal]]\nid = \"a\"\nrole = \"x\"\n",
+        serving_base()
+    );
+    assert_eq!(single_code(&text), FindingCode::Schema);
+}
+
+#[test]
+fn ac5_principal_repeats_are_reported_ids_then_names() {
+    // covers: 0004 AC-5. Two cross checks at the end of item 6: duplicate
+    // ids first, then duplicate names, each at the second and later entry.
+    let extra = "\n[[principal]]\nid = \"orders-app\"\nname = \"report_app\"\nverifier_file = \"/v/1\"\n\n[[principal]]\nid = \"third\"\nname = \"orders_app\"\nverifier_file = \"/v/2\"\n";
+    let text = format!("{}{extra}", serving_base());
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (FindingCode::DuplicateId, key_at("principal.id", 70, 6)),
+            (
+                FindingCode::DuplicatePrincipal,
+                key_at("principal.name", 71, 8)
+            ),
+            (
+                FindingCode::DuplicatePrincipal,
+                key_at("principal.name", 76, 8)
+            ),
+        ]
+    );
+    // Names are compared byte for byte, so a different case is no repeat.
+    let text = serving_with(
+        "id = \"report-app\"\nname = \"report_app\"",
+        "id = \"report-app\"\nname = \"Orders_app\"",
+    );
+    assert_text_valid(&text);
+}
+
+#[test]
+fn ac5_new_checks_come_after_item_5_and_before_the_cross_checks() {
+    // covers: 0004 AC-5, 0003 AC-3. The order of spec 0004: identity keys
+    // (item 5), then listener, limits, probe, the monitor keys of each
+    // cluster, the TLS keys of each node, each principal, then the cross
+    // checks of spec 0003 and the two of spec 0004.
+    let mut text = serving_base();
+    for (old, new) in [
+        ("port = 6432", "port = 0"),
+        ("monitor_login = \"pool_monitor\"", "monitor_login = \"\""),
+        (
+            "port = 5433\ntls_ca_file = \"/etc/pool/tls/ca.crt\"",
+            "port = 5433\ntls_ca_file = \"ca.crt\"",
+        ),
+        (
+            "credential_file = \"/etc/pool/secrets/orders_rw\"",
+            "credential_file = \"x\"",
+        ),
+        (
+            "id = \"report-app\"\nname = \"report_app\"",
+            "id = \"orders-app\"\nname = \"report_app\"",
+        ),
+        (
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+            "verifier_file = \"v\"",
+        ),
+        ("id = \"pg2\"", "id = \"pg1\""),
+    ] {
+        assert!(text.contains(old), "{old}");
+        text = text.replacen(old, new, 1);
+    }
+    text = text.replacen(
+        "[[cluster]]",
+        "[limits]\nhandshake_max_count = 0\n\n[probe]\ntimeout_ms = 1\n\n[[cluster]]",
+        1,
+    );
+    assert_eq!(
+        findings(text.as_bytes()),
+        [
+            (
+                FindingCode::InvalidValue,
+                key_at("identity.credential_file", 53, 19)
+            ),
+            (FindingCode::InvalidValue, Location::Key("listener.port")),
+            (
+                FindingCode::InvalidValue,
+                Location::Key("limits.handshake_max_count")
+            ),
+            (FindingCode::InvalidValue, Location::Key("probe.timeout_ms")),
+            (
+                FindingCode::InvalidValue,
+                key_at("cluster.monitor_login", 23, 17)
+            ),
+            (
+                FindingCode::InvalidValue,
+                key_at("node.tls_ca_file", 45, 15)
+            ),
+            (
+                FindingCode::InvalidValue,
+                key_at("principal.verifier_file", 68, 17)
+            ),
+            (FindingCode::DuplicateId, key_at("node.id", 34, 6)),
+            (FindingCode::DuplicateId, key_at("principal.id", 71, 6)),
+        ]
+    );
+}
+
+#[test]
+fn ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text() {
+    // covers: 0004 AC-6, SEC-11. The canary is in every new string value.
+    let config = accepted(&fixture("secret-serving-values.toml"));
+    let listener = config.listener().expect("a listener");
+    assert!(listener.host().contains(CANARY));
+    let mut texts = vec![
+        format!("{config:?}"),
+        format!("{listener:?}"),
+        format!("{:?}", listener.tls_private_key()),
+        format!("{:?}", config.limits()),
+        format!("{:?}", config.probe()),
+        format!("{:?}", config.probing().expect("probing")),
+        format!("{:?}", config.serving().expect("serving")),
+    ];
+    for cluster in config.clusters() {
+        texts.push(format!("{cluster:?}"));
+    }
+    for node in config.nodes() {
+        texts.push(format!("{node:?}"));
+    }
+    for principal in config.principals() {
+        texts.push(format!("{principal:?} {:?}", principal.verifier()));
+    }
+    for text in texts {
+        assert!(!text.contains(CANARY), "{text}");
+        assert!(!text.contains("6432"), "{text}");
+        assert!(!text.contains("0.0.0.0"), "{text}");
+    }
+    assert!(config.resolve_principal("CANARY-9f2c7b1e-orders").is_some());
+    // The same values, each made invalid, never reach the rejection.
+    let mut text = String::from_utf8(fixture("secret-serving-values.toml")).expect("utf-8");
+    text = text.replace("CANARY-9f2c7b1e", "CANARY-9f2c7b1e\u{2028}");
+    let rejection = rejected(text.as_bytes());
+    assert!(rejection.findings().len() > 10);
+    for text in [format!("{rejection:?}"), rejection.to_string()] {
+        assert!(!text.contains(CANARY), "{text}");
+    }
+}
+
+/// The scalar values that no name and no path may hold, written out from
+/// the list under "Names and paths" in spec 0004.
+fn refused_scalars() -> Vec<char> {
+    (0_u32..=0x1f)
+        .chain(0x7f..=0x9f)
+        .chain([0x61c, 0x200e, 0x200f])
+        .chain(0x202a..=0x202e)
+        .chain(0x2066..=0x2069)
+        .chain([0x2028, 0x2029])
+        .map(|scalar| char::from_u32(scalar).expect("a scalar"))
+        .collect()
+}
+
+#[test]
+fn ac6_every_name_and_path_key_refuses_each_listed_character() {
+    // covers: 0004 AC-6. Every key with name or path syntax, old and new.
+    // The value holds the canary too, which must never reach the text.
+    let keys: [(&str, &str, &str, bool); 14] = [
+        (
+            "state_directory = \"/var/lib/pool\"",
+            "state_directory",
+            "control.state_directory",
+            true,
+        ),
+        (
+            "monitor_login = \"pool_monitor\"",
+            "monitor_login",
+            "cluster.monitor_login",
+            false,
+        ),
+        (
+            "monitor_login",
+            "monitor_database",
+            "cluster.monitor_database",
+            false,
+        ),
+        (
+            "monitor_credential_file = \"/etc/pool/secrets/pool_monitor\"",
+            "monitor_credential_file",
+            "cluster.monitor_credential_file",
+            true,
+        ),
+        (
+            "tls_ca_file = \"/etc/pool/tls/ca.crt\"",
+            "tls_ca_file",
+            "node.tls_ca_file",
+            true,
+        ),
+        (
+            "principal = \"orders_app\"",
+            "principal",
+            "identity.principal",
+            false,
+        ),
+        (
+            "database = \"orders\"",
+            "database",
+            "identity.database",
+            false,
+        ),
+        (
+            "backend_database = \"orders_reporting\"",
+            "backend_database",
+            "identity.backend_database",
+            false,
+        ),
+        (
+            "backend_login = \"orders_rw\"",
+            "backend_login",
+            "identity.backend_login",
+            false,
+        ),
+        (
+            "credential_file = \"/etc/pool/secrets/orders_rw\"",
+            "credential_file",
+            "identity.credential_file",
+            true,
+        ),
+        ("name = \"orders_app\"", "name", "principal.name", false),
+        (
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+            "verifier_file",
+            "principal.verifier_file",
+            true,
+        ),
+        (
+            "tls_certificate_file = \"/etc/pool/tls/server.crt\"",
+            "tls_certificate_file",
+            "listener.tls_certificate_file",
+            true,
+        ),
+        (
+            "tls_private_key_file = \"/etc/pool/tls/server.key\"",
+            "tls_private_key_file",
+            "listener.tls_private_key_file",
+            true,
+        ),
+    ];
+    for (old, key, path, is_path) in keys {
+        for scalar in refused_scalars() {
+            let value = if is_path {
+                format!("/a{scalar}{CANARY}")
+            } else {
+                format!("a{scalar}{CANARY}")
+            };
+            let line = format!("{key} = {}", toml_string(&value));
+            // `monitor_database` is not in the base, so it is added.
+            let new = if key == "monitor_database" {
+                format!("{line}\nmonitor_login")
+            } else {
+                line
+            };
+            let text = serving_with(old, &new);
+            let rejection = rejected(text.as_bytes());
+            let found: Vec<FindingCode> = rejection
+                .findings()
+                .iter()
+                .map(|finding| finding.code())
+                .collect();
+            assert_eq!(found, [FindingCode::InvalidValue], "{path} {scalar:?}");
+            let at = match rejection.findings()[0].location() {
+                Location::Key(key) | Location::KeyAt { key, .. } => key,
+                other => panic!("{other:?}"),
+            };
+            assert_eq!(at, path, "{scalar:?}");
+            let shown = format!("{rejection:?} {rejection}");
+            assert!(!shown.contains(CANARY), "{shown}");
+        }
+    }
+}
+
+#[test]
+fn ac6_the_neighbours_of_each_listed_range_stay_allowed() {
+    // covers: 0004 AC-6. The list is closed: the scalar just before and just
+    // after each range is still allowed in a name.
+    for scalar in [
+        '\u{a0}', '\u{61b}', '\u{61d}', '\u{200d}', '\u{2010}', '\u{2027}', '\u{202f}', '\u{2065}',
+        '\u{206a}',
+    ] {
+        let text = identity_with("backend_login", &toml_string(&format!("a{scalar}b")));
+        assert_text_valid(&text);
+    }
+}
+
+/// Made input 5 of spec 0004: `identity = [`, then empty entries on line 2,
+/// as many as fit in the size limit.
+fn made_input_5() -> (String, usize) {
+    let head = "config_version = 1\nidentity = [";
+    let tail = "]\n";
+    let mut text = String::from(head);
+    let mut count = 0;
+    loop {
+        let entry = if count == 0 { "{}" } else { ",{}" };
+        if text.len() + entry.len() + tail.len() > MAX_CONFIG_BYTES {
+            text.push_str(tail);
+            return (text, count);
+        }
+        text.push_str(entry);
+        count += 1;
+    }
+}
+
+#[test]
+fn ac7_validate_keeps_the_first_twenty_thousand_and_counts_the_rest() {
+    // covers: 0004 AC-7. Made input 5: six findings per entry.
+    let (text, count) = made_input_5();
+    // One more entry (three bytes) would not fit.
+    assert!(text.len() <= MAX_CONFIG_BYTES && text.len() + 3 > MAX_CONFIG_BYTES);
+    let started = std::time::Instant::now();
+    let rejection = rejected(text.as_bytes());
+    let elapsed = started.elapsed();
+    assert!(elapsed < AC15_LIMIT, "validate took {elapsed:?}");
+    assert_eq!(rejection.findings().len(), MAX_FINDINGS);
+    assert_eq!(MAX_FINDINGS, 20_000);
+    let total = u64::try_from(count * 6).expect("count");
+    assert_eq!(rejection.omitted(), total - 20_000);
+    // The kept findings are the first ones in the validation order: the six
+    // keys of the first entry, then the next entry, and so on.
+    let keys = [
+        "identity.id",
+        "identity.principal",
+        "identity.database",
+        "identity.cluster",
+        "identity.backend_login",
+        "identity.credential_file",
+    ];
+    for (index, finding) in rejection.findings().iter().enumerate() {
+        let entry = index / 6;
+        let column = u32::try_from(13 + entry * 3).expect("column");
+        assert_eq!(
+            (finding.code(), finding.location()),
+            (FindingCode::MissingKey, key_at(keys[index % 6], 2, column)),
+            "finding {index}"
+        );
+    }
+    assert_eq!(rejection.to_string().lines().count(), MAX_FINDINGS);
+}
+
+#[test]
+fn ac7_at_twenty_thousand_nothing_is_omitted_and_one_more_is_counted() {
+    // covers: 0004 AC-7. 5000 empty nodes give 4 findings each.
+    let nodes = |version: u32, count: usize| {
+        let entries = vec!["{}"; count].join(",");
+        format!("config_version = {version}\nnode = [{entries}]\n")
+    };
+    let rejection = rejected(nodes(1, 5000).as_bytes());
+    assert_eq!(
+        (rejection.findings().len(), rejection.omitted()),
+        (20_000, 0)
+    );
+    let rejection = rejected(nodes(2, 5000).as_bytes());
+    assert_eq!(
+        (rejection.findings().len(), rejection.omitted()),
+        (20_000, 1)
+    );
+    assert_eq!(
+        rejection.findings()[0].location(),
+        Location::Key("config_version")
+    );
+    assert_eq!(
+        rejection.findings()[19_999].location(),
+        key_at("node.host", 2, u32::try_from(9 + 4999 * 3).expect("column"))
+    );
+    let rejection = rejected(nodes(1, 4999).as_bytes());
+    assert_eq!(
+        (rejection.findings().len(), rejection.omitted()),
+        (19_996, 0)
+    );
+}
+
+#[test]
+fn ac8_views_need_what_each_command_needs() {
+    // covers: 0004 AC-8. The rows of the table under "What a command needs",
+    // in its order. Each missing piece is one `config.incomplete`.
+    let probe_only = accepted(&fixture("valid-serving-probe-only.toml"));
+    let probing = probe_only.probing().expect("probing");
+    assert_eq!(probing.state_directory(), Path::new("/var/lib/pool"));
+    assert_eq!(probing.config().clusters().len(), 1);
+    assert_eq!(
+        view_findings(probe_only.serving().expect_err("serving")),
+        [
+            incomplete(Location::Key("listener.host")),
+            incomplete(key_at("identity.principal", 35, 1)),
+            incomplete(key_at("identity.principal", 43, 1)),
+        ]
+    );
+
+    let topology = accepted(&fixture("valid-topology.toml"));
+    let both = [
+        incomplete(key_at("cluster.monitor_login", 7, 1)),
+        incomplete(key_at("cluster.monitor_credential_file", 7, 1)),
+        incomplete(key_at("node.tls_ca_file", 12, 1)),
+        incomplete(key_at("node.tls_ca_file", 18, 1)),
+        incomplete(key_at("node.tls_ca_file", 24, 1)),
+    ];
+    assert_eq!(
+        view_findings(topology.probing().expect_err("probing")),
+        both
+    );
+    let mut serving = both.to_vec();
+    serving.extend([
+        incomplete(Location::Key("listener.host")),
+        incomplete(key_at("identity.principal", 30, 1)),
+        incomplete(key_at("identity.principal", 38, 1)),
+    ]);
+    assert_eq!(
+        view_findings(topology.serving().expect_err("serving")),
+        serving
+    );
+
+    let minimal = accepted(&fixture("valid-minimal.toml"));
+    assert_eq!(
+        view_findings(minimal.probing().expect_err("probing")),
+        [
+            incomplete(Location::Key("control.state_directory")),
+            incomplete(Location::Key("cluster.id")),
+        ]
+    );
+    assert_eq!(
+        view_findings(minimal.serving().expect_err("serving")),
+        [
+            incomplete(Location::Key("control.state_directory")),
+            incomplete(Location::Key("cluster.id")),
+            incomplete(Location::Key("listener.host")),
+            incomplete(Location::Key("identity.id")),
+        ]
+    );
+
+    let config = accepted(&fixture("valid-serving.toml"));
+    let serving = config.serving().expect("serving");
+    assert_eq!(serving.state_directory(), Path::new("/var/lib/pool"));
+    assert_eq!(serving.listener().port(), 6432);
+    assert!(std::ptr::eq(serving.config(), &config));
+    assert!(std::ptr::eq(
+        serving.listener(),
+        config.listener().expect("listener")
+    ));
+    assert_eq!(
+        format!("{serving:?}"),
+        "ServingView { clusters: 1, nodes: 3, identities: 2, principals: 2 }"
+    );
+    assert_eq!(
+        format!("{:?}", config.probing().expect("probing")),
+        "ProbingView { clusters: 1, nodes: 3 }"
+    );
+}
+
+#[test]
+fn ac8_one_missing_monitor_key_or_principal_gives_one_finding() {
+    // covers: 0004 AC-8.
+    let cases = [
+        (
+            "monitor_login = \"pool_monitor\"\n",
+            vec![incomplete(key_at("cluster.monitor_login", 13, 1))],
+        ),
+        (
+            "monitor_credential_file = \"/etc/pool/secrets/pool_monitor\"\n",
+            vec![incomplete(key_at("cluster.monitor_credential_file", 13, 1))],
+        ),
+        (
+            "port = 5433\ntls_ca_file = \"/etc/pool/tls/ca.crt\"\n",
+            vec![incomplete(key_at("node.tls_ca_file", 34, 1))],
+        ),
+    ];
+    for (old, want) in cases {
+        let new = old.split_once('\n').map_or("", |(first, _)| {
+            if first.starts_with("port") {
+                "port = 5433\n"
+            } else {
+                ""
+            }
+        });
+        let text = serving_with(old, new);
+        let config = accepted(text.as_bytes());
+        assert_eq!(
+            view_findings(config.probing().expect_err("probing")),
+            want,
+            "{old}"
+        );
+        assert_eq!(
+            view_findings(config.serving().expect_err("serving")),
+            want,
+            "{old}"
+        );
+    }
+    // A principal of another name does not stand in for the one an identity
+    // names: the lookup is byte for byte.
+    let text = serving_with("name = \"report_app\"", "name = \"Report_app\"");
+    let config = accepted(text.as_bytes());
+    assert!(config.probing().is_ok());
+    assert_eq!(
+        view_findings(config.serving().expect_err("serving")),
+        [incomplete(key_at("identity.principal", 49, 1))]
+    );
+}
+
+#[test]
+fn ac8_validate_never_gives_incomplete() {
+    // covers: 0004 AC-8. `pool check-config` does not report these.
+    for name in [
+        "valid-minimal.toml",
+        "valid-topology.toml",
+        "valid-serving-probe-only.toml",
+    ] {
+        assert!(validate(&fixture(name)).is_ok(), "{name}");
+    }
+}
+
+#[test]
+fn spec_0004_finding_codes_and_messages_are_stable() {
+    // covers: 0004 AC-5, AC-8. The table under "Findings" in spec 0004.
+    assert_eq!(
+        FindingCode::DuplicatePrincipal.as_str(),
+        "config.duplicate_principal"
+    );
+    assert_eq!(
+        FindingCode::DuplicatePrincipal.message(),
+        "two principal entries have the same name"
+    );
+    assert_eq!(FindingCode::Incomplete.as_str(), "config.incomplete");
+    assert_eq!(
+        FindingCode::Incomplete.message(),
+        "a key that this command needs is missing"
+    );
 }
