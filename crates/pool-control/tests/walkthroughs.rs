@@ -1621,3 +1621,103 @@ fn ac7_bootstrap_judges_each_cluster_on_its_own_and_ignores_unconfigured_nodes()
         &["bootstrap.timeline_ahead"],
     );
 }
+
+// Spec 0003 AC-16 (build plan step 9): a Ready state stays tied to the
+// witness of the configuration it was classified from.
+
+/// Calls admission with `config` for the healthy observations, for a second
+/// primary, and for a cluster the configuration does not have, and expects
+/// the one reason `reason` each time, without the latch.
+#[track_caller]
+fn assert_only_reason(config: &ValidatedConfig, state: &AuthorityState, reason: &str) {
+    for observations in [healthy(), healthy_with(vec![primary("pg2", 1)])] {
+        assert_closed(&admission(config, state, &observations), &[reason], false);
+    }
+    let other = ClusterId::parse("other").expect("cluster id");
+    match writer_admission(
+        config,
+        state,
+        &other,
+        &healthy_with(vec![primary("pg2", 1)]),
+        now(),
+        EXPIRY,
+    ) {
+        WriterAdmission::Closed(closed) => {
+            let names: Vec<&str> = closed.reasons().iter().map(|r| r.as_str()).collect();
+            assert_eq!(names, [reason]);
+            assert!(!closed.latches_conflict());
+        }
+        WriterAdmission::Open(primary) => panic!("expected closed, got open {primary:?}"),
+    }
+}
+
+#[track_caller]
+fn assert_unchanged_with_its_own_configuration(config: &ValidatedConfig, state: &AuthorityState) {
+    assert_open(&admission(config, state, &healthy()), "pg1", 1, 1);
+    assert_closed(
+        &admission(config, state, &healthy_with(vec![primary("pg2", 1)])),
+        &["evidence.second_primary"],
+        true,
+    );
+}
+
+#[test]
+fn ac16_a_ready_state_with_a_configuration_without_witness_is_unconfirmed() {
+    // covers: 0003 AC-16
+    let classified_from = witness(X).config();
+    let state = ready(&classified_from, journal(X));
+    assert_only_reason(&Setup::default().config(), &state, "authority.unconfirmed");
+    assert_unchanged_with_its_own_configuration(&classified_from, &state);
+}
+
+#[test]
+fn ac16_a_ready_state_with_a_configuration_of_another_witness_is_a_mismatch() {
+    // covers: 0003 AC-16
+    let classified_from = witness(X).config();
+    let state = ready(&classified_from, journal(X));
+    assert_only_reason(&witness(Y).config(), &state, "authority.mismatch");
+    // A witness one hexadecimal digit off is another witness too.
+    assert_only_reason(
+        &witness("0123456789abcdef0123456789abcdee").config(),
+        &state,
+        "authority.mismatch",
+    );
+    assert_unchanged_with_its_own_configuration(&classified_from, &state);
+}
+
+#[test]
+fn ac16_the_witness_check_comes_before_every_other_reason() {
+    // covers: 0003 AC-16. A configuration that differs in more than the
+    // witness still gives the one witness reason; with the right witness the
+    // other differences give their own reasons as before.
+    let classified_from = witness(X).config();
+    let mut stored = journal(X);
+    stored.clusters[0].conflict_latched = true;
+    stored.quarantine.push(Quarantine {
+        cluster: main_cluster(),
+        node: node("pg1"),
+    });
+    let state = ready(&classified_from, stored);
+    let differs = |witness: Option<&str>| {
+        Setup {
+            witness,
+            expected_writer: "pg2",
+            system_identifier: OTHER_SYSTEM_ID,
+            nodes: &["pg1", "pg2"],
+        }
+        .config()
+    };
+    assert_only_reason(&differs(None), &state, "authority.unconfirmed");
+    assert_only_reason(&differs(Some(Y)), &state, "authority.mismatch");
+    assert_closed(
+        &admission(&differs(Some(X)), &state, &[primary("pg2", 1)]),
+        &[
+            "authority.config_conflict",
+            "authority.conflict_latched",
+            "authority.writer_quarantined",
+            "evidence.writer_missing",
+            "evidence.second_primary",
+        ],
+        true,
+    );
+}
