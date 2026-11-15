@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "crates/pool-config/tests/validate.rs": {
-    "mtime": 1794736584.337483,
-    "seen": 1794737031.147466,
-    "ast_hash": "cd7e4e7dfcd5999e91efe16569a90bd3",
+    "mtime": 1794737999.1865773,
+    "seen": 1794738038.541002,
+    "ast_hash": "2ffa5c8ed87e484634e5728473bab997",
     "semantic_hash": ""
   },
   "docs/specs/0001-initial-architecture/verify.md": {
@@ -894,9 +894,9 @@
     "semantic_hash": "1420eab3cfd7fad5052cafe4a22fdc72"
   },
   "crates/pool-config/src/serving.rs": {
-    "mtime": 1794736584.3338575,
-    "seen": 1794737031.1474628,
-    "ast_hash": "aeb84dc15e13a40cacc2041b3ed183df",
+    "mtime": 1794737999.1858635,
+    "seen": 1794738038.540999,
+    "ast_hash": "aaeae23751a6114e242d6b15e5e59d41",
     "semantic_hash": ""
   },
   "crates/pool-config/src/views.rs": {

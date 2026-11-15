@@ -2833,7 +2833,7 @@ const NUMBER_KEYS: [(&str, &str, u64, u64); 12] = [
     ("limits", "shutdown_timeout_ms", 0, 600_000),
     ("limits", "startup_packet_max_bytes", 512, 65_536),
     ("limits", "frontend_message_max_bytes", 1024, 1_073_741_823),
-    ("probe", "period_ms", 100, 60_000),
+    ("probe", "period_ms", 100, 30_000),
     ("probe", "timeout_ms", 100, 30_000),
     ("probe", "observation_expiry_ms", 1000, 60_000),
 ];
@@ -2893,19 +2893,6 @@ fn ac5_number_keys_accept_their_range_and_refuse_what_is_outside() {
         let path = number_key(table, key);
         for value in [low, high] {
             let text = serving_with_table(&number_table(table, key, &value.to_string()));
-            if path == "probe.period_ms" && value == high {
-                // A period of 60000 passes its own range, but no expiry can
-                // cover it: the timeout is at least 100 and the expiry at
-                // most 60000. Only the cross rule speaks.
-                assert_eq!(
-                    findings(text.as_bytes()),
-                    [(
-                        FindingCode::InvalidValue,
-                        Location::Key("probe.observation_expiry_ms")
-                    )]
-                );
-                continue;
-            }
             assert_text_valid(&text);
         }
         let mut outside = vec![high + 1];
@@ -2928,6 +2915,27 @@ fn ac5_number_keys_accept_their_range_and_refuse_what_is_outside() {
 }
 
 #[test]
+fn ac5_a_period_above_thirty_thousand_is_refused_at_the_period() {
+    // covers: 0004 AC-5 (decision 49). The first version of the table
+    // allowed up to 60000; each of those values now gives the finding at
+    // the period itself, whatever the expiry.
+    for period in [30_001_u32, 45_000, 59_900, 60_000] {
+        for expiry in [1000_u32, 60_000] {
+            let text = serving_with_table(&format!(
+                "[probe]\nperiod_ms = {period}\ntimeout_ms = 100\nobservation_expiry_ms = {expiry}"
+            ));
+            assert_eq!(
+                findings(text.as_bytes()),
+                [(FindingCode::InvalidValue, Location::Key("probe.period_ms"))],
+                "{period} {expiry}"
+            );
+        }
+    }
+    let text = serving_with_table("[probe]\nperiod_ms = 4294967296");
+    assert_eq!(single_code(&text), FindingCode::Schema);
+}
+
+#[test]
 fn ac5_the_expiry_must_cover_the_period_and_the_timeout() {
     // covers: 0004 AC-5 (point n2 of spec 0003 Follow-up 4).
     let at = |period: u32, timeout: u32, expiry: u32| {
@@ -2944,8 +2952,11 @@ fn ac5_the_expiry_must_cover_the_period_and_the_timeout() {
             Location::Key("probe.observation_expiry_ms")
         )]
     );
+    // The largest period and the largest timeout still fit the largest
+    // expiry (spec 0004, decision 49), and one less is refused.
+    assert_text_valid(&at(30_000, 30_000, 60_000));
     assert_eq!(
-        findings(at(60_000, 30_000, 60_000).as_bytes()),
+        findings(at(30_000, 30_000, 59_999).as_bytes()),
         [(
             FindingCode::InvalidValue,
             Location::Key("probe.observation_expiry_ms")
