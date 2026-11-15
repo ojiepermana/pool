@@ -270,10 +270,10 @@
     "semantic_hash": "d6dac06b367870b83b4c521826d7f0cc"
   },
   "docs/scope/003-control-and-session-data-model.md": {
-    "mtime": 1794623130.2351134,
-    "seen": 1794623470.244102,
+    "mtime": 1794719658.9786024,
+    "seen": 1794720579.5633001,
     "ast_hash": "bbebd1c2bc8121d2262d0475abe4319d",
-    "semantic_hash": "bbebd1c2bc8121d2262d0475abe4319d"
+    "semantic_hash": "3dfe3cc595883c12022abfcaa5f0f55f"
   },
   "docs/scope/004-one-real-primary-path.md": {
     "mtime": 1794623415.6864564,
@@ -360,10 +360,10 @@
     "semantic_hash": "d894e0d3a8045f88571853f736396b49"
   },
   "docs/scope/index.md": {
-    "mtime": 1794700264.8401492,
-    "seen": 1794700674.021611,
+    "mtime": 1794719658.9789395,
+    "seen": 1794720579.563301,
     "ast_hash": "5aef3b02f87fb3e8058fdcd509457a4a",
-    "semantic_hash": "950cd77be4f1526de389e2d4d4f1b8d2"
+    "semantic_hash": "d50e16c0be527240cd7bdc2082a3b1ae"
   },
   "docs/security/security-requirements.md": {
     "mtime": 1794624116.17761,
@@ -762,15 +762,33 @@
     "semantic_hash": "d5b29419250844a8dbb80d04470c8055"
   },
   "docs/scope/coordination/003-control-and-session-data-model.log.md": {
-    "mtime": 1794717543.808988,
-    "seen": 1794718304.59481,
+    "mtime": 1794719658.9793375,
+    "seen": 1794720579.5633018,
     "ast_hash": "",
-    "semantic_hash": "49b28fdff5767f6c5808ff983591c380"
+    "semantic_hash": "0c956e6237a315a0a61dec4271eb3960"
   },
   "docs/scope/coordination/003-control-and-session-data-model.manual.md": {
-    "mtime": 1794717405.4581199,
-    "seen": 1794718304.594812,
+    "mtime": 1794718577.7383938,
+    "seen": 1794720579.563303,
     "ast_hash": "",
-    "semantic_hash": "63fd4ebc232ece9086973fc1a37e97c6"
+    "semantic_hash": "7d32f8c75031b81d23004e25df9e4abc"
+  },
+  "docs/specs/0003-control-and-session-data-model/index.md": {
+    "mtime": 1794719595.3833523,
+    "seen": 1794720579.563294,
+    "ast_hash": "",
+    "semantic_hash": "2eadaace8abc1d2853d68c11641b6f46"
+  },
+  "docs/specs/0003-control-and-session-data-model/rationale.md": {
+    "mtime": 1794719595.3835728,
+    "seen": 1794720579.563297,
+    "ast_hash": "",
+    "semantic_hash": "16dc0f113688dcd58aa15bc54773a62c"
+  },
+  "docs/adr/0003-control-and-session-data-model.md": {
+    "mtime": 1794719595.380638,
+    "seen": 1794720579.563298,
+    "ast_hash": "",
+    "semantic_hash": "cb0446142f2dd795ff4c17917d835688"
   }
 }

@@ -16,7 +16,7 @@
 | Process boundary | One daemon with separate modules; separate CLI | Confirmed; split processes deferred |
 | Routing | Primary default, explicit read only session profiles first | Confirmed; endpoint chosen at login, SQL admitted on pinned lease, lag screened at admission only, eventual reads, no primary fallback |
 | Frontend authentication | Terminated SCRAM over TLS and optional mTLS, separately provisioned backend credentials | Confirmed boundary; implementation needs a feature spec |
-| Local persistence | SQLite journal for operations, audit and approved writer/epoch/quarantine; never observed backend role truth | Confirmed; bootstrap once, reconcile durable authorization with fresh roles before restart admission |
+| Local persistence | SQLite journal for operations, audit and approved writer/epoch/quarantine; never observed backend role truth | Confirmed; bootstrap once, reconcile durable authorization with fresh roles before restart admission. The records, the journal format and the start rules are settled in [spec 0003](../specs/0003-control-and-session-data-model/index.md) |
 | Runtime | Tokio with bounded tasks and queues | Confirmed |
 | TLS | rustls and tokio-rustls, one crypto provider | Confirmed; exact feature graph reviewed at dependency adoption |
 | Parser | pg_query with PostgreSQL 18 grammar | Confirmed; native code isolated and reviewed |
@@ -45,7 +45,7 @@ You requested a critique from another model, then explicitly chose to apply all 
 | Observed role was confused with authorized writer after restart | Persist approved writer, epoch and quarantine; fresh probes must agree; reconcile incomplete effects | Control plane and initial spec |
 | Login selection depended on SQL not yet available; lag and role could change later | Select at login, admit later SQL on lease, eventual reads with admission screen, no primary fallback, retire candidate replica leases before promotion | SQL routing and balancing PRDs |
 | Cancellation could arrive after lease reuse | Private backend keys, virtual frontend credentials, serialized retirement and physical backend closure after forwarding | Core proxy and pooling contracts |
-| Credential selection authority was implicit | Operator map from verified principal/requested DB to permitted backend identity and secret reference/generation | Authentication and control contracts |
+| Credential selection authority was implicit | Operator map from verified principal/requested DB to permitted backend identity and secret reference/generation | Authentication and control contracts. The map, its keys and its lookup are settled in [spec 0003](../specs/0003-control-and-session-data-model/index.md#configuration) |
 | Acquisition retry wording could imply session replacement | Retry only before initial lease and ReadyForQuery exposure, never after established session loss | Data plane |
 | Library types appeared owned by the binary | Control owns observations, core owns routing inputs; daemon adapts between them | Repository and initial spec |
 | POOL-only drain could imply a final WAL bound while direct writers remain | Require authoritative barrier across every write path before known final flush evidence; otherwise unknown loss window | Failover contract and PRD |
