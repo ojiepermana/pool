@@ -604,20 +604,39 @@ fn run_daemon(layout: &Layout) -> Run {
     ])
 }
 
+/// `pool run` on the layout refuses with the finding `code` and never binds.
+///
+/// The test holds a listener on the port of the configuration for the whole
+/// run (round three of the tests): a `pool run` that tried to bind would fail
+/// with `listener.failed` and exit 3, and no other test can be handed the
+/// port between the run and a check made afterwards. Every failure prints the
+/// whole output and the time the run took.
 #[track_caller]
-fn assert_not_serving(layout: &Layout, code: &str, port: u16) {
+fn assert_not_serving(layout: &Layout, code: &str, holder: &TcpListener) {
     let started = Instant::now();
-    let run = run_daemon(layout);
-    assert_eq!(run.code, 1, "{} {}", run.stdout, run.stderr);
+    let run = pool_within(
+        &[
+            "run",
+            "--config",
+            layout.config.to_str().expect("utf-8 path"),
+        ],
+        30,
+    );
+    let took = started.elapsed();
+    let seen = format!(
+        "exit {}, after {took:?}\n--- stdout\n{}--- stderr\n{}",
+        run.code, run.stdout, run.stderr
+    );
+    assert_eq!(run.code, 1, "{seen}");
     assert_eq!(
         run.stdout,
-        format!("run refused\nfindings: 1\n{code}: the journal state does not allow serving\n")
+        format!("run refused\nfindings: 1\n{code}: the journal state does not allow serving\n"),
+        "{seen}"
     );
-    assert_eq!(run.stderr, "");
-    assert!(started.elapsed() < Duration::from_secs(5));
+    assert_eq!(run.stderr, "", "{seen}");
+    assert!(took < Duration::from_secs(5), "{seen}");
     assert_no_path(&run, layout);
-    // The listener was never bound.
-    TcpListener::bind(("127.0.0.1", port)).expect("the port is still free");
+    holder.local_addr().expect("the test still holds the port");
 }
 
 #[test]
@@ -625,19 +644,20 @@ fn ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds()
     // covers: 0004 AC-13. Uninitialized, missing and unreadable here;
     // unconfirmed, mismatch and ready need a real journal (integration.rs).
     let layout = Layout::new("run-states");
-    let port = closed_port();
+    let holder = TcpListener::bind("127.0.0.1:0").expect("bind");
+    let port = holder.local_addr().expect("address").port();
     layout.write_serving_config(None, port);
-    assert_not_serving(&layout, "authority.uninitialized", port);
+    assert_not_serving(&layout, "authority.uninitialized", &holder);
     assert!(!layout.journal().exists(), "run never creates the journal");
     assert_eq!(layout.entries(), ["pool.lock"]);
 
     write_mode(&layout.journal(), b"", 0o600);
-    assert_not_serving(&layout, "authority.uninitialized", port);
+    assert_not_serving(&layout, "authority.uninitialized", &holder);
     assert_eq!(fs::metadata(layout.journal()).expect("journal").len(), 0);
 
     fs::remove_file(layout.journal()).expect("remove");
     layout.write_serving_config(Some(X), port);
-    assert_not_serving(&layout, "authority.missing", port);
+    assert_not_serving(&layout, "authority.missing", &holder);
 
     write_mode(
         &layout.journal(),
@@ -645,7 +665,7 @@ fn ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds()
         0o600,
     );
     let before = fs::read(layout.journal()).expect("read");
-    assert_not_serving(&layout, "authority.unreadable", port);
+    assert_not_serving(&layout, "authority.unreadable", &holder);
     assert_eq!(
         fs::read(layout.journal()).expect("read"),
         before,
