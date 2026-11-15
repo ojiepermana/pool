@@ -17,7 +17,7 @@ use pool_core::scram::MockKey;
 use pool_core::secret::{self, SecretError};
 use pool_core::session::{Server, ServerError, ServerParts};
 use pool_core::{load, tls};
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpSocket};
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::{mpsc, watch};
 use tokio::time::Instant;
@@ -238,14 +238,11 @@ async fn serve(prepared: Prepared) -> Outcome {
             LISTENER_FAILED_MESSAGE,
         )));
     };
-    let listener = match TcpListener::bind((listener_config.host(), listener_config.port())).await {
-        Ok(listener) => listener,
-        Err(_) => {
-            return Outcome::Report(Report::Error(Item::plain(
-                LISTENER_FAILED,
-                LISTENER_FAILED_MESSAGE,
-            )));
-        }
+    let Some(listener) = bind(listener_config.host(), listener_config.port()).await else {
+        return Outcome::Report(Report::Error(Item::plain(
+            LISTENER_FAILED,
+            LISTENER_FAILED_MESSAGE,
+        )));
     };
     // The handlers for SIGTERM and SIGINT, before step 9: a daemon that
     // could not be stopped cleanly does not start.
@@ -363,6 +360,34 @@ async fn log_writer(log: &mut Option<log::LogHandle>) {
         }
         None => std::future::pending::<()>().await,
     }
+}
+
+/// How many connections the kernel may hold for the listener before they
+/// are accepted.
+const BACKLOG: u32 = 1024;
+
+/// Step 7: binds the first address of `host` that works. The socket has
+/// TCP keepalive on before it listens, and every socket it accepts takes
+/// that option from it (spec 0004, "A peer that vanished", decision 84).
+async fn bind(host: &str, port: u16) -> Option<TcpListener> {
+    for address in tokio::net::lookup_host((host, port)).await.ok()? {
+        let socket = match address {
+            std::net::SocketAddr::V4(_) => TcpSocket::new_v4(),
+            std::net::SocketAddr::V6(_) => TcpSocket::new_v6(),
+        };
+        let Ok(socket) = socket else { continue };
+        let ready = socket
+            .set_reuseaddr(true)
+            .and_then(|()| socket.set_keepalive(true))
+            .and_then(|()| socket.bind(address));
+        if ready.is_err() {
+            continue;
+        }
+        if let Ok(listener) = socket.listen(BACKLOG) {
+            return Some(listener);
+        }
+    }
+    None
 }
 
 /// The finding of a runtime, or a signal handler, that could not be set up.
