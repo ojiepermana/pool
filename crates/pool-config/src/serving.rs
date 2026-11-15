@@ -583,7 +583,9 @@ fn check_probe(checker: &mut Checker<'_>, raw: Option<&RawProbe>) -> ProbeConfig
         raw.period_ms.as_ref(),
         KEY_PROBE_PERIOD,
         default.period_ms,
-        100..=60_000,
+        // 30000 like the timeout, so that the period plus the timeout never
+        // passes the largest expiry (spec 0004, decision 49).
+        100..=30_000,
     );
     let timeout = top_number(
         checker,
