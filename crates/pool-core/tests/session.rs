@@ -690,6 +690,7 @@ async fn unsupported_and_broken_frontend_messages_end_the_session() {
         (encode_message(b'd', &[1]), "0A000"),
         (encode_message(b'?', &[]), "08P01"),
         (vec![b'Q', 0, 0, 0, 3], "08P01"),
+        (encode_message(b'X', b"x"), "08P01"),
     ] {
         let h = Harness::new("");
         let (mut tls, _) = login(&h).await.ready();
