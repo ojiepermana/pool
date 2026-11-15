@@ -9,6 +9,8 @@ CARGO_DENY_VERSION=0.20.2
 CARGO_FUZZ_VERSION=0.13.2
 CARGO_CYCLONEDX_VERSION=0.5.10
 FUZZ_TOOLCHAIN=nightly-2026-10-17
+# The PostgreSQL image of the integration check, pinned by its index digest (spec 0004).
+POSTGRES_IMAGE=postgres:18.7-bookworm@sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f
 
 usage() {
   cat >&2 <<'USAGE'
@@ -18,6 +20,7 @@ required checks: fmt clippy test deny linux-build guards docs
 all              fmt clippy test deny guards docs, in that order, without stopping at a failure
 tools            make cargo-deny available under target/tools
 fuzz             run the fuzz target validate (not a required check)
+integration      run apps/pool/tests/integration.rs against PostgreSQL 18 in Docker (not a required check)
 sbom             write target/sbom/pool.cdx.json (not a required check)
 
 exit status: 0 every named check passed, 1 a check failed, 2 usage error, 3 a check could not run
@@ -150,6 +153,12 @@ check_tools() {
   fi
 }
 
+check_integration() {
+  need_command docker integration || return 1
+  need_command cargo integration || return 1
+  run3 env POOL_IT_IMAGE="$POSTGRES_IMAGE" scripts/integration/run.sh
+}
+
 check_fuzz() {
   need_command cargo fuzz || return 1
   need_command rustup fuzz || return 1
@@ -199,7 +208,7 @@ names=
 for arg in "$@"; do
   case "$arg" in
     all) names="$names fmt clippy test deny guards docs" ;;
-    fmt | clippy | test | deny | linux-build | guards | docs | tools | fuzz | sbom) names="$names $arg" ;;
+    fmt | clippy | test | deny | linux-build | guards | docs | tools | fuzz | sbom | integration) names="$names $arg" ;;
     *)
       echo "scripts/check.sh: unknown check: $arg" >&2
       usage

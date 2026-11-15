@@ -22,15 +22,19 @@ const HELP: &str = "\
 POOL daemon
 
 Usage:
-  pool check-config --config <PATH> [--format <human|json>]
+  pool check-config   --config <PATH> [--format <human|json>]
+  pool bootstrap      --config <PATH> [--format <human|json>]
+  pool show-authority --config <PATH> [--format <human|json>]
   pool --help
   pool --version
 
 Commands:
-  check-config  Validate a configuration file offline and exit
+  check-config    Validate a configuration file offline and exit
+  bootstrap       Probe every node once and create the journal
+  show-authority  Print the authority state and the journal ID
 
-Options for check-config:
-  --config <PATH>          Configuration file to validate (TOML)
+Options:
+  --config <PATH>          Configuration file (TOML)
   --format <human|json>    Output format (default: human)
 
 Exit status:
