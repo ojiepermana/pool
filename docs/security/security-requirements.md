@@ -27,6 +27,10 @@ Use one deliberately selected rustls crypto provider, initially the compatible a
 
 Use an unprivileged service account, restrictive secret/journal permissions, no core dumps containing credentials by default, an isolated management network, and no broad Proxmox administrator credential in the data plane. Document certificate expiry alerts, credential rotation, lost credentials, emergency drain, compromised node quarantine and backup restoration. SQL diagnostics require an explicit restricted opt in and retention policy.
 
+One private key is committed on purpose: the test key `crates/pool-core/tests/fixtures/node.key`. It protects nothing, and no other private key may be committed. The rule is in [spec 0004](../specs/0004-one-real-primary-path/index.md#tests-and-who-owns-them), in the paragraph "One test key is committed" (added on 2026-11-16).
+
+Until scope 008, `pool run` serves on when nothing reads its stderr, and then writes no log. A conflict latch shows only in the log. Keep stderr of the daemon with a service manager that outlives its reader. See [Log events](../specs/0004-one-real-primary-path/index.md#log-events) and the [security model](../specs/0004-one-real-primary-path/index.md#security-model) of spec 0004 (added on 2026-11-16).
+
 ## Disclosure and support
 
 Use the [project security policy](../../SECURITY.md) for the private reporting channel, responder and support requirements before the first public release.
