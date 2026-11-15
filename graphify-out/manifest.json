@@ -450,9 +450,9 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/check_config.rs": {
-    "mtime": 1794736584.332391,
-    "seen": 1794737031.147458,
-    "ast_hash": "ce8bdc59a04bf3f6fc5e0add45e63fd8",
+    "mtime": 1794738319.1161041,
+    "seen": 1794738404.830533,
+    "ast_hash": "861f3e8c5a32050d7b5116c35c7b0642",
     "semantic_hash": ""
   },
   "crates/pool-config/Cargo.toml": {
@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "crates/pool-config/tests/validate.rs": {
-    "mtime": 1794737999.1865773,
-    "seen": 1794738038.541002,
-    "ast_hash": "2ffa5c8ed87e484634e5728473bab997",
+    "mtime": 1794738319.1166632,
+    "seen": 1794738404.8305311,
+    "ast_hash": "2c289eefdf4f9c9b67841cb56624309c",
     "semantic_hash": ""
   },
   "docs/specs/0001-initial-architecture/verify.md": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "scripts/prove-checks.sh": {
-    "mtime": 1794735937.112571,
-    "seen": 1794737031.147467,
-    "ast_hash": "eda4b4efcad64f56561ef8d110c58609",
+    "mtime": 1794738319.1196303,
+    "seen": 1794738404.830534,
+    "ast_hash": "417792a4486307c46a95b9dbd3ae1d49",
     "semantic_hash": ""
   },
   "tools/repo-check/tests/repo_check/check_script.rs": {
@@ -903,6 +903,18 @@
     "mtime": 1794736584.3344166,
     "seen": 1794737031.147465,
     "ast_hash": "db5ee887eef7c01a1f9a06ae588357c5",
+    "semantic_hash": ""
+  },
+  "crates/pool-core/src/lib.rs": {
+    "mtime": 1794738319.1171532,
+    "seen": 1794738404.8305259,
+    "ast_hash": "2408bf40b23aed8d35d104cecce603a1",
+    "semantic_hash": ""
+  },
+  "crates/pool-protocol/src/lib.rs": {
+    "mtime": 1794738319.1174488,
+    "seen": 1794738404.830529,
+    "ast_hash": "b5b945cdaa10a978b69338a819da131e",
     "semantic_hash": ""
   }
 }

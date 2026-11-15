@@ -1,6 +1,12 @@
 [workspace]
 resolver = "3"
-members = ["apps/pool", "crates/pool-config", "crates/pool-control"]
+members = [
+    "apps/pool",
+    "crates/pool-config",
+    "crates/pool-control",
+    "crates/pool-core",
+    "crates/pool-protocol",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -12,9 +18,26 @@ publish = false
 [workspace.dependencies]
 pool-config = { path = "crates/pool-config" }
 pool-control = { path = "crates/pool-control" }
+pool-core = { path = "crates/pool-core" }
+pool-protocol = { path = "crates/pool-protocol" }
+aws-lc-rs = { version = "1.19.0", default-features = false, features = ["aws-lc-sys", "prebuilt-nasm"] }
+rusqlite = { version = "0.42.0", default-features = false, features = ["bundled"] }
+rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12", "aws_lc_rs"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
+tokio = { version = "1.54.1", default-features = false, features = [
+    "rt-multi-thread",
+    "net",
+    "io-util",
+    "io-std",
+    "time",
+    "sync",
+    "signal",
+    "macros",
+] }
+tokio-rustls = { version = "0.26.6", default-features = false }
 toml = { version = "1.2.1", default-features = false, features = ["parse", "serde"] }
+tracing = { version = "0.1.44", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -2640,7 +2640,7 @@ fn ac5_serving_fixtures_are_accepted() {
         "valid-serving.toml",
         "valid-serving-limits.toml",
         "valid-serving-probe-only.toml",
-        "secret-serving-values.toml",
+        "valid-serving-secret-values.toml",
     ] {
         let config = accepted(&fixture(name));
         assert_disabled(&config);
@@ -2649,7 +2649,7 @@ fn ac5_serving_fixtures_are_accepted() {
     for name in [
         "valid-serving.toml",
         "valid-serving-limits.toml",
-        "secret-serving-values.toml",
+        "valid-serving-secret-values.toml",
     ] {
         assert!(accepted(&fixture(name)).serving().is_ok(), "{name}");
     }
@@ -3235,7 +3235,7 @@ fn ac5_new_checks_come_after_item_5_and_before_the_cross_checks() {
 #[test]
 fn ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text() {
     // covers: 0004 AC-6, SEC-11. The canary is in every new string value.
-    let config = accepted(&fixture("secret-serving-values.toml"));
+    let config = accepted(&fixture("valid-serving-secret-values.toml"));
     let listener = config.listener().expect("a listener");
     assert!(listener.host().contains(CANARY));
     let mut texts = vec![
@@ -3263,7 +3263,7 @@ fn ac5_ac6_every_new_string_value_keeps_the_canary_out_of_every_text() {
     }
     assert!(config.resolve_principal("CANARY-9f2c7b1e-orders").is_some());
     // The same values, each made invalid, never reach the rejection.
-    let mut text = String::from_utf8(fixture("secret-serving-values.toml")).expect("utf-8");
+    let mut text = String::from_utf8(fixture("valid-serving-secret-values.toml")).expect("utf-8");
     text = text.replace("CANARY-9f2c7b1e", "CANARY-9f2c7b1e\u{2028}");
     let rejection = rejected(text.as_bytes());
     assert!(rejection.findings().len() > 10);
