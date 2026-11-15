@@ -654,4 +654,83 @@ mod tests {
         );
         assert_eq!(named(&events, "journal.write_failed").len(), 2);
     }
+
+    // ---- added by the tests of scope 004, round four (review finding M3) ----
+
+    fn failed(node: &str, at: MonotonicTime) -> Observation {
+        Observation::new(
+            NodeId::parse(node).expect("node id"),
+            at,
+            ObservationOutcome::Failed,
+        )
+    }
+
+    fn reasons_of(snapshot: &TopologySnapshot) -> Vec<&'static str> {
+        match snapshot.clusters()[0].admission() {
+            WriterAdmission::Closed(closed) => {
+                closed.reasons().iter().map(|r| r.as_str()).collect()
+            }
+            WriterAdmission::Open(_) => panic!("closed expected"),
+        }
+    }
+
+    #[test]
+    fn ac14_a_second_primary_beside_a_silent_writer_is_a_conflict_although_silence_is_not() {
+        // covers: 0004 AC-14, "When a running session is ended": the writer
+        // gave a failed sample or none, another node reports as a primary.
+        // The reasons mix silence with a conflict, and the conflict ends
+        // the running sessions.
+        let path = journal_file("silent-writer-second-primary");
+        let config = config(true);
+        let at = MonotonicTime::from_origin(Duration::from_secs(10));
+        for writer_failed in [true, false] {
+            let mut controller = Controller::new(ready(&path));
+            if writer_failed {
+                controller.record(failed("pg1", at));
+            }
+            controller.record(reached("pg2", at, false));
+            let snapshot = controller.round(&config, at);
+            // The second primary also latches the cluster in memory in the
+            // same round; the silence of the writer stays among the reasons.
+            let reasons = reasons_of(&snapshot);
+            for reason in ["evidence.writer_missing", "evidence.second_primary"] {
+                assert!(
+                    reasons.contains(&reason),
+                    "writer failed: {writer_failed}: {reasons:?}"
+                );
+            }
+            assert_eq!(
+                route_view(&snapshot).state(&main_cluster()),
+                RouteState::Closed { conflict: true },
+                "writer failed: {writer_failed}"
+            );
+        }
+    }
+
+    #[test]
+    fn ac14_a_latched_journal_with_an_empty_board_is_a_conflict() {
+        // covers: 0004 AC-14, 0003 AC-17: after a restart with the latch on
+        // disk and no sample yet, the cluster is closed with the conflict flag.
+        let path = journal_file("latched-empty-board");
+        let AuthorityState::Ready(authority) = ready(&path) else {
+            unreachable!("checked in ready");
+        };
+        let (mut journal, _) = Journal::open_ready(&path, &authority).expect("open");
+        journal
+            .set_conflict_latch(&main_cluster(), 1_763_200_000_002)
+            .expect("latch");
+        drop(journal);
+        let mut controller = Controller::new(ready(&path));
+        let at = MonotonicTime::from_origin(Duration::from_secs(10));
+        let snapshot = controller.round(&config(true), at);
+        assert!(
+            reasons_of(&snapshot).contains(&"authority.conflict_latched"),
+            "{:?}",
+            reasons_of(&snapshot)
+        );
+        assert_eq!(
+            route_view(&snapshot).state(&main_cluster()),
+            RouteState::Closed { conflict: true }
+        );
+    }
 }
