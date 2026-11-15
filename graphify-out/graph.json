@@ -15356,6 +15356,17 @@
       "source_location": "L127"
     },
     {
+      "id": "crates_pool_control_tests_admission_model_expected_reasons",
+      "label": "expected_reasons()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "expected_reasons()",
+      "source_file": "crates/pool-control/tests/admission_model.rs",
+      "source_location": "L159"
+    },
+    {
       "id": "crates_pool_control_tests_admission_model_node",
       "label": "node()",
       "_origin": "ast",
@@ -15386,7 +15397,7 @@
       "file_type": "code",
       "norm_label": "older_conflict()",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L234"
+      "source_location": "L307"
     },
     {
       "id": "crates_pool_control_tests_admission_model_open_carries_the_epoch_and_revision_of_the_journal",
@@ -15397,7 +15408,7 @@
       "file_type": "code",
       "norm_label": "open_carries_the_epoch_and_revision_of_the_journal()",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L294"
+      "source_location": "L367"
     },
     {
       "id": "crates_pool_control_tests_admission_model_open_only_on_full_agreement",
@@ -15408,7 +15419,7 @@
       "file_type": "code",
       "norm_label": "open_only_on_full_agreement()",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L155"
+      "source_location": "L204"
     },
     {
       "id": "crates_pool_control_tests_admission_model_rs_nodeid",
@@ -15429,6 +15440,17 @@
       "community_name": "pool-config Validation Library",
       "file_type": "code",
       "norm_label": "option",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "crates_pool_control_tests_admission_model_rs_vec",
+      "label": "Vec",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "pool-config Validation Library",
+      "file_type": "code",
+      "norm_label": "vec",
       "source_file": "",
       "source_location": ""
     },
@@ -15463,7 +15485,7 @@
       "file_type": "code",
       "norm_label": "the_answer_does_not_depend_on_the_order_or_on_older_samples()",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L247"
+      "source_location": "L320"
     },
     {
       "id": "crates_pool_control_tests_walkthroughs",
@@ -47895,7 +47917,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L236",
+      "source_location": "L309",
       "weight": 1.0
     },
     {
@@ -47907,7 +47929,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L299",
+      "source_location": "L372",
       "weight": 1.0
     },
     {
@@ -47919,7 +47941,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L300",
+      "source_location": "L373",
       "weight": 1.0
     },
     {
@@ -47931,7 +47953,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L312",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -47943,7 +47965,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L158",
+      "source_location": "L207",
       "weight": 1.0
     },
     {
@@ -47955,7 +47977,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L168",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -47967,7 +47989,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L178",
+      "source_location": "L227",
       "weight": 1.0
     },
     {
@@ -47979,7 +48001,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L188",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -47991,7 +48013,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L255",
+      "source_location": "L328",
       "weight": 1.0
     },
     {
@@ -48003,7 +48025,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L257",
+      "source_location": "L330",
       "weight": 1.0
     },
     {
@@ -48015,7 +48037,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L265",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -48027,7 +48049,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L279",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -62803,6 +62825,18 @@
       "weight": 1.0
     },
     {
+      "source": "crates_pool_control_tests_admission_model_expected_reasons",
+      "target": "crates_pool_control_tests_admission_model_seen",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "crates/pool-control/tests/admission_model.rs",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
       "source": "crates_pool_control_tests_admission_model_observation",
       "target": "crates_pool_control_tests_admission_model_seen",
       "relation": "references",
@@ -65683,6 +65717,18 @@
       "weight": 1.0
     },
     {
+      "source": "crates_pool_control_tests_admission_model_expected_reasons",
+      "target": "crates_pool_control_tests_admission_model_rs_vec",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "crates/pool-control/tests/admission_model.rs",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
       "source": "crates_pool_control_tests_admission_model_node",
       "target": "crates_pool_control_tests_admission_model_rs_nodeid",
       "relation": "references",
@@ -65715,7 +65761,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L234",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -71429,13 +71475,24 @@
     },
     {
       "source": "crates_pool_control_tests_admission_model",
+      "target": "crates_pool_control_tests_admission_model_expected_reasons",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-control/tests/admission_model.rs",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_control_tests_admission_model",
       "target": "crates_pool_control_tests_admission_model_open_only_on_full_agreement",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L155",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -71446,29 +71503,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L234",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_control_tests_admission_model",
-      "target": "crates_pool_control_tests_admission_model_the_answer_does_not_depend_on_the_order_or_on_older_samples",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L247",
-      "weight": 1.0
-    },
-    {
-      "source": "crates_pool_control_tests_admission_model",
-      "target": "crates_pool_control_tests_admission_model_open_carries_the_epoch_and_revision_of_the_journal",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L294",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -71480,6 +71515,28 @@
       "confidence_score": 1.0,
       "source_file": "crates/pool-control/tests/admission_model.rs",
       "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_control_tests_admission_model",
+      "target": "crates_pool_control_tests_admission_model_the_answer_does_not_depend_on_the_order_or_on_older_samples",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-control/tests/admission_model.rs",
+      "source_location": "L320",
+      "weight": 1.0
+    },
+    {
+      "source": "crates_pool_control_tests_admission_model",
+      "target": "crates_pool_control_tests_admission_model_open_carries_the_epoch_and_revision_of_the_journal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "crates/pool-control/tests/admission_model.rs",
+      "source_location": "L367",
       "weight": 1.0
     },
     {
@@ -81053,7 +81110,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L305",
+      "source_location": "L378",
       "weight": 1.0
     },
     {
@@ -81065,7 +81122,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L314",
+      "source_location": "L387",
       "weight": 1.0
     },
     {
@@ -81077,7 +81134,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L166",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -81089,7 +81146,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L180",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -81101,7 +81158,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L257",
+      "source_location": "L330",
       "weight": 1.0
     },
     {
@@ -81113,7 +81170,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "crates/pool-control/tests/admission_model.rs",
-      "source_location": "L268",
+      "source_location": "L341",
       "weight": 1.0
     },
     {
@@ -140250,5 +140307,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "eaaef9528a788b7eee7021908b58da34ad8d8ea9"
+  "built_at_commit": "91c6854d1983216135154900aaf58c1498d58a7a"
 }

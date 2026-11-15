@@ -151,6 +151,55 @@ fn expected(
     }
 }
 
+/// The exact reasons of a closed answer, by the table of spec 0003, "Writer
+/// admission", for this domain (added by /test). The journal and the
+/// configuration agree on the system identifier and the members, and only
+/// pg3 can be quarantined, so checks 1, 2 (but for the writer) and 4 never
+/// apply. Empty means open.
+fn expected_reasons(
+    expected_writer: usize,
+    approved_writer: usize,
+    pg3_quarantined: bool,
+    latched: bool,
+    seen: [Seen; 3],
+) -> Vec<&'static str> {
+    let mut reasons = Vec::new();
+    if expected_writer != approved_writer {
+        reasons.push("authority.config_conflict");
+    }
+    if latched {
+        reasons.push("authority.conflict_latched");
+    }
+    match seen[approved_writer] {
+        Seen::None | Seen::Stale | Seen::Failed => reasons.push("evidence.writer_missing"),
+        Seen::PrimaryOtherSystem => reasons.push("evidence.writer_identity"),
+        Seen::PrimaryTimeline1 => {}
+        Seen::PrimaryTimeline2 => reasons.push("evidence.writer_timeline"),
+        Seen::ReplicaTimeline1 => reasons.push("evidence.writer_in_recovery"),
+        Seen::ReplicaTimeline2 => {
+            reasons.push("evidence.writer_in_recovery");
+            reasons.push("evidence.writer_timeline");
+        }
+    }
+    let others: Vec<Seen> = (0..3)
+        .filter(|&n| n != approved_writer && !(n == 2 && pg3_quarantined))
+        .map(|n| seen[n])
+        .collect();
+    if others
+        .iter()
+        .any(|s| matches!(s, Seen::PrimaryTimeline1 | Seen::PrimaryTimeline2))
+    {
+        reasons.push("evidence.second_primary");
+    }
+    if others
+        .iter()
+        .any(|s| matches!(s, Seen::PrimaryTimeline2 | Seen::ReplicaTimeline2))
+    {
+        reasons.push("evidence.timeline_ahead");
+    }
+    reasons
+}
+
 #[test]
 fn open_only_on_full_agreement() {
     let now = MonotonicTime::from_origin(Duration::from_secs(100));
@@ -199,11 +248,35 @@ fn open_only_on_full_agreement() {
                                 match (&answer, want) {
                                     (WriterAdmission::Open(primary), Some(writer)) => {
                                         assert_eq!(primary.node(), &node(NODES[writer]), "{case}");
+                                        assert!(
+                                            expected_reasons(
+                                                expected_writer,
+                                                approved_writer,
+                                                pg3_quarantined,
+                                                latched,
+                                                seen,
+                                            )
+                                            .is_empty(),
+                                            "{case}"
+                                        );
                                         opened += 1;
                                     }
                                     (WriterAdmission::Closed(closed), None) => {
                                         assert!(!closed.reasons().is_empty(), "{case}");
                                         assert_eq!(closed.latches_conflict(), latches, "{case}");
+                                        let names: Vec<&str> =
+                                            closed.reasons().iter().map(|r| r.as_str()).collect();
+                                        assert_eq!(
+                                            names,
+                                            expected_reasons(
+                                                expected_writer,
+                                                approved_writer,
+                                                pg3_quarantined,
+                                                latched,
+                                                seen,
+                                            ),
+                                            "{case}"
+                                        );
                                     }
                                     _ => panic!("{case}: got {answer:?}, want {want:?}"),
                                 }

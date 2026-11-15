@@ -840,9 +840,9 @@
     "semantic_hash": ""
   },
   "crates/pool-control/tests/admission_model.rs": {
-    "mtime": 1794724063.7091823,
-    "seen": 1794724097.908965,
-    "ast_hash": "4c2848e9e80c0a4772b617afdbf9c187",
+    "mtime": 1794724236.0525053,
+    "seen": 1794724260.078877,
+    "ast_hash": "a4110f6adb6908d2ca572b2916280a15",
     "semantic_hash": ""
   },
   "crates/pool-control/tests/walkthroughs.rs": {

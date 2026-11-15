@@ -482,7 +482,7 @@ Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15. The 
 | `tools/repo-check/src/workspace.rs` (unit) | 30 | 35 |
 | Total | 198 | 257 |
 
-The existing `open_only_on_full_agreement` gained one line: it now asserts the exact number of open answers, 130, worked out by hand from the rules (65 per approved writer), where it asserted only that one opened.
+The existing `open_only_on_full_agreement` now asserts the exact number of open answers, 130, worked out by hand from the rules (65 per approved writer), where it asserted only that one opened. On every closed answer of its 8192 cases it also compares the exact list of reasons with `expected_reasons`, a rule of the test written from the table under "Writer admission", where it checked only that the list was not empty. `scripts/check.sh all` passes after that change too: 448 tests, 0 failed.
 
 ### What each group locks
 
