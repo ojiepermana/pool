@@ -268,9 +268,17 @@ fn certificates(pem: &[u8]) -> Result<Vec<CertificateDer<'static>>, SecretError>
     Ok(certs)
 }
 
-/// A certificate chain in PEM, leaf first.
-#[derive(Debug, Clone)]
+/// A certificate chain in PEM, leaf first. Its certificates carry names from a file: `Debug` prints the count only.
+#[derive(Clone)]
 pub struct CertificateChain(pub(crate) Vec<CertificateDer<'static>>);
+
+impl fmt::Debug for CertificateChain {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CertificateChain")
+            .field("certificates", &self.0.len())
+            .finish()
+    }
+}
 
 impl CertificateChain {
     /// Parses one or more certificates in PEM.
@@ -284,9 +292,17 @@ pub fn read_certificate_chain(path: &Path) -> Result<CertificateChain, SecretErr
     CertificateChain::parse(&read_limited(path, CERTIFICATE_MAX_BYTES)?)
 }
 
-/// The trust roots for one node: the certificates of its CA file and nothing else.
-#[derive(Debug, Clone)]
+/// The trust roots for one node: the certificates of its CA file and nothing else. `Debug` prints the count only.
+#[derive(Clone)]
 pub struct TrustRoots(pub(crate) RootCertStore);
+
+impl fmt::Debug for TrustRoots {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TrustRoots")
+            .field("roots", &self.0.len())
+            .finish()
+    }
+}
 
 impl TrustRoots {
     /// Parses a CA file: at least one certificate in PEM, each usable as a trust anchor.
@@ -498,6 +514,15 @@ mod tests {
             0o644,
         );
         assert!(read_certificate_chain(&chain).is_ok());
+        let debug = format!(
+            "{:?} {:?}",
+            read_certificate_chain(&chain).expect("chain"),
+            read_trust_roots(&chain).expect("roots")
+        );
+        assert_eq!(
+            debug,
+            "CertificateChain { certificates: 1 } TrustRoots { roots: 1 }"
+        );
         assert!(read_trust_roots(&chain).is_ok());
         let empty = dir.file("empty", b"no certificate here\n", 0o644);
         assert_eq!(

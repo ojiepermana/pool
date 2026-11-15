@@ -149,8 +149,8 @@ impl fmt::Debug for MockKey {
     }
 }
 
-/// What the server checks a client against.
-#[derive(Debug, Clone)]
+/// What the server checks a client against. `Debug` names the variant only.
+#[derive(Clone)]
 pub enum ServerCredential<'a> {
     /// The verifier of the principal entry with the claimed name.
     Known(&'a Verifier),
@@ -180,8 +180,32 @@ impl<'a> ServerCredential<'a> {
     }
 }
 
+impl fmt::Debug for ServerCredential<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Known(_) => "ServerCredential::Known([REDACTED])",
+            Self::Unknown { .. } => "ServerCredential::Unknown([REDACTED])",
+        })
+    }
+}
+
+impl fmt::Debug for ServerExchange<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ServerExchange([REDACTED])")
+    }
+}
+
+impl fmt::Debug for ClientExchange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ClientExchange([REDACTED])")
+    }
+}
+
 /// The server side after the client-first message: what it must remember for the final message.
-#[derive(Debug, Clone)]
+///
+/// It holds the nonces and the first message of the client, which can carry
+/// the user name the client wrote: `Debug` prints `[REDACTED]`.
+#[derive(Clone)]
 pub struct ServerExchange<'a> {
     credential: ServerCredential<'a>,
     header: Gs2Header,
@@ -259,7 +283,9 @@ impl<'a> ServerExchange<'a> {
 }
 
 /// The client side toward a node, from the client-first message to the check of the server signature.
-#[derive(Debug, Clone)]
+///
+/// It holds the client nonce: `Debug` prints `[REDACTED]`.
+#[derive(Clone)]
 pub struct ClientExchange {
     nonce: String,
 }
@@ -485,5 +511,37 @@ mod tests {
         let b = new_nonce().expect("random");
         assert_ne!(a, b);
         assert_eq!(a.len(), 24);
+    }
+
+    #[test]
+    fn the_exchange_types_print_no_nonce_and_no_client_message() {
+        let verifier =
+            Verifier::parse(verifier_text(&pencil(), &salt(), 4096).as_bytes()).expect("valid");
+        let (server, server_first) = ServerExchange::start_with_nonce(
+            ServerCredential::Known(&verifier),
+            CLIENT_FIRST.as_bytes(),
+            SERVER_NONCE,
+        )
+        .expect("first");
+        let (client, client_first) = ClientExchange::start().expect("random");
+        let unknown =
+            ServerCredential::unknown(&MockKey::generate().expect("random"), b"mallory", 4096);
+        let text = format!(
+            "{server:?} {client:?} {:?} {unknown:?}",
+            ServerCredential::Known(&verifier)
+        );
+        let client_nonce = client_first.strip_prefix("n,,n=,r=").expect("shape");
+        for hidden in [
+            CLIENT_NONCE,
+            SERVER_NONCE,
+            "user",
+            client_nonce,
+            &server_first,
+            SALT,
+            "mallory",
+        ] {
+            assert!(!text.contains(hidden), "{hidden} in {text}");
+        }
+        assert!(text.contains("[REDACTED]"));
     }
 }
