@@ -1528,3 +1528,71 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 - **The pool key comparison alone (C5)** is an equivalent change, as the table says.
 - **`0004 AC-26` and `0004 AC-27`** are proven by `scripts/check.sh integration` (also without a Docker daemon) and `scripts/check.sh fuzz`, not by a test that names them.
 - **No new integration test.** The gaps above were all reachable without a container. `scripts/check.sh integration` ran unchanged, as a gate.
+
+### Round two
+
+On 2026-11-15 from 23:00 and 2026-11-16 until 00:15 WIB, by the tester session, on `main` at `b116bd2` and the commits `525c0e8`, `ac57b9a` and ``aaede74`` of its branch, with `main` merged again at ``1650321``. macOS 27.0.1, arm64, Docker 29.9.2 running; a workstation, not Linux and not CI, except the `linux-build` row. The source is the list "For the tester: wrong changes that no test caught" and the test gaps of [the checker run of steps 10 and 11, and of milestone 4](#checker-run-of-steps-10-and-11-and-of-milestone-4). No line of production code changed: the unit tests are appended at the end of the existing `mod tests` of `apps/pool/src/control.rs`, and `apps/pool/tests/support/mod.rs` gained two methods of the relay (`retarget` and `accept_tls_again`).
+
+#### What was added
+
+| Gap of the checker | Tests | File |
+|---|---|---|
+| M1, M4: the route view | `ac14_route_view_marks_a_positive_conflict_and_not_silence` (a second primary gives `Closed { conflict: true }`, a writer with no sample `Closed { conflict: false }`), `ac14_an_open_route_is_fresh_exactly_until_its_snapshot_says` | `apps/pool/src/control.rs` |
+| M2: published before the disk (decision 12) | `ac14_the_conflict_view_is_published_before_the_latch_is_written`: the round is polled exactly once with a waker that does nothing; the latch write is still on its blocking thread, and the view with the conflict is already out. (A first version used `tokio::time::timeout` with a zero duration; the timer rounds up to the next millisecond, the write was done by then, and M2 survived. The single poll catches it.) | `apps/pool/src/control.rs` |
+| M3 and "the journal write through `control.rs`" | `ac14_a_second_primary_latches_the_cluster_in_the_journal_through_the_control_loop`: a real journal under the temporary folder, two nodes, `pg2` reports a second primary; after one round the latch is on disk (a new `Controller` from the file closes with `authority.conflict_latched` although both nodes look healthy), and `authority.conflict_latched` is logged with `recorded` false, then true | `apps/pool/src/control.rs` |
+| "A journal write that fails while the daemon runs" | `ac14_a_latch_write_that_fails_is_logged_and_the_latch_holds_in_memory`: a second holder of the journal moves the authority revision on, so each write of the loop fails with `journal.changed`; two rounds log `journal.write_failed` twice and the unrecorded line once, and the cluster stays closed with the conflict flag | `apps/pool/src/control.rs` |
+| M12 | `ac10_a_run_that_stops_at_a_missing_protected_file_does_not_use_up_a_start_sequence`: a ready journal made with the library, the listener certificate missing; two runs exit 3 with `secret.not_found`, and the journal file is the same byte for byte | `apps/pool/tests/commands.rs` |
+| M8, M9 | `it_ac12_a_probe_that_lost_its_connection_opens_a_new_one_and_logs_each_class_once`: the connection of the monitor login is ended with `pg_terminate_backend`; the probe logs `probe.failed`, then `probe.recovered`. Then the relay refuses TLS to new connections for two seconds (about ten rounds): one `probe.failed` line with the class `tls`, three `probe.failed` lines in all, two `probe.recovered` | `apps/pool/tests/integration.rs` |
+| "Silence does not end a running session" | `it_ac14_a_writer_that_falls_silent_keeps_running_sessions_and_refuses_new_logins`: a session runs, the probe loses the node; a new `admission.changed` closed with `evidence.writer_missing` alone; the running session answers `SELECT 2`, a new login gets `57P03`, and no `session.ended` is written | `apps/pool/tests/integration.rs` |
+| M1 through the daemon, "a running session ended for a positive conflict" | `it_ac14_a_writer_that_changes_its_identity_ends_running_sessions_through_the_daemon`: the relay sends the probe's next connection to container 2 (another system identifier) while the session stays on container 1; `evidence.writer_identity`, then the idle session gets `57P01` within 10 seconds and `session.ended` names `conflict` and `idle`. A second primary with the same system identifier, and so the latch, cannot be made with the two containers of the fixture; the unit tests above cover it | `apps/pool/tests/integration.rs`, `support/mod.rs` |
+| M6, "`pool run` on the hold `restore_pending`" | `it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds`: no command of this slice sets the hold, so the test sets it with the `sqlite3` tool of the host; `show-authority` says `restore_pending`, `pool run` exits 1 with `authority.restore_pending`, never binds, and the file does not change | `apps/pool/tests/integration.rs` |
+| "Only the fields of the table, a canary in the error text of PostgreSQL" | `it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresql`: `CANARY-9f2c7b1e` in a `RAISE EXCEPTION`, in a cast error and as a wrong password; the client sees the error text, the log never does; every line is an event of the table under [Log events](index.md#log-events) with only its fields, each a string, a whole number or a boolean | `apps/pool/tests/integration.rs` |
+
+Test count: `apps/pool/src/control.rs` 1 to 6, `apps/pool/tests/commands.rs` 16 to 17, `apps/pool/tests/integration.rs` 21 to 26; 11 more in all.
+
+#### Mutations M1 to M12
+
+Each change was made in a copy of the tree outside the repository, one at a time, and run against `cargo test -p pool --locked` and then `scripts/check.sh integration` (the second only when the first passed). "Before" is the result of the checker against the tests of `d4fdb62`; `apps/pool/tests/integration.rs`, `tests/support/` and `apps/pool/src/` did not change between `d4fdb62` and `b116bd2`. The tests of round one added nothing that reaches these changes: at `b116bd2` all twelve passed `cargo test -p pool --locked`.
+
+| # | Wrong change | Before | After, caught by |
+|---|---|---|---|
+| M1 | `route_view` never sets the conflict flag | not caught | the four unit tests of `control.rs` that see a conflict, among them `ac14_route_view_marks_a_positive_conflict_and_not_silence` |
+| M2 | The view is published after the latch writes | not caught | `ac14_the_conflict_view_is_published_before_the_latch_is_written` |
+| M3 | A latch is never written | not caught | `ac14_a_second_primary_latches_the_cluster_in_the_journal_through_the_control_loop`, `ac14_a_latch_write_that_fails_...`, `ac14_the_conflict_view_is_published_...` |
+| M4 | An open route stays fresh one hour more | not caught | `ac14_an_open_route_is_fresh_exactly_until_its_snapshot_says` |
+| M5 | `mismatch` reported as `authority.unconfirmed` | caught | `it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds` (as before) |
+| M6 | `restore_pending` reported as `authority.unreadable` | not caught | `it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds` |
+| M7 | Shutdown does not end the sessions | caught | the four new fixture tests, each within the 20 second limit of its stop (run with the new tests alone). The existing `it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007` does not fail but hangs, because `Daemon::stop` waits without a limit; the first run with the whole file was ended by the 900 second limit of the mutation runner |
+| M8 | The probe keeps its connection after a failure | not caught | `it_ac12_a_probe_that_lost_its_connection_opens_a_new_one_...`, `it_ac14_a_writer_that_changes_its_identity_...` |
+| M9 | `probe.failed` for every failed sample | not caught | `it_ac12_a_probe_that_lost_its_connection_..._logs_each_class_once` |
+| M10 | `admission.changed` only when open or closed changes | caught | `it_ac14_a_writer_that_changes_its_identity_...`, and `it_the_wrong_identity_closes_admission_before_any_login` as before |
+| M11 | The refusal counters are never flushed while serving | caught | `it_ac24_the_log_holds_only_the_fields_...`, and `it_waiters_are_limited_and_time_out_after_the_acquire_deadline` as before |
+| M12 | The start sequence is advanced before the protected files are read | not caught | `ac10_a_run_that_stops_at_a_missing_protected_file_does_not_use_up_a_start_sequence` |
+
+All twelve are caught. The order that M2 breaks, which the checker read in the code only, is now held by a test.
+
+#### Faults found in the tests, and stability
+
+- **My silence test, fixed in `ac57b9a`.** The daemon writes one `admission.changed` closed with `evidence.writer_missing` before its first sample, and the first version waited for any such line, so it found that one, and a login could still meet the open route and get `08006`. Run alone, it failed in 2 of 3 runs, and in the first mutation run it failed beside each change. It now counts the lines first and waits for a new one. Then: 5 of 5 runs alone, and the mutation runs of M5, M6, M9, M10 and M11 were done again.
+- **A named pipe that never ended, in my bootstrap race test of round one, rewritten in ``aaede74``.** On macOS, during a plain `cargo test -p pool --locked --test commands` while the machine was busy, one `pool bootstrap` of the eight had read its whole configuration from its named pipe (707 of 707 bytes, seen with `lsof`) and waited in `read` for an end of file, with no writer left open. The test then waited for it with no limit, for 632 seconds until I ended the child. This is the hang that the checker reported once in 137 runs for `ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked`; the product only reads its file. The test now starts the eight one after another, which still meets a held lock, because the first holds it for the probe timeout of 3 seconds, and waits for each child, and for the holder of the other lock test, at most 20 seconds. After the change: 5 of 5 and, after the merge with the time limit that `dev-f4-m2` gave to the original test, 3 of 3. The original test, which still uses pipes, catches L2 of round one; the rewritten one no longer races the creation of `pool.lock`.
+- **One failure that did not come back.** In one mutation run of M11, `ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds` of `commands.rs` failed, which M11 cannot reach. The output was not kept. It passed in the next 2 runs with M11 and in 8 plain runs. Seen once, cause not established; it has a limit of 5 seconds on the time of `pool run`, and the machine was busy.
+- The unit tests of `control.rs` ran 5 times (6 of 6 each), the new fixture tests ran in two whole runs of `scripts/check.sh integration` and in the mutation runs.
+
+#### Gates on the final tree
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `1650321` (the branch with `main` at `19eea61` merged), on 2026-11-16 from 00:00 to 00:09 WIB.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok`; `pool` 18 unit tests (6 of them in `control.rs`), 87 `check_config`, 17 `commands`, 26 integration tests ignored here | pass |
+| `scripts/check.sh integration` | exit 0, nothing left behind | exit 0: 26 of 26 in 42 s against the pinned image; no `pool-it-` container afterwards | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0: host `aarch64-unknown-linux-gnu`, 22 test results `ok`, none failed, `linux build check passed` | pass |
+| `git diff --stat main...HEAD` | test files and this record only | `apps/pool/src/control.rs` (lines added at the end of `mod tests` only), `apps/pool/tests/commands.rs`, `apps/pool/tests/integration.rs`, `apps/pool/tests/support/mod.rs` and this record; 0 lines of production code | pass |
+
+During the mutation runs one run with M7 was ended by the limit of the runner while `scripts/integration/run.sh` waited for its test; its two containers (`pool-it-1-74706`, `pool-it-2-74706`, both of my run) stayed until I ended the mutated `pool run` with SIGKILL, after which the script removed them itself.
+
+#### Gaps that stay open after round two
+
+- **A second primary and the latch on the fixture.** It needs a second PostgreSQL with the same system identifier (a copy of container 1 made with `pg_basebackup` and promoted), which `scripts/integration/` does not make. The path through `control.rs` is held by the unit tests above, with a real journal.
+- **`Daemon::stop` of `integration.rs` waits without a limit.** M7 shows it: the existing shutdown test hangs instead of failing. The new tests use `stop_within(20)`. `Daemon::stop` is called 13 times and `stop_after_signal` twice in the existing tests; giving them a limit is a small change of the helper, left as a follow up for the lead to assign.
+- **The hold `restore_pending` needs the `sqlite3` tool on the host** of `scripts/check.sh integration`. It is on this workstation (`sqlite3` 3.54.0). Whether the hosted runner of the CI job `integration` has it was not checked, because that job does not exist yet (manual step M2). Without it the test fails with a message that names the tool.
