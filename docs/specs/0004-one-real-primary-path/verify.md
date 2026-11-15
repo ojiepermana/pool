@@ -1081,3 +1081,54 @@ On 2026-11-15, on top of `main` with step 12 merged. Items 1 and 2 of [Document 
 `scripts/check.sh docs`: exit 0 (links and anchors D1 and D2, scope status D3, IDs D4 to D6).
 
 Two sentences of the same files are no longer exact and are left to the "Document it" box of scope 004, as item 5 of the corrections says: the paragraph on the fuzz package in "Rust and runtime" of `docs/engineering-standards.md` names only `crates/pool-config/fuzz/`, and `crates/pool-protocol/fuzz/` now exists too; the row of `apps/pool` in the crate table of `docs/repository-structure.md` says it depends on all four internal crates, and today it depends on `pool-config`, `pool-control` and `pool-core`, not on `pool-protocol`.
+
+### Build plan step 14: evidence
+
+On 2026-11-15, on macOS (workstation, Docker Desktop running; not Linux and not CI) and in the Linux builder image. The final tree is revision `ecd0ee5` of `main`: every Build plan step from 1 to 13, the fix of the lock test (`2590ba6`) and of the bootstrap that stopped (`b33f155`). Its code is that of `3ab5045`; `ecd0ee5` adds two lines to this file only. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`. Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+#### UI / manual
+
+Manual steps M2 and M3 are under [Build plan step 12](#build-plan-step-12-fuzzing-and-the-ci-rule), and both are `BLOCKED`, `owner: user`. Until they are done the CI jobs `integration` and `fuzz` do not exist in `.github/` and their runs are `NOT_RUN`.
+
+#### Commands
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo metadata --no-deps --format-version 1` | five members, the six pairs of [Workspace](index.md#workspace), `pool-protocol` without dependencies | `pool` → `pool-config`, `pool-control`, `pool-core`; `pool-control` → `pool-config`; `pool-core` → `pool-config`, `pool-protocol`; `pool-config` and `pool-protocol` take no workspace package | pass |
+| `Cargo.lock` | the five members and 70 third party entries | 75 entries, 70 of them from the registry | pass |
+| `cargo build --workspace --locked` | exit 0 and no warning about a dependency | exit 0, no warning line at all | pass |
+| The use check under [Adopted dependencies](index.md#adopted-dependencies) | no output | no output | pass |
+| `scripts/check.sh all` | exit 0 | exit 0: fmt, clippy, test, deny, guards, docs all `ok`. Tests: `pool` 13 unit, 84 `check_config`, 12 `commands` (21 integration ignored here); `pool-config` 32 unit, 123 `validate` and its doc tests; `pool-control` 5 unit, 3 `admission_model`, 12 `controller`, 19 `journal`, 28 `walkthroughs`; `pool-core` 37 unit, 29 `session`; `pool-protocol` 22 unit, 11 golden, 4 redaction; `pool-repo-check` 108 unit, 110 integration | pass |
+| `scripts/check.sh integration` | exit 0 | exit 0 in 63 s: 21 of 21 against the pinned image | pass |
+| `DOCKER_HOST=unix:///nonexistent/docker.sock scripts/check.sh integration` | exit 3 without a Docker daemon (`0004 AC-26`) | exit 3, `integration: the Docker daemon is not running; start it and run scripts/check.sh integration again` | pass |
+| `scripts/check.sh fuzz` | every target of both fuzz packages on its committed inputs, no crash file | exit 0: `validate` 325335 runs, `startup` 3285074, `frontend_message` 491711, `scram` 2501940, 31 s each; no file under any `fuzz/artifacts/` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0 in 101 s, host `aarch64-unknown-linux-gnu`, `pool 0.1.0`, binary `sha256 35ead2faee9d225e9696ee3f507e824a2235f935e5932ff21f2abd41356ddbbc`. It failed once at an earlier tree of step 12, see [Build plan step 12](#build-plan-step-12-fuzzing-and-the-ci-rule); here the first run passed | pass |
+| `scripts/prove-checks.sh --with-linux-build` | every case rejects its change | exit 0 on `ecd0ee5`: `all checks reject their bad change`, cases 1 to 35 `PASS`, case 20 run with Docker | pass |
+| CI run of `integration` and of `fuzz` | the jobs pass on the hosted runner | the jobs do not exist yet (manual step M2) | `NOT_RUN`, `owner: user` |
+
+**The tree moved once more.** While this record was written, `main` gained `fd62cf4` (a lock file made by another process at the same moment is `state.locked`, in `apps/pool/src/state.rs` and `apps/pool/tests/commands.rs`). On `22182fb`, which holds it, the checks that this change can reach ran again: `cargo build --workspace --locked` exit 0 with no warning, the use check printed nothing, `scripts/check.sh all` exit 0 (`commands.rs` now 13 tests), `scripts/check.sh integration` exit 0 (21 of 21), `scripts/check.sh linux-build` exit 0 (binary `sha256 7ccc2e2ba0ba2b3df8f4acef60e937f2a0207c54caa80cd1e21c481072a9ca7a`), and `scripts/prove-checks.sh --with-linux-build` exit 0 (35 of 35, case 20 with Docker). `scripts/check.sh fuzz` was not run again: the change touches no code that a fuzz target reaches. The rows of the table below hold for both revisions.
+
+**The declared environment.** The image is `postgres:18.7-bookworm@sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, as written once in `scripts/check.sh`. In a one-off container of that image, removed afterwards, `postgres --version` printed `postgres (PostgreSQL) 18.7 (Debian 18.7-1.pgdg12+2)` and `psql --version` printed `psql (PostgreSQL) 18.7 (Debian 18.7-1.pgdg12+2)`. Locked versions of the six adopted dependencies and the two native libraries: `tokio` 1.54.1, `rustls` 0.23.46, `tokio-rustls` 0.26.6, `aws-lc-rs` 1.19.0 (`aws-lc-sys` 0.47.0), `rusqlite` 0.42.0 (`libsqlite3-sys` 0.40.0), `tracing` 0.1.44. This macOS run is evidence for the behavior against real PostgreSQL 18, not Linux evidence; the Linux evidence of the fixture is the CI job `integration`, which is `NOT_RUN`.
+
+#### Evidence per criterion
+
+Each row names what proves the criterion on the final tree and the part of this record that holds the details. The checkers' verdicts are theirs and are not repeated here.
+
+| Criterion | What proves it at `ecd0ee5` | Details | Result |
+|---|---|---|---|
+| `0004 AC-1` | `cargo metadata`, `Cargo.lock`, `cargo build --workspace --locked`, the use check, `scripts/check.sh guards` (rows above) | [Milestone 1](#milestone-1-guards-workspace-shape-and-dependencies), [step 10](#build-plan-step-10-the-daemon) | pass on the workstation |
+| `0004 AC-2`, `0004 AC-4` | the `pool-repo-check` tests and `scripts/prove-checks.sh` | [Milestone 1](#milestone-1-guards-workspace-shape-and-dependencies) | pass on the workstation |
+| `0004 AC-3` | `scripts/check.sh deny` (inside `all`) and `scripts/check.sh linux-build` | [Milestone 1](#milestone-1-guards-workspace-shape-and-dependencies), [step 12](#build-plan-step-12-fuzzing-and-the-ci-rule) | pass on the workstation and in the Linux image |
+| `0004 AC-5` to `0004 AC-8` | `pool-config` tests and `check_config.rs` (inside `all`) | [Milestone 2](#milestone-2-configuration-and-wire-format) | pass |
+| `0004 AC-9`, `0004 AC-13` | `commands.rs` (inside `all`) and the secret tests of `pool-core` | [step 7](#build-plan-step-7-secrets-tls-and-the-backend-connection), [step 8](#build-plan-step-8-bootstrap-the-authority-command-and-the-first-run-against-postgresql), [step 10](#build-plan-step-10-the-daemon) | pass |
+| `0004 AC-10` | `pool-control` `journal.rs` (inside `all`) and `integration` | [step 6](#build-plan-step-6-authority-on-disk-and-the-control-loop), [step 8](#build-plan-step-8-bootstrap-the-authority-command-and-the-first-run-against-postgresql) | pass |
+| `0004 AC-11`, `0004 AC-12` | `integration`, with `pool-control` `controller.rs` for the library half | [step 6](#build-plan-step-6-authority-on-disk-and-the-control-loop), [step 8](#build-plan-step-8-bootstrap-the-authority-command-and-the-first-run-against-postgresql) | pass on PostgreSQL 18.7 in the container |
+| `0004 AC-14` to `0004 AC-17`, `0004 AC-19`, `0004 AC-20`, `0004 AC-22`, `0004 AC-23`, `0004 AC-25` | `pool-core` tests for the hermetic half (inside `all`), `integration` for the half on the fixture | [step 9](#build-plan-step-9-the-session), [step 10](#build-plan-step-10-the-daemon), [step 11](#build-plan-step-11-limits-loss-and-denial-on-the-fixture) | pass in both halves; the CI half `NOT_RUN` |
+| `0004 AC-18`, `0004 AC-21`, `0004 AC-24` | `integration` | [step 10](#build-plan-step-10-the-daemon), [step 11](#build-plan-step-11-limits-loss-and-denial-on-the-fixture) | pass on PostgreSQL 18.7 in the container; the CI half `NOT_RUN` |
+| `0004 AC-26` | `integration` with Docker (exit 0) and without a daemon (exit 3) | rows above, [step 8](#build-plan-step-8-bootstrap-the-authority-command-and-the-first-run-against-postgresql) | pass |
+| `0004 AC-27` | `scripts/check.sh fuzz` | [step 12](#build-plan-step-12-fuzzing-and-the-ci-rule) | pass on the workstation; the CI job `fuzz` `NOT_RUN` (M2) |
+| `0004 AC-28` | `pool-protocol` tests (inside `all`) | [step 4](#step-4-the-wire-format) | pass |
+| `0003 AC-17`, `0003 AC-18` | `pool-control` tests (inside `all`); the guard half of `0003 AC-18` in `scripts/check.sh guards` | [step 6](#build-plan-step-6-authority-on-disk-and-the-control-loop), [Milestone 1](#milestone-1-guards-workspace-shape-and-dependencies) | pass |
+| `0003 AC-19` | `scripts/check.sh guards` and its case in `scripts/prove-checks.sh` | [Milestone 1](#milestone-1-guards-workspace-shape-and-dependencies) | pass |
+
+**Messages proved only hermetically.** Under the rule "A golden message is not proof of a wire format" of [The integration check](index.md#the-integration-check), these stay hermetic because no real client of the fixture can be made to send them: a `GSSENCRequest`, a `CancelRequest` and a startup packet with another major version (`gssenc_is_answered_with_n_and_a_version_3_2_gets_negotiation`, `a_cancel_request_is_read_and_dropped`, `refused_versions_and_parameters` in `pool-core/tests/session.rs`, and the golden tests of `pool-protocol`), and a `_pq_.` parameter, whose `NegotiateProtocolVersion` answer is compared with bytes captured from PostgreSQL 18.7 (`negotiation_carries_the_whole_protocol_code_as_postgresql_18_7_sends_it`). Every other message that POOL sends to a client or expects from a node has had a real `psql` 18.7 or PostgreSQL 18.7 on the other end in `integration`.
