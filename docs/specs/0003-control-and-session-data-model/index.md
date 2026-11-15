@@ -1,7 +1,7 @@
 # 0003. Control and session data model
 
 **Date**: 2026-11-15
-**Status**: In Progress
+**Status**: Accepted
 
 ## Summary
 
