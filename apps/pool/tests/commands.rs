@@ -12,6 +12,7 @@ use std::net::TcpListener;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 const CA: &str = concat!(
@@ -29,12 +30,24 @@ struct Run {
     stderr: String,
 }
 
+/// One child starts at a time. A child between fork and exec holds a copy of
+/// every descriptor of this process, also of the `pool.lock` that a test
+/// holds, and `flock` stays held while any copy is open. `spawn` returns
+/// after the exec, which closes the copy, so the next start sees none.
+static SPAWN: Mutex<()> = Mutex::new(());
+
 fn pool(args: &[&str]) -> Run {
-    let output: Output = Command::new(env!("CARGO_BIN_EXE_pool"))
-        .args(args)
-        .stdin(Stdio::null())
-        .output()
-        .expect("run pool");
+    let child = {
+        let _no_other_child_starts = SPAWN.lock().unwrap_or_else(PoisonError::into_inner);
+        Command::new(env!("CARGO_BIN_EXE_pool"))
+            .args(args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("run pool")
+    };
+    let output: Output = child.wait_with_output().expect("wait for pool");
     Run {
         code: output.status.code().expect("exit status, not a signal"),
         stdout: String::from_utf8(output.stdout).expect("utf-8"),
