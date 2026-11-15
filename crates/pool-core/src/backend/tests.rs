@@ -1019,3 +1019,67 @@ async fn ac29_the_node_must_name_the_system_identifier_and_timeline_of_the_route
         );
     }
 }
+
+#[test]
+fn data_row_refuses_every_body_that_lies_about_its_columns() {
+    // Added by the tests of scope 004, round six (decision 102): `data_row`
+    // is out of the fuzz target `auth`, so its bodies that lie are fed here.
+    // Each one is `BackendError::Protocol`, and none panics.
+    let good = data_row_message(&[Some("7613"), None, Some("primary")])[5..].to_vec();
+    assert_eq!(
+        data_row(&good),
+        Ok(vec![
+            Some("7613".to_string()),
+            None,
+            Some("primary".to_string())
+        ])
+    );
+    // Every prefix of a good body.
+    for end in 0..good.len() {
+        assert_eq!(
+            data_row(&good[..end]),
+            Err(BackendError::Protocol),
+            "prefix of {end} bytes"
+        );
+    }
+    let column = |len: i32, bytes: &[u8]| [&len.to_be_bytes()[..], bytes].concat();
+    let body =
+        |count: u16, columns: &[Vec<u8>]| [&count.to_be_bytes()[..], &columns.concat()].concat();
+    let lies: [(&str, Vec<u8>); 8] = [
+        (
+            "more columns than there are",
+            body(3, &[column(1, b"a"), column(-1, b"")]),
+        ),
+        ("the largest count", body(u16::MAX, &[column(1, b"a")])),
+        (
+            "a column longer than the body",
+            body(1, &[column(5, b"abc")]),
+        ),
+        (
+            "a column of i32::MAX bytes",
+            body(1, &[column(i32::MAX, b"abc")]),
+        ),
+        (
+            "a negative length other than -1",
+            body(1, &[column(-2, b"")]),
+        ),
+        ("i32::MIN as the length", body(1, &[column(i32::MIN, b"")])),
+        (
+            "bytes after the last column",
+            body(1, &[column(1, b"a"), b"\x00".to_vec()]),
+        ),
+        (
+            "text that is not UTF-8",
+            body(1, &[column(2, &[0xc3, 0x28])]),
+        ),
+    ];
+    for (what, bytes) in lies {
+        assert_eq!(
+            data_row(&bytes),
+            Err(BackendError::Protocol),
+            "{what}: {bytes:02x?}"
+        );
+    }
+    // And a count of 0 with nothing after it is an empty row, not an error.
+    assert_eq!(data_row(&[0, 0]), Ok(Vec::new()));
+}
