@@ -100,7 +100,7 @@ fn healthy_board() -> ObservationBoard {
 /// The plan that the bootstrap command would write, through the real reader.
 fn plan(path: &Path) -> BootstrapPlan {
     Journal::read(path)
-        .plan_bootstrap(&config(None), &healthy_board(), at(100))
+        .bootstrap_plan(&config(None), &healthy_board(), at(100))
         .expect("bootstrap is allowed")
 }
 
@@ -239,7 +239,7 @@ fn ac10_a_created_journal_reads_back_as_ready_with_its_witness() {
     assert_eq!(authority.start_sequence().get(), 0);
     // The reader refuses a second bootstrap.
     let refused = read
-        .plan_bootstrap(&config(None), &healthy_board(), at(100))
+        .bootstrap_plan(&config(None), &healthy_board(), at(100))
         .expect_err("a journal is present");
     let names: Vec<&str> = refused.reasons().iter().map(|r| r.as_str()).collect();
     assert_eq!(names, ["bootstrap.store_present"]);
@@ -268,7 +268,7 @@ fn ac10_no_file_and_an_empty_file_are_absent() {
     assert_eq!(std::fs::metadata(&path).expect("file").len(), 0);
     assert!(
         Journal::read(&path)
-            .plan_bootstrap(&config(None), &healthy_board(), at(100))
+            .bootstrap_plan(&config(None), &healthy_board(), at(100))
             .is_ok(),
         "an empty file does not block the next bootstrap"
     );
@@ -358,7 +358,7 @@ fn ac10_reading_never_changes_the_journal() {
     for witness in [None, Some(X), Some(Y)] {
         let _ = Journal::read(&path).classify(&config(witness));
     }
-    let _ = Journal::read(&path).plan_bootstrap(&config(None), &healthy_board(), at(100));
+    let _ = Journal::read(&path).bootstrap_plan(&config(None), &healthy_board(), at(100));
     assert_eq!(std::fs::read(&path).expect("read"), before);
     assert_eq!(integer(&path, "SELECT start_sequence FROM store"), 0);
 }
@@ -369,7 +369,7 @@ fn ac10_create_needs_an_empty_file() {
     let folder = folder("create-needs-empty");
     let missing = folder.join("journal.sqlite3");
     let plan = Journal::read(&missing)
-        .plan_bootstrap(&config(None), &healthy_board(), at(100))
+        .bootstrap_plan(&config(None), &healthy_board(), at(100))
         .expect("plan");
     assert_eq!(
         Journal::create(&missing, &plan, id(X), 0),

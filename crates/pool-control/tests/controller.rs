@@ -119,7 +119,7 @@ fn ready_journal(name: &str) -> (PathBuf, AuthorityState, Journal) {
     let path = folder.join("journal.sqlite3");
     std::fs::File::create_new(&path).expect("create the empty journal file");
     let plan = Journal::read(&path)
-        .plan_bootstrap(&config(None), &board_of(healthy(98)), at(100))
+        .bootstrap_plan(&config(None), &board_of(healthy(98)), at(100))
         .expect("bootstrap is allowed");
     Journal::create(
         &path,
@@ -479,7 +479,7 @@ fn ac19_journal_read_plans_bootstrap_with_the_board_and_the_configuration() {
     let config = config(None);
     // Samples dated after now still count: the now is the latest sample.
     let plan = read
-        .plan_bootstrap(&config, &board_of(healthy(120)), at(100))
+        .bootstrap_plan(&config, &board_of(healthy(120)), at(100))
         .expect("plan");
     let writers: Vec<&str> = plan
         .clusters()
@@ -493,13 +493,13 @@ fn ac19_journal_read_plans_bootstrap_with_the_board_and_the_configuration() {
         "\n[probe]\nperiod_ms = 100\ntimeout_ms = 100\nobservation_expiry_ms = 1000\n",
     );
     let refused = read
-        .plan_bootstrap(&short, &board_of(healthy(98)), at(100))
+        .bootstrap_plan(&short, &board_of(healthy(98)), at(100))
         .expect_err("stale");
     let names: Vec<&str> = refused.reasons().iter().map(|r| r.as_str()).collect();
     assert_eq!(names, ["bootstrap.evidence_missing"]);
     // An empty board is no evidence.
     assert!(
-        read.plan_bootstrap(&config, &ObservationBoard::new(), at(100))
+        read.bootstrap_plan(&config, &ObservationBoard::new(), at(100))
             .is_err()
     );
 }

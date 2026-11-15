@@ -166,7 +166,7 @@ impl LatchReceipt {
 /// Only [`Journal::read`] makes one, and it shows nothing of what it holds.
 /// Code outside this crate gets an [`AuthorityState`] from
 /// [`JournalRead::classify`] and a [`BootstrapPlan`] from
-/// [`JournalRead::plan_bootstrap`], and in no other way. So no other crate
+/// [`JournalRead::bootstrap_plan`], and in no other way. So no other crate
 /// can build a journal value or change one that was read. Code outside this
 /// crate cannot build one:
 ///
@@ -200,7 +200,7 @@ impl JournalRead {
     /// Decides whether `pool bootstrap` may write a journal, from what was
     /// read, the samples of `board`, the expiry of `config.probe()` and the
     /// later of `now` and the latest sample time on the board.
-    pub fn plan_bootstrap(
+    pub fn bootstrap_plan(
         &self,
         config: &ValidatedConfig,
         board: &ObservationBoard,
