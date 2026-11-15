@@ -918,15 +918,15 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/startup.rs": {
-    "mtime": 1794739082.5161052,
-    "seen": 1794739104.2788968,
-    "ast_hash": "f8b0ca2ef3249f65f7f69754b8d720bd",
+    "mtime": 1794742393.2850323,
+    "seen": 1794742439.252386,
+    "ast_hash": "ef8d337e067120f7cc723072f555c604",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/message.rs": {
-    "mtime": 1794739082.5156252,
-    "seen": 1794739104.278899,
-    "ast_hash": "4024b76f92bd9ec40e73c438a039c042",
+    "mtime": 1794742393.2844727,
+    "seen": 1794742439.2523808,
+    "ast_hash": "2d249b274a2887ba57e3e41e516f6133",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/auth.rs": {
@@ -942,9 +942,9 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/scram.rs": {
-    "mtime": 1794739082.5158336,
-    "seen": 1794739104.278902,
-    "ast_hash": "98ddd71e7617e199b316b1f09e1c2e2c",
+    "mtime": 1794742393.2846847,
+    "seen": 1794742439.252384,
+    "ast_hash": "7e9ed6385777ac452b8fe1847111b00f",
     "semantic_hash": ""
   },
   "crates/pool-protocol/src/base64.rs": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "crates/pool-protocol/tests/golden.rs": {
-    "mtime": 1794739082.5163229,
-    "seen": 1794739104.278904,
-    "ast_hash": "c93f2c465f90fd0ccbfd95fe543ce6c6",
+    "mtime": 1794742393.2852736,
+    "seen": 1794742439.252387,
+    "ast_hash": "9b8e157e59ba26c0e9f29a3280fa21d6",
     "semantic_hash": ""
   },
   "crates/pool-control/src/journal.rs": {
@@ -1026,15 +1026,15 @@
     "semantic_hash": ""
   },
   "crates/pool-core/src/backend/tests.rs": {
-    "mtime": 1794741377.6169004,
-    "seen": 1794741410.869602,
-    "ast_hash": "50565b51f646bac4dc91fbd871c88fee",
+    "mtime": 1794742393.283121,
+    "seen": 1794742439.252393,
+    "ast_hash": "ed6a833630089b4d5614bea1d8a33a1c",
     "semantic_hash": ""
   },
   "crates/pool-core/src/session.rs": {
-    "mtime": 1794741377.618532,
-    "seen": 1794741410.869598,
-    "ast_hash": "6446349c6381bb8c36430c01250c4649",
+    "mtime": 1794742393.2836285,
+    "seen": 1794742439.252392,
+    "ast_hash": "aa4fd0a42ca615548b4d5cb4152cfe11",
     "semantic_hash": ""
   },
   "crates/pool-core/src/route.rs": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "crates/pool-core/tests/session.rs": {
-    "mtime": 1794741377.6188073,
-    "seen": 1794741410.8696032,
-    "ast_hash": "44852cea579dffc2e4a36853c2e2b0b4",
+    "mtime": 1794742393.284073,
+    "seen": 1794742439.252394,
+    "ast_hash": "03387c885490307d2415617f91c5bced",
     "semantic_hash": ""
   },
   "apps/pool/src/commands.rs": {

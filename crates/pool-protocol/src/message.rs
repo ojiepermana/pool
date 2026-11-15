@@ -164,18 +164,16 @@ pub enum FrontendAction {
         /// The bytes of the body that follow.
         body_len: u32,
     },
-    /// `Terminate`: send it on and close both connections.
-    Terminate {
-        /// The bytes of the body that follow.
-        body_len: u32,
-    },
+    /// `Terminate` with the length 4 and no body: send it on and close both connections.
+    Terminate,
     /// Refuse with this error and close the backend.
     Refuse(PoolError),
 }
 
 /// Classifies a client message header after `ReadyForQuery`, spec 0004 "Messages after login".
 ///
-/// `max_len` is `limits.frontend_message_max_bytes`, compared with the length field.
+/// `max_len` is `limits.frontend_message_max_bytes`, compared with the length field
+/// of a `Query`. `Terminate` must have the length 4, a message with no body.
 pub fn classify_frontend(bytes: [u8; HEADER_LEN], max_len: u32) -> FrontendAction {
     let Ok(header) = Header::parse(bytes) else {
         return FrontendAction::Refuse(PoolError::ProtocolViolation);
@@ -185,9 +183,8 @@ pub fn classify_frontend(bytes: [u8; HEADER_LEN], max_len: u32) -> FrontendActio
         b'Q' => FrontendAction::Query {
             body_len: header.body_len(),
         },
-        b'X' => FrontendAction::Terminate {
-            body_len: header.body_len(),
-        },
+        b'X' if header.len == 4 => FrontendAction::Terminate,
+        b'X' => FrontendAction::Refuse(PoolError::ProtocolViolation),
         b'P' | b'B' | b'D' | b'E' | b'C' | b'H' | b'S' | b'F' | b'd' | b'c' | b'f' => {
             FrontendAction::Refuse(PoolError::FeatureNotSupported)
         }
@@ -278,8 +275,15 @@ mod tests {
         );
         assert_eq!(
             classify_frontend(header(b'X', 4), 1024),
-            FrontendAction::Terminate { body_len: 0 }
+            FrontendAction::Terminate
         );
+        for len in [5, 8, 1024, u32::MAX] {
+            assert_eq!(
+                classify_frontend(header(b'X', len), 1024),
+                FrontendAction::Refuse(PoolError::ProtocolViolation),
+                "{len}"
+            );
+        }
         for tag in *b"PBDECHSFdcf" {
             assert_eq!(
                 classify_frontend(header(tag, 4), 1024),
