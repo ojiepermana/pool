@@ -278,3 +278,89 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod edge_tests {
+    //! Edges added by /test (0003 AC-6): identifiers count bytes, accept only
+    //! ASCII, and compare exactly.
+
+    use super::*;
+
+    #[test]
+    fn ac6_name_ids_refuse_letters_that_only_look_ascii() {
+        for text in [
+            "\u{440}g1",
+            "p\u{261}1",
+            "\u{ff50}\u{ff47}1",
+            "pg\u{200b}1",
+            "pg\u{661}",
+            "pg1\0",
+            "pg1\u{7f}",
+            "\u{130}",
+        ] {
+            assert_eq!(ClusterId::parse(text), None, "{text:?}");
+            assert_eq!(NodeId::parse(text), None, "{text:?}");
+            assert_eq!(IdentityId::parse(text), None, "{text:?}");
+        }
+    }
+
+    #[test]
+    fn ac6_name_ids_accept_a_trailing_dash_or_underscore_and_keep_the_text() {
+        for text in ["a-", "a_", "a--", "z9", "a-_-_9"] {
+            assert_eq!(
+                NodeId::parse(text).map(|id| id.to_string()),
+                Some(text.to_owned())
+            );
+        }
+        // Different kinds hold the same text and stay different types; each
+        // compares only with its own kind.
+        assert_eq!(ClusterId::parse("main"), ClusterId::parse("main"));
+        assert_ne!(ClusterId::parse("main"), ClusterId::parse("main-"));
+        assert_ne!(NodeId::parse("pg1"), NodeId::parse("pg1_"));
+    }
+
+    #[test]
+    fn ac6_system_identifier_refuses_other_digits_and_orders_by_number() {
+        for text in ["\u{661}", "1\u{661}", "\u{ff11}", "1.0", "1,000", "1_000"] {
+            assert_eq!(SystemIdentifier::parse(text), None, "{text:?}");
+        }
+        assert!(SystemIdentifier::parse("9") < SystemIdentifier::parse("10"));
+        assert_eq!(
+            SystemIdentifier::parse("18446744073709551615").map(|id| id.to_string()),
+            Some("18446744073709551615".to_owned())
+        );
+    }
+
+    #[test]
+    fn ac6_authority_id_counts_bytes_and_round_trips_every_byte() {
+        // Thirty two bytes that are not thirty two hex digits.
+        assert_eq!(AuthorityId::parse(&"\u{e9}".repeat(16)), None);
+        assert_eq!(
+            AuthorityId::parse(&format!("{}\u{e9}", "a".repeat(30))),
+            None
+        );
+        // Every byte value survives text and back.
+        for value in 0..=u8::MAX {
+            let bytes = [value; 16];
+            let text = AuthorityId::from_bytes(bytes).to_string();
+            assert_eq!(text.len(), 32);
+            assert_eq!(
+                AuthorityId::parse(&text),
+                Some(AuthorityId::from_bytes(bytes))
+            );
+        }
+        // One differing byte at either end is another identity.
+        let mut first = [0_u8; 16];
+        first[0] = 1;
+        let mut last = [0_u8; 16];
+        last[15] = 1;
+        assert_ne!(
+            AuthorityId::from_bytes(first),
+            AuthorityId::from_bytes(last)
+        );
+        assert_ne!(
+            AuthorityId::from_bytes(first),
+            AuthorityId::from_bytes([0; 16])
+        );
+    }
+}

@@ -873,3 +873,70 @@ fn build(
         identity_index: IdentityIndex(index),
     }
 }
+
+#[cfg(test)]
+mod edge_tests {
+    //! Edges of the value syntaxes, added by /test (0003 AC-2, AC-4).
+
+    use super::*;
+
+    #[test]
+    fn ac2_name_syntax_counts_bytes_and_refuses_only_the_listed_controls() {
+        assert_eq!(parse_name(&"a".repeat(63)).map(|n| n.len()), Some(63));
+        assert_eq!(parse_name(&"a".repeat(64)), None);
+        assert_eq!(parse_name(""), None);
+        assert_eq!(parse_name(&"\u{e9}".repeat(32)), None);
+        assert!(parse_name(&format!("a{}", "\u{e9}".repeat(31))).is_some());
+        for scalar in (0_u32..=0x1f).chain([0x7f]) {
+            let text = format!("a{}b", char::from_u32(scalar).expect("scalar"));
+            assert_eq!(parse_name(&text), None, "{scalar:#x}");
+        }
+        for text in [" ", " a ", "\u{80}", "\u{85}", "\u{a0}", "\u{2028}"] {
+            assert_eq!(parse_name(text), Some(text.to_owned()), "{text:?}");
+        }
+    }
+
+    #[test]
+    fn ac2_path_syntax_counts_bytes_and_needs_a_leading_slash() {
+        assert!(parse_path("/").is_some());
+        assert!(parse_path(&format!("/{}", "p".repeat(4095))).is_some());
+        assert_eq!(parse_path(&format!("/{}", "p".repeat(4096))), None);
+        assert_eq!(parse_path(&format!("/{}", "\u{e9}".repeat(2048))), None);
+        for text in [
+            "", "p", "./p", "~/p", " /p", "\\p", "/p\n", "/p\u{7f}", "/p\0",
+        ] {
+            assert_eq!(parse_path(text), None, "{text:?}");
+        }
+    }
+
+    #[test]
+    fn ac2_host_syntax_counts_bytes_and_allows_only_its_characters() {
+        assert!(parse_host(&"a".repeat(253)).is_some());
+        assert_eq!(parse_host(&"a".repeat(254)), None);
+        assert_eq!(parse_host(""), None);
+        for text in ["::1", "a.b-c:d", "A.B", "1", "."] {
+            assert!(parse_host(text).is_some(), "{text:?}");
+        }
+        for byte in 0_u8..=0x7f {
+            let allowed = byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b':');
+            let text = format!("a{}b", char::from(byte));
+            assert_eq!(parse_host(&text).is_some(), allowed, "{byte:#x}");
+        }
+        assert_eq!(parse_host("d\u{e9}"), None);
+    }
+
+    #[test]
+    fn ac4_identity_index_debug_prints_only_the_count() {
+        let mut map = BTreeMap::new();
+        map.insert(
+            "CANARY-9f2c7b1e".to_owned(),
+            BTreeMap::from([("CANARY-9f2c7b1e".to_owned(), 0), ("db".to_owned(), 1)]),
+        );
+        map.insert("other".to_owned(), BTreeMap::from([("db".to_owned(), 2)]));
+        let index = IdentityIndex(map);
+        assert_eq!(format!("{index:?}"), "IdentityIndex { entries: 3 }");
+        assert_eq!(index.get("CANARY-9f2c7b1e", "db"), Some(1));
+        assert_eq!(index.get("other", "CANARY-9f2c7b1e"), None);
+        assert_eq!(index.get("db", "other"), None);
+    }
+}

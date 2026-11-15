@@ -220,4 +220,104 @@ fn open_only_on_full_agreement() {
     // Open needs agreement on the writer (2 of 4 pairs), no latch, the writer
     // a primary on timeline 1, and no conflict from the other two nodes.
     assert!(opened > 0);
+    // The exact count, worked out by hand from the same rules (added by
+    // /test): an open answer needs expected and approved writer equal (pg1
+    // or pg2), no latch and the writer seen as a primary on timeline 1. Each
+    // of the other two nodes must then be seen in one of the five states that
+    // are no conflict (none, stale, failed, a replica on timeline 1, another
+    // system), except a quarantined pg3, which may be seen in any of the
+    // eight. Per writer: 5 * 5 + 5 * 8 = 65, and two writers give 130.
+    assert_eq!(opened, 130);
+}
+
+/// An older sample that would conflict if it were taken for the latest one.
+fn older_conflict(id: &str) -> Observation {
+    Observation::new(
+        node(id),
+        MonotonicTime::from_origin(Duration::from_secs(97)),
+        ObservationOutcome::Reached(NodeFacts {
+            system_identifier: SystemIdentifier::parse(SYSTEM_ID).expect("system identifier"),
+            timeline: TimelineId::from_observed(2).expect("timeline"),
+            in_recovery: false,
+        }),
+    )
+}
+
+#[test]
+fn the_answer_does_not_depend_on_the_order_or_on_older_samples() {
+    // covers: 0003 AC-11, AC-12. Over the observation part of the domain,
+    // the answer is the same with the samples reversed, and with an older
+    // conflicting sample of every node put in front of or behind the rest.
+    // An older sample only counts when it is the latest one, so it is left
+    // out where a node has no sample at 98 seconds.
+    let now = MonotonicTime::from_origin(Duration::from_secs(100));
+    let main = ClusterId::parse("main").expect("cluster id");
+    let config = config("pg1");
+    for latched in [false, true] {
+        let state = classify_startup(&config, StoreProbe::Present(stored("pg1", false, latched)));
+        for a in ALL_SEEN {
+            for b in ALL_SEEN {
+                for c in ALL_SEEN {
+                    let seen = [a, b, c];
+                    let base: Vec<Observation> = NODES
+                        .iter()
+                        .zip(seen)
+                        .filter_map(|(id, s)| observation(id, s))
+                        .collect();
+                    let answer = |observations: &[Observation]| {
+                        writer_admission(&config, &state, &main, observations, now, EXPIRY)
+                    };
+                    let want = answer(&base);
+                    let mut reversed = base.clone();
+                    reversed.reverse();
+                    assert_eq!(answer(&reversed), want, "reversed {seen:?}");
+
+                    let older: Vec<Observation> = NODES
+                        .iter()
+                        .zip(seen)
+                        .filter(|(_, s)| !matches!(s, Seen::None | Seen::Stale))
+                        .map(|(id, _)| older_conflict(id))
+                        .collect();
+                    let mut front = older.clone();
+                    front.extend(base.iter().cloned());
+                    assert_eq!(answer(&front), want, "older in front {seen:?}");
+                    let mut back = base.clone();
+                    back.extend(older);
+                    assert_eq!(answer(&back), want, "older behind {seen:?}");
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn open_carries_the_epoch_and_revision_of_the_journal() {
+    // covers: 0003 AC-12. The node of an Open result is the approved writer
+    // and its numbers are the journal's, not new ones.
+    let now = MonotonicTime::from_origin(Duration::from_secs(100));
+    let main = ClusterId::parse("main").expect("cluster id");
+    let config = config("pg1");
+    let mut journal = stored("pg1", false, false);
+    journal.authority_revision = AuthorityRevision::from_stored(42).expect("revision");
+    journal.start_sequence = StartSequence::from_stored(9).expect("start sequence");
+    journal.clusters[0].topology_epoch =
+        TopologyEpoch::from_stored(9_223_372_036_854_775_807).expect("epoch");
+    let state = classify_startup(&config, StoreProbe::Present(journal));
+    let observations: Vec<Observation> = [
+        ("pg1", Seen::PrimaryTimeline1),
+        ("pg2", Seen::ReplicaTimeline1),
+        ("pg3", Seen::None),
+    ]
+    .into_iter()
+    .filter_map(|(id, s)| observation(id, s))
+    .collect();
+    match writer_admission(&config, &state, &main, &observations, now, EXPIRY) {
+        WriterAdmission::Open(primary) => {
+            assert_eq!(primary.cluster(), &main);
+            assert_eq!(primary.node(), &node("pg1"));
+            assert_eq!(primary.topology_epoch().get(), 9_223_372_036_854_775_807);
+            assert_eq!(primary.authority_revision().get(), 42);
+        }
+        WriterAdmission::Closed(closed) => panic!("expected open, got {closed:?}"),
+    }
 }

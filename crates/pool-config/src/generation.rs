@@ -141,3 +141,57 @@ mod tests {
         assert_eq!(StartSequence::FIRST.to_string(), "0");
     }
 }
+
+#[cfg(test)]
+mod edge_tests {
+    //! Edges added by /test (0003 AC-6): every generation type stops at
+    //! 9223372036854775807 and never wraps.
+
+    use super::*;
+
+    const BELOW_TOP: u64 = 9_223_372_036_854_775_806;
+    const TOP: u64 = 9_223_372_036_854_775_807;
+
+    macro_rules! assert_edges {
+        ($ty:ident) => {{
+            let below = $ty::from_stored(BELOW_TOP).expect("below the top");
+            let top = $ty::from_stored(TOP).expect("the top");
+            assert_eq!(below.get(), BELOW_TOP);
+            assert_eq!(top.get(), TOP);
+            assert_eq!(below.checked_next(), Some(top));
+            assert!(below < top);
+            assert_eq!(top.checked_next(), None);
+            assert_eq!(top.to_string(), "9223372036854775807");
+            assert_eq!(below.to_string(), "9223372036854775806");
+            assert_eq!($ty::from_stored(TOP + 1), None);
+            assert_eq!($ty::from_stored(u64::MAX), None);
+            let mut generation = $ty::FIRST;
+            for _ in 0..1000 {
+                let next = generation.checked_next().expect("far below the top");
+                assert_eq!(next.get(), generation.get() + 1);
+                assert!(generation < next);
+                generation = next;
+            }
+            assert_eq!($ty::from_stored($ty::FIRST.get()), Some($ty::FIRST));
+        }};
+    }
+
+    #[test]
+    fn ac6_topology_epoch_stops_exactly_at_the_largest_stored_value() {
+        assert_edges!(TopologyEpoch);
+    }
+
+    #[test]
+    fn ac6_authority_revision_stops_exactly_at_the_largest_stored_value() {
+        assert_edges!(AuthorityRevision);
+    }
+
+    #[test]
+    fn ac6_start_sequence_stops_exactly_at_the_largest_stored_value() {
+        assert_edges!(StartSequence);
+        assert_eq!(
+            StartSequence::from_stored(1).map(StartSequence::get),
+            Some(1)
+        );
+    }
+}
