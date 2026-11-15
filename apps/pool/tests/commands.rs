@@ -708,50 +708,40 @@ const RACE_ROUNDS: usize = 25;
 fn ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked() {
     // covers: 0004 AC-9 (the second finding of the verification of
     // milestone 3). Eight `show-authority` on a state directory without
-    // `pool.lock`. Children start one at a time, so each reads its
-    // configuration from a named pipe of its own, and the test releases all
-    // eight together: they reach the lock file at the same moment. Each must
-    // exit 0 or 3 with `state.locked`, never with `state.permissions`.
-    use std::io::Write;
+    // `pool.lock`. Children start one at a time, so each waits at a gate of
+    // its own, and the test opens all eight gates together: they reach the
+    // lock file at the same moment. Each must exit 0 or 3 with
+    // `state.locked`, never with `state.permissions`.
     let mut locked = 0;
     for round in 0..RACE_ROUNDS {
         let layout = Layout::new(&format!("lock-race-{round}"));
-        let text = fs::read(&layout.config).expect("read the configuration");
-        let pipes: Vec<PathBuf> = (0..8)
-            .map(|index| layout.root.join(format!("pool-{index}.toml")))
+        let config = layout.config.to_str().expect("utf-8");
+        let gates: Vec<PathBuf> = (0..8)
+            .map(|index| layout.root.join(format!("gate-{index}")))
             .collect();
-        for pipe in &pipes {
-            let made = start("mkfifo", &[pipe.to_str().expect("utf-8")])
+        for gate in &gates {
+            let made = start("mkfifo", &[gate.to_str().expect("utf-8")])
                 .wait()
                 .expect("mkfifo");
             assert!(made.success());
         }
-        let children: Vec<_> = pipes
+        let children: Vec<_> = gates
             .iter()
-            .map(|pipe| {
+            .map(|gate| {
                 start(
-                    env!("CARGO_BIN_EXE_pool"),
-                    &["show-authority", "--config", pipe.to_str().expect("utf-8")],
+                    "/bin/sh",
+                    &[
+                        "-c",
+                        GATE,
+                        "gate",
+                        gate.to_str().expect("utf-8"),
+                        env!("CARGO_BIN_EXE_pool"),
+                        config,
+                    ],
                 )
             })
             .collect();
-        // Opening a writer waits for its reader, so all eight are now
-        // blocked in their read. Then all are released together.
-        let mut writers: Vec<fs::File> = pipes
-            .iter()
-            .map(|pipe| {
-                fs::OpenOptions::new()
-                    .write(true)
-                    .open(pipe)
-                    .expect("open the pipe")
-            })
-            .collect();
-        for writer in &mut writers {
-            writer.write_all(&text).expect("write the configuration");
-        }
-        drop(writers);
-        for child in children {
-            let output = child.wait_with_output().expect("wait");
+        for (index, output) in release(round, &gates, children).into_iter().enumerate() {
             let code = output.status.code().expect("an exit status");
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -761,11 +751,11 @@ fn ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked() {
                     assert_eq!(
                         stderr,
                         "error: state.locked: another process is using the state directory\n",
-                        "round {round}"
+                        "round {round}, child {index}"
                     );
                     locked += 1;
                 }
-                other => panic!("round {round}: exit {other}: {stdout} {stderr}"),
+                other => panic!("round {round}, child {index}: exit {other}: {stdout} {stderr}"),
             }
         }
         let mode = fs::metadata(layout.state.join("pool.lock"))
@@ -777,6 +767,78 @@ fn ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked() {
     // The number for the verification record.
     let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("pool-cmd-lock-race-locked.txt");
     fs::write(path, format!("{locked}\n")).expect("write");
+}
+
+/// The gate of one child of the lock race: the shell reads one line from
+/// the named pipe `$1`, then becomes `$2 show-authority --config $3`. The
+/// line ends the read, so nothing waits for the end of the pipe, and the
+/// configuration is a regular file.
+const GATE: &str = r#"read -r line < "$1" && exec "$2" show-authority --config "$3""#;
+
+/// How long one stage of the lock race may take for one child: opening its
+/// gate, and then finishing.
+const RACE_STAGE: Duration = Duration::from_secs(60);
+
+/// Opens the gate of each child, writes one line to each gate, and waits
+/// for every child to finish. The gates stay open until all children have
+/// finished, so no child can see a gate without a writer. A child that is
+/// not at its gate, or not finished, within [`RACE_STAGE`] fails the test
+/// with its round, its number and the stage; every child of the round is
+/// killed first, so the test never waits without end.
+fn release(round: usize, gates: &[PathBuf], mut children: Vec<std::process::Child>) -> Vec<Output> {
+    use tokio::io::AsyncWriteExt;
+    use tokio::net::unix::pipe;
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("a runtime for the test");
+    let fail = |children: &mut Vec<std::process::Child>, index: usize, stage: &str| -> ! {
+        for child in children.iter_mut() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+        panic!("round {round}, child {index}: {stage} within {RACE_STAGE:?}");
+    };
+    runtime.block_on(async {
+        // Opening a gate without waiting fails while its child has not
+        // opened it yet, so each open is asked again until the deadline.
+        let mut senders = Vec::new();
+        for (index, gate) in gates.iter().enumerate() {
+            let started = Instant::now();
+            let sender = loop {
+                match pipe::OpenOptions::new().open_sender(gate) {
+                    Ok(sender) => break sender,
+                    Err(_) if started.elapsed() < RACE_STAGE => {
+                        tokio::time::sleep(Duration::from_millis(5)).await;
+                    }
+                    Err(_) => fail(&mut children, index, "the child did not open its gate"),
+                }
+            };
+            senders.push(sender);
+        }
+        for (index, sender) in senders.iter_mut().enumerate() {
+            if sender.write_all(b"go\n").await.is_err() {
+                fail(&mut children, index, "the gate could not be written");
+            }
+        }
+        let started = Instant::now();
+        for index in 0..children.len() {
+            loop {
+                match children[index].try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) if started.elapsed() < RACE_STAGE => {
+                        tokio::time::sleep(Duration::from_millis(5)).await;
+                    }
+                    _ => fail(&mut children, index, "the child did not finish"),
+                }
+            }
+        }
+        drop(senders);
+    });
+    children
+        .into_iter()
+        .map(|child| child.wait_with_output().expect("the output of a child"))
+        .collect()
 }
 
 // ---- added by the tests of scope 004 (`/test one real primary path`) ----
