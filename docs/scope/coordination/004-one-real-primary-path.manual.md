@@ -8,7 +8,7 @@ Keputusan yang diambil atas namamu ada di `004-one-real-primary-path.log.md` bag
 
 | ID | Langkah | AC | Kotak yang dicentang dengan langkah ini `NOT_RUN` | Bisa dijalankan sesudah | Hasil |
 | --- | --- | --- | --- | --- | --- |
-| `F4-1` | Izin menulis ke GitHub untuk scope ini: lead mem-push `main` lokal ke branch `scope/004-one-real-primary-path`, membuka pull request dengan `gh`, menunggu check wajib, lalu `gh pr merge --merge` (jalur perubahan spec 0002; `main` menolak push langsung). Pull request itu juga membawa tiga commit penutup scope 003 yang masih lokal (`173ede5`, `7c5dbb4`, `c4d5714`), kecuali kamu meminta pull request penutup `scope/003-closing` lebih dulu | bukti CI fitur 4: check wajib pada pull request | belum ada | kapan saja; dibutuhkan paling lambat saat penutupan | `NOT_RUN`; ditanyakan ke user pada 2026-11-15, belum dijawab |
+| `F4-1` | Izin menulis ke GitHub untuk scope ini: lead mem-push `main` lokal ke branch `scope/004-one-real-primary-path`, membuka pull request dengan `gh`, menunggu check wajib, lalu `gh pr merge --merge` (jalur perubahan spec 0002; `main` menolak push langsung). Penutup scope 003 sudah masuk lewat pull request 5 (`673f91e`), jadi pull request ini hanya membawa pekerjaan scope 004 | bukti CI fitur 4: check wajib pada pull request | belum ada | kapan saja; dibutuhkan paling lambat saat penutupan | `NOT_RUN`; ditanyakan ke user pada 2026-11-15, belum dijawab |
 
 ## Nilai dari user
 

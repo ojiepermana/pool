@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `004-one-real-primary-path.brief-umum.md` · **Langkah manual:** `004-one-real-primary-path.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 16:02`
+- **Diperbarui:** `2026-11-15 16:05`
 
 ## Sub sesi wave `1`
 
@@ -41,6 +41,7 @@
 | 2026-11-15 | Tujuh sesi dimulai dari `619da9f`. Aplikasi memakai ulang lima folder worktree scope 003 di `/Users/ojiepermana/worktrees/pool/` untuk lima sesi baru (nama folder lama, branch baru; kolom Branch menyebut foldernya), jadi lima branch `claude/*-f3-*` kini tanpa worktree. Branch itu tetap ada dan tidak disentuh. | lead |
 | 2026-11-15 | User menjawab "Ya, buka PR 003". Lead mem-push `c4d5714` ke `scope/003-closing` (hanya tiga commit penutup 003; dua commit koordinasi 004 tidak ikut) dan membuka [pull request 5](https://github.com/ojiepermana/pool/pull/5). Run `ci` `43696000932` pada `c4d5714`: tujuh check `success`. Review otomatis Copilot membuka satu thread (severity rendah) pada log 003: `graphify-out/manifest.json` masih memuat hash lama untuk dokumen penutup, bertentangan dengan `AGENTS.md` langkah 6 dan dengan kalimat log 003 tentang "pembaruan kecil". Temuan itu benar. | user; lead |
 | 2026-11-15 | Perbaikan temuan itu: satu subagent (sekitar 315 ribu token, 11 menit) memperbarui graph untuk delapan dokumen pull request 5 lewat `graph_update.py --docs`: 3466 → 3503 node, 10781 → 10969 edge, 0 baris "minted by two different files", 0 node lama berpindah komunitas, tepat delapan baris manifest berubah dan tiap `semantic_hash` sama dengan MD5 file sekarang (dicek ulang lead). Commit di `main` = `04add78`; commit yang sama di-cherry-pick ke atas `c4d5714` di worktree sementara (`8bbfa97`) dan di-push ke `scope/003-closing`. Delapan dokumen itu keluar dari batch graph saat merge spec 0004. Menandai thread selesai dan merge menunggu jawaban user. | lead |
+| 2026-11-15 | User menjawab "Ya, selesaikan dan merge". Run `ci` `43697267010` pada `8bbfa97`: tujuh check `success`; tidak ada review atau thread baru. Lead menandai satu thread Copilot selesai (temuannya diperbaiki oleh `8bbfa97`), `mergeStateStatus` `CLEAN`, `gh pr merge 5 --merge` → `673f91e` (2026-11-15 16:04, 09:04 UTC). `main` lokal disamakan lewat `git merge --no-ff origin/main` → `57e4813` (tanpa konflik; `git diff origin/main HEAD` hanya tiga file koordinasi 004). Penutupan scope 003 selesai: lima branch `claude/*-f3-*` lulus `git merge-base --is-ancestor <branch> origin/main`, tanpa worktree, dihapus dengan `git branch -d`; kelima sesinya sudah terarsip oleh aplikasi sebelum run ini memakai ulang folder worktree-nya. Branch remote `scope/003-*` disimpan. | user; lead |
 
 ## Keputusan delegasi
 
@@ -53,7 +54,7 @@ Keputusan spec yang diambil dari opsi rekomendasi atas nama user (SKILL.md bagia
 ## Blocker terbuka
 
 - `F4-1` izin menulis ke GitHub untuk scope 004 (push branch scope, pull request, merge): belum dijawab; tidak menahan pekerjaan lokal, dibutuhkan paling lambat saat penutupan; dibuka oleh user.
-- Penutupan scope 003 di remote: tiga commit lokal (`173ede5`, `7c5dbb4`, `c4d5714`) belum di `origin/main`; lima branch, worktree, dan sesi `*-f3-*` belum dibersihkan; dibuka oleh izin user untuk pull request penutup, atau ikut pull request scope 004.
+- `main` lokal berada di depan `origin/main` (`673f91e`) hanya dengan commit koordinasi scope 004; semuanya ikut pull request scope 004 (`F4-1`).
 - Keputusan user dari scope 003 yang tidak menahan scope 004: Follow-up 13 spec 0003 (`PRD-006 AC-2`), catatan review Copilot di pull request 4, butir scope 002 (`F2-N1` sampai `F2-N5`, `F2-4`, `F2-5`).
 
 ## Dicentang pada wave ini
