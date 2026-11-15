@@ -78,7 +78,21 @@ process_tree() {
     }'
 }
 
-# Whether process $1 still runs: it exists and is not a zombie.
+# The start time of process $1, as one word, so that a process ID that was
+# used again by another process is not taken for the one that was seen.
+started_at() {
+  if command -v ps >/dev/null 2>&1; then
+    ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' '_'
+  elif [ -r "/proc/$1/stat" ]; then
+    line=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+    set -- ${line##*) }
+    shift 19
+    echo "$1"
+  fi
+}
+
+# Whether process $1 still runs: it exists, is not a zombie, and, when $2 is
+# given, started at $2.
 running() {
   if command -v ps >/dev/null 2>&1; then
     state=$(ps -o stat= -p "$1" 2>/dev/null) || return 1
@@ -92,22 +106,26 @@ running() {
   case $state in
     "" | Z*) return 1 ;;
   esac
+  if [ -n "${2:-}" ] && [ "$(started_at "$1")" != "$2" ]; then
+    return 1
+  fi
   return 0
 }
 
 # Ends $1 and every process under it. The tree is stopped first, until no
 # new process appears in it, so that none escapes by its parent ending
-# first. Then each gets SIGTERM, and after 5 seconds SIGKILL. Returns 1,
-# after one line on stderr, when a process of the tree still runs.
+# first. Each process is kept with its start time. Then each gets SIGTERM,
+# and after 5 seconds SIGKILL. Returns 1, after one line on stderr, when a
+# process of the tree still runs.
 end_tree() {
   [ -n "$1" ] || return 0
-  if ! running "$1"; then
-    wait "$1" 2>/dev/null || :
-    return 0
-  fi
   if ! command -v ps >/dev/null 2>&1 && [ ! -r /proc/self/stat ]; then
     echo "integration: neither ps nor /proc is there to end the processes of the tests" >&2
     return 1
+  fi
+  if ! running "$1"; then
+    wait "$1" 2>/dev/null || :
+    return 0
   fi
   frozen=" "
   rounds=0
@@ -115,18 +133,20 @@ end_tree() {
     grown=no
     for pid in $(process_tree "$1"); do
       case $frozen in
-        *" $pid "*) ;;
-        *) kill -STOP "$pid" 2>/dev/null && frozen="$frozen$pid "
+        *" $pid="*) ;;
+        *) if kill -STOP "$pid" 2>/dev/null; then
+             frozen="$frozen$pid=$(started_at "$pid") "
+           fi
            grown=yes ;;
       esac
     done
     [ "$grown" = no ] && break
     rounds=$((rounds + 1))
   done
-  for pid in $frozen; do kill -TERM "$pid" 2>/dev/null || :; done
-  for pid in $frozen; do kill -CONT "$pid" 2>/dev/null || :; done
+  signal_frozen TERM
+  signal_frozen CONT
   wait_ended 5 || {
-    for pid in $left; do kill -KILL "$pid" 2>/dev/null || :; done
+    signal_frozen KILL
     wait_ended 2
   } || {
     echo "integration: process$left of the tests could not be ended" >&2
@@ -136,14 +156,24 @@ end_tree() {
   return 0
 }
 
+# Sends signal $1 to each process of $frozen that is still the one that was
+# stopped.
+signal_frozen() {
+  for entry in $frozen; do
+    if running "${entry%%=*}" "${entry#*=}"; then
+      kill "-$1" "${entry%%=*}" 2>/dev/null || :
+    fi
+  done
+}
+
 # Asks every second, for at most $1 seconds, whether a process of $frozen
 # still runs. Leaves the ones that do in $left.
 wait_ended() {
   waited=0
   while :; do
     left=
-    for pid in $frozen; do
-      running "$pid" && left="$left $pid"
+    for entry in $frozen; do
+      running "${entry%%=*}" "${entry#*=}" && left="$left ${entry%%=*}"
     done
     [ -z "$left" ] && return 0
     [ "$waited" -ge "$1" ] && return 1
@@ -203,9 +233,11 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$DIR/certs:/certs" --entrypoint s
 # 2. Two servers from the same image, with the same certificate, roles and
 #    passwords. Only the system identifier differs, which initdb makes.
 for name in "$CONTAINER_1" "$CONTAINER_2"; do
-  # A container that was made and could not start prints no ID, so it is
-  # removed by its name, which holds the process ID of this script.
-  if ! id=$(docker run -d --name "$name" \
+  # docker create prints the ID also when the start below fails, and the ID
+  # is kept before the start, so the cleanup removes the container by its
+  # ID. When the name is taken by another container, create makes nothing
+  # and nothing is removed: a name is never used to remove.
+  id=$(docker create --name "$name" \
     -p 127.0.0.1::5432 \
     --add-host=host.docker.internal:host-gateway \
     -e POSTGRES_PASSWORD="$SUPERUSER_PASSWORD" \
@@ -213,11 +245,9 @@ for name in "$CONTAINER_1" "$CONTAINER_2"; do
     -e POOL_IT_RW_PASSWORD="$RW_PASSWORD" \
     -v "$ROOT/scripts/integration/initdb:/docker-entrypoint-initdb.d:ro" \
     -v "$DIR/certs:/certs:ro" \
-    "$POOL_IT_IMAGE"); then
-    docker rm -f -v "$name" >/dev/null 2>&1 || :
-    fail "container $name did not start"
-  fi
+    "$POOL_IT_IMAGE") || fail "container $name could not be created"
   IDS="$IDS $id"
+  docker start "$id" >/dev/null || fail "container $name did not start"
 done
 
 # 3. Wait until both answer over TCP, which they do only after the init
@@ -293,14 +323,24 @@ sh -c '
   exit "$(cat "$out.rc" 2>/dev/null || echo 1)"
 ' sh "$OUT" ${POOL_IT_FILTER:+"$POOL_IT_FILTER"} &
 TEST_PID=$!
+# The watchdog only says that the time is up, with SIGUSR1 to this script.
+# This script ends the tests itself, so that the list of their processes,
+# and the SIGKILL after it, stay here.
+TIMED_OUT=no
+trap 'TIMED_OUT=yes' USR1
 (
   sleep "$TEST_LIMIT_SECONDS"
-  echo "integration: the tests did not end within $TEST_LIMIT_SECONDS seconds" >&2
-  end_tree "$TEST_PID"
-) </dev/null >/dev/null &
+  kill -USR1 "$$"
+) </dev/null >/dev/null 2>&1 &
 WATCHDOG=$!
 rc=0
 wait "$TEST_PID" || rc=$?
+if [ "$TIMED_OUT" = yes ] && running "$TEST_PID"; then
+  echo "integration: the tests did not end within $TEST_LIMIT_SECONDS seconds" >&2
+  end_tree "$TEST_PID" || :
+  TEST_PID=
+  exit 1
+fi
 TEST_PID=
 end_tree "$WATCHDOG" || fail "the watchdog could not be ended"
 WATCHDOG=

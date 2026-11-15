@@ -1,11 +1,11 @@
 # Graph Report - pool  (2026-11-16)
 
 ## Corpus Check
-- 5 files · ~557,051 words
+- 1 files · ~558,104 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5717 nodes · 18084 edges · 127 communities (101 shown, 26 thin omitted)
+- 5719 nodes · 18089 edges · 127 communities (101 shown, 26 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 1532 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
@@ -599,7 +599,7 @@ Nodes (6): Unreleased, Changed section (scope 002 and scope 003), Changed: root 
 
 ### Community 116 - "pool-control Authority Model Crate"
 Cohesion: 0.08
-Nodes (24): Closed, ClosedReason, EligiblePrimary, AuthorityRevision, NodeId, TopologyEpoch, state_reason(), Authority (+16 more)
+Nodes (24): is_conflict(), Closed, ClosedReason, EligiblePrimary, AuthorityRevision, NodeId, TopologyEpoch, state_reason() (+16 more)
 
 ### Community 117 - "Spec 0004 Requirements, Decision and Consequences"
 Cohesion: 0.03
@@ -623,11 +623,11 @@ Nodes (78): Spec 0004: AuthenticationOk is not sent after the SCRAM exchange; it
 
 ### Community 123 - "crates/pool-protocol/src/lib.rs"
 Cohesion: 0.01
-Nodes (777): DefaultGuard, Events, Metadata, Mutex, Path, PathBuf, Subscriber, Arc (+769 more)
+Nodes (777): ac14_a_latch_write_that_fails_is_logged_and_the_latch_holds_in_memory(), ac14_a_latched_journal_with_an_empty_board_is_a_conflict(), ac14_a_second_primary_beside_a_silent_writer_is_a_conflict_although_silence_is_not(), ac14_a_second_primary_latches_the_cluster_in_the_journal_through_the_control_loop(), ac14_route_view_marks_a_positive_conflict_and_not_silence(), ac14_the_conflict_view_is_published_before_the_latch_is_written(), ac29_the_route_carries_the_approved_timeline_of_the_writer(), ac30_a_failure_of_another_class_starts_the_time_again() (+769 more)
 
 ### Community 125 - "scripts/integration/run.sh"
 Cohesion: 0.16
-Nodes (13): cleanup(), end_tree(), fail(), POOL_IT_CLIENT_HOST, POOL_IT_CONTAINER, POOL_IT_CONTAINER_2, POOL_IT_DIR, POOL_IT_LISTEN_HOST (+5 more)
+Nodes (14): run.sh script, running(), end_tree(), signal_frozen(), wait_ended(), cleanup(), fail(), POOL_IT_CONTAINER (+6 more)
 
 ## Knowledge Gaps
 - **151 isolated node(s):** `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165`, `Feature status model (Research, Planned; none Implemented or Tested)`, `Concurrency group per event name and ref; only pull request runs are cancelled` (+146 more)
@@ -638,11 +638,11 @@ Nodes (13): cleanup(), end_tree(), fail(), POOL_IT_CLIENT_HOST, POOL_IT_CONTAINE
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Spec 0003 Delegated Decisions and Workspace Guards`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`, `Spec 0004 Requirements, Decision and Consequences`?**
+  _High betweenness centrality (0.061) - this node is a cross-community bridge._
+- **Why does `tst-f3-test reused (tester, opus-5-5 high; F3 Test it, AC-1 to AC-13, range ca9a897..a92bee7; done 2026-11-15: 32a7b24 tests for steps 1 to 8, 26210ce ac16_ tests, tip f75a0ed; 59 new test functions (198 to 257), check.sh all 385 to 448 tests, 111 of 112 mutations caught; no production code change; merged as aaad537, addition 8a5f2dc merged as 4c61e3b)` connect `Scope 003 Coordination Brief, Log and Manual Steps` to `check-config Integration Tests`, `pool-config Validation Tests`, `workspace.rs: src/workspace.rs: src/workspace.rs`, `pool-config Validation Library`, `Spec 0003 Authority Model: Startup States and Bootstrap`?**
   _High betweenness centrality (0.060) - this node is a cross-community bridge._
-- **Why does `Spec 0004 Build plan step 5: Configuration: implement the Configuration section in pool-config (the keys, the two codes, the name rule, the finding limit, the two views, the two generation types and the fixtures, with the one changed line in invalid-unknown-key.toml and in the two tests the Fixtures section names), wrap the output of the binary in a BufWriter and add the omitted line and field to apps/pool/src/report.rs; files crates/pool-config/, apps/pool/src/report.rs, apps/pool/src/main.rs and apps/pool/tests/check_config.rs; satisfies 0004 AC-5 to AC-8` connect `Spec 0004 Workspace, Guards, Build Plan and Evidence` to `check-config Integration Tests`, `pool-config Validation Tests`, `cli.rs Parsing and Test Count Evidence`, `pool-config Validation Library`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Spec 0004 Requirements, Decision and Consequences`, `Spec 0004 Configuration, Commands and Protected Files`, `pool-config Validation Library: pool/src/report.rs`?**
-  _High betweenness centrality (0.051) - this node is a cross-community bridge._
 - **Why does `SystemIdentifier` connect `pool-config Validation Library` to `crates/pool-protocol/src/lib.rs`, `pool-control Authority Model Crate`?**
-  _High betweenness centrality (0.051) - this node is a cross-community bridge._
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Spec 0001. POOL initial architecture` (e.g. with `Planning ledger: the assembled foundation was ratified by the user on 2026-11-14 ('Accept, looks solid'); scope feature 1 design checked, execution queued, the governing spec Proposed until built` and `Linux builder image rust:1.100.0-slim-bookworm by index digest`) actually correct?**
   _`Spec 0001. POOL initial architecture` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 9 inferred relationships involving `4. One real primary path (in-progress)` (e.g. with `Features 1, 2 and 3 are done; their evidence is in the verification records of spec 0001, spec 0002 and spec 0003; the next queued feature is 4, the first walking slice whose acceptance is in docs/testing/strategy.md` and `1. Stack and workspace (done)`) actually correct?**

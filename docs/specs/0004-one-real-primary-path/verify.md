@@ -2066,6 +2066,32 @@ After `git merge main` at `7a67c93`: `d41d25c`, **a copy of the test CA in the c
 
   **Not proven:** the full `scripts/check.sh integration` on Linux. It needs Docker and Rust inside Linux, which this machine has only through the CI job, so it stays `NOT_RUN` until that job exists (`F4-3`). The path in which a process cannot be ended at all was not reached in any run. Its message is read from the code, not observed.
 - **A container that was made and could not start** (nit of the second review). `docker run -d` prints no ID when the container was created and then failed to start, so the failure branch now removes it by its name, which holds the process ID of the script. Checked with a temporary copy that gives the containers `--entrypoint /nonexistent`: with the fix, under `/bin/dash` and under `/bin/bash`, the run ends with `container ... did not start` and leaves no container of its own. The same copy made from the script before the fix left 1 container, which was then removed by hand. The row for `0004 AC-9` and `0004 AC-13` under "Build plan step 14: evidence" now says, with a date, where `restore_pending` is proven since decision 101.
+- `d5ca979`, **the script itself ends the tests when the watchdog fires** (r6 of the second review). The watchdog was a child shell that ended the tests with a list of their processes of its own. The shell of the test command ended first, the main script stopped waiting on it, and ended the watchdog in the middle of its 5 seconds, so SIGKILL was never sent. Now the watchdog only sends SIGUSR1 to the script. The script, which holds the list, ends the tests: SIGTERM, then SIGKILL after 5 seconds, then the line about any process that still runs, then exit 1. Two nits of the same review are fixed with it:
+  - each stopped process is kept with its start time (`ps -o lstart=`, or field 22 of `/proc/<pid>/stat`), and a process whose start time differs is no longer signalled;
+  - `end_tree` checks for `ps` and `/proc` before anything else, so its line about them is reached.
+
+  The case of the review was rebuilt with a stand in `cargo` early in `PATH`: it never ends, ignores SIGTERM, and starts three children that ignore it too. The real `run.sh` ran in a copy with a limit of 10 seconds, without a terminal:
+
+  | Shell, script | Exit | Line on stderr | Processes and containers left |
+  |---|---|---|---|
+  | `/bin/dash`, with the fix | 1, after 19 s | `the tests did not end within 10 seconds` | none |
+  | `/bin/bash`, with the fix | 1, after 25 s | the same | none |
+  | `/bin/dash`, the script before the fix | 1 | the same | 3 `sleep 301` and the stand-in `cargo`, ended by hand afterwards |
+
+  In the pinned image the check script now has a case E, 18 of 18 passing. It takes the block of step 6 from `run.sh` as it is, runs it with the stand-in `cargo` and a limit of 3 seconds, and checks status 1, the line of the watchdog, and no process left, all within 12 seconds. The `end_tree` of `run.sh`, run on macOS with `/bin` left out of `PATH` (so no `ps`, and macOS has no `/proc`), wrote `neither ps nor /proc is there to end the processes of the tests` and returned 1, under both shells.
+
+  The six cases of r1 ran again on this tree, each without a terminal, with no container and no process of the run left:
+
+  | Case | `/bin/dash` | `/bin/bash` |
+  |---|---|---|
+  | full run | exit 0, 30 of 30, pipe closed after 90 s | exit 0, 30 of 30, 71 s |
+  | watchdog, a copy with a limit of 25 s | exit 1, 30 s | exit 1, 35 s |
+  | SIGTERM to the script | exit 1, 4 s | exit 1, 6 s |
+- `cc0d81a`, **no removal by name** (r7 of the second review). The removal by name of the item before this one also ran when `docker run -d` failed because the name already belonged to another container, and so removed that container. The containers are now made with `docker create`, which prints the ID also when the start then fails. The ID is kept before `docker start`, and the cleanup removes by ID only. Checked without a terminal under `/bin/dash` and `/bin/bash`:
+  - **A name that was already taken.** The script was started through a shell that wrote its process ID, waited 3 seconds and then ran `exec` on the script, and in those seconds a decoy container got the name the run would give. Both runs exited 1 with `container pool-it-1-<pid> could not be created`. The decoy was still there afterwards, and no container of the run was left. The same case with the script before this change exited 1 with `did not start` and had removed the decoy.
+  - **A container that was made and could not start.** A temporary copy gave `docker create` `--entrypoint /nonexistent`. Both runs exited 1 with `did not start`, and no container of the run was left.
+
+  The decoys were then removed by their label `pz7-decoy=1`.
 
 ### Crates, tooling and build (developer A)
 

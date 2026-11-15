@@ -18690,7 +18690,7 @@
       },
       "norm_label": "cleanup()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L155"
+      "source_location": "L185"
     },
     {
       "id": "scripts_integration_run_end_tree",
@@ -18705,7 +18705,7 @@
       },
       "norm_label": "end_tree()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L102"
+      "source_location": "L120"
     },
     {
       "id": "scripts_integration_run_fail",
@@ -18720,7 +18720,7 @@
       },
       "norm_label": "fail()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L175"
+      "source_location": "L205"
     },
     {
       "id": "scripts_integration_run_pool_it_client_host",
@@ -18735,7 +18735,7 @@
       },
       "norm_label": "pool_it_client_host",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L278"
+      "source_location": "L308"
     },
     {
       "id": "scripts_integration_run_pool_it_container",
@@ -18750,7 +18750,7 @@
       },
       "norm_label": "pool_it_container",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L272"
+      "source_location": "L302"
     },
     {
       "id": "scripts_integration_run_pool_it_container_2",
@@ -18765,7 +18765,7 @@
       },
       "norm_label": "pool_it_container_2",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L273"
+      "source_location": "L303"
     },
     {
       "id": "scripts_integration_run_pool_it_dir",
@@ -18780,7 +18780,7 @@
       },
       "norm_label": "pool_it_dir",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L276"
+      "source_location": "L306"
     },
     {
       "id": "scripts_integration_run_pool_it_listen_host",
@@ -18795,7 +18795,7 @@
       },
       "norm_label": "pool_it_listen_host",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L277"
+      "source_location": "L307"
     },
     {
       "id": "scripts_integration_run_pool_it_pg_port",
@@ -18810,7 +18810,7 @@
       },
       "norm_label": "pool_it_pg_port",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L274"
+      "source_location": "L304"
     },
     {
       "id": "scripts_integration_run_pool_it_pg_port_2",
@@ -18825,7 +18825,7 @@
       },
       "norm_label": "pool_it_pg_port_2",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L275"
+      "source_location": "L305"
     },
     {
       "id": "scripts_integration_run_port_of",
@@ -18840,7 +18840,7 @@
       },
       "norm_label": "port_of()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L237"
+      "source_location": "L267"
     },
     {
       "id": "scripts_integration_run_process_table",
@@ -18885,7 +18885,7 @@
       },
       "norm_label": "running()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L82"
+      "source_location": "L96"
     },
     {
       "id": "scripts_integration_run_sh__entry",
@@ -18903,6 +18903,36 @@
       "source_location": "L1"
     },
     {
+      "id": "scripts_integration_run_signal_frozen",
+      "label": "signal_frozen()",
+      "_origin": "ast",
+      "community": 125,
+      "community_name": "scripts/integration/run.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "signal_frozen()",
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L161"
+    },
+    {
+      "id": "scripts_integration_run_started_at",
+      "label": "started_at()",
+      "_origin": "ast",
+      "community": 125,
+      "community_name": "scripts/integration/run.sh",
+      "file_type": "code",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "norm_label": "started_at()",
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L83"
+    },
+    {
       "id": "scripts_integration_run_wait_ended",
       "label": "wait_ended()",
       "_origin": "ast",
@@ -18915,7 +18945,7 @@
       },
       "norm_label": "wait_ended()",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L141"
+      "source_location": "L171"
     },
     {
       "id": "crates_pool_protocol_fuzz_fuzz_targets_auth",
@@ -107592,7 +107622,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L157",
+      "source_location": "L187",
       "weight": 1.0
     },
     {
@@ -107604,7 +107634,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L104",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_integration_run_end_tree",
+      "target": "scripts_integration_run_signal_frozen",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L146",
       "weight": 1.0
     },
     {
@@ -107616,7 +107658,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L128",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -107628,7 +107670,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L201",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_integration_run_sh__entry",
+      "target": "scripts_integration_run_running",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -107640,7 +107694,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L299",
+      "source_location": "L340",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_integration_run_signal_frozen",
+      "target": "scripts_integration_run_running",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
@@ -107652,7 +107718,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L146",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -165998,7 +166064,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L102",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_integration_run",
+      "target": "scripts_integration_run_signal_frozen",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L161",
       "weight": 1.0
     },
     {
@@ -166009,7 +166086,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L141",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -166020,7 +166097,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L155",
+      "source_location": "L185",
       "weight": 1.0
     },
     {
@@ -166031,7 +166108,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L175",
+      "source_location": "L205",
       "weight": 1.0
     },
     {
@@ -166042,7 +166119,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L237",
+      "source_location": "L267",
       "weight": 1.0
     },
     {
@@ -166053,7 +166130,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L272",
+      "source_location": "L302",
       "weight": 1.0
     },
     {
@@ -166064,7 +166141,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L273",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -166075,7 +166152,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L274",
+      "source_location": "L304",
       "weight": 1.0
     },
     {
@@ -166086,7 +166163,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L275",
+      "source_location": "L305",
       "weight": 1.0
     },
     {
@@ -166097,7 +166174,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L276",
+      "source_location": "L306",
       "weight": 1.0
     },
     {
@@ -166108,7 +166185,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L277",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -166119,7 +166196,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L278",
+      "source_location": "L308",
       "weight": 1.0
     },
     {
@@ -166146,13 +166223,24 @@
     },
     {
       "source": "scripts_integration_run",
+      "target": "scripts_integration_run_started_at",
+      "relation": "defines",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/integration/run.sh",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_integration_run",
       "target": "scripts_integration_run_running",
       "relation": "defines",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "scripts/integration/run.sh",
-      "source_location": "L82",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -282212,5 +282300,5 @@
       "source_file": "docs/security/security-requirements.md"
     }
   ],
-  "built_at_commit": "526914d4aa22e61e1bcefa4956c1adef317193a7"
+  "built_at_commit": "62fc7efd8f6142b4406d69223dbc1364297d2805"
 }
