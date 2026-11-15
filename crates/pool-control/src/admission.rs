@@ -2,10 +2,12 @@
 
 use std::time::Duration;
 
-use pool_config::{AuthorityRevision, ClusterId, NodeId, TopologyEpoch, ValidatedConfig};
+use pool_config::{
+    AuthorityRevision, ClusterId, NodeId, SystemIdentifier, TopologyEpoch, ValidatedConfig,
+};
 
 use crate::authority::{AuthorityState, StoredAuthority};
-use crate::observation::{Evidence, MonotonicTime, Observation};
+use crate::observation::{Evidence, MonotonicTime, Observation, TimelineId};
 
 /// One reason why admission is closed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,12 +111,16 @@ pub enum WriterAdmission {
 ///     pool_config::NodeId,
 ///     pool_config::TopologyEpoch,
 ///     pool_config::AuthorityRevision,
+///     pool_config::SystemIdentifier,
+///     pool_control::TimelineId,
 /// ) {
 ///     (
 ///         primary.cluster().clone(),
 ///         primary.node().clone(),
 ///         primary.topology_epoch(),
 ///         primary.authority_revision(),
+///         primary.system_identifier(),
+///         primary.writer_timeline(),
 ///     )
 /// }
 /// ```
@@ -126,6 +132,8 @@ pub struct EligiblePrimary {
     node: NodeId,
     topology_epoch: TopologyEpoch,
     authority_revision: AuthorityRevision,
+    system_identifier: SystemIdentifier,
+    writer_timeline: TimelineId,
 }
 
 impl EligiblePrimary {
@@ -147,6 +155,19 @@ impl EligiblePrimary {
     /// The authority revision of the journal.
     pub fn authority_revision(&self) -> AuthorityRevision {
         self.authority_revision
+    }
+
+    /// The system identifier of the approved topology, which the sample of the writer named.
+    ///
+    /// A session compares it with what the node says on its own connection
+    /// (spec 0004, `0004 AC-29`).
+    pub fn system_identifier(&self) -> SystemIdentifier {
+        self.system_identifier
+    }
+
+    /// The writer timeline of the approved topology, which the sample of the writer named.
+    pub fn writer_timeline(&self) -> TimelineId {
+        self.writer_timeline
     }
 }
 
@@ -349,6 +370,8 @@ fn admit_ready(
             node: writer.clone(),
             topology_epoch: approved.topology_epoch,
             authority_revision: stored.authority_revision,
+            system_identifier: approved.system_identifier,
+            writer_timeline: approved.writer_timeline,
         })
     } else {
         closed(reasons)
