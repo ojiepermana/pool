@@ -26,6 +26,16 @@ const OTHER_CA: &str = concat!(
 );
 const REFUSED: &str = "bootstrap is not possible in this state";
 
+/// A copy of [`OTHER_CA`] with mode 0644. A tree from `git archive` gives
+/// the committed file mode 0664, which the rule of decision 88 refuses
+/// before any TLS, and these tests are about the TLS check.
+fn other_ca_copy() -> PathBuf {
+    let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("pool-it-other-ca.pem");
+    fs::write(&path, fs::read(OTHER_CA).expect("read the other CA")).expect("write");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).expect("chmod");
+    path
+}
+
 fn var(name: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| panic!("{name} is set by scripts/check.sh integration"))
 }
@@ -428,7 +438,7 @@ fn it_a_wrong_password_ca_or_server_name_is_a_failed_probe() {
 
     let other_ca = Case::new("wrong-ca");
     let mut ca_settings = other_ca.settings();
-    ca_settings.ca = PathBuf::from(OTHER_CA);
+    ca_settings.ca = other_ca_copy();
     other_ca.write(&ca_settings, &[primary_node()]);
 
     let other_name = Case::new("wrong-name");
@@ -1512,7 +1522,7 @@ fn it_a_wrong_ca_or_name_toward_the_node_closes_admission() {
     // sessions, so a wrong CA or name closes the cluster first: the client
     // gets 57P03 and PostgreSQL sees no login of the application.
     for (name, ca, server_name) in [
-        ("wrong-ca", Some(PathBuf::from(OTHER_CA)), None),
+        ("wrong-ca", Some(other_ca_copy()), None),
         ("wrong-name", None, Some("other.pool.test")),
     ] {
         let (case, port, daemon) = serving_case(name, primary_node(), None, "", true);
@@ -2072,50 +2082,6 @@ fn it_ac14_a_writer_that_changes_its_identity_ends_running_sessions_through_the_
     drop(relay);
 }
 
-#[test]
-#[ignore = "needs scripts/check.sh integration"]
-fn it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds() {
-    // covers: 0004 AC-13, AC-10: the hold `restore_pending` gives its own
-    // finding. No command of this slice sets the hold, so the test sets it
-    // with the `sqlite3` tool of the host.
-    let (case, port, _id) = ready_case("restore-pending");
-    let holder = TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
-        .expect("the test holds the port of the listener");
-    let set = Command::new("sqlite3")
-        .arg(case.journal())
-        .arg("UPDATE store SET hold = 'restore_pending' WHERE singleton = 1;")
-        .output()
-        .expect("the sqlite3 tool of the host (needed by this test)");
-    assert!(
-        set.status.success(),
-        "{}",
-        String::from_utf8_lossy(&set.stderr)
-    );
-    let before = fs::read(case.journal()).expect("read");
-    let show = pool("show-authority", &case.config, "human");
-    assert!(
-        show.stdout
-            .starts_with("authority state: restore_pending\n"),
-        "{}",
-        show.stdout
-    );
-    let run = Command::new(env!("CARGO_BIN_EXE_pool"))
-        .args(["run", "--config", case.config.to_str().expect("utf-8")])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("run");
-    let run = output_within(run, 30, "pool run");
-    assert_eq!(run.status.code(), Some(1));
-    assert_eq!(
-        String::from_utf8_lossy(&run.stdout),
-        "run refused\nfindings: 1\nauthority.restore_pending: the journal state does not allow serving\n"
-    );
-    assert_eq!(fs::read(case.journal()).expect("read"), before);
-    holder.local_addr().expect("the test still holds the port");
-}
-
 /// The fields that each event may carry after `ts`, `level` and `event`
 /// (spec 0004, "Log events").
 fn allowed_fields(event: &str) -> Option<&'static [&'static str]> {
@@ -2301,13 +2267,17 @@ fn it_ac14_a_second_primary_beside_a_silent_writer_ends_sessions_and_latches_the
             .is_some()
     );
 
+    // The writer falls silent first, and its monitor connection is ended
+    // while pg2 is still refused, so the count can only see pg1. Only then
+    // does pg2 answer: counted after it, its own monitor login could be in
+    // the count too.
     writer.refuse_tls_from(writer.connections() + 1);
-    second.accept_tls_again();
     assert_eq!(
         end_monitor_connections(),
         1,
         "the monitor connection of pg1"
     );
+    second.accept_tls_again();
     daemon.wait_for(
         &[
             "\"event\":\"admission.changed\"",

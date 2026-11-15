@@ -161,10 +161,14 @@ export POOL_IT_CLIENT_HOST=host.docker.internal
 #    them after TEST_LIMIT_SECONDS. Their output is kept to count the tests.
 OUT="$DIR/test-output.txt"
 set -m
+#    POOL_IT_FILTER, when set, is passed on as the filter of test names, to
+#    run one test again and again; a filter that matches none fails below.
 sh -c '
-  { cargo test -p pool --locked --test integration -- --ignored --test-threads=1; echo "$?" > "$1.rc"; } 2>&1 | tee "$1"
-  exit "$(cat "$1.rc" 2>/dev/null || echo 1)"
-' sh "$OUT" &
+  out=$1
+  shift
+  { cargo test -p pool --locked --test integration -- --ignored --test-threads=1 "$@"; echo "$?" > "$out.rc"; } 2>&1 | tee "$out"
+  exit "$(cat "$out.rc" 2>/dev/null || echo 1)"
+' sh "$OUT" ${POOL_IT_FILTER:+"$POOL_IT_FILTER"} &
 TEST_PID=$!
 set +m
 (
