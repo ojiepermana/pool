@@ -170,10 +170,15 @@ impl Closed {
 /// Decides whether a write may go to a node of `cluster`, and to which one.
 ///
 /// In any state but `Ready` the answer is closed with the one reason of that
-/// state, and the observations are not looked at. In `Ready` every rule of
-/// spec 0003, "Writer admission", runs and every reason that applies is
-/// reported. Admission is open only when the configuration, the journal and a
-/// fresh observation agree on the writer and no conflict is seen.
+/// state, and the observations are not looked at. In `Ready` the witness
+/// `control.authority_id` of `config` is compared with the authority ID of the
+/// state first: no witness closes with `authority.unconfirmed` alone, another
+/// witness closes with `authority.mismatch` alone, and then no other rule runs
+/// and the observations are not looked at. When the witness matches, every
+/// other rule of spec 0003, "Writer admission", runs and every reason that
+/// applies is reported. Admission is open only when the configuration, the
+/// journal and a fresh observation agree on the writer and no conflict is
+/// seen.
 pub fn writer_admission(
     config: &ValidatedConfig,
     state: &AuthorityState,
@@ -186,6 +191,14 @@ pub fn writer_admission(
         AuthorityState::Ready(authority) => authority,
         other => return closed(vec![state_reason(other)]),
     };
+    // A `Ready` state belongs to the configuration it was classified with.
+    match config.control().and_then(|control| control.authority_id()) {
+        None => return closed(vec![ClosedReason::Unconfirmed]),
+        Some(witness) if witness != authority.authority_id() => {
+            return closed(vec![ClosedReason::Mismatch]);
+        }
+        Some(_) => {}
+    }
     admit_ready(
         config,
         authority.stored(),
