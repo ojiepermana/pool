@@ -5,7 +5,7 @@
 - **Mode keputusan:** `auto` · **Ketentuan tambahan:** tidak ada
 - **Aturan umum brief:** `004-one-real-primary-path.brief-umum.md` · **Langkah manual:** `004-one-real-primary-path.manual.md`
 - **Wave aktif:** `1`, mulai `2026-11-15`
-- **Diperbarui:** `2026-11-15 17:16`
+- **Diperbarui:** `2026-11-15 17:20`
 
 ## Sub sesi wave `1`
 
@@ -60,6 +60,7 @@
 | 2026-11-15 | `needs-decision` `dev-f4-m1` (langkah 3, commit `9df18f6`: lima anggota, enam pasangan, 75 entri lockfile sama dengan daftar rationale, `check.sh all` dan `deny` lulus dengan lima pengecualian saja). Dua hal diteruskan ke `arc-f4-spec` sebagai `architect (update)` di mode `auto`: (1) fixture valid berawalan `secret-`: arah = ganti nama menjadi berawalan `valid-`, nama persis dari architect; (2) `prove-checks` kasus 9 membuat `crates/pool-core` yang kini ada: arah = kasus 9 memakai `apps/pool-cli`. Plus batas atas `probe.period_ms` dari catatan `dev-f4-m2`. `dev-f4-m1` mendapat tambahan ownership untuk item ini: `scripts/prove-checks.sh` (kasus 9), fixture itu, dan baris yang menyebut namanya di `crates/pool-config/tests/validate.rs` dan `apps/pool/tests/check_config.rs` (milik `dev-f4-m2`, yang sudah selesai dan tidak menyentuhnya lagi). | lead (mode `auto`) |
 | 2026-11-15 | Laporan `done` architect (commit `718bc43`): keputusan 47 (fixture `valid-serving-secret-values.toml`), 48 (kasus 9 ke `apps/pool-cli`, `berat`), 49 (`probe.period_ms` 100 sampai 30000); spec 0001 tidak disentuh, satu catatan bertanggal di spec 0002 (0 kata lama dihapus). Ketiganya opsi rekomendasi yang lead minta, jadi dianggap `accept`. Gerbang dokumen lulus (`check.sh docs`, `guards`); merge = `73eab45`. Rentang baru membuka item kecil untuk `dev-f4-m2` (batas di `crates/pool-config/src/` dan test rentangnya); ia dan `dev-f4-m1` sama sama menyentuh `crates/pool-config/tests/validate.rs` pada baris yang berbeda (test `probe` lawan nama fixture), pengecualian yang lead terima: perubahan `dev-f4-m2` di-merge dulu, lalu `dev-f4-m1` menjalankan `git merge main` sebelum verifikasi akhirnya. | lead (mode `auto`) |
 | 2026-11-15 | Verify langkah 1, 2, dan 5 di-merge sebagai `73080f0` (hanya `verify.md`; `check.sh docs` lulus). Kotak milestone tetap terbuka: milestone 1 menunggu langkah 3, milestone 2 menunggu langkah 4. Checker menjalankan verify pada `d8797a5`, sebelum ganti nama fixture (keputusan 47) dan rentang `probe.period_ms` (keputusan 49); dua perubahan itu diverifikasi ulang bersama langkah 3 dan 4. Tiga celah test dari checker disimpan untuk brief `tst-f4-test`: baseline `forbidden-source-patterns.txt` nyata lawan matriks path `0004 AC-2` dan blok spec; kasus 17 pada tiap status scope; karakter terlarang mentah dan tepi rentang lewat binary. Temuan di luar kriteria: saat pembaca stdout hilang binary exit 3 tanpa teks di stderr (perilaku lama). | lead |
+| 2026-11-15 | Gerbang rentang `probe.period_ms` (keputusan 49) di `main`: merge `26a3f5c` (`e90f575`: `serving.rs`, test `probe` di `validate.rs`, satu kalimat `verify.md`) tanpa konflik; `scripts/check.sh all` lulus; `linux-build` tidak dijalankan karena masih merah oleh nama fixture sampai langkah 3 masuk; graph kode dua file diperbarui di dalam commit merge yang sama = `3fbc5f3`. | lead |
 
 ## Keputusan delegasi
 
