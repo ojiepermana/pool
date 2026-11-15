@@ -787,6 +787,12 @@ fn ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked() {
     // The number for the verification record.
     let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("pool-cmd-lock-race-locked.txt");
     fs::write(path, format!("{locked}\n")).expect("write");
+    // Round four (review finding t7): a run in which no child met the lock
+    // proves nothing about the race. 20 runs on macOS gave 11 to 66.
+    assert!(
+        locked > 0,
+        "no child of {RACE_ROUNDS} rounds met a held lock"
+    );
 }
 
 /// The gate of one child of the lock race: the shell reads one line from
@@ -1179,5 +1185,28 @@ fn ac10_a_run_that_stops_at_a_missing_protected_file_does_not_use_up_a_start_seq
     assert!(
         fs::metadata(&wal).map_or(true, |m| m.len() == 0),
         "nothing waits in the write-ahead log"
+    );
+}
+
+// ---- added by the tests of scope 004, round four (review finding t6) ----
+
+#[test]
+fn ac13_run_refuses_a_real_journal_without_or_with_another_witness_and_never_binds() {
+    // covers: 0004 AC-13, AC-10 without Docker: `unconfirmed` and `mismatch`
+    // through `pool run`, with a journal made by the library, the port held by
+    // the test and the file unchanged.
+    let layout = Layout::new("run-real-journal");
+    let holder = TcpListener::bind("127.0.0.1:0").expect("bind");
+    let port = holder.local_addr().expect("address").port();
+    layout.write_serving_config(None, port);
+    real_journal(&layout);
+    let before = fs::read(layout.journal()).expect("read");
+    assert_not_serving(&layout, "authority.unconfirmed", &holder);
+    layout.write_serving_config(Some("fedcba9876543210fedcba9876543210"), port);
+    assert_not_serving(&layout, "authority.mismatch", &holder);
+    assert_eq!(
+        fs::read(layout.journal()).expect("read"),
+        before,
+        "unchanged"
     );
 }

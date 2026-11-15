@@ -895,6 +895,21 @@ fn display_of_a_backend_error_is_its_constant_kind_and_no_debug_form() {
 }
 
 #[test]
+fn a_credential_prints_neither_its_password_nor_its_keys() {
+    // Added by the tests of scope 004, round four (review finding t2).
+    let credential = Credential::new(password("CANARY-9f2c7b1e"));
+    let text = format!("{credential:?} {credential:#?}");
+    assert!(!text.contains("CANARY"), "{text}");
+    let bytes = "CANARY-9f2c7b1e"
+        .bytes()
+        .map(|b| b.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    assert!(!text.contains(&bytes), "{text}");
+    assert_eq!(format!("{credential:?}"), "[REDACTED]");
+}
+
+#[test]
 fn ac30_a_socket_to_a_node_has_keepalive_on_before_it_connects() {
     // covers: 0004 AC-30, the socket half toward a node.
     for address in ["127.0.0.1:5432", "[::1]:5432"] {

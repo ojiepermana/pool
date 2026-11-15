@@ -215,4 +215,18 @@ mod tests {
         assert_eq!(id.to_string(), "00000000000000030000000000000007");
         assert_eq!(id.to_string().len(), 32);
     }
+
+    // Added by the tests of scope 004, round four (review finding t2).
+    #[test]
+    fn a_verified_principal_prints_its_id_and_never_its_name() {
+        let principal = VerifiedPrincipal::new(
+            PrincipalId::parse("orders-app").expect("id"),
+            "CANARY-9f2c7b1e".to_owned(),
+        );
+        assert_eq!(
+            format!("{principal:?}"),
+            "VerifiedPrincipal { id: PrincipalId(\"orders-app\"), name: \"[REDACTED]\" }"
+        );
+        assert!(!format!("{principal:#?}").contains("CANARY"));
+    }
 }

@@ -106,7 +106,8 @@ impl ControlLoop {
     }
 
     /// Runs rounds until `stop` changes: after each sample, and at least
-    /// once per `probe.period_ms`. Returns the journal, to be closed.
+    /// once per `probe.period_ms`. Then tries once more to write every latch
+    /// the journal does not hold yet, and returns the journal, to be closed.
     pub async fn run(
         mut self,
         mut samples: mpsc::Receiver<Observation>,
@@ -126,7 +127,25 @@ impl ControlLoop {
             }
             self.round().await;
         }
+        self.last_try().await;
         self.journal
+    }
+
+    /// Step 5 of shutdown: one more write for every latch that is still
+    /// open, and `authority.conflict_latched` with `recorded` false for each
+    /// one that still cannot be written, so that a second primary the
+    /// process saw is not forgotten at exit without a line (spec 0004,
+    /// decision 96).
+    async fn last_try(&mut self) {
+        for cluster in self.controller.unrecorded_latches().to_vec() {
+            if !self.record_latch(cluster.clone()).await {
+                tracing::warn!(
+                    event = "authority.conflict_latched",
+                    cluster_id = cluster.as_str(),
+                    recorded = false
+                );
+            }
+        }
     }
 
     /// One round: in memory first, published at once, then the disk.
@@ -146,19 +165,26 @@ impl ControlLoop {
             }
         }
         for cluster in self.controller.unrecorded_latches().to_vec() {
-            match self.write_latch(cluster).await {
-                Ok(receipt) => {
-                    tracing::warn!(
-                        event = "authority.conflict_latched",
-                        cluster_id = receipt.cluster().as_str(),
-                        recorded = true
-                    );
-                    self.unrecorded.retain(|held| held != receipt.cluster());
-                    self.controller.latch_recorded(&receipt);
-                }
-                Err(class) => {
-                    tracing::error!(event = "journal.write_failed", class);
-                }
+            self.record_latch(cluster).await;
+        }
+    }
+
+    /// Writes one latch and says so. Returns whether the journal holds it.
+    async fn record_latch(&mut self, cluster: ClusterId) -> bool {
+        match self.write_latch(cluster).await {
+            Ok(receipt) => {
+                tracing::warn!(
+                    event = "authority.conflict_latched",
+                    cluster_id = receipt.cluster().as_str(),
+                    recorded = true
+                );
+                self.unrecorded.retain(|held| held != receipt.cluster());
+                self.controller.latch_recorded(&receipt);
+                true
+            }
+            Err(class) => {
+                tracing::error!(event = "journal.write_failed", class);
+                false
             }
         }
     }
@@ -619,6 +645,119 @@ mod tests {
                 pairs(&[("class", "journal.changed")]),
                 pairs(&[("class", "journal.changed")]),
             ]
+        );
+    }
+
+    #[tokio::test]
+    async fn c9_a_latch_still_open_at_shutdown_is_tried_once_more_and_said_so() {
+        // covers: spec 0004 decision 96 (finding c9 of the independent
+        // review): when the loop stops, every latch that the journal does
+        // not hold is written once more, and one that still fails gets
+        // `authority.conflict_latched` with `recorded` false.
+        let (events, _guard) = capture();
+        let path = journal_file("latch-last-try");
+        let (mut control, _receiver) = control_loop(&path);
+        let AuthorityState::Ready(authority) = ready(&path) else {
+            unreachable!("checked in ready");
+        };
+        let (mut other, _) = Journal::open_ready(&path, &authority).expect("a second start");
+        other
+            .set_conflict_latch(&main_cluster(), 1_763_200_000_001)
+            .expect("the other holder writes");
+        control.sample(true);
+        control.round().await;
+        control.last_try().await;
+        assert_eq!(control.controller.unrecorded_latches(), [main_cluster()]);
+        let unrecorded = pairs(&[("cluster_id", "main"), ("recorded", "false")]);
+        assert_eq!(
+            named(&events, "authority.conflict_latched"),
+            [unrecorded.clone(), unrecorded]
+        );
+        assert_eq!(named(&events, "journal.write_failed").len(), 2);
+    }
+
+    // ---- added by the tests of scope 004, round four (review finding M3) ----
+
+    fn failed(node: &str, at: MonotonicTime) -> Observation {
+        Observation::new(
+            NodeId::parse(node).expect("node id"),
+            at,
+            ObservationOutcome::Failed,
+        )
+    }
+
+    fn reasons_of(snapshot: &TopologySnapshot) -> Vec<&'static str> {
+        match snapshot.clusters()[0].admission() {
+            WriterAdmission::Closed(closed) => {
+                closed.reasons().iter().map(|r| r.as_str()).collect()
+            }
+            WriterAdmission::Open(_) => panic!("closed expected"),
+        }
+    }
+
+    #[test]
+    fn ac14_a_second_primary_beside_a_silent_writer_is_a_conflict_although_silence_is_not() {
+        // covers: 0004 AC-14, "When a running session is ended": the writer
+        // gave a failed sample or none, another node reports as a primary.
+        // The reasons mix silence with a conflict, and the conflict ends
+        // the running sessions.
+        let path = journal_file("silent-writer-second-primary");
+        let config = config(true);
+        let at = MonotonicTime::from_origin(Duration::from_secs(10));
+        for writer_failed in [true, false] {
+            let mut controller = Controller::new(ready(&path));
+            if writer_failed {
+                controller.record(failed("pg1", at));
+            }
+            controller.record(reached("pg2", at, false));
+            let snapshot = controller.round(&config, at);
+            // The second primary also latches the cluster in memory in the
+            // same round; the silence of the writer stays among the reasons.
+            let reasons = reasons_of(&snapshot);
+            for reason in ["evidence.writer_missing", "evidence.second_primary"] {
+                assert!(
+                    reasons.contains(&reason),
+                    "writer failed: {writer_failed}: {reasons:?}"
+                );
+            }
+            assert_eq!(
+                route_view(&snapshot).state(&main_cluster()),
+                RouteState::Closed {
+                    conflict: true,
+                    lost: false
+                },
+                "writer failed: {writer_failed}"
+            );
+        }
+    }
+
+    #[test]
+    fn ac14_a_latched_journal_with_an_empty_board_is_a_conflict() {
+        // covers: 0004 AC-14, 0003 AC-17: after a restart with the latch on
+        // disk and no sample yet, the cluster is closed with the conflict flag.
+        let path = journal_file("latched-empty-board");
+        let AuthorityState::Ready(authority) = ready(&path) else {
+            unreachable!("checked in ready");
+        };
+        let (mut journal, _) = Journal::open_ready(&path, &authority).expect("open");
+        journal
+            .set_conflict_latch(&main_cluster(), 1_763_200_000_002)
+            .expect("latch");
+        drop(journal);
+        let mut controller = Controller::new(ready(&path));
+        let at = MonotonicTime::from_origin(Duration::from_secs(10));
+        let snapshot = controller.round(&config(true), at);
+        assert!(
+            reasons_of(&snapshot).contains(&"authority.conflict_latched"),
+            "{:?}",
+            reasons_of(&snapshot)
+        );
+        assert_eq!(
+            route_view(&snapshot).state(&main_cluster()),
+            RouteState::Closed {
+                conflict: true,
+                lost: false
+            }
         );
     }
 }

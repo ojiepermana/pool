@@ -40,12 +40,20 @@ pub struct JsonLog {
     next_span: AtomicUsize,
 }
 
-/// The handle that waits until every queued line was written.
+/// The handle that waits until every queued line was written, and that
+/// holds the task of the writer, so that the daemon can watch it.
 pub struct LogHandle {
     queue: mpsc::Sender<Item>,
+    writer: tokio::task::JoinHandle<()>,
 }
 
 impl LogHandle {
+    /// The task that writes the queue to stderr. It ends only when it
+    /// panicked: the subscriber keeps the queue open while the process lives.
+    pub fn writer(&mut self) -> &mut tokio::task::JoinHandle<()> {
+        &mut self.writer
+    }
+
     /// Waits until every line queued before this call reached stderr.
     pub async fn flush(&self) {
         let (done, wait) = oneshot::channel();
@@ -55,9 +63,14 @@ impl LogHandle {
     }
 }
 
-/// Installs the writer as the global subscriber and starts the task that
-/// writes the queue to stderr. Must be called inside the runtime. Returns
-/// `None` when a subscriber was installed already.
+/// Installs the writer as the global subscriber, starts the task that
+/// writes the queue to stderr, and installs the panic hook. Must be called
+/// inside the runtime. Returns `None` when a subscriber was installed
+/// already; the panic hook is then left as it was.
+///
+/// The hook writes the event `daemon.panicked` through the queue and
+/// nothing else: the message and the place of a panic can hold a value, and
+/// every line on stderr stays one JSON object (spec 0004, decision 86).
 pub fn install() -> Option<LogHandle> {
     let (queue, mut lines) = mpsc::channel(QUEUE_LINES);
     let subscriber = JsonLog {
@@ -66,7 +79,10 @@ pub fn install() -> Option<LogHandle> {
         next_span: AtomicUsize::new(1),
     };
     tracing::subscriber::set_global_default(subscriber).ok()?;
-    tokio::spawn(async move {
+    std::panic::set_hook(Box::new(|_| {
+        tracing::error!(event = "daemon.panicked");
+    }));
+    let writer = tokio::spawn(async move {
         let mut stderr = tokio::io::stderr();
         while let Some(item) = lines.recv().await {
             match item {
@@ -80,7 +96,19 @@ pub fn install() -> Option<LogHandle> {
             }
         }
     });
-    Some(LogHandle { queue })
+    Some(LogHandle { queue, writer })
+}
+
+/// Writes the event `daemon.failed` for the task `log` straight to stderr,
+/// since the writer task that would take it from the queue is gone.
+pub fn write_log_failed() {
+    use std::io::Write as _;
+    let line = Line::new(Level::ERROR, Some("daemon.failed"))
+        .text("task", "log")
+        .finish();
+    let mut stderr = std::io::stderr().lock();
+    let _ = stderr.write_all(line.as_bytes());
+    let _ = stderr.flush();
 }
 
 impl JsonLog {
