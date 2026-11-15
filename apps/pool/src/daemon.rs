@@ -22,7 +22,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::{mpsc, watch};
 use tokio::time::Instant;
 
-use crate::commands::{load_config, secret_error, state_error};
+use crate::commands::{
+    RUNTIME_FAILED, RUNTIME_FAILED_MESSAGE, load_config, secret_error, state_error,
+};
 use crate::control::ControlLoop;
 use crate::log;
 use crate::output::{Item, Report};
@@ -79,10 +81,7 @@ pub fn run_file(path: &Path) -> Option<Report> {
         .max_blocking_threads(4)
         .build()
     else {
-        return Some(Report::Error(Item::plain(
-            LISTENER_FAILED,
-            LISTENER_FAILED_MESSAGE,
-        )));
+        return Some(runtime_failed());
     };
     runtime.block_on(serve(prepared))
 }
@@ -231,8 +230,14 @@ async fn serve(prepared: Prepared) -> Option<Report> {
             )));
         }
     };
-    let mut terminate = signal(SignalKind::terminate()).ok();
-    let mut interrupt = signal(SignalKind::interrupt()).ok();
+    // The handlers for SIGTERM and SIGINT, before step 9: a daemon that
+    // could not be stopped cleanly does not start.
+    let (Ok(mut terminate), Ok(mut interrupt)) = (
+        signal(SignalKind::terminate()),
+        signal(SignalKind::interrupt()),
+    ) else {
+        return Some(runtime_failed());
+    };
     // 8. From here every line on stderr is a log event.
     let log = log::install();
     // 9. The control loop with an empty board, the first view (every
@@ -280,8 +285,8 @@ async fn serve(prepared: Prepared) -> Option<Report> {
     );
     // 10. SIGTERM or SIGINT. A second signal does nothing more.
     tokio::select! {
-        _ = recv(&mut terminate) => {}
-        _ = recv(&mut interrupt) => {}
+        _ = terminate.recv() => {}
+        _ = interrupt.recv() => {}
     }
     tracing::info!(event = "daemon.stopping", sessions = server.sessions());
     server.shutdown().await;
@@ -298,12 +303,7 @@ async fn serve(prepared: Prepared) -> Option<Report> {
     None
 }
 
-/// Waits for one signal, or forever when the handler could not be installed.
-async fn recv(handler: &mut Option<tokio::signal::unix::Signal>) {
-    match handler {
-        Some(handler) => {
-            handler.recv().await;
-        }
-        None => std::future::pending::<()>().await,
-    }
+/// The finding of a runtime, or a signal handler, that could not be set up.
+fn runtime_failed() -> Report {
+    Report::Error(Item::plain(RUNTIME_FAILED, RUNTIME_FAILED_MESSAGE))
 }
