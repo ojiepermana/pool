@@ -4,11 +4,11 @@ This file holds the acceptance evidence for [spec 0004](index.md), as the [testi
 
 ## Milestone 1: Guards, workspace shape and dependencies
 
-Build plan steps 1 and 2, on 2026-11-15, on macOS (workstation, not Linux and not CI). Commits `41d4709` (step 1) and `8d84f50` (step 2), on top of the accepted spec at `560096e` and the scope change `6ad02c0`. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`. Docker was running (`docker info` exit 0). Step 3 waits for manual step M1 and is not part of this record yet.
+Build plan steps 1 and 2, on 2026-11-15, on macOS (workstation, not Linux and not CI). Commits `41d4709` (step 1) and `8d84f50` (step 2), on top of the accepted spec at `560096e` and the scope change `6ad02c0`. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`. Docker was running (`docker info` exit 0). Build plan step 3 followed on the same day, after manual step M1 was answered (`ISC` and `BSD-3-Clause` allowed for `aws-lc-rs` 1.19.0, `aws-lc-sys` 0.47.0, `rustls-webpki` 0.103.17, `untrusted` 0.9.0 and `subtle` 2.6.1 only): commit `9df18f6`, on top of `main` at `87db7b0`, which holds step 5.
 
 ### UI / manual
 
-None for steps 1 and 2.
+None for steps 1 to 3. Manual step M1, the license decision, was answered by the user before step 3.
 
 ### Commands
 
@@ -22,10 +22,23 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `cargo test --manifest-path tools/repo-check/Cargo.toml --locked --target-dir target/repo-check` at `8d84f50` | exit 0 | exit 0, 106 unit and 110 integration tests passed, 0 failed; six new tests in the module `source_guard_tests` of `tools/repo-check/src/workspace.rs` | pass |
 | `scripts/check.sh all` at `8d84f50` (includes `scripts/check.sh guards`) | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok`; the new baseline finds nothing in the current tree | pass |
 | `scripts/prove-checks.sh --with-linux-build` on commit `8d84f50` | every case rejects its change | `all checks reject their bad change`, cases 1 to 35 `PASS`, case 20 ran with Docker. Cases 30 to 35 matched, in order: `crates/pool-control/src/lib.rs:30: forbidden text TcpStream`, `apps/pool/src/main.rs:94: forbidden text UnixStream`, `crates/pool-control/src/lib.rs:30: forbidden text Instant::now`, `crates/pool-control/src/lib.rs:30: forbidden text rusqlite`, `apps/pool/src/main.rs:94: forbidden text StoreProbe`, `crates/pool-config/src/lib.rs:819: forbidden text writer_admission`, each after `W3:` | pass |
+| `cargo build --workspace` at step 3 (before the commit) | `Cargo.lock` gains the packages | exit 0 in 21 s; `aws-lc-sys` and `libsqlite3-sys` compiled on macOS; Cargo prints the `unused dependency` warnings of the known exception of [Adopted dependencies](index.md#adopted-dependencies) | pass |
+| `cargo metadata --no-deps --format-version 1` at `9df18f6` | five members and the six pairs of [Workspace](index.md#workspace); `pool-protocol` with no dependency | `pool` (`pool-config`, `pool-control`, `pool-core`, `serde`, `serde_json`, `tokio`, `tracing`), `pool-config` (`serde`, `toml`), `pool-control` (`pool-config`, `rusqlite`), `pool-core` (`aws-lc-rs`, `pool-config`, `pool-protocol`, `rustls`, `tokio`, `tokio-rustls`, `tracing`), `pool-protocol` (none) | pass |
+| Names and versions of `Cargo.lock` compared with [locked packages](rationale.md#locked-packages) | the 70 entries of the rationale and the five members | 75 entries: the five members at 0.1.0 and 70 third party entries whose names and versions equal the rationale list line for line (`diff` empty) | pass |
+| `scripts/check.sh all` at `9df18f6` | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok`. `deny` printed `advisories ok, bans ok, licenses ok, sources ok`, and warns `license-exception-not-encountered` for `untrusted` and `subtle` on a lockfile that does not hold them, as the spec expects | pass |
+| `scripts/check.sh linux-build` at `9df18f6` | exit 0 | exit 1 after 121 s. In the image, `aws-lc-sys v0.47.0` and `libsqlite3-sys v0.40.0` compiled with the image's C compiler and no other tool, the release build finished in 1 min 13 s, and every `cargo test --locked --workspace` result was `ok`. The fixture loop then stopped at `crates/pool-config/tests/fixtures/secret-serving-values.toml human exit=0` with `unexpected exit 0, wanted 1`: the loop wants exit 0 only for names that start with `valid-`, and this fixture of step 5 is valid by the fixture table of the spec. See the note below | fail |
+| `scripts/prove-checks.sh` on commit `9df18f6` | every case rejects its change | exit 1: `FAIL 9 guards accepted the change (exit 0)`; every other case `PASS`, case 20 skipped. Case 9 makes `crates/pool-core`, which is no longer a forbidden path. See the note below | fail |
 
 **Note on the six groups of `0004 AC-2`.** The proof cases read the sentence of the criterion as six groups of refusal: (30) a socket or the runtime outside `crates/pool-core` and `apps/pool`, (31) a thread or a Unix or UDP socket anywhere, also in `apps/pool`, (32) a clock, a file call or an environment read in `crates/pool-control/src`, (33) `rusqlite` there outside `journal.rs`, (34) a journal name outside `crates/pool-control` (`0003 AC-19`), and (35) `writer_admission` outside it (the guard half of `0003 AC-18`). `crates/pool-protocol` does not exist before step 3, so case 30 uses `crates/pool-control`. That a socket or the runtime is accepted in `crates/pool-core` and `apps/pool`, and that an `allow` line is compared by whole components, is shown by the unit tests `an_allow_line_lifts_the_text_only_at_or_under_its_path` and `source_rule_reads_the_three_forms`, since a proof case can only show a refusal.
 
 **Note on the cargo warning.** Cargo still prints `warning: unused workspace dependency pool-control`. It goes away when a member takes the dependency, in a later step (`0004 AC-1`).
+
+**Note on the two failures of step 3.** Both are in files that step 3 does not own, and neither is in the native build.
+
+- `scripts/check.sh linux-build`: `scripts/linux-build.sh` is a copy of the Linux build block of spec 0001 (rule W7), which treats every fixture whose name does not start with `valid-` as invalid. The fixture `secret-serving-values.toml` of step 5 is named by the fixture table of spec 0004 and is valid. So `main` fails the same way from step 5 on. Either the fixture gets a name that starts with `valid-`, which changes the fixture table of spec 0004 and the tests of step 5, or the block of spec 0001 and its copy learn a third name. That is a decision for the lead.
+- `scripts/prove-checks.sh` case 9 puts `crates/pool-core` in its copy of the tree and expects rule W2. From step 3 on, the only forbidden path is `apps/pool-cli`, so the case must make that path and expect `W2` and `apps/pool-cli`.
+
+**Note on the cargo warning since step 3.** Cargo prints `unused workspace dependency` and `unused dependency` warnings for the new dependencies and members that no code uses yet (twelve lines in the `check.sh all` log). No required check fails because of them. They end with Build plan step 10 (`0004 AC-1`).
 
 ### Acceptance-criteria coverage
 
@@ -34,7 +47,8 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `0004 AC-4` | `local_packages` in `tools/repo-check/src/workspace.rs` ends an entry at the next line that starts with `[`; test `w4_a_table_after_the_last_entry_ends_it`; case 17 with its own feature 99 and case 29 in `scripts/prove-checks.sh`; `scripts/prove-checks.sh` passes on the committed trees `41d4709` and `8d84f50` with scope 004 `in-progress` | pass on the workstation; CI evidence waits for the pull request |
 | `0004 AC-2` | `SourceRule`, `source_rule`, `covers` and `forbidden_in` in `tools/repo-check/src/workspace.rs`; the baseline `tools/repo-check/baseline/forbidden-source-patterns.txt` holds the file of [Source guard](index.md#source-guard); the tests of `source_guard_tests`, one passing and one failing case per kind of line; cases 30 to 35 | pass on the workstation; CI evidence waits for the pull request |
 | `0003 AC-19`, guard half of `0003 AC-18` | cases 34 and 35, and the `allow crates/pool-control` lines of the baseline | pass for the guard; the library half of `0003 AC-18` is Build plan step 6 |
-| `0004 AC-1` (shape), `0004 AC-3` | Build plan step 3, after manual step M1 | not run |
+| `0004 AC-1` (shape) | `cargo metadata` and `Cargo.lock` rows above; baselines `lock-packages.txt` (75 names), `forbidden-paths.txt` (only `apps/pool-cli`), `internal-dependencies.txt` (the six pairs); `scripts/check.sh guards` passes. `cargo build --workspace --locked` without the dependency warning waits for Build plan step 10 | pass for the shape on the workstation; the warning half and CI evidence are not run |
+| `0004 AC-3` | `deny.toml` with the five exceptions by crate and the unchanged general list; `scripts/check.sh deny` passes on the product lockfile and both fuzz lockfiles; `NOTICE` names SQLite 3.54.1 and AWS-LC 0.47.0 with their terms, copied from the locked `libsqlite3-sys` 0.40.0 and `aws-lc-sys` 0.47.0; `scripts/check.sh linux-build` built the native code in the image with its C compiler only, but failed on a fixture of step 5 | open: the linux-build half fails until the fixture conflict is resolved |
 | `0004 AC-5` to `0004 AC-28` | Build plan steps 4 to 14, other milestones | not run |
 
 ## Milestone 2: Configuration and wire format
