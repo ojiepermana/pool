@@ -446,3 +446,74 @@ The made inputs were built by a probe script outside the repository, as [Validat
 | `0003 AC-2`, `0003 AC-3` (positions) | the fixture and large file comparisons above: no position changed | pass; the checker repeats them |
 | `0003 AC-16` | the code of `8135cca` and the step 9 probe row above | pass on the workstation for the code. The `ac16_` tests and their run come from `tst-f3-test` |
 | `0003 AC-7` to `0003 AC-12` | the walks and the small domain pass unchanged on `8135cca` | pass |
+
+## Test it: tests added by /test
+
+Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15. The tests are in commits `32a7b24` (steps 1 to 8) and `26210ce` (step 9); every command below without another revision ran on `26210ce`, which holds `main` at `eaaef95`, with steps 8 and 9. The tests add edges and error cases and do not repeat the walks. Every new test names the criterion it locks in its name, in a `covers:` comment or in the comment of its test module. No production line, manifest, `Cargo.lock`, fixture or baseline changed: the source files of `pool-config` and `pool-repo-check` only gained `#[cfg(test)]` modules at their end.
+
+### Commands
+
+| Command | Revision | Expected | Observed | Result |
+|---|---|---|---|---|
+| `scripts/check.sh all` | `26210ce` | every check ok | exit 0, `ok` for fmt, clippy, test, deny, guards and docs; 448 tests passed, 0 failed | pass |
+| `scripts/prove-checks.sh` | `26210ce` | every case rejects its change | exit 0, cases 1 to 19 and 21 to 28 `PASS`, case 20 skipped (run without `--with-linux-build`), `all checks reject their bad change` | pass |
+| `cargo test --manifest-path tools/repo-check/Cargo.toml --locked --target-dir target/repo-check` | `26210ce` | every test passes | 100 and 110 passed | pass |
+| `cargo test -p pool-config -p pool --locked ac15_` | `26210ce` | every `ac15_` test passes within its limit | 4 passed in 1.82 s (`validate.rs`), 1 passed in 1.08 s (`check_config.rs`) | pass |
+| `cargo test -p pool-control --locked ac16_` | `26210ce` | the three `ac16_` tests pass | 3 passed | pass |
+| `cargo test -p pool-control --locked` | `26210ce` | the walks and the small domain unchanged | `walkthroughs.rs` 26 passed, `admission_model.rs` 3 passed | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | `26210ce` | exit 0 | exit 0, the valid report | pass |
+| `cargo test -p pool-config --locked --test validate -- ac15_ ac3_large --test-threads 1` | `32a7b24`, before step 8 reached `main` | the `ac15_` tests fail on the old position lookup | `ac15_large_valid_inputs_validate_within_ten_seconds ... FAILED`; the run took 13 minutes | fail as expected, finding 1 |
+| The same tests, `scripts/check.sh all` and `scripts/prove-checks.sh` with `be8bcf1` merged on `32a7b24`, in a scratch copy | `176bd7b` | pass | `ac15_` 4 passed in 2.79 s and 1 passed in 1.31 s; `check.sh all` exit 0 with 445 tests; `prove-checks.sh` exit 0 | pass |
+| Mutation probes, see below | `32a7b24` and `26210ce` | each mutation fails a test | 111 of 112 caught; the one left is equivalent | pass |
+
+### Test counts
+
+`#[test]` functions per file, before on `79de174` and after on `26210ce`.
+
+| File | Before | After |
+|---|---|---|
+| `crates/pool-config/tests/validate.rs` | 75 | 91 |
+| `crates/pool-config/src/identifier.rs` (unit) | 7 | 11 |
+| `crates/pool-config/src/generation.rs` (unit) | 4 | 7 |
+| `crates/pool-config/src/topology.rs` (unit) | 0 | 4 |
+| `apps/pool/tests/check_config.rs` | 74 | 80 |
+| `crates/pool-control/tests/walkthroughs.rs` | 7 | 26 |
+| `crates/pool-control/tests/admission_model.rs` | 1 | 3 |
+| `tools/repo-check/src/workspace.rs` (unit) | 30 | 35 |
+| Total | 198 | 257 |
+
+The existing `open_only_on_full_agreement` gained one line: it now asserts the exact number of open answers, 130, worked out by hand from the rules (65 per approved writer), where it asserted only that one opened.
+
+### What each group locks
+
+| Group | Criteria |
+|---|---|
+| `walkthroughs.rs`: `ac11_freshness_is_exact_at_the_expiry_and_at_now`, `ac11_bootstrap_uses_the_same_freshness_rule`, `ac11_the_latest_sample_decides_even_when_it_is_from_the_future`, `ac11_a_tie_hides_evidence_only_at_the_latest_time` | `0003 AC-11`: age equal to the expiry and one nanosecond below, a sample at now and one nanosecond later, an expiry of zero, a future latest sample hiding an older fresh one, ties only at the latest time, a failed latest sample after a good one, the same rules in bootstrap |
+| `walkthroughs.rs`: `ac9_a_configured_node_outside_the_journal_members_still_counts`, `ac9_a_second_cluster_does_not_affect_the_first`, `ac9_cluster_unknown_is_reported_alone`, `ac9_every_ready_reason_is_reported_once_in_the_listed_order`, `ac9_a_writer_with_another_identity_skips_the_recovery_and_timeline_checks`, `ac9_other_nodes_with_another_system_identifier_are_not_a_conflict`, `ac9_a_quarantined_node_never_closes_and_never_opens`, `ac9_timelines_compare_with_the_journal_not_with_each_other` | `0003 AC-9`, `0003 AC-12`: a second cluster with the same system identifier, quarantine rows of another cluster, a configured node that is not a journal member, every reason of checks 2 to 10 at once in order, each reason once however many nodes cause it, the skips after checks 5 and 6, a journal timeline other than 1, the largest timeline |
+| `walkthroughs.rs`: `ac7_ac8_ac10_start_classification_edges`, `ac7_ac8_bootstrap_reasons_combine_in_the_listed_order`, `ac7_bootstrap_checks_six_to_eight_look_only_at_fitting_nodes`, `ac7_bootstrap_judges_each_cluster_on_its_own_and_ignores_unconfigured_nodes` | `0003 AC-7`, `AC-8`, `AC-10`: `Unreadable` without a witness, a held journal without a witness (`Unconfirmed`) and of another identity (`Mismatch`), a witness one bit off, `Ready` carrying the stored revision and start sequence, two and seven bootstrap reasons together in order, two clusters planned in file order |
+| `walkthroughs.rs`: `ac16_a_ready_state_with_a_configuration_without_witness_is_unconfirmed`, `ac16_a_ready_state_with_a_configuration_of_another_witness_is_a_mismatch`, `ac16_the_witness_check_comes_before_every_other_reason` | `0003 AC-16`: one reason and no latch for healthy observations, for a second primary and for a cluster the configuration does not have; unchanged answers with the configuration the state was classified from; the witness reason alone also when the configuration differs in more than the witness |
+| `admission_model.rs`: `the_answer_does_not_depend_on_the_order_or_on_older_samples`, `open_carries_the_epoch_and_revision_of_the_journal` | `0003 AC-11`, `AC-12`: the domain answers again with the samples reversed and with an older conflicting sample of every node in front and behind; `Open` carries epoch 9223372036854775807 and revision 42 from the journal |
+| `validate.rs`: `ac2_port_edges`, `ac2_host_edges`, `ac2_ac6_id_edges_through_validate`, `ac2_system_identifier_edges_through_validate`, `ac2_authority_id_edges_through_validate`, `ac2_name_syntax_edges`, `ac2_path_syntax_edges`, `ac2_routing_profile_edges`, `ac1_ac2_empty_and_inline_tables` | `0003 AC-1`, `AC-2`, `AC-6`: port 1, 65535, 0, `-0`, 65536; host of 253 and 254 bytes; IDs of 63 and 64 bytes and letters of other scripts that look like ASCII; system identifiers with a sign, spaces, other digits; an authority ID of 32 bytes that are not 32 hex digits; names and paths counted in bytes with every listed control character; routing profile spellings; empty and inline tables, a cluster without `[control]`, empty entries |
+| `validate.rs`: `ac3_findings_follow_the_validation_order_not_the_file_order`, `ac3_each_repeat_is_reported_at_each_later_entry`, `ac5_resolve_identity_refuses_names_that_only_look_alike`, `ac5_an_empty_identity_map_resolves_nothing` | `0003 AC-3`, `AC-5`: finding order when the tables come in reverse order, three equal ids, an id and a pair repeated at once; lookups with NFD, other scripts, NUL, tab, zero width space, prefixes, the backend names |
+| `validate.rs`: `ac15_made_inputs_have_the_listed_size`, `ac15_large_valid_inputs_validate_within_ten_seconds`, `ac15_one_finding_per_entry_on_one_line_at_each_value`, `ac15_findings_follow_the_validation_order_against_the_file_order`, `ac3_large_file_positions_stay_exact_deep_in_many_lines`, `ac3_a_finding_after_a_long_comment_has_its_exact_position`, `ac3_positions_count_scalars_with_crlf_and_at_block_boundaries` | `0003 AC-15`, `AC-2`, `AC-3`: the four made inputs of "Validation time" with the listed entries and bytes (13217 and 1048511, 16471 and 1048558, 17268 and 1048559), every column of input 3 read from the built text, input 4; positions deep in many lines, after a comment of 900 KB, with CRLF and é€😀 before the finding, and at byte offsets 255, 256, 257, 511, 512 and 513 |
+| `identifier.rs`, `generation.rs`, `topology.rs` unit modules | `0003 AC-2`, `AC-4`, `AC-6`: each generation type at 9223372036854775806 and 9223372036854775807, and 1000 steps of one; IDs of other scripts; every byte value of an authority ID through its text; the name, path and host syntax for every ASCII byte and control character; the `Debug` of the identity index prints the count only |
+| `check_config.rs`: `ac2_a_control_finding_prints_its_key_without_a_position`, `ac2_an_inline_entry_missing_keys_is_reported_at_its_brace_in_both_formats`, `ac2_ac3_every_new_code_in_one_run_in_the_validation_order`, `ac4_a_canary_in_any_topology_value_never_reaches_the_output`, `ac1_made_topology_files_at_the_edges_report_exactly_the_valid_report`, `ac15_the_binary_reports_every_finding_of_input_3_within_ten_seconds` | `0003 AC-1` to `AC-4`, `AC-15`: the key only line and object, the fourth location shape at a brace, the six new codes and a missing key in one run in both formats, the canary in every topology value on exit 0 and 1, values at their edge and one byte past it, input 3 through the binary |
+| `workspace.rs` unit module `lockfile_edge_tests` | `0003 AC-13`: a local package that is not a member at the start, middle and end of `Cargo.lock`, members anywhere, CRLF, indentation, `source` before `name`, a member name in another letter case, one line per package, and the table after the last entry (finding 2 below) |
+
+### Mutation probes
+
+Each mutation changed one line or one clause of production code in the worktree, ran the package's tests, and was put back; `git status` showed only test files afterwards. Nothing of it was committed.
+
+| Package | Mutations | Caught | Not caught |
+|---|---|---|---|
+| `pool-control`, the tester's list, on `32a7b24` | 31: each closed reason dropped one by one (quarantine, conflict latch, a member missing from the configuration, a later timeline, another system identifier, `expected_writer` against the journal, the `restore_pending` hold), the expiry boundary, future samples, ties, the latest sample, quarantine and nodes of another cluster, every bootstrap refusal, the consistency check, the latch for a later timeline, a failed sample as evidence | 31 | none |
+| `pool-control`, the 60 of `chk-f3-verify` (milestone 3), 13 of which no test caught before, on `32a7b24` | 60 | 59 | `A26`, which the checker marks as equivalent (an open answer names `expected_writer`, which then equals the approved writer) |
+| `pool-control`, the witness check of step 9, on `26210ce` | 3: no witness check, no mismatch check, the witness checked after the cluster | 3 | none |
+| `pool-config`, on `32a7b24` | 18: port 0, the byte limits of host, name, path and ID, DEL and U+001F, `_` in a host, endpoint case, `replica` without case, a leading digit, a leading zero, both generation bounds, a cluster without `[control]`, the duplicate pair without the database, the skip of check 2, an upper case authority ID | 18 | none |
+
+The `pool-config` run skipped the three slow tests, because on `32a7b24` they took minutes.
+
+### Findings
+
+1. **`validate` took time that grew with the square of the number of entries** (`0003 AC-15`). On `32a7b24`, before step 8, `ac15_large_valid_inputs_validate_within_ten_seconds` failed. Step 8 (`be8bcf1`, on `main` through `ebc9228`) fixes it; on `26210ce` every `ac15_` test passes in under 2 seconds.
+2. **W4 counts a table after the last entry as part of that entry.** `w4_a_table_after_the_last_entry_counts_as_part_of_it` pins it: a local package that is not a member, written last and followed by a `[[patch.unused]]` table with its own `source` line, is not reported. By the text of spec 0003 ("an entry is the lines from one `[[package]]` line to the next, or to the end of the file") this is the specified behaviour, not a defect. It is a gap: Cargo writes such tables after the packages. Changing it changes the rule text, so it is for the architect.
