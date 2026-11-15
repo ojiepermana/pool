@@ -1271,6 +1271,11 @@ fn it_the_session_limit_and_teardown_give_the_permit_back() {
 #[ignore = "needs scripts/check.sh integration"]
 fn it_waiters_are_limited_and_time_out_after_the_acquire_deadline() {
     // covers: 0004 AC-20 (one waiter too many, the acquire deadline).
+    // Round seven (review finding t8): two clients of the test log in at the
+    // same moment while one session holds the only backend. One of them
+    // takes the one place of a waiter and the other is refused at once;
+    // which is which is not decided by the test, so no pause decides it.
+    // Each clock starts when the TCP connection of that client is made.
     let extra = "\n[limits]\nsession_max_count = 3\nnode_backend_max_count = 1\nbackend_wait_max_count = 1\nbackend_acquire_timeout_ms = 3000\n";
     let (_case, port, daemon) = serving_case("waiters", primary_node(), None, extra, true);
     let right = password("principal.password");
@@ -1279,34 +1284,33 @@ fn it_waiters_are_limited_and_time_out_after_the_acquire_deadline() {
     eventually(10, "the session holding the backend runs", || {
         sessions_of_rw("active") == "1"
     });
-    let waiter_started = std::time::Instant::now();
-    let mut waiter = client_spawn(&pool_conninfo(port), &right);
-    write_stdin(&mut waiter, "SELECT 1;\n");
-    pause();
-    pause();
-    pause();
-    pause();
-    pause();
-    let third = std::time::Instant::now();
-    let (code, _, stderr) = client(&pool_conninfo(port), &right, "SELECT 1;");
-    assert_ne!(code, 0);
-    assert_eq!(fatal(&stderr), [TOO_MANY.to_owned()], "{stderr}");
-    let third_took = third.elapsed();
-    let (code, _, stderr) = finish(waiter);
-    let waited = waiter_started.elapsed();
-    assert_ne!(code, 0);
-    assert_eq!(fatal(&stderr), [TOO_MANY.to_owned()], "{stderr}");
+    let runtime = support::runtime();
+    let host = var("POOL_IT_LISTEN_HOST");
+    let ca = ca_pem();
+    let mut outcomes = runtime.block_on(async {
+        let one = tokio::spawn(timed_login(host.clone(), port, ca.clone(), right.clone()));
+        let two = tokio::spawn(timed_login(host.clone(), port, ca.clone(), right.clone()));
+        vec![one.await.expect("join"), two.await.expect("join")]
+    });
+    outcomes.sort_by_key(|(_, took)| *took);
+    let [(first, at_once), (second, waited)] = [outcomes[0].clone(), outcomes[1].clone()];
+    assert_eq!(first.as_deref(), Some("53300"), "one waiter too many");
     assert!(
-        third_took < std::time::Duration::from_millis(2000),
-        "one waiter too many is refused at once: {third_took:?}"
+        at_once < std::time::Duration::from_millis(2000),
+        "one waiter too many is refused at once: {at_once:?}"
+    );
+    assert_eq!(
+        second.as_deref(),
+        Some("53300"),
+        "the waiter at its deadline"
     );
     assert!(
         waited >= std::time::Duration::from_millis(3000),
-        "{waited:?}"
+        "not before the deadline: {waited:?}"
     );
     assert!(
-        waited <= std::time::Duration::from_millis(5500),
-        "{waited:?}"
+        waited <= std::time::Duration::from_millis(5000),
+        "not more than 2 seconds after it: {waited:?}"
     );
     let (code, _, stderr) = finish(holder);
     assert_eq!(code, 0, "{stderr}");
@@ -1315,6 +1319,41 @@ fn it_waiters_are_limited_and_time_out_after_the_acquire_deadline() {
     assert!(log.contains("\"reason\":\"wait_limit\""), "{log}");
     assert!(log.contains("\"reason\":\"acquire_timeout\""), "{log}");
     assert_eq!(daemon.stop(), 0);
+}
+
+/// A login of the principal through POOL by the code of `pool-core`, timed
+/// from the moment its TCP connection is made. Returns the SQLSTATE of the
+/// refusal, or `None` when the login succeeded or failed without one.
+async fn timed_login(
+    host: String,
+    port: u16,
+    ca: Vec<u8>,
+    secret: String,
+) -> (Option<String>, std::time::Duration) {
+    use pool_core::backend::{self, BackendError, Credential, Login, Purpose};
+    use pool_core::secret::{Password, TrustRoots};
+    use pool_core::tls::NodeTls;
+    let roots = TrustRoots::parse(&ca).expect("the test CA");
+    let tls = NodeTls::new(&roots, "host.docker.internal").expect("the server name");
+    let login = Login::new(
+        "pz7_principal",
+        "pz7_db",
+        Credential::new(Password::parse(secret.as_bytes()).expect("password")),
+    );
+    let stream = tokio::net::TcpStream::connect((host.as_str(), port))
+        .await
+        .expect("connect to POOL");
+    let connected = std::time::Instant::now();
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(20);
+    let result = backend::establish(stream, &tls, &login, Purpose::Probe, deadline).await;
+    let took = connected.elapsed();
+    let code = match result {
+        Err(BackendError::Server { sqlstate }) => {
+            sqlstate.map(|s| String::from_utf8_lossy(&s).into_owned())
+        }
+        _ => None,
+    };
+    (code, took)
 }
 
 /// The resident memory of a process, in KiB.
