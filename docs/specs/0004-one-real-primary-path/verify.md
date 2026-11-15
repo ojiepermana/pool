@@ -1882,3 +1882,16 @@ Every step that a session can run has run and passed on `af23fa4`. Evidence from
 - **For the developer of step 14:** the two inexact places in the evidence table.
 - **For the architect:** a test of the integration check now needs a tool of the host (`sqlite3`), against the sentence that the host needs no tool. Either the sentence or the test should give.
 - **For the developer of step 8:** the reading of the `ac13` test above.
+
+## Build plan step 15
+
+### `apps/pool`, the daemon and its tasks (developer B, stage 1)
+
+Built on 2026-11-16 on top of `main` at `6ba9e36`, as decisions 86 and 96 and findings c1, c2, c9 and d3 of the independent review ask. One commit for each part:
+
+- `9c42a72`, **`runtime.failed`** (c1, d3). A runtime that cannot be built is `runtime.failed` with exit 3 in `run` (which reported it as `listener.failed`) and in `bootstrap` (which went on with no sample and was refused with `bootstrap.evidence_missing`). The handlers for SIGTERM and SIGINT are installed before step 9, and a handler that cannot be installed is `runtime.failed` too. The daemon used to wait for ever on a handler that was missing. No test makes the operating system refuse a runtime or a handler, so these two paths are held by review only.
+- `52ca154`, **the panic hook** (d3). `log::install` sets a hook that writes `daemon.panicked` through the queue and nothing else. Commands other than `run` keep the default hook.
+- `0ac3996`, **the daemon watches its tasks** (c2). Step 10 waits on the two signals, the control loop, every probe task (a `JoinSet`), the listener task and the log writer. The first task that ends with no shutdown having asked for it gives `daemon.failed` with `task` `control`, `probe`, `listener` or `log`, then shutdown, `daemon.stopped` and exit 3. For `log` the line is written straight to stderr as one JSON object, since the writer is gone. A join handle that returned is never awaited again. **Open until stage 2:** the spec ends the sessions as if the deadline had passed (step 4 of Shutdown). `pool-core` has no call for that yet, so the failed path runs the whole `Server::shutdown()`, with a comment in `daemon.rs`. `dev-f4-m1` adds the call, and stage 2 uses it. No test ends a task of the daemon on purpose, so the watch is held by review only.
+- `77e57f8`, **a last try for each latch** (c9). When the loop stops, every latch on `unrecorded_latches()` is written once more before the journal is closed, and one that still fails gets `authority.conflict_latched` with `recorded` false. Test: `control::tests::c9_a_latch_still_open_at_shutdown_is_tried_once_more_and_said_so`, which fails without the last try: one line and one failed write instead of two.
+
+Gates on this tree, on macOS: `cargo test -p pool --locked` and `scripts/check.sh integration` passed (26 of 26). In `scripts/check.sh all`, every check but `test` passed, and `test` failed in one place only, the test `ac2_the_committed_w3_baseline_is_the_block_of_spec_0004` of `tools/repo-check`. The spec on `main` already has the lines `rusqlite` and `aws_lc_rs` of decision 93 (finding g2), and the committed `forbidden-source-patterns.txt` does not have them yet. That file belongs to another part of step 15, so this is not something stage 1 changed, and stage 1 does not touch `tools/`.

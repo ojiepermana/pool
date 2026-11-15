@@ -27,6 +27,10 @@ const JOURNAL_FAILED: &str = "journal.failed";
 const JOURNAL_FAILED_MESSAGE: &str = "the journal could not be written";
 const RANDOM_FAILED: &str = "random.failed";
 const RANDOM_FAILED_MESSAGE: &str = "random bytes could not be obtained";
+/// The finding of a runtime that could not be built, in `bootstrap` and `run`.
+pub const RUNTIME_FAILED: &str = "runtime.failed";
+/// The message of [`RUNTIME_FAILED`].
+pub const RUNTIME_FAILED_MESSAGE: &str = "the runtime could not be started";
 
 /// Runs `pool bootstrap` on the file at `path` and returns its report.
 pub fn bootstrap_file(path: &Path) -> Report {
@@ -96,20 +100,18 @@ fn bootstrap(config: &ValidatedConfig) -> Result<Report, Report> {
     // 3. The journal, then the monitor credentials and the CA files.
     let read = Journal::read(&state.journal());
     let targets = targets(config, state.owner())?;
-    // 4. One probe of every node, all at the same time.
-    // A runtime that cannot start gives no sample, so the plan below is
-    // refused with `bootstrap.evidence_missing` and nothing is written.
-    let origin = tokio::time::Instant::now();
-    let mut board = ObservationBoard::new();
-    if let Ok(runtime) = tokio::runtime::Builder::new_current_thread()
+    // 4. One probe of every node, all at the same time. A runtime that
+    // cannot be built is `runtime.failed`, and nothing is written.
+    let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
         .build()
-    {
-        let timeout = config.probe().timeout();
-        for observation in runtime.block_on(probe::probe_all(targets, timeout, origin)) {
-            board.record(observation);
-        }
+        .map_err(|_| Report::Error(Item::plain(RUNTIME_FAILED, RUNTIME_FAILED_MESSAGE)))?;
+    let origin = tokio::time::Instant::now();
+    let mut board = ObservationBoard::new();
+    let timeout = config.probe().timeout();
+    for observation in runtime.block_on(probe::probe_all(targets, timeout, origin)) {
+        board.record(observation);
     }
     let now = MonotonicTime::from_origin(origin.elapsed());
     // 5. The plan, or the reasons it was refused. Nothing is written then.
