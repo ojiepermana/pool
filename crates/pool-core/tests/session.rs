@@ -204,6 +204,8 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
         return;
     };
     let mut reader = FirstPacketReader::new(65536);
+    // One reader per connection: it has seen the SSLRequest read above.
+    let _ = reader.feed(&first);
     let mut byte = [0u8; 1];
     let request = loop {
         if tls.read_exact(&mut byte).await.is_err() {

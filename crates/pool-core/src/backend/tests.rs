@@ -118,6 +118,8 @@ async fn run_node(
     let acceptor = TlsAcceptor::from(server_config(&chain, &key).expect("server config"));
     let mut tls = acceptor.accept(stream).await.ok()?;
     let mut reader = FirstPacketReader::new(65536);
+    // One reader per connection: it has seen the SSLRequest read above.
+    let _ = reader.feed(&first);
     let mut buf = [0u8; 1];
     let startup = loop {
         tls.read_exact(&mut buf).await.ok()?;

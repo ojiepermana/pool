@@ -57,8 +57,9 @@ fn attribute(part: &str, name: char) -> Option<&str> {
 ///
 /// It must start with `n,,` or `y,,`. A request for channel binding
 /// (`p=`), an authorization identity, a reserved `m=` attribute or an
-/// extension is [`Malformed`]. The user name is required by the grammar and
-/// otherwise ignored, as PostgreSQL ignores it.
+/// extension is [`Malformed`], and so is a message that is not UTF-8 text.
+/// The `n=` attribute is required by the grammar; the user name in it is
+/// read up to the next comma and ignored, as PostgreSQL ignores it.
 pub fn parse_client_first(data: &[u8]) -> Result<ClientFirst, Malformed> {
     let text = std::str::from_utf8(data).map_err(|_| Malformed)?;
     let (header, bare) = if let Some(bare) = text.strip_prefix("n,,") {
@@ -69,13 +70,11 @@ pub fn parse_client_first(data: &[u8]) -> Result<ClientFirst, Malformed> {
         return Err(Malformed);
     };
     let mut parts = bare.split(',');
-    let user = parts
+    // The user name is read up to the next comma and ignored, whatever it holds, as PostgreSQL does.
+    parts
         .next()
         .and_then(|p| attribute(p, 'n'))
         .ok_or(Malformed)?;
-    if user.contains('=') && !valid_saslname(user) {
-        return Err(Malformed);
-    }
     let nonce = parts
         .next()
         .and_then(|p| attribute(p, 'r'))
@@ -88,19 +87,6 @@ pub fn parse_client_first(data: &[u8]) -> Result<ClientFirst, Malformed> {
         bare: bare.to_string(),
         nonce: nonce.to_string(),
     })
-}
-
-/// A saslname may hold `=` only as `=2C` or `=3D`.
-fn valid_saslname(name: &str) -> bool {
-    let mut rest = name;
-    while let Some(index) = rest.find('=') {
-        let after = &rest[index + 1..];
-        if !(after.starts_with("2C") || after.starts_with("3D")) {
-            return false;
-        }
-        rest = &after[2..];
-    }
-    true
 }
 
 /// The client-first message that POOL sends to a node: `n,,n=,r=<nonce>`.
@@ -319,7 +305,27 @@ mod tests {
             parse_client_first(b"y,,n=,r=abc").map(|f| f.header),
             Ok(Gs2Header::BindingNotOffered)
         );
-        assert!(parse_client_first(b"n,,n=a=2Cb=3D,r=abc").is_ok());
+        // Any user name up to the next comma is accepted and ignored.
+        for name in [
+            "a=2Cb=3D",
+            "a=zz",
+            "=",
+            "==",
+            "a=b=c",
+            "\u{e9}l\u{e8}ve",
+            "",
+        ] {
+            assert_eq!(
+                parse_client_first(format!("n,,n={name},r=abc").as_bytes()).map(|f| f.nonce),
+                Ok("abc".to_string()),
+                "{name}"
+            );
+        }
+        assert_eq!(
+            parse_client_first(b"n,,n=\xff\xfe,r=abc"),
+            Err(Malformed),
+            "not UTF-8"
+        );
         for bad in [
             "p=tls-server-end-point,,n=,r=abc",
             "n,a=admin,n=,r=abc",
@@ -335,7 +341,6 @@ mod tests {
             "n,,",
             "n,n=,r=abc",
             "x,,n=,r=abc",
-            "n,,n=a=zz,r=abc",
             "",
         ] {
             assert_eq!(parse_client_first(bad.as_bytes()), Err(Malformed), "{bad}");

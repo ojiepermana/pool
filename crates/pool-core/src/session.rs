@@ -1071,9 +1071,8 @@ where
                 let _ = self.backend.flush().await;
                 Ok(())
             }
-            FrontendAction::Terminate { body_len } => {
+            FrontendAction::Terminate => {
                 let _ = self.backend.write_all(&header).await;
-                let _ = self.copy_to_backend(body_len).await;
                 let _ = self.backend.flush().await;
                 Err(Stop::End(EndReason::ClientTerminate))
             }

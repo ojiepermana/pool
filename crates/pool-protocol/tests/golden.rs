@@ -13,9 +13,22 @@ use pool_protocol::{message, scram};
 
 const STARTUP_MAX: u32 = 8192;
 
-/// Feeds `pieces` in order and collects every result; checks that the reader took every byte.
-fn first_packets(pieces: &[&[u8]]) -> Vec<Result<FirstPacket, PoolError>> {
+/// A reader for a connection that is already over TLS: it has read an `SSLRequest`.
+fn reader(tls: bool) -> FirstPacketReader {
     let mut reader = FirstPacketReader::new(STARTUP_MAX);
+    if tls {
+        assert_eq!(
+            reader.feed(&encode_ssl_request()).1,
+            Some(Ok(FirstPacket::SslRequest))
+        );
+    }
+    reader
+}
+
+/// Feeds `pieces` in order and collects every result; checks that the reader took every byte it was
+/// given until it decided.
+fn first_packets(tls: bool, pieces: &[&[u8]]) -> Vec<Result<FirstPacket, PoolError>> {
+    let mut reader = reader(tls);
     let mut out = Vec::new();
     for piece in pieces {
         let mut rest: &[u8] = piece;
@@ -85,6 +98,7 @@ fn golden_first_packets() -> Vec<(&'static str, Vec<u8>)> {
             ]),
         ),
         ("user only", encode_startup(&[("user", b"alice")])),
+        ("plaintext startup", encode_startup(&[("user", b"alice")])),
         (
             "protocol 3.2",
             encode_startup_version(3, 2, &[("user", b"alice"), ("_pq_.test_option", b"1")]),
@@ -116,11 +130,19 @@ fn golden_first_packets() -> Vec<(&'static str, Vec<u8>)> {
     ]
 }
 
+/// Whether a golden packet is sent over TLS, after an `SSLRequest` on the same reader.
+fn after_tls(name: &str) -> bool {
+    matches!(
+        name,
+        "psql" | "user only" | "protocol 3.2" | "replication" | "options" | "no user" | "twice"
+    )
+}
+
 #[test]
 fn first_packets_give_their_rows() {
     let results: Vec<_> = golden_first_packets()
         .into_iter()
-        .map(|(name, bytes)| (name, first_packets(&[&bytes])))
+        .map(|(name, bytes)| (name, first_packets(after_tls(name), &[&bytes])))
         .collect();
     let one = |name: &str| {
         let (_, r) = results
@@ -160,26 +182,34 @@ fn first_packets_give_their_rows() {
     assert_eq!(one("short"), Err(PoolError::ProtocolViolation));
     assert_eq!(one("too large"), Err(PoolError::MessageTooLarge));
     assert_eq!(one("direct TLS"), Err(PoolError::MessageTooLarge));
+    // Without TLS a startup packet is refused at its header: the parameters are never read.
+    assert_eq!(one("plaintext startup"), Err(PoolError::TlsRequired));
+    let plain = encode_startup(&[("user", b"alice")]);
+    assert_eq!(
+        FirstPacketReader::new(STARTUP_MAX).feed(&plain),
+        (8, Some(Err(PoolError::TlsRequired)))
+    );
 }
 
 #[test]
 fn first_packets_split_at_every_byte_give_the_same_result() {
     for (name, bytes) in golden_first_packets() {
-        let whole = first_packets(&[&bytes]);
+        let tls = after_tls(name);
+        let whole = first_packets(tls, &[&bytes]);
         for at in 0..=bytes.len() {
             let (a, b) = bytes.split_at(at);
-            assert_eq!(first_packets(&[a, b]), whole, "{name} split at {at}");
+            assert_eq!(first_packets(tls, &[a, b]), whole, "{name} split at {at}");
         }
         // One byte at a time, the hardest split of all.
         let singles: Vec<&[u8]> = bytes.chunks(1).collect();
-        assert_eq!(first_packets(&singles), whole, "{name} byte by byte");
+        assert_eq!(first_packets(tls, &singles), whole, "{name} byte by byte");
     }
 }
 
 #[test]
 fn a_first_packet_reader_never_takes_a_byte_after_its_packet() {
     for (name, bytes) in golden_first_packets() {
-        let mut reader = FirstPacketReader::new(STARTUP_MAX);
+        let mut reader = reader(after_tls(name));
         let mut input = bytes.clone();
         input.extend_from_slice(b"\x16\x03\x01NEXT");
         let mut used = 0;
@@ -503,4 +533,20 @@ fn a_length_field_is_checked_before_anything_is_reserved() {
     // Counts inside a body are compared, never reserved from.
     assert!(auth::parse_negotiate_protocol_version(b"\0\0\0\0\x7f\xff\xff\xff").is_err());
     assert!(auth::parse_sasl_initial_response(b"SCRAM-SHA-256\0\x7f\xff\xff\xff").is_err());
+}
+
+#[test]
+fn terminate_has_no_body() {
+    use pool_protocol::message::{FrontendAction, classify_frontend};
+    let terminate: [u8; 5] = message::encode_terminate().try_into().expect("five bytes");
+    assert_eq!(
+        classify_frontend(terminate, 1024),
+        FrontendAction::Terminate
+    );
+    let with_body = message::encode_message(b'X', b"x");
+    let header: [u8; 5] = with_body[..5].try_into().expect("five bytes");
+    assert_eq!(
+        classify_frontend(header, 1024),
+        FrontendAction::Refuse(PoolError::ProtocolViolation)
+    );
 }
