@@ -1098,9 +1098,9 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/integration.rs": {
-    "mtime": 1794743181.0272424,
-    "seen": 1794743240.802519,
-    "ast_hash": "0c7c83fb1434cb7e72a6769b85966ba8",
+    "mtime": 1794751911.217009,
+    "seen": 1794751990.000758,
+    "ast_hash": "441cab3281577e57fe61f7ff2083a6db",
     "semantic_hash": ""
   },
   "scripts/integration/run.sh": {
@@ -1155,6 +1155,12 @@
     "mtime": 1794744423.1884692,
     "seen": 1794744693.435828,
     "ast_hash": "9c1b0724b489d4255e79c0e1882e82b4",
+    "semantic_hash": ""
+  },
+  "apps/pool/tests/support/mod.rs": {
+    "mtime": 1794751911.2173898,
+    "seen": 1794751990.00076,
+    "ast_hash": "5a31c2158fef85d18738a81e263a38fd",
     "semantic_hash": ""
   }
 }
