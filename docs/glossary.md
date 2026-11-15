@@ -14,6 +14,7 @@ This file owns the project's terms. Each entry names the document that owns the 
 | Session permit | The bounded right of one frontend to exist. It is returned when the frontend ends. Avoid the bare word permit for anything else. | [Data plane](architecture/data-plane.md#resource-proposal) |
 | Lease | Exclusive ownership of one backend by one frontend for the whole session. | [Spec 0001](specs/0001-initial-architecture/index.md#safety-contracts), contract 1 |
 | Pool key | The full backend identity that partitions reusable backends. | [Connection pooling](architecture/connection-pooling.md#pool-identity-and-lifecycle) |
+| Identity ID | The name an operator gives one entry of the identity map. Logs and metrics use it in place of the principal or the backend login. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#what-may-appear-in-default-telemetry) |
 | Virtual cancellation credential | The per lease cancel token given to the frontend. The real backend key stays private. | [Spec 0001](specs/0001-initial-architecture/index.md#safety-contracts), contract 9 |
 
 ## Profiles
@@ -39,6 +40,13 @@ The word profile always takes a qualifier.
 | Eligible primary | The approved writer while a fresh observation agrees with it. Only this node receives writes. Avoid verified primary. | [Control plane](architecture/control-plane.md) |
 | Eligible replica | A replica that passes role, identity, freshness, lag, maintenance and weight checks at admission. | [Load balancing PRD](prd/004-load-balancing.md) |
 | Topology snapshot | The immutable, versioned view of eligibility that the data plane reads. | [Spec 0001](specs/0001-initial-architecture/index.md#boundaries) |
+| Node | One configured PostgreSQL server of a cluster, with a stable ID, a host and a port. A backend is a connection to a node. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#records) |
+| Expected writer | The node that the configuration names as the writer of a cluster. It seeds the approved writer at bootstrap and must keep agreeing with it. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#keys) |
+| Journal | The SQLite file that holds the approved topology and quarantine and, later, operations and audit events. One daemon owns one journal. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#the-journal) |
+| Authority ID | The random value that names one journal. The configuration repeats it as the authority witness, so that a missing journal is not taken for a first start. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#start-classification) |
+| Bootstrap | The explicit operator command that creates a journal once, from the expected writer and matching fresh observations of every node. The daemon never does this by itself. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#bootstrap) |
+| Restore hold | The mark a journal carries when it came out of a backup. Admission stays closed until an operator reconciles it. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#walk-4-restore-of-a-backup-taken-before-a-promotion) |
+| Conflict latch | The durable mark a cluster gets when a second primary or a later timeline was observed. Writes stay closed until an operation clears it, also when the evidence is gone. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#writer-admission) |
 | Admission | The decision to accept work. Initial admission selects a backend at login. Operation admission accepts or refuses later work on the pinned lease. | [Data plane](architecture/data-plane.md) |
 
 ## Generations
@@ -50,6 +58,8 @@ The word generation always takes a qualifier. The [control model](scope/003-cont
 | Configuration generation | One validated whole configuration. An invalid reload keeps the previous one. | [Security requirements](security/security-requirements.md), SEC-12 |
 | Credential generation | One version of a secret reference. Rotation retires the old one. | [Connection pooling](architecture/connection-pooling.md#limits-and-operations) |
 | Topology epoch | The durable counter that changes with the approved writer. Avoid durable epoch. | [Control plane](architecture/control-plane.md#proposed-records) |
+| Authority revision | The durable counter that rises with every change of the approved topology, the quarantine, a membership decision or the restore hold. A mutation of durable authority names the revision it expects. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#generations) |
+| Start sequence | The durable counter that rises by one each time the daemon opens its journal to serve. A generation that lives in memory is only comparable inside one start sequence. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#generations) |
 | Snapshot generation | The version of one published topology snapshot. It is rebuilt after restart. | [Control plane](architecture/control-plane.md#proposed-records) |
 | Lease generation | The unique value that stops a late cancel or completion from reaching a reused backend. | [Architecture overview](architecture/overview.md#module-contracts) |
 | Policy version | The version of a routing or selection policy recorded with a decision. Avoid policy generation. | [SQL routing PRD](prd/003-sql-routing.md) |

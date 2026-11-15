@@ -51,6 +51,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/adr/0001-initial-architecture.md](adr/0001-initial-architecture.md) | ADR 0001. Initial architecture |
 | [docs/adr/0002-standards-and-tooling.md](adr/0002-standards-and-tooling.md) | ADR 0002. Standards and tooling |
+| [docs/adr/0003-control-and-session-data-model.md](adr/0003-control-and-session-data-model.md) | ADR 0003. Control and session data model |
 
 ## docs/architecture
 
@@ -166,6 +167,13 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/specs/0002-standards-and-tooling/index.md](specs/0002-standards-and-tooling/index.md) | 0002. Standards and tooling |
 | [docs/specs/0002-standards-and-tooling/rationale.md](specs/0002-standards-and-tooling/rationale.md) | Standards and tooling rationale |
 | [docs/specs/0002-standards-and-tooling/verify.md](specs/0002-standards-and-tooling/verify.md) | 0002. Verification record |
+
+## docs/specs/0003-control-and-session-data-model
+
+| Path | Document |
+|---|---|
+| [docs/specs/0003-control-and-session-data-model/index.md](specs/0003-control-and-session-data-model/index.md) | 0003. Control and session data model |
+| [docs/specs/0003-control-and-session-data-model/rationale.md](specs/0003-control-and-session-data-model/rationale.md) | Control and session data model rationale |
 
 ## docs/testing
 
