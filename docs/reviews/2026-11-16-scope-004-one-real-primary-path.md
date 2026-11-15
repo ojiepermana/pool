@@ -507,3 +507,43 @@ The documents of this range. `claude-opus-5-5` read decisions 114 to 117 and the
 - ⚪ The corrected row at `docs/specs/0004-one-real-primary-path/verify.md:1424` still links only to the older steps and not to the run that holds the new evidence.
 
 Open and minor at `79f3cbd`: r6 and r7 in the script, and r2 to r5, a1 to a3 and n15 as far as their fixes are not on `main` yet (the rule of decision 109, the code of decision 116 and the tests of Follow-up 16).
+
+## Final confirmation, `main` at `f7175b6`, 2026-11-16
+
+**Reviewed by**: `claude-fable-5-2`, the session that wrote the rounds above (author of the code, the script and the tests on `claude-opus-5-5`). No second reader in this round. Every claim below is from a run of mine on the tree at `f7175b6`.
+**Scope**: the range `79f3cbd..f7175b6`, without `graphify-out/` and `docs/scope/coordination/`. Two changes to product code (`crates/pool-config/src/serving.rs`, decision 109, and `crates/pool-protocol/src/startup.rs`, decision 116), the fixes of r6 and r7 in `scripts/integration/run.sh`, and tests. The last corrections of the spec text by the architect were not on `main` and are outside what I read.
+**Verdict**: Approved, at `f7175b6`. No blocker and no major finding is open in the range `c4d5714..f7175b6`. M1, M2, M3 and r1 are closed, and so are r2, r6 and r7. I found no new defect in this range.
+
+### What I ran
+
+No input, output or error stream was a terminal.
+
+| Run | Result |
+|---|---|
+| `cargo test --workspace --locked` (debug build, macOS, Rust 1.100.0) | exit 0. 566 tests passed with the documentation tests, 0 failed, 30 ignored (the tests of the fixture) |
+| The whole script as `/bin/dash scripts/integration/run.sh` (macOS, Docker Desktop, the pinned image) | exit 0 after 69 seconds, 30 of 30 tests, no container left |
+| The functions of the script in a harness with a stand in for the test command, seven cases, under `/bin/dash` of macOS and under `sh` in a container of the pinned PostgreSQL image (`/usr/bin/dash`, no `ps`), and three of them under `/bin/bash` | every case as expected, nothing left in any. The table of the third look, with one line changed: the watchdog on a tree that ignores SIGTERM now exits 1 after 8 or 9 seconds with nothing left |
+| The lines of the script that make a container, with a name that a container of mine already held, and with a container that is created and cannot start | the first: "could not be created", and the container that was there first is still there. The second: "did not start", the container is in the state `Created`, and the removal by ID takes it away |
+| 14 wrong changes to the code, each file put back with `git checkout` | 11 caught by a named test, 3 pass. See below |
+
+### The findings that were open
+
+| Finding | State | Evidence |
+|---|---|---|
+| r2, the loss time with no cross rule | Closed | `probe.node_loss_timeout_ms` below twice the period plus the timeout is `config.invalid_value` at its key (`crates/pool-config/src/serving.rs:634`). With that bound the next probe of the writer has asked and had its whole timeout before the time is over, so one probe that stumbles marks nothing. Four wrong changes fail `ac5_the_loss_time_must_cover_two_periods_and_the_timeout` and the fixture test: the rule never fires, one period in place of two, the edge value refused, the finding at the wrong key. The default of 30000 counts when the key is left out, which the test holds at a period of 14500 and 14501. The slow primary is a matter of text (decision 110), which I did not read again |
+| r6, the watchdog and a process that ignores SIGTERM | Closed | The watchdog now only sends SIGUSR1 to the script, and the script ends the tests itself, so the list of processes and the SIGKILL stay with it (`scripts/integration/run.sh:326` to `:343`). My case that left four processes now leaves none, in all three shells |
+| r7, removal by name | Closed | `docker create` prints the ID, the ID is kept before `docker start`, and no name is used to remove (`run.sh:240` to `:250`). Both probes above |
+| The nits of the third look | Closed | A process is known by its ID and its start time (`run.sh:83`, `:109`), and `end_tree` looks for `ps` and `/proc` first (`run.sh:122`) |
+| r3, nine wrong changes that passed | Six are caught now, three are left on purpose | Caught: the greeting write not raced against a cut (`a_conflict_ends_a_login_whose_client_does_not_read_its_greeting`), step 8 with no deadline (`ac29_a_node_that_never_answers_the_identity_question_is_refused_at_the_deadline`), the route with timeline 1 (`ac29_the_route_carries_the_approved_timeline_of_the_writer`), the status `I` after the answer (`ac29_a_node_that_is_not_idle_after_the_identity_answer_is_refused_with_08006`), the last try for a latch (`c9_the_loop_stopped_through_run_tries_the_latch_once_more`), the keepalive of the listener (`ac30_the_listener_socket_has_keepalive_on_and_hands_it_to_the_sockets_it_accepts`). Still passing: the tasks left after the last limit of shutdown are never dropped, a task that ends is ended with `shutdown`, and a probe task that ends is not noticed. The tester left these three for scope 005 with reasons, and Follow-up 16 owns them |
+| t2, t8, n15 | Closed as far as tests can show | `Lease`, `Server` and `ServerParts` have a `Debug` test now. t8 was confirmed in the addendum above |
+| r4, r5, a1 to a3, and the notes on decisions 116 and 117 | Not confirmed | Text of the spec. The corrections of the architect were not on `main` when I read |
+
+### The two changes to product code
+
+Decision 109 is the rule in the table above. It reads only values that passed their own range, and it comes after the rule for the expiry, so a file gets one finding for one mistake.
+
+Decision 116: a `database` that is sent with an empty value keeps the value of `user` (`crates/pool-protocol/src/startup.rs:261`), as PostgreSQL does. Taking the line out fails `parameter_rows`, and `ac17_an_empty_database_takes_the_user_name_and_reaches_its_identity_entry` logs in through the listener. The identity map still decides what such a client reaches, so nothing opens that was closed.
+
+### What stays open
+
+Nothing that holds the verdict. Minor and recorded: the three wrong changes of r3 that still pass (Follow-up 16, scope 005), the second sentence of `0004 AC-28` (decision 112), and the text points that wait for the architect. One step is not run and is not mine to close: the whole of `scripts/check.sh integration` on a Linux host, which needs the CI job of the manual step. My advice from the third look stands: run that job once before the feature is called done.
