@@ -18,7 +18,7 @@ use pool_protocol::message::{self, Message};
 use pool_protocol::sqlstate::error_sqlstate;
 use pool_protocol::startup::{encode_ssl_request, encode_startup};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite};
-use tokio::net::TcpStream;
+use tokio::net::{TcpSocket, TcpStream};
 use tokio::time::Instant;
 use tokio_rustls::TlsConnector;
 use tokio_rustls::client::TlsStream;
@@ -418,14 +418,40 @@ pub async fn connect(
     deadline: Instant,
 ) -> Result<BackendConnection<TcpStream>, BackendError> {
     tokio::time::timeout_at(deadline, async {
-        let tcp = TcpStream::connect((node.host.as_str(), node.port))
-            .await
-            .map_err(|_| BackendError::Connect)?;
+        let tcp = connect_tcp(&node.host, node.port).await?;
         let _ = tcp.set_nodelay(true);
         handshake(tcp, &node.tls, login, purpose).await
     })
     .await
     .map_err(|_| BackendError::Timeout)?
+}
+
+/// Step 1: resolves the name at each attempt and tries the addresses in the order they come back,
+/// each on a socket with TCP keepalive on before it connects (spec 0004, "A peer that vanished").
+async fn connect_tcp(host: &str, port: u16) -> Result<TcpStream, BackendError> {
+    let addresses = tokio::net::lookup_host((host, port))
+        .await
+        .map_err(|_| BackendError::Connect)?;
+    for address in addresses {
+        let Ok(socket) = node_socket(address) else {
+            continue;
+        };
+        if let Ok(tcp) = socket.connect(address).await {
+            return Ok(tcp);
+        }
+    }
+    Err(BackendError::Connect)
+}
+
+/// A socket for one address of a node, with TCP keepalive on, not connected yet.
+pub(crate) fn node_socket(address: std::net::SocketAddr) -> std::io::Result<TcpSocket> {
+    let socket = if address.is_ipv4() {
+        TcpSocket::new_v4()?
+    } else {
+        TcpSocket::new_v6()?
+    };
+    socket.set_keepalive(true)?;
+    Ok(socket)
 }
 
 /// Steps 2 to 7 of the backend connection over an open stream, before `deadline`.

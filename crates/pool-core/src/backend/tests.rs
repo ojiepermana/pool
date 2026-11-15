@@ -893,3 +893,24 @@ fn display_of_a_backend_error_is_its_constant_kind_and_no_debug_form() {
         "backend attempt failed: server_error"
     );
 }
+
+#[test]
+fn ac30_a_socket_to_a_node_has_keepalive_on_before_it_connects() {
+    // covers: 0004 AC-30, the socket half toward a node.
+    for address in ["127.0.0.1:5432", "[::1]:5432"] {
+        let socket = node_socket(address.parse().expect("address")).expect("socket");
+        assert!(socket.keepalive().expect("keepalive"), "{address}");
+    }
+}
+
+#[tokio::test]
+async fn a_node_that_no_address_answers_is_connect() {
+    // A port that nothing listens on: every address is tried and the attempt is `connect`.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+    let port = listener.local_addr().expect("address").port();
+    drop(listener);
+    assert_eq!(
+        connect_tcp("127.0.0.1", port).await.map(|_| ()),
+        Err(BackendError::Connect)
+    );
+}
