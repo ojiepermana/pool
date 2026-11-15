@@ -138,6 +138,8 @@ The product run of `deny` prints one warning, `license-exception-not-encountered
 
 The fuzz package is formatted and its dependencies are checked, but no required check compiles it. That is a known gap until the first slice that adds a fuzz job (see [Rules for later slices](#rules-for-later-slices)).
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#tests-and-evidence): scope 004 adds two checks, `integration` and `fuzz`. They are names of `scripts/check.sh` from Build plan steps 8 and 12 of spec 0004 on. They become required checks only after manual steps M2 and M3 of that spec: a person adds the two jobs to the workflow and the two names to the branch rule file, and applies the rule on the remote. Until then the table above, with its seven checks, is the current statement, and the two new jobs do not block a merge. After those steps there are nine. The job `fuzz` is what closes the gap that the last paragraph above names: from then on the fuzz packages are compiled on every pull request. From step 12 on, `deny` also checks the lockfile of the new fuzz package and `fmt` formats its manifest.
+
 ### The check entry point
 
 `scripts/check.sh` is a POSIX shell script (`#!/bin/sh`, `set -eu`). It may be called from any directory; it first changes to the repository root, which is the parent of its own directory.
@@ -167,6 +169,8 @@ Rules:
 - `fuzz` and `sbom` check their tool the same way as `deny` and name the install command in their message: `cargo install --locked --root target/tools cargo-fuzz@0.13.2` and `cargo install --locked --root target/tools cargo-cyclonedx@0.5.10`. A missing toolchain `nightly-2026-10-17` is reported with the command `rustup toolchain install nightly-2026-10-17`; the script does not install toolchains.
 
 To reproduce a failed CI job named `X`, check out the same commit and run `scripts/check.sh X`. That is the whole rule.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#the-integration-check): `scripts/check.sh` gains the name `integration` from Build plan step 8 of spec 0004 on, and the name `fuzz-tools` from its step 12 on, when `fuzz` also starts to run every target of both fuzz packages. `integration` needs Docker, exits 3 without it, and is not part of `all`. `fuzz-tools` installs `cargo-fuzz` 0.13.2 under `target/tools` and the pinned nightly toolchain with `rustup` when they are missing. That is one exception, for this one name, to the sentence above that the script does not install toolchains. The tag and the digest of the PostgreSQL image are written at the top of the script, with the other pinned versions.
 
 ### Linux build script
 
@@ -258,6 +262,8 @@ Rules for changing it:
 
 - Adding a license, a license exception or an entry to `ignore` is a decision of the Release maintainer (licenses) or the Maintainer (advisories), who must be a person (see the [reviewer roster](../../engineering-standards.md#reviewer-roster)). The pull request that makes the change records the reason in the technology evaluation. An `ignore` entry also records the advisory ID and a date by which it is looked at again.
 - A dependency update is its own pull request. It changes `Cargo.toml` or `Cargo.lock`, the matching baseline file if the set of package names changed, and the technology evaluation if a direct dependency changed. No update bot is configured. New advisories are found by the daily run of the workflow.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#dependency-policy): from Build plan step 3 of spec 0004 on, `deny.toml` has five more `[[licenses.exceptions]]` entries, for `aws-lc-rs`, `aws-lc-sys`, `rustls-webpki`, `untrusted` and `subtle`. They allow `ISC` and `BSD-3-Clause` for those packages only. The general list stays as above. A person decides them first (manual step M1 of spec 0004), as the rules for changing this file ask. The block above is the file of the first build, and the file in the repository is the current statement.
 
 ### Lint rules
 
@@ -403,6 +409,8 @@ pool -> pool-config
 
 Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/index.md#workspace-and-guards): the block above shows the baseline files of the first build. From Build plan step 1 of spec 0003 on, three of them differ: `lock-packages.txt` gains `pool-control`, `forbidden-paths.txt` loses `crates/pool-control`, and `internal-dependencies.txt` gains `pool-control -> pool-config`. The files in `tools/repo-check/baseline/` are the current statement. The block is not updated with each slice.
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#source-guard): scope 004 changes the baseline files again and gives rule W3 a new file format. From its Build plan step 2 on, `forbidden-source-patterns.txt` has three kinds of line: a bare text that is forbidden in every `.rs` file under `apps/` and `crates/`, `deny <path> <text>` and `allow <path> <text>`. The format, the file and what it keeps true are under Source guard of spec 0004 (`0004 AC-2`). The row for W3 in the table above keeps its text, and its message still names the file, the line number and the text. This is the change that the last detail below announces for the first slice that opens a socket. The lines are not removed: they get an `allow` line for `crates/pool-core` and for `apps/pool`. From step 1 on, the lockfile check of rule W4 ends an entry at the next line that starts with `[` (`0004 AC-4`). From step 3 on, `lock-packages.txt` holds 75 names (five members and 70 third party entries), `forbidden-paths.txt` holds `apps/pool-cli` only, and `internal-dependencies.txt` holds six pairs (`0004 AC-1`). From step 12 on there is a fourth lockfile, `crates/pool-protocol/fuzz/Cargo.lock`, with the baseline file `protocol-fuzz-lock-packages.txt`, so rules W1 and W6 name four lockfiles.
+
 Details:
 
 - W1 reads a lockfile line by line: a `name = "<x>"` line that follows a `[[package]]` line is a package name. Names are compared as a sorted list, so a package that appears twice must be listed twice. The message names each missing and each extra package. If Cargo resolves a different set for the fuzz lockfile than the one above, stop and report it to the lead; do not edit the baseline to fit.
@@ -449,6 +457,8 @@ Details:
 - A later slice that needs another key, or a second workflow file, adds it to this rule in its own spec, in the same pull request.
 
 What these rules still do not read is listed under [Consequences](#consequences).
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#ci-definition-and-manual-steps): from Build plan step 12 of spec 0004 on, rule C3 (b) allows one more name after `scripts/check.sh`: `fuzz-tools`. That is the addition which the last detail above asks a later slice to write down in its own spec. No key is added to the list, and no other rule of this section changes. The two jobs that this serves are in the workflow only after manual step M2 of spec 0004.
 
 #### Document checks
 
@@ -571,6 +581,8 @@ cargo +nightly-2026-10-17 fuzz run validate fuzz/corpus/validate tests/fixtures 
 The script changes to that directory inside a child shell, and writes `CDPATH=` in front of that `cd` as it does in front of its first one. An exported `CDPATH` can then not send the fuzz run to another tree while the crash file test looks at this one.
 
 It creates `fuzz/corpus/validate` first if it is missing. The fixture directory is a second, read only seed corpus. `POOL_FUZZ_SECONDS` replaces the 60. Exit 0 with no file under `fuzz/artifacts/validate/` is a pass. A crash file is a finding to report with its bytes, not to delete.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#fuzzing): from Build plan step 12 of spec 0004 on there is a second fuzz package, `crates/pool-protocol/fuzz/`, of the shape shown above, with the targets `startup`, `frontend_message` and `scram`. Each target of both packages gets a directory `fuzz/regressions/<target>/` with committed inputs. `scripts/check.sh fuzz` then runs every target of both packages on its corpus, its seeds and its regression inputs, for `POOL_FUZZ_SECONDS` each, 30 by default (`0004 AC-27`). The command above is the run of the first build.
 
 ### Software inventory
 
@@ -698,6 +710,8 @@ Notes:
 - The cache holds only `target/tools`, which is the `cargo-deny` binary. Its key changes when `scripts/check.sh` changes, which is where the version is pinned.
 - The daily run at 03:17 UTC is what finds an advisory published against a package that nobody touched. GitHub turns a schedule off after 60 days without activity in a public repository; a person turns it on again from the Actions page.
 - The two action hashes were read from the GitHub API on 2026-11-14: `actions/checkout` tag `v7.0.1` and `actions/cache` tag `v6.1.0`. Changing an action version is a dependency update like any other.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#ci-definition-and-manual-steps): the workflow above lists seven jobs, and the rule file below lists the same seven names. Spec 0004 gives the text of two more jobs, `integration` and `fuzz`. No session adds them. A person does, in manual step M2 of spec 0004, in one commit with the two names in `main.json`, and applies the rule on the remote in manual step M3. Until then nothing in this section has changed. The blocks in this spec stay the record of the first build, and after those steps the files under `.github/` are the current statement.
 
 ### Branch rule and change path
 
@@ -842,6 +856,8 @@ For each case the check must exit with a status other than 0 and its output must
 | 28 | `docs` | Append line L to `docs/security/security-requirements.md` | `D4` and `SEC-14` |
 
 Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/index.md#workspace-and-guards): case 17 needs the word `planned` in the first line of the file it edits. Scope 003 leaves that status when its build starts, so from Build plan step 1 of spec 0003 on the script applies case 17 to the first line of `docs/scope/004-one-real-primary-path.md`. The check, the change and the expected text stay as the row says.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#proof-script-and-lockfile-check): from Build plan step 1 of spec 0004 on, case 17 no longer edits a real scope file. The script adds a feature of its own to its copy of the tree, with a row that says `planned` and a file that says `done`, and expects `D3`. So the case holds whatever state the real features are in, and it needs no new target with each scope. The same step adds a case that puts a local package into `Cargo.lock` and expects `W4`. Step 2 of that spec adds six cases for the new format of rule W3. The numbers of the new cases are in the script.
 
 ```text
 A  fn  prove_fmt( ){}
@@ -1169,6 +1185,8 @@ These are decisions with nothing to build today. The slice named in each rule bu
 
 **Notices**: the first slice that bundles native code, or the first release, whichever comes first, creates the `NOTICE` file. Until then the license check and the inventory are the record.
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md): scope 004 is the slice that these four rules name, and it builds each one. PostgreSQL: `postgres:18.7-bookworm` by its index digest, and the check `integration` (`0004 AC-26`). Fuzzing: the package `crates/pool-protocol/fuzz/` and the check `fuzz` (`0004 AC-27`). The job enters the workflow and the branch rule by manual steps M2 and M3 of that spec, and not before. New workspace members: `pool-protocol` and `pool-core` (`0004 AC-1`). Notices: the file `NOTICE`, with SQLite and AWS-LC (`0004 AC-3`). One thing goes beyond the letter of the first rule: the integration check starts two containers of the same image, because one case needs a second server with another system identifier.
+
 ### Reviewer roster and fresh model reviews
 
 The roster itself is a living table in the [engineering standards](../../engineering-standards.md#reviewer-roster), because holders change and a spec should not. This spec decides its shape and the rule below.
@@ -1367,7 +1385,7 @@ The order is a tracer bullet (one thin real path first): first the policy and th
 3. Spec 0001 Follow-up 9 and Follow-up 11 are answered by **AC-5** and **AC-6** of this spec. Applied in spec 0001 (2026-11-14): its Follow-up 9 and Follow-up 11 are marked as answered, its "Linux build" section points at `scripts/linux-build.sh` and rule W7, and its "Workspace layout and manifests" section notes that the root `Cargo.toml` gained a Clippy lint table.
 4. `0001 AC-2` passed in the container on the workstation on 2026-11-14, and spec 0001 is accepted. From remote step 1 on, the CI job `linux-build` runs the same command on a native runner on every pull request. Nothing in spec 0001 needs to change for that. Done: remote steps 1 and 2 ran on 2026-11-14, and the run on the native runner printed `runner: Linux aarch64` and `linux build check passed`. The evidence is in [verify.md](verify.md).
 5. The private channel for security reports and the maintainer team in `SECURITY.md` and `CONTRIBUTING.md` are still open. GitHub private vulnerability reporting is off on the repository. This spec does not decide them.
-6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices).
+6. [Scope 004](../../scope/004-one-real-primary-path.md) builds the `integration` check and the first protocol fuzz target under [Rules for later slices](#rules-for-later-slices). Answered on 2026-11-15 by `0004 AC-26` and `0004 AC-27`: the check, the fuzz package and the text of both CI jobs are in [spec 0004](../0004-one-real-primary-path/index.md#tests-and-evidence). The jobs become required checks after its manual steps M2 and M3.
 7. [Scope 011](../../scope/011-release-qualification-harness.md) turns the inventory into a release inventory with notices, and decides whether the inventory becomes a required check.
 8. After the first scheduled run, confirm that the daily run happened (remote step 8).
 9. The text of the coordination skill (`.claude/skills/coordinate/SKILL.md`: its step 9, "Push `main`", and the limit "Lead hanya push `main` ke `origin`") no longer fits [Branch rule and change path](#branch-rule-and-change-path) once the branch rule is active. The repository owner updates it, because no session edits `.claude/`. Until then the lead follows this spec: remote step 7 of the [remote proof](#remote-proof), a closing pull request from `scope/<number>-closing`, stands in for step 9 of the skill, for this scope and for later ones. The rule is active since remote step 3 ran on 2026-11-14 (the evidence is in [verify.md](verify.md)), so this applies now. The skill text also has no word yet for step 4 of "How a change reaches `main`", the review threads.
