@@ -534,6 +534,19 @@ Notes that are not failures:
 - `derive_keys` is public and panics for a count of 0. Every caller in the crate passes a count that a parser has checked.
 - `Debug` of a `ServerExchange` prints the text of the client-first message, which holds whatever user name the client wrote there. Nothing logs it today.
 - CI evidence does not exist yet. It waits for the pull request.
+#### Checker run of the additions to step 7
+
+The three changes to step 7 that came with Build plan step 9 (commit `ca122c2`, decisions 55 and 58), on 2026-11-15 at 19:03 WIB, by the checker session, on the merged tree `8783337`. Every command below was run in this session, with a scripted node of the checker's own.
+
+**Verdict: PASS.** The two differences that the checker run above noted and did not judge are gone.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| Probe, the limit of a message of a node during startup: a notice with a body of 16384 bytes, then of 16385 bytes, before `ReadyForQuery` | accepted, then `protocol` | 16384 bytes: the connection opens. 16385 bytes: `protocol` | pass |
+| Probe, the limit of a probe answer: the one row query answered with a data row, a command complete and `ReadyForQuery` whose bodies are 4096 bytes together, then 4097 | the row, then `protocol` | 4096 bytes: one row with its column of 4086 bytes. 4097 bytes: `protocol`. No single message of the second answer is above 4096 bytes, so the bodies are counted together | pass |
+| Probe, one source of random bytes: a search of every first party crate for a call that asks for random bytes | `pool_core::random::fill_random` alone | `aws_lc_rs::rand::fill` is called in `crates/pool-core/src/random.rs` and nowhere else. `scram.rs` gets its nonce and the mock key through `fill_random` | pass |
+| Probe, `random_failed` | a login that cannot get random bytes is closed without a message and counted | read in the code, not seen: a failure of the generator cannot be made from outside. `ScramFault::Random` at the server nonce and `BackendError::Random` at the client nonce both end the login with no message and count `random_failed` | read |
+
 ### Build plan step 8: bootstrap, the authority command and the first run against PostgreSQL
 
 On 2026-11-15, on macOS (workstation, Docker Desktop 29.9.2, not Linux and not CI). Commits `0e93678` (step 8) and `7231266` (the finding `random.failed` with the random bytes of step 9), on the tree `ae729d5`. Image `postgres:18.7-bookworm`, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, `arm64` variant. Observed in it: `postgres --version` and `psql --version` print 18.7 (Debian 18.7-1.pgdg12+2), and `openssl version` prints OpenSSL 3.0.22.
@@ -570,19 +583,6 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `0004 AC-26` | `scripts/check.sh integration` with `scripts/integration/run.sh` and `scripts/integration/initdb/10-pool-fixture.sh`: the rows above for a pass, a failing test, a stop part way and no daemon | pass on the workstation; the CI job is manual step M2 |
 
 **Readings.** The JSON of `bootstrap` when it is refused uses the shape of spec 0001 (`config_version` and `capabilities` `null`, `result` `refused`), since the spec gives its fields only for exit 0. The state directory and the four journal files are checked without following links, so a link in their place is `state.permissions`. A bootstrap whose runtime could not start has no sample and is refused with `bootstrap.evidence_missing`, writing nothing.
-
-#### Checker run of the additions to step 7
-
-The three changes to step 7 that came with Build plan step 9 (commit `ca122c2`, decisions 55 and 58), on 2026-11-15 at 19:03 WIB, by the checker session, on the merged tree `8783337`. Every command below was run in this session, with a scripted node of the checker's own.
-
-**Verdict: PASS.** The two differences that the checker run above noted and did not judge are gone.
-
-| Command or probe | Expected | Observed | Result |
-|---|---|---|---|
-| Probe, the limit of a message of a node during startup: a notice with a body of 16384 bytes, then of 16385 bytes, before `ReadyForQuery` | accepted, then `protocol` | 16384 bytes: the connection opens. 16385 bytes: `protocol` | pass |
-| Probe, the limit of a probe answer: the one row query answered with a data row, a command complete and `ReadyForQuery` whose bodies are 4096 bytes together, then 4097 | the row, then `protocol` | 4096 bytes: one row with its column of 4086 bytes. 4097 bytes: `protocol`. No single message of the second answer is above 4096 bytes, so the bodies are counted together | pass |
-| Probe, one source of random bytes: a search of every first party crate for a call that asks for random bytes | `pool_core::random::fill_random` alone | `aws_lc_rs::rand::fill` is called in `crates/pool-core/src/random.rs` and nowhere else. `scram.rs` gets its nonce and the mock key through `fill_random` | pass |
-| Probe, `random_failed` | a login that cannot get random bytes is closed without a message and counted | read in the code, not seen: a failure of the generator cannot be made from outside. `ScramFault::Random` at the server nonce and `BackendError::Random` at the client nonce both end the login with no message and count `random_failed` | read |
 
 ## Milestone 4: The session path
 
@@ -709,6 +709,18 @@ The verification of step 9 found that a relay waiting on a write toward a client
 | `a_positive_conflict_ends_a_session_whose_client_stopped_reading` | The same client; a positive conflict ends the session within 3 s and closes the backend | failed | pass |
 
 `cargo test -p pool-core --locked`: 37 unit and 29 session tests passed. `scripts/check.sh all`, `scripts/check.sh linux-build` and `scripts/check.sh integration` (6 of 6) at `da51f43`: exit 0.
+
+#### Checker run of the fix
+
+The fix `da51f43` for the finding of the checker run above, on 2026-11-15 at 19:09 WIB, by the checker session, on the merged tree `5b11ca3`, which holds it. The same probe program was built against this tree and run again, whole. No mutation was run again.
+
+**Verdict: the finding is closed.** With it, the probe finds nothing against the hermetic halves of `0004 AC-14` and `0004 AC-25`.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| Probe, shutdown with `limits.shutdown_timeout_ms = 300` and one client that stopped reading in the middle of 8 MB of rows | `shutdown` returns after the deadline, nothing is left | `shutdown` returns after 1.31 s, which is the deadline and the one second the close of the client stream may take; no connection, no session, the backend closed (1 opened, 1 closed) | pass |
+| Probe, a positive conflict with the same client | the session is ended and the backend closed | 1.5 s later: no session, the backend closed | pass |
+| Probe, the rest of the program on this tree | as in the checker run above | 101 checks. The two that do not match are mistakes of the probe, the same as before: one expects one closed backend where two sessions were running on the cluster and both were ended, and one compares a lease generation in decimal with a session counter in hex. The rows of the table above state what was seen | pass |
 
 ### Build plan step 10: the daemon
 
