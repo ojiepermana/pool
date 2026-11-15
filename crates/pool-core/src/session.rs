@@ -52,6 +52,10 @@ pub const RELAY_BUFFER_BYTES: usize = 65536;
 pub const TLS_SEND_BUFFER_BYTES: usize = 65536;
 /// The longest the end of a session waits to close a client that does not read.
 pub const CLOSE_TIMEOUT: Duration = Duration::from_secs(1);
+/// The longest shutdown waits after `limits.shutdown_timeout_ms` before it drops the connection
+/// tasks that are left. Every wait of a session after that deadline is cut at once or bounded by
+/// [`CLOSE_TIMEOUT`], so only a defect reaches this limit; it keeps shutdown from waiting for ever.
+pub const END_TIMEOUT: Duration = Duration::from_secs(2);
 /// How long the listener waits after a failed accept.
 pub const ACCEPT_RETRY: Duration = Duration::from_millis(100);
 
@@ -169,6 +173,8 @@ pub struct Server<C: Connector> {
     waiters: Arc<Semaphore>,
     counters: Arc<Counters>,
     phase: watch::Sender<Phase>,
+    /// Set when [`END_TIMEOUT`] has passed after the deadline: every connection task is dropped.
+    abort: watch::Sender<bool>,
     tracker: Arc<Tracker>,
     startup_timeout: Duration,
     acquire_timeout: Duration,
@@ -277,6 +283,7 @@ impl<C: Connector> Server<C> {
             })
             .collect();
         let (phase, _) = watch::channel(Phase::Running);
+        let (abort, _) = watch::channel(false);
         Ok(Arc::new(Self {
             acceptor: TlsAcceptor::from(parts.tls),
             verifiers,
@@ -297,6 +304,7 @@ impl<C: Connector> Server<C> {
             waiters: Arc::new(Semaphore::new(limits.backend_wait_max_count() as usize)),
             counters: Arc::new(Counters::default()),
             phase,
+            abort,
             tracker: Arc::new(Tracker::default()),
             startup_timeout: limits.startup_timeout(),
             acquire_timeout: limits.backend_acquire_timeout(),
@@ -368,15 +376,22 @@ impl<C: Connector> Server<C> {
         self.tracker.live.fetch_add(1, Ordering::SeqCst);
         let guard = LiveGuard(Arc::clone(&self.tracker));
         let server = Arc::clone(self);
+        let mut abort = self.abort.subscribe();
         Some(tokio::spawn(async move {
             let _guard = guard;
-            server.connection(stream, permit).await;
+            // Dropping the connection future drops the lease and closes the backend.
+            tokio::select! {
+                biased;
+                () = server.connection(stream, permit) => {}
+                _ = abort.wait_for(|abort| *abort) => {}
+            }
         }))
     }
 
     /// Shutdown steps 1 to 4: stop accepting, close connections before step 10, end idle
     /// sessions, end the others when they become idle, and every one when
-    /// `limits.shutdown_timeout_ms` has passed. Returns when every connection task ended.
+    /// `limits.shutdown_timeout_ms` has passed. Returns when every connection task ended, and
+    /// drops the tasks that are left when [`END_TIMEOUT`] has passed after the deadline.
     pub async fn shutdown(&self) {
         self.phase.send_replace(Phase::Draining);
         let deadline = Instant::now() + self.shutdown_timeout;
@@ -385,7 +400,13 @@ impl<C: Connector> Server<C> {
             .is_err()
         {
             self.phase.send_replace(Phase::Ending);
-            self.wait_idle().await;
+            if tokio::time::timeout(END_TIMEOUT, self.wait_idle())
+                .await
+                .is_err()
+            {
+                self.abort.send_replace(true);
+                self.wait_idle().await;
+            }
         }
     }
 
@@ -723,8 +744,20 @@ impl<C: Connector> Server<C> {
             greeting.extend_from_slice(&encode_message(b'S', &body));
         }
         greeting.extend_from_slice(&auth::encode_ready_for_query(lease.backend.status));
-        if write_tls(&mut stream, &greeting).await.is_err() {
-            return;
+        let mut routes = self.routes.clone();
+        let mut phase = self.phase.subscribe();
+        // A client that does not read its greeting cannot hold the session past a cut: the
+        // greeting may be partly written, so the cut sends nothing.
+        match guarded(
+            write_tls(&mut stream, &greeting),
+            &mut routes,
+            &mut phase,
+            &cluster,
+        )
+        .await
+        {
+            Ok(Ok(())) => {}
+            Ok(Err(_)) | Err(_) => return,
         }
         self.tracker.sessions.fetch_add(1, Ordering::SeqCst);
         let _session = SessionGuard(Arc::clone(&self.tracker));
@@ -742,8 +775,8 @@ impl<C: Connector> Server<C> {
         let mut relay = Relay {
             client: &mut stream,
             backend: &mut lease.backend.stream,
-            routes: self.routes.clone(),
-            phase: self.phase.subscribe(),
+            routes,
+            phase,
             cluster: &cluster,
             frontend_max: self.frontend_message_max,
             buffer: vec![0u8; RELAY_BUFFER_BYTES],
@@ -1087,9 +1120,18 @@ where
             }
             BackendAction::ReadyForQuery => {
                 let mut status = [0u8; 1];
-                if self.backend.read_exact(&mut status).await.is_err() {
-                    self.send(self.loss_error()).await;
-                    return Err(Stop::End(EndReason::BackendLost));
+                // The header is not forwarded yet, so a cut here is at a message boundary.
+                let read = self.backend.read_exact(&mut status);
+                match guarded(read, &mut self.routes, &mut self.phase, self.cluster).await {
+                    Ok(Ok(_)) => {}
+                    Ok(Err(_)) => {
+                        self.send(self.loss_error()).await;
+                        return Err(Stop::End(EndReason::BackendLost));
+                    }
+                    Err(reason) => {
+                        self.send(self.ending_error()).await;
+                        return Err(Stop::End(reason));
+                    }
                 }
                 let Ok(parsed) = auth::parse_ready_for_query(&status) else {
                     self.send(self.loss_error()).await;
@@ -1228,7 +1270,8 @@ async fn wait_cut(
     }
 }
 
-/// Runs `work` (a write toward a peer that may not read) unless the session must be cut first.
+/// Runs `work` (a write toward a peer that may not read, or a read from a peer that may not
+/// write) unless the session must be cut first.
 ///
 /// `work` is polled first, so a write that fits completes even when the cut is
 /// already due; a write that waits is abandoned as soon as the cut comes.
