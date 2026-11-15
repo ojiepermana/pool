@@ -18,6 +18,8 @@ use std::process::{Command, Stdio};
 use pool_config::AuthorityId;
 use pool_control::{AuthorityState, Journal};
 
+mod support;
+
 const OTHER_CA: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../crates/pool-core/tests/fixtures/other-ca.pem"
@@ -478,15 +480,31 @@ impl Case {
     /// The configuration of the walking fixture: the cluster and the node of
     /// container 1, a listener, the principal and the identity entry.
     fn write_serving(&self, witness: Option<&str>, listen_port: u16) {
+        self.write_serving_with(witness, listen_port, primary_node(), None, "");
+    }
+
+    /// The same, with another node port (the relay or container 2), another
+    /// CA for the node, and more tables, such as small `[limits]`.
+    fn write_serving_with(
+        &self,
+        witness: Option<&str>,
+        listen_port: u16,
+        node: NodeAt,
+        ca: Option<PathBuf>,
+        extra: &str,
+    ) {
         let dir = fixture_dir();
         let mut settings = self.settings();
         settings.witness = witness;
-        self.write(&settings, &[primary_node()]);
+        if let Some(ca) = ca {
+            settings.ca = ca;
+        }
+        self.write(&settings, &[node]);
         let mut text = fs::read_to_string(&self.config).expect("read");
         text.push_str(&format!(
             "\n[listener]\nhost = \"{host}\"\nport = {listen_port}\n\
              tls_certificate_file = \"{certs}/host.docker.internal.pem\"\ntls_private_key_file = \"{dir}/pool.key\"\n\n\
-             [probe]\nperiod_ms = 200\ntimeout_ms = 1000\nobservation_expiry_ms = 3000\n\n\
+             [probe]\nperiod_ms = 200\ntimeout_ms = 5000\nobservation_expiry_ms = 8000\n\n\
              [[principal]]\nid = \"it-principal\"\nname = \"pz7_principal\"\nverifier_file = \"{dir}/principal.verifier\"\n\n\
              [[identity]]\nid = \"it-identity\"\nprincipal = \"pz7_principal\"\ndatabase = \"pz7_db\"\ncluster = \"main\"\n\
              backend_database = \"pz7_appdb\"\nbackend_login = \"pz7_rw\"\ncredential_file = \"{dir}/rw.password\"\n",
@@ -494,6 +512,7 @@ impl Case {
             certs = dir.join("certs").display(),
             dir = dir.display(),
         ));
+        text.push_str(extra);
         fs::write(&self.config, text).expect("write");
     }
 
@@ -563,6 +582,18 @@ impl Daemon {
             );
             pause();
         }
+    }
+
+    /// Waits for the exit status after a signal the test sent itself.
+    fn stop_after_signal(mut self) -> i32 {
+        let code = self
+            .child
+            .wait()
+            .expect("wait")
+            .code()
+            .expect("an exit status");
+        std::mem::forget(self);
+        code
     }
 
     /// Sends SIGTERM and waits for the exit status.
@@ -811,4 +842,903 @@ fn it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds() {
         TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
             .expect("the listener was never bound");
     }
+}
+
+// Build plan step 11: limits, loss and denial on the fixture (`0004 AC-14`
+// to `AC-17`, `AC-19` to `AC-22`, `AC-25`). Each test bootstraps its own
+// journal against container 1 and runs its own daemon.
+
+const TLS_REQUIRED: &str = "TLS is required";
+const NOT_SUPPORTED: &str = "this protocol feature is not supported";
+const AUTH_FAILED: &str = "authentication failed";
+const NO_IDENTITY: &str = "no identity entry for this user and database";
+const TOO_MANY: &str = "too many connections";
+const TOO_LARGE: &str = "a message is larger than the configured limit";
+const NOT_ADMITTED: &str = "the database is not accepting connections through this proxy";
+const NOT_OPENED: &str = "the backend connection could not be established";
+const UNKNOWN_OUTCOME: &str =
+    "the connection was ended; the outcome of the statement in flight is unknown";
+
+/// A bootstrapped case whose daemon is configured with `node`, `ca` and
+/// `extra`, started and admitted (or, when `wait_open` is false, started).
+fn serving_case(
+    name: &str,
+    node: NodeAt,
+    ca: Option<PathBuf>,
+    extra: &str,
+    wait_open: bool,
+) -> (Case, u16, Daemon) {
+    let case = Case::new(name);
+    let port = free_port(&var("POOL_IT_LISTEN_HOST"));
+    case.write_serving(None, port);
+    let id = bootstrap(&case).to_string();
+    case.write_serving_with(Some(&id), port, node, ca, extra);
+    let daemon = Daemon::start(&case);
+    daemon.wait_for(&["\"event\":\"daemon.started\""], 20);
+    if wait_open {
+        daemon.wait_for(
+            &["\"event\":\"admission.changed\"", "\"state\":\"open\""],
+            20,
+        );
+    }
+    (case, port, daemon)
+}
+
+fn select_one_works(port: u16) {
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        "SELECT 1;",
+    );
+    assert_eq!(code, 0, "a normal login after the case: {stderr}");
+}
+
+/// The text after `FATAL:  ` that psql printed, for errors of POOL.
+fn fatal(stderr: &str) -> Vec<String> {
+    stderr
+        .lines()
+        .filter_map(|line| {
+            line.split_once("FATAL:  ")
+                .map(|(_, message)| message.to_owned())
+        })
+        .collect()
+}
+
+fn pg_log_since(container: &str, before: usize) -> String {
+    let log = logs(container);
+    log[before.min(log.len())..].to_owned()
+}
+
+/// `psql` started in the background with the SQL on its stdin, still open.
+fn client_spawn(conninfo: &str, password: &str) -> std::process::Child {
+    Command::new("docker")
+        .args([
+            "exec",
+            "-i",
+            "-e",
+            &format!("PGPASSWORD={password}"),
+            &var("POOL_IT_CONTAINER"),
+            "psql",
+            "-X",
+            conninfo,
+            "-f",
+            "-",
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("docker exec psql")
+}
+
+fn write_stdin(child: &mut std::process::Child, text: &str) {
+    use std::io::Write;
+    let stdin = child.stdin.as_mut().expect("stdin");
+    stdin.write_all(text.as_bytes()).expect("write");
+    stdin.flush().expect("flush");
+}
+
+fn finish(mut child: std::process::Child) -> (i32, String, String) {
+    drop(child.stdin.take());
+    let output = child.wait_with_output().expect("psql");
+    (
+        output.status.code().unwrap_or(-1),
+        String::from_utf8(output.stdout).expect("utf-8"),
+        String::from_utf8(output.stderr).expect("utf-8"),
+    )
+}
+
+fn sessions_of_rw(state: &str) -> String {
+    psql(
+        &var("POOL_IT_CONTAINER"),
+        &format!(
+            "SELECT count(*) FROM pg_stat_activity WHERE usename = 'pz7_rw' AND state = '{state}'"
+        ),
+    )
+}
+
+fn ca_pem() -> Vec<u8> {
+    fs::read(fixture_dir().join("certs/ca.pem")).expect("the test CA")
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_first_packets_are_judged_from_their_header() {
+    // covers: 0004 AC-15, SEC-1, T-01. Raw TCP, no TLS.
+    let (_case, port, daemon) = serving_case("first-packets", primary_node(), None, "", true);
+    let host = var("POOL_IT_LISTEN_HOST");
+    let runtime = support::runtime();
+    runtime.block_on(async {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let connect = || tokio::net::TcpStream::connect((host.as_str(), port));
+        let startup = support::first_packet(
+            support::PROTOCOL_3_0,
+            &support::parameters(&[("user", "pz7_principal"), ("database", "pz7_db")]),
+        );
+        let first_error = |bytes: Vec<u8>| {
+            assert_eq!(bytes.first(), Some(&b'E'), "{bytes:?}");
+            let length = u32::from_be_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]) as usize;
+            let message = support::Message {
+                tag: b'E',
+                body: bytes[5..1 + length].to_vec(),
+            };
+            (message.fields(), bytes.len() == 1 + length)
+        };
+        // A startup packet without TLS: 28000 in plain text, no
+        // authentication request, and nothing after it.
+        let mut stream = connect().await.expect("connect");
+        support::send(&mut stream, &startup).await.expect("send");
+        let bytes = support::read_to_close(&mut stream, std::time::Duration::from_secs(5))
+            .await
+            .expect("closed");
+        let (fields, alone) = first_error(bytes);
+        let codes: Vec<u8> = fields.iter().map(|(code, _)| *code).collect();
+        assert_eq!(codes, [b'S', b'V', b'C', b'M']);
+        assert_eq!(fields[2].1, "28000");
+        assert_eq!(fields[3].1, TLS_REQUIRED);
+        assert!(alone, "no authentication request and no other message");
+        // GSSENCRequest: N, then the same plain text startup is 28000.
+        let mut stream = connect().await.expect("connect");
+        support::send(&mut stream, &support::first_packet(80_877_104, &[]))
+            .await
+            .expect("send");
+        let mut answer = [0u8; 1];
+        stream.read_exact(&mut answer).await.expect("an answer");
+        assert_eq!(&answer, b"N");
+        support::send(&mut stream, &startup).await.expect("send");
+        let bytes = support::read_to_close(&mut stream, std::time::Duration::from_secs(5))
+            .await
+            .expect("closed");
+        assert_eq!(first_error(bytes).0[2].1, "28000");
+        // CancelRequest: read and dropped, no answer.
+        let mut stream = connect().await.expect("connect");
+        support::send(
+            &mut stream,
+            &support::first_packet(80_877_102, &[0, 0, 0, 1, 0, 0, 0, 2]),
+        )
+        .await
+        .expect("send");
+        let bytes = support::read_to_close(&mut stream, std::time::Duration::from_secs(5))
+            .await
+            .expect("closed");
+        assert!(bytes.is_empty(), "{bytes:?}");
+        // Protocol major 2 and 4: 0A000. A length below 8: 08P01. A length
+        // above limits.startup_packet_max_bytes (8192): 54000, body unread.
+        for (header, code) in [
+            (support::first_packet(2 << 16, &[]), "0A000"),
+            (support::first_packet(4 << 16, &[]), "0A000"),
+            (vec![0, 0, 0, 4, 0, 3, 0, 0], "08P01"),
+            (
+                [9000u32.to_be_bytes(), support::PROTOCOL_3_0.to_be_bytes()].concat(),
+                "54000",
+            ),
+        ] {
+            let mut stream = connect().await.expect("connect");
+            stream.write_all(&header).await.expect("send");
+            let bytes = support::read_to_close(&mut stream, std::time::Duration::from_secs(5))
+                .await
+                .expect("closed");
+            assert_eq!(first_error(bytes).0[2].1, code, "{header:?}");
+        }
+    });
+    drop(runtime);
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_startup_parameters_versions_and_authentication_on_the_fixture() {
+    // covers: 0004 AC-15, AC-16, AC-17, AC-18. psql of the image over TLS.
+    let (case, port, daemon) = serving_case("startup", primary_node(), None, "", true);
+    let container = var("POOL_IT_CONTAINER");
+    let right = password("principal.password");
+    let before = logs(&container).len();
+    // Through POOL: the mapped login and database, a primary, the
+    // configured system identifier.
+    let (code, stdout, stderr) = client(
+        &pool_conninfo(port),
+        &right,
+        "\\pset tuples_only on\n\\pset format unaligned\nSELECT current_user, current_database(), pg_is_in_recovery(), (SELECT system_identifier FROM pg_control_system());\n",
+    );
+    assert_eq!(code, 0, "{stderr}");
+    assert_eq!(
+        stdout.lines().last().expect("a row"),
+        format!("pz7_rw|pz7_appdb|f|{}", system_identifier(&container))
+    );
+    let after_good = logs(&container).len();
+    // Refusals before or during authentication, none of which reaches PostgreSQL.
+    for (conninfo, password, message) in [
+        (
+            format!("{} replication=database", pool_conninfo(port)),
+            right.clone(),
+            NOT_SUPPORTED,
+        ),
+        (
+            format!("{} options='-c work_mem=64kB'", pool_conninfo(port)),
+            right.clone(),
+            NOT_SUPPORTED,
+        ),
+        (
+            pool_conninfo(port),
+            "pz7-wrong-password".to_owned(),
+            AUTH_FAILED,
+        ),
+        (
+            pool_conninfo(port).replace("user=pz7_principal", "user=pz7_nobody"),
+            right.clone(),
+            AUTH_FAILED,
+        ),
+        (
+            pool_conninfo(port).replace("dbname=pz7_db", "dbname=pz7_other"),
+            right.clone(),
+            NO_IDENTITY,
+        ),
+    ] {
+        let (code, _, stderr) = client(&conninfo, &password, "SELECT 1;");
+        assert_ne!(code, 0, "{conninfo}");
+        assert_eq!(fatal(&stderr), [message.to_owned()], "{conninfo}: {stderr}");
+    }
+    let refused = pg_log_since(&container, after_good);
+    assert!(
+        !refused.contains("connection authorized: user=pz7_rw"),
+        "{refused}"
+    );
+    assert!(
+        pg_log_since(&container, before)
+            .contains("connection authorized: user=pz7_rw database=pz7_appdb")
+    );
+    // The verifier POOL holds is no password of PostgreSQL, and the
+    // principal is no role there.
+    let verifier = fs::read_to_string(fixture_dir().join("principal.verifier")).expect("verifier");
+    let (code, _, _) = client(
+        &direct_conninfo().replace("user=pz7_rw", "user=pz7_principal"),
+        verifier.trim(),
+        "SELECT 1;",
+    );
+    assert_ne!(code, 0);
+    select_one_works(port);
+    let log_path = daemon.log.clone();
+    assert_eq!(daemon.stop(), 0);
+    assert_log_is_clean(&case, &fs::read_to_string(log_path).expect("log"));
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_an_authentication_message_above_1024_bytes_is_refused() {
+    // covers: 0004 AC-16. openssl s_client of the image does the TLS start
+    // for PostgreSQL; the test writes a StartupMessage and a
+    // SASLInitialResponse of 1025 bytes of body.
+    let (_case, port, daemon) = serving_case("auth-size", primary_node(), None, "", true);
+    let startup = support::first_packet(
+        support::PROTOCOL_3_0,
+        &support::parameters(&[("user", "pz7_principal"), ("database", "pz7_db")]),
+    );
+    let mut body = b"SCRAM-SHA-256\0".to_vec();
+    let data_len = 1025 - body.len() - 4;
+    body.extend_from_slice(&u32::try_from(data_len).expect("small").to_be_bytes());
+    body.extend(std::iter::repeat_n(b'a', data_len));
+    assert_eq!(body.len(), 1025);
+    let mut sasl = vec![b'p'];
+    sasl.extend_from_slice(&u32::try_from(body.len() + 4).expect("small").to_be_bytes());
+    sasl.extend_from_slice(&body);
+    let mut input = startup;
+    input.extend_from_slice(&sasl);
+    use std::io::Write;
+    let mut child = Command::new("docker")
+        .args([
+            "exec",
+            "-i",
+            &var("POOL_IT_CONTAINER"),
+            "openssl",
+            "s_client",
+            "-quiet",
+            "-ign_eof",
+            "-starttls",
+            "postgres",
+            "-connect",
+            &format!("{}:{port}", var("POOL_IT_CLIENT_HOST")),
+            "-servername",
+            "host.docker.internal",
+            "-CAfile",
+            "/certs/ca.pem",
+            "-verify_return_error",
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("openssl");
+    child
+        .stdin
+        .as_mut()
+        .expect("stdin")
+        .write_all(&input)
+        .expect("write");
+    drop(child.stdin.take());
+    let output = child.wait_with_output().expect("openssl");
+    let bytes = output.stdout;
+    assert_eq!(
+        bytes.first(),
+        Some(&b'R'),
+        "AuthenticationSASL first: {bytes:?}"
+    );
+    let sasl_len = u32::from_be_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]) as usize;
+    let rest = &bytes[1 + sasl_len..];
+    assert_eq!(rest.first(), Some(&b'E'), "{rest:?}");
+    let length = u32::from_be_bytes([rest[1], rest[2], rest[3], rest[4]]) as usize;
+    let error = support::Message {
+        tag: b'E',
+        body: rest[5..1 + length].to_vec(),
+    };
+    assert_eq!(error.sqlstate().as_deref(), Some("08P01"));
+    select_one_works(port);
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_message_and_startup_limits_refuse_and_a_normal_login_follows() {
+    // covers: 0004 AC-20 (54000 for a Query and for a startup packet, the
+    // startup deadline).
+    let extra = "\n[limits]\nfrontend_message_max_bytes = 1024\nstartup_packet_max_bytes = 512\nstartup_timeout_ms = 500\n";
+    let (_case, port, daemon) = serving_case("message-limits", primary_node(), None, extra, true);
+    let container = var("POOL_IT_CONTAINER");
+    let right = password("principal.password");
+    // A Query above 1024 bytes: 54000, and no byte of it reaches PostgreSQL.
+    let marker = format!("pz7-too-large-{}", "x".repeat(1100));
+    let before = logs(&container).len();
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &right,
+        &format!("SELECT 1 /* {marker} */;\n"),
+    );
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [TOO_LARGE.to_owned()], "{stderr}");
+    assert!(!pg_log_since(&container, before).contains("pz7-too-large-"));
+    select_one_works(port);
+    // Through a raw client: a Query whose length field is exactly 1024
+    // passes, one of 1025 gets 54000.
+    let runtime = support::runtime();
+    let host = var("POOL_IT_LISTEN_HOST");
+    let ca = ca_pem();
+    runtime.block_on(async {
+        for (length, refused) in [(1024usize, false), (1025, true)] {
+            let mut connection = support::login(
+                &host,
+                port,
+                &ca,
+                "host.docker.internal",
+                "pz7_principal",
+                "pz7_db",
+                &right,
+            )
+            .await
+            .expect("login");
+            // 4 (length) + text + 1 (zero byte); the text is SELECT '...'.
+            let text = format!("SELECT '{}'", "y".repeat(length - 5 - 9));
+            let bytes = support::query(&text);
+            assert_eq!(bytes.len() - 1, length);
+            support::send(connection.stream_mut(), &bytes)
+                .await
+                .expect("send");
+            let mut error = None;
+            loop {
+                match support::read_message(connection.stream_mut()).await {
+                    Ok(message) if message.tag == b'E' => {
+                        error = message.sqlstate();
+                        break;
+                    }
+                    Ok(message) if message.tag == b'Z' => break,
+                    Ok(_) => {}
+                    Err(_) => break,
+                }
+            }
+            if refused {
+                assert_eq!(error.as_deref(), Some("54000"), "{length}");
+            } else {
+                assert_eq!(error, None, "{length}");
+            }
+        }
+    });
+    // A startup packet above 512 bytes: 54000.
+    let long_name = "a".repeat(600);
+    let (code, _, stderr) = client(
+        &format!("{} application_name={long_name}", pool_conninfo(port)),
+        &right,
+        "SELECT 1;",
+    );
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [TOO_LARGE.to_owned()], "{stderr}");
+    select_one_works(port);
+    // A client that sends nothing is closed after 500 ms.
+    let waited = runtime.block_on(async {
+        let mut stream = tokio::net::TcpStream::connect((host.as_str(), port))
+            .await
+            .expect("connect");
+        let started = std::time::Instant::now();
+        let bytes = support::read_to_close(&mut stream, std::time::Duration::from_secs(5))
+            .await
+            .expect("closed");
+        assert!(bytes.is_empty(), "closed without a message: {bytes:?}");
+        started.elapsed()
+    });
+    assert!(
+        waited >= std::time::Duration::from_millis(450),
+        "{waited:?}"
+    );
+    assert!(
+        waited < std::time::Duration::from_millis(2500),
+        "{waited:?}"
+    );
+    select_one_works(port);
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_the_session_limit_and_teardown_give_the_permit_back() {
+    // covers: 0004 AC-19, AC-20 (one session more than the limit).
+    let extra = "\n[limits]\nsession_max_count = 1\n";
+    let (_case, port, daemon) = serving_case("session-limit", primary_node(), None, extra, true);
+    let right = password("principal.password");
+    let mut holder = client_spawn(&pool_conninfo(port), &right);
+    write_stdin(&mut holder, "SELECT pg_sleep(4);\n");
+    eventually(10, "the first session runs", || {
+        sessions_of_rw("active") == "1"
+    });
+    let started = std::time::Instant::now();
+    let (code, _, stderr) = client(&pool_conninfo(port), &right, "SELECT 1;");
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [TOO_MANY.to_owned()], "{stderr}");
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(2),
+        "at once"
+    );
+    let (code, _, stderr) = finish(holder);
+    assert_eq!(code, 0, "{stderr}");
+    select_one_works(port);
+    // A client that leaves inside an open transaction leaves no row, its
+    // backend is gone, and the one permit came back.
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &right,
+        "BEGIN;\nINSERT INTO pz7_items (key, value) VALUES (77, 'left open');\n",
+    );
+    assert_eq!(code, 0, "{stderr}");
+    eventually(2, "the backend of the open transaction is gone", || {
+        sessions_of_rw("idle in transaction") == "0" && sessions_of_rw("idle") == "0"
+    });
+    let (code, stdout, stderr) = client(
+        &direct_conninfo(),
+        &password("rw.password"),
+        "\\pset tuples_only on\nSELECT count(*) FROM pz7_items WHERE key = 77;\n",
+    );
+    assert_eq!(code, 0, "{stderr}");
+    assert_eq!(stdout.trim(), "0", "the row was rolled back");
+    select_one_works(port);
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_waiters_are_limited_and_time_out_after_the_acquire_deadline() {
+    // covers: 0004 AC-20 (one waiter too many, the acquire deadline).
+    let extra = "\n[limits]\nsession_max_count = 3\nnode_backend_max_count = 1\nbackend_wait_max_count = 1\nbackend_acquire_timeout_ms = 1000\n";
+    let (_case, port, daemon) = serving_case("waiters", primary_node(), None, extra, true);
+    let right = password("principal.password");
+    let mut holder = client_spawn(&pool_conninfo(port), &right);
+    write_stdin(&mut holder, "SELECT pg_sleep(6);\n");
+    eventually(10, "the session holding the backend runs", || {
+        sessions_of_rw("active") == "1"
+    });
+    let waiter_started = std::time::Instant::now();
+    let mut waiter = client_spawn(&pool_conninfo(port), &right);
+    write_stdin(&mut waiter, "SELECT 1;\n");
+    pause();
+    pause();
+    pause();
+    pause();
+    pause();
+    let third = std::time::Instant::now();
+    let (code, _, stderr) = client(&pool_conninfo(port), &right, "SELECT 1;");
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [TOO_MANY.to_owned()], "{stderr}");
+    let third_took = third.elapsed();
+    let (code, _, stderr) = finish(waiter);
+    let waited = waiter_started.elapsed();
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [TOO_MANY.to_owned()], "{stderr}");
+    assert!(
+        third_took < std::time::Duration::from_millis(900),
+        "one waiter too many is refused at once: {third_took:?}"
+    );
+    assert!(
+        waited >= std::time::Duration::from_millis(1000),
+        "{waited:?}"
+    );
+    assert!(
+        waited <= std::time::Duration::from_millis(3500),
+        "{waited:?}"
+    );
+    let (code, _, stderr) = finish(holder);
+    assert_eq!(code, 0, "{stderr}");
+    select_one_works(port);
+    let log = daemon.log();
+    assert!(log.contains("\"reason\":\"wait_limit\""), "{log}");
+    assert!(log.contains("\"reason\":\"acquire_timeout\""), "{log}");
+    assert_eq!(daemon.stop(), 0);
+}
+
+/// The resident memory of a process, in KiB.
+fn rss_kib(pid: u32) -> u64 {
+    let output = Command::new("ps")
+        .args(["-o", "rss=", "-p", &pid.to_string()])
+        .output()
+        .expect("ps");
+    String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .parse()
+        .expect("a number")
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_the_memory_budget_holds_with_32_sessions_that_stopped_reading() {
+    // covers: 0004 AC-21, R-13. Each session asks for 256 MiB of rows and
+    // never reads; then one row of 64 MiB passes through unchanged.
+    let (case, port, daemon) = serving_case("memory", primary_node(), None, "", true);
+    let host = var("POOL_IT_LISTEN_HOST");
+    let right = password("principal.password");
+    let runtime = support::runtime();
+    let ca = ca_pem();
+    let sessions = runtime.block_on(async {
+        let mut sessions = Vec::new();
+        for _ in 0..32 {
+            let mut connection = support::login(
+                &host,
+                port,
+                &ca,
+                "host.docker.internal",
+                "pz7_principal",
+                "pz7_db",
+                &right,
+            )
+            .await
+            .expect("a login through POOL");
+            support::send(
+                connection.stream_mut(),
+                &support::query("SELECT repeat('x', 1048576) FROM generate_series(1, 256)"),
+            )
+            .await
+            .expect("send the query");
+            sessions.push(connection);
+        }
+        sessions
+    });
+    eventually(10, "32 queries run on PostgreSQL", || {
+        sessions_of_rw("active") == "32"
+    });
+    let mut highest = 0;
+    for _ in 0..20 {
+        highest = highest.max(rss_kib(daemon.child.id()));
+        pause();
+    }
+    assert!(highest < 96 * 1024, "resident memory {highest} KiB");
+    drop(sessions);
+    drop(runtime);
+    eventually(5, "the 32 backends are gone", || {
+        sessions_of_rw("active") == "0"
+    });
+    // One row of 64 MiB, straight and through POOL, the same bytes.
+    let digest = |conninfo: &str, password: &str| {
+        let output = Command::new("docker")
+            .args([
+                "exec",
+                "-e",
+                &format!("PGPASSWORD={password}"),
+                &var("POOL_IT_CONTAINER"),
+                "sh",
+                "-c",
+                &format!("psql -X -At \"{conninfo}\" -c \"SELECT repeat('ab', 33554432)\" | tee /dev/null | wc -c; psql -X -At \"{conninfo}\" -c \"SELECT repeat('ab', 33554432)\" | md5sum"),
+            ])
+            .output()
+            .expect("docker exec");
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout).expect("utf-8")
+    };
+    let direct = digest(&direct_conninfo(), &password("rw.password"));
+    let through = digest(&pool_conninfo(port), &right);
+    assert!(direct.starts_with("67108865\n"), "{direct}");
+    assert_eq!(through, direct);
+    // The number for the verification record.
+    fs::write(case.root.join("rss-kib.txt"), format!("{highest}\n")).expect("write");
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_a_lost_commit_answer_gives_08007_and_is_never_replayed() {
+    // covers: 0004 AC-22, R-10, T-07. The relay cuts the connection after
+    // PostgreSQL answered the COMMIT and before POOL got the answer.
+    let runtime = support::runtime();
+    let relay = support::Relay::start(&runtime, var("POOL_IT_PG_PORT").parse().expect("port"));
+    let (_case, port, daemon) = serving_case(
+        "lost-commit",
+        NodeAt {
+            id: "pg1",
+            port: relay.port,
+        },
+        None,
+        "",
+        true,
+    );
+    let container = var("POOL_IT_CONTAINER");
+    let rw = password("rw.password");
+    let _ = client(
+        &direct_conninfo(),
+        &rw,
+        "DELETE FROM pz7_items WHERE key = 4242;\n",
+    );
+    let probes = relay.connections();
+    let mut session = client_spawn(&pool_conninfo(port), &password("principal.password"));
+    write_stdin(
+        &mut session,
+        "BEGIN;\nINSERT INTO pz7_items (key, value) VALUES (4242, 'lost answer');\n",
+    );
+    eventually(10, "the transaction is open", || {
+        sessions_of_rw("idle in transaction") == "1"
+    });
+    let session_index = relay.connections();
+    assert_eq!(
+        session_index,
+        probes + 1,
+        "the session has the next connection"
+    );
+    let before = logs(&container).len();
+    relay.arm(session_index);
+    write_stdin(&mut session, "COMMIT /* pz7-lost-commit-marker */;\n");
+    let (_, _, stderr) = finish(session);
+    assert!(relay.was_cut(), "the relay dropped the answer");
+    assert_eq!(
+        fatal(&stderr),
+        [UNKNOWN_OUTCOME.to_owned()],
+        "one error: {stderr}"
+    );
+    let pg_log = pg_log_since(&container, before);
+    assert_eq!(
+        pg_log.matches("pz7-lost-commit-marker").count(),
+        1,
+        "{pg_log}"
+    );
+    assert!(
+        !pg_log.contains("connection authorized: user=pz7_rw"),
+        "no new backend: {pg_log}"
+    );
+    let (code, stdout, stderr) = client(
+        &direct_conninfo(),
+        &rw,
+        "\\pset tuples_only on\nSELECT count(*) FROM pz7_items WHERE key = 4242;\n",
+    );
+    assert_eq!(code, 0, "{stderr}");
+    assert_eq!(
+        stdout.trim(),
+        "1",
+        "the COMMIT was applied; POOL claimed no rollback"
+    );
+    assert!(
+        daemon.log().contains("\"reason\":\"backend_lost\""),
+        "{}",
+        daemon.log()
+    );
+    assert_eq!(daemon.stop(), 0);
+    drop(relay);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_a_node_that_refuses_tls_gives_08006_and_gets_no_startup_packet() {
+    // covers: 0004 AC-15 (toward the node). The probe passes; the session
+    // connection gets N to its SSLRequest.
+    let runtime = support::runtime();
+    let relay = support::Relay::start(&runtime, var("POOL_IT_PG_PORT").parse().expect("port"));
+    let (_case, port, daemon) = serving_case(
+        "tls-refused",
+        NodeAt {
+            id: "pg1",
+            port: relay.port,
+        },
+        None,
+        "",
+        true,
+    );
+    relay.refuse_tls_from(relay.connections() + 1);
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        "SELECT 1;",
+    );
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [NOT_OPENED.to_owned()], "{stderr}");
+    assert_eq!(daemon.stop(), 0);
+    drop(relay);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_a_wrong_ca_or_name_toward_the_node_closes_admission() {
+    // covers: 0004 AC-15, AC-14. The probe uses the same TLS setup as the
+    // sessions, so a wrong CA or name closes the cluster first: the client
+    // gets 57P03 and PostgreSQL sees no login of the application.
+    for (name, ca, server_name) in [
+        ("wrong-ca", Some(PathBuf::from(OTHER_CA)), None),
+        ("wrong-name", None, Some("other.pool.test")),
+    ] {
+        let (case, port, daemon) = serving_case(name, primary_node(), None, "", true);
+        let id = Journal::read(&case.journal())
+            .authority_id()
+            .expect("id")
+            .to_string();
+        assert_eq!(daemon.stop(), 0);
+        case.write_serving_with(Some(&id), port, primary_node(), ca, "");
+        if let Some(server_name) = server_name {
+            let text = fs::read_to_string(&case.config).expect("read").replace(
+                "tls_server_name = \"pg.pool.test\"",
+                &format!("tls_server_name = \"{server_name}\""),
+            );
+            fs::write(&case.config, text).expect("write");
+        }
+        let daemon = Daemon::start(&case);
+        daemon.wait_for(&["\"event\":\"probe.failed\"", "\"class\":\"tls\""], 20);
+        let container = var("POOL_IT_CONTAINER");
+        let before = logs(&container).len();
+        let (code, _, stderr) = client(
+            &pool_conninfo(port),
+            &password("principal.password"),
+            "SELECT 1;",
+        );
+        assert_ne!(code, 0);
+        assert_eq!(
+            fatal(&stderr),
+            [NOT_ADMITTED.to_owned()],
+            "{name}: {stderr}"
+        );
+        assert!(!pg_log_since(&container, before).contains("connection authorized: user=pz7_rw"));
+        assert_eq!(daemon.stop(), 0);
+    }
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_the_wrong_identity_closes_admission_before_any_login() {
+    // covers: 0004 AC-14 on the fixture (cross check finding 1): the node
+    // points at container 2, which has the same certificate, roles and
+    // passwords and another system identifier.
+    let (_case, port, daemon) = serving_case(
+        "wrong-identity",
+        NodeAt {
+            id: "pg1",
+            port: var("POOL_IT_PG_PORT_2").parse().expect("port"),
+        },
+        None,
+        "",
+        false,
+    );
+    daemon.wait_for(
+        &[
+            "\"event\":\"admission.changed\"",
+            "\"state\":\"closed\"",
+            "evidence.writer_identity",
+        ],
+        20,
+    );
+    let second = var("POOL_IT_CONTAINER_2");
+    let before = logs(&second).len();
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        "SELECT 1;",
+    );
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [NOT_ADMITTED.to_owned()], "{stderr}");
+    let log = pg_log_since(&second, before);
+    assert!(!log.contains("connection authorized: user=pz7_rw"), "{log}");
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007() {
+    // covers: 0004 AC-25. One idle session, one with a query in flight,
+    // and a shutdown deadline of 1 second.
+    let extra = "\n[limits]\nshutdown_timeout_ms = 1000\n";
+    let (_case, port, daemon) = serving_case("shutdown", primary_node(), None, extra, true);
+    let host = var("POOL_IT_LISTEN_HOST");
+    let right = password("principal.password");
+    let runtime = support::runtime();
+    let ca = ca_pem();
+    let (mut idle, mut busy) = runtime.block_on(async {
+        let login = || {
+            support::login(
+                &host,
+                port,
+                &ca,
+                "host.docker.internal",
+                "pz7_principal",
+                "pz7_db",
+                &right,
+            )
+        };
+        let idle = login().await.expect("idle session");
+        let mut busy = login().await.expect("busy session");
+        support::send(busy.stream_mut(), &support::query("SELECT pg_sleep(10)"))
+            .await
+            .expect("send");
+        (idle, busy)
+    });
+    eventually(10, "the query runs", || sessions_of_rw("active") == "1");
+    let signalled = std::time::Instant::now();
+    let status = Command::new("kill")
+        .args(["-TERM", &daemon.child.id().to_string()])
+        .status()
+        .expect("kill");
+    assert!(status.success());
+    let (idle_code, busy_code, busy_after) = runtime.block_on(async {
+        let idle_code = support::next_error(idle.stream_mut()).await;
+        let busy_code = support::next_error(busy.stream_mut()).await;
+        (idle_code, busy_code, signalled.elapsed())
+    });
+    assert_eq!(idle_code.as_deref(), Some("57P01"));
+    assert_eq!(
+        busy_code.as_deref(),
+        Some("08007"),
+        "never 57P01 while in flight"
+    );
+    assert!(
+        busy_after >= std::time::Duration::from_millis(900),
+        "{busy_after:?}"
+    );
+    assert_eq!(daemon.stop_after_signal(), 0);
+    drop(runtime);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_a_request_for_protocol_3_2_goes_on_with_3_0() {
+    // covers: 0004 AC-15. NegotiateProtocolVersion for 3.0, then the login
+    // goes on with 3.0.
+    let (_case, port, daemon) = serving_case("protocol-3-2", primary_node(), None, "", true);
+    let (code, _, stderr) = client(
+        &format!(
+            "{} min_protocol_version=3.0 max_protocol_version=3.2",
+            pool_conninfo(port)
+        ),
+        &password("principal.password"),
+        "SELECT 1;",
+    );
+    assert_eq!(code, 0, "{stderr}");
+    assert_eq!(daemon.stop(), 0);
 }
