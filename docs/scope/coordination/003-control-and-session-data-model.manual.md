@@ -8,7 +8,7 @@ Keputusan yang diambil atas namamu ada di `003-control-and-session-data-model.lo
 
 | ID | Langkah | AC | Kotak yang dicentang dengan langkah ini `NOT_RUN` | Bisa dijalankan sesudah | Hasil |
 | --- | --- | --- | --- | --- | --- |
-| `F3-1` | Izin menulis ke GitHub untuk scope ini: lead mem-push `main` lokal ke branch `scope/003-control-and-session-data-model`, membuka pull request dengan `gh`, menunggu tujuh check, lalu `gh pr merge --merge` (jalur perubahan spec 0002; `main` menolak push langsung) | tidak ada; ini jalur perubahan, bukan kriteria spec 0003 | belum ada | kapan saja; dibutuhkan paling lambat saat penutupan | `NOT_RUN`; 2026-11-15 user menjawab "Belum, lokal dulu": lead tidak menulis ke GitHub sampai kamu berkata lain |
+| `F3-1` | Izin menulis ke GitHub untuk scope ini: lead mem-push `main` lokal ke branch `scope/003-control-and-session-data-model`, membuka pull request dengan `gh`, menunggu tujuh check, lalu `gh pr merge --merge` (jalur perubahan spec 0002; `main` menolak push langsung) | bukti CI fitur 3: tujuh check pada pull request (`0003 AC-13` dan seluruh fitur); di `verify.md` bagian "Full verification" tercatat `NOT_RUN`, `owner: user` | F3 · `Build it`; F3 · `Verify it` | kapan saja; dibutuhkan paling lambat saat penutupan | `NOT_RUN`; 2026-11-15 user menjawab "Belum, lokal dulu": lead tidak menulis ke GitHub sampai kamu berkata lain |
 
 ## Nilai dari user
 
