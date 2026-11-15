@@ -1032,9 +1032,9 @@
     "semantic_hash": ""
   },
   "crates/pool-core/src/session.rs": {
-    "mtime": 1794742393.2836285,
-    "seen": 1794742439.252392,
-    "ast_hash": "aa4fd0a42ca615548b4d5cb4152cfe11",
+    "mtime": 1794743380.8622816,
+    "seen": 1794743415.284182,
+    "ast_hash": "87222233292d41a3fa45e7c2a9f20329",
     "semantic_hash": ""
   },
   "crates/pool-core/src/route.rs": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "crates/pool-core/tests/session.rs": {
-    "mtime": 1794742884.8086889,
-    "seen": 1794742956.923978,
-    "ast_hash": "be5f07d11471ae87de7b388ba1676c22",
+    "mtime": 1794743380.862708,
+    "seen": 1794743415.2841852,
+    "ast_hash": "09973ecf3aaf0e86271de59e22065e47",
     "semantic_hash": ""
   },
   "apps/pool/src/commands.rs": {

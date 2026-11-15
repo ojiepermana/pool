@@ -50,6 +50,8 @@ use crate::wire::{WireError, read_message};
 pub const RELAY_BUFFER_BYTES: usize = 65536;
 /// The most bytes each TLS connection queues for sending.
 pub const TLS_SEND_BUFFER_BYTES: usize = 65536;
+/// The longest the end of a session waits to close a client that does not read.
+pub const CLOSE_TIMEOUT: Duration = Duration::from_secs(1);
 /// How long the listener waits after a failed accept.
 pub const ACCEPT_RETRY: Duration = Duration::from_millis(100);
 
@@ -759,8 +761,9 @@ impl<C: Connector> Server<C> {
             }
         };
         drop(relay);
-        // Step 12: close the backend, give every permit back.
-        let _ = stream.shutdown().await;
+        // Step 12: close the backend, give every permit back. A client that does
+        // not read cannot hold the end of its session: the close is bounded.
+        let _ = tokio::time::timeout(CLOSE_TIMEOUT, stream.shutdown()).await;
         drop(lease);
         drop(permits);
         tracing::info!(
@@ -944,7 +947,7 @@ where
         let mut phase_alive = true;
         loop {
             if let Some(reason) = self.stop_now() {
-                send_error(self.client, self.ending_error()).await;
+                self.send(self.ending_error()).await;
                 return reason;
             }
             let in_flight = self.in_flight;
@@ -966,8 +969,7 @@ where
                 Wake::Changed => {}
                 Wake::Client(Ok(0) | Err(_)) => {
                     // The client went away with no query in flight: Terminate first, then close.
-                    let _ = self.backend.write_all(&encode_terminate()).await;
-                    let _ = self.backend.flush().await;
+                    let _ = self.write_backend(&encode_terminate()).await;
                     return EndReason::ClientClosed;
                 }
                 Wake::Client(Ok(n)) => match client_header.feed(&client_bytes[..n]) {
@@ -979,14 +981,13 @@ where
                     }
                     (_, Some(Err(_))) => {
                         // A length below 4.
-                        send_error(self.client, PoolError::ProtocolViolation).await;
-                        let _ = self.backend.write_all(&encode_terminate()).await;
-                        let _ = self.backend.flush().await;
+                        self.send(PoolError::ProtocolViolation).await;
+                        let _ = self.write_backend(&encode_terminate()).await;
                         return EndReason::Protocol;
                     }
                 },
                 Wake::Backend(Ok(0) | Err(_)) => {
-                    send_error(self.client, self.loss_error()).await;
+                    self.send(self.loss_error()).await;
                     return EndReason::BackendLost;
                 }
                 Wake::Backend(Ok(n)) => match backend_header.feed(&backend_bytes[..n]) {
@@ -997,7 +998,7 @@ where
                         }
                     }
                     (_, Some(Err(_))) => {
-                        send_error(self.client, self.loss_error()).await;
+                        self.send(self.loss_error()).await;
                         return EndReason::BackendLost;
                     }
                 },
@@ -1019,34 +1020,48 @@ where
             FrontendAction::Query { body_len } => {
                 // A query is in flight from the first byte written toward the backend.
                 self.in_flight = true;
-                if self.backend.write_all(&header).await.is_err() {
-                    send_error(self.client, self.loss_error()).await;
-                    return Err(Stop::End(EndReason::BackendLost));
+                match self.write_backend(&header).await {
+                    Ok(()) => {}
+                    Err(None) => {
+                        self.send(self.loss_error()).await;
+                        return Err(Stop::End(EndReason::BackendLost));
+                    }
+                    Err(Some(reason)) => {
+                        self.send(self.ending_error()).await;
+                        return Err(Stop::End(reason));
+                    }
                 }
                 match self.copy_to_backend(body_len).await {
                     Copied::Done => {}
                     Copied::SourceGone => return Err(Stop::End(EndReason::ClientClosed)),
                     Copied::DestinationGone => {
-                        send_error(self.client, self.loss_error()).await;
+                        self.send(self.loss_error()).await;
                         return Err(Stop::End(EndReason::BackendLost));
                     }
                     Copied::Cut(reason) => {
-                        send_error(self.client, self.ending_error()).await;
+                        self.send(self.ending_error()).await;
                         return Err(Stop::End(reason));
                     }
                 }
-                let _ = self.backend.flush().await;
-                Ok(())
+                match self.write_backend(&[]).await {
+                    Ok(()) => Ok(()),
+                    Err(None) => {
+                        self.send(self.loss_error()).await;
+                        Err(Stop::End(EndReason::BackendLost))
+                    }
+                    Err(Some(reason)) => {
+                        self.send(self.ending_error()).await;
+                        Err(Stop::End(reason))
+                    }
+                }
             }
             FrontendAction::Terminate => {
-                let _ = self.backend.write_all(&header).await;
-                let _ = self.backend.flush().await;
+                let _ = self.write_backend(&header).await;
                 Err(Stop::End(EndReason::ClientTerminate))
             }
             FrontendAction::Refuse(error) => {
-                send_error(self.client, error).await;
-                let _ = self.backend.write_all(&encode_terminate()).await;
-                let _ = self.backend.flush().await;
+                self.send(error).await;
+                let _ = self.write_backend(&encode_terminate()).await;
                 Err(Stop::End(match error {
                     PoolError::FeatureNotSupported => EndReason::Unsupported,
                     PoolError::MessageTooLarge => EndReason::MessageLimit,
@@ -1059,9 +1074,8 @@ where
     async fn backend_message(&mut self, header: [u8; HEADER_LEN]) -> Result<(), Stop> {
         match pool_protocol::message::classify_backend(header) {
             BackendAction::Forward { body_len } => {
-                if self.client.write_all(&header).await.is_err() {
-                    return Err(Stop::End(EndReason::ClientClosed));
-                }
+                // A cut while the header waits leaves a partial message: close without a message.
+                self.write_client(&header, false).await?;
                 // From here until the body is written the session is not at a message boundary.
                 match self.copy_to_client(body_len).await {
                     Copied::Done => {}
@@ -1069,40 +1083,76 @@ where
                     Copied::DestinationGone => return Err(Stop::End(EndReason::ClientClosed)),
                     Copied::Cut(reason) => return Err(Stop::End(reason)),
                 }
-                if self.client.flush().await.is_err() {
-                    return Err(Stop::End(EndReason::ClientClosed));
-                }
-                Ok(())
+                self.write_client(&[], true).await
             }
             BackendAction::ReadyForQuery => {
                 let mut status = [0u8; 1];
                 if self.backend.read_exact(&mut status).await.is_err() {
-                    send_error(self.client, self.loss_error()).await;
+                    self.send(self.loss_error()).await;
                     return Err(Stop::End(EndReason::BackendLost));
                 }
                 let Ok(parsed) = auth::parse_ready_for_query(&status) else {
-                    send_error(self.client, self.loss_error()).await;
+                    self.send(self.loss_error()).await;
                     return Err(Stop::End(EndReason::BackendLost));
                 };
                 let mut message = header.to_vec();
                 message.push(status[0]);
-                if self.client.write_all(&message).await.is_err()
-                    || self.client.flush().await.is_err()
-                {
-                    return Err(Stop::End(EndReason::ClientClosed));
-                }
+                self.write_client(&message, true).await?;
                 self.status = parsed;
                 self.in_flight = false;
                 Ok(())
             }
             BackendAction::CopyResponse => {
-                send_error(self.client, PoolError::FeatureNotSupported).await;
+                self.send(PoolError::FeatureNotSupported).await;
                 Err(Stop::End(EndReason::Unsupported))
             }
             BackendAction::Lost => {
-                send_error(self.client, self.loss_error()).await;
+                self.send(self.loss_error()).await;
                 Err(Stop::End(EndReason::BackendLost))
             }
+        }
+    }
+
+    /// Sends one error to the client and closes it, unless the session must be cut while the client does not read.
+    async fn send(&mut self, error: PoolError) {
+        let client = &mut *self.client;
+        let _ = guarded(
+            send_error(client, error),
+            &mut self.routes,
+            &mut self.phase,
+            self.cluster,
+        )
+        .await;
+    }
+
+    /// Writes bytes to the client (and flushes when asked), raced against the cut.
+    async fn write_client(&mut self, bytes: &[u8], flush: bool) -> Result<(), Stop> {
+        let client = &mut *self.client;
+        let work = async move {
+            client.write_all(bytes).await?;
+            if flush {
+                client.flush().await?;
+            }
+            Ok::<(), std::io::Error>(())
+        };
+        match guarded(work, &mut self.routes, &mut self.phase, self.cluster).await {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(_)) => Err(Stop::End(EndReason::ClientClosed)),
+            Err(reason) => Err(Stop::End(reason)),
+        }
+    }
+
+    /// Writes bytes to the backend and flushes, raced against the cut. `false` when the backend is gone or the cut came.
+    async fn write_backend(&mut self, bytes: &[u8]) -> Result<(), Option<EndReason>> {
+        let backend = &mut *self.backend;
+        let work = async move {
+            backend.write_all(bytes).await?;
+            backend.flush().await
+        };
+        match guarded(work, &mut self.routes, &mut self.phase, self.cluster).await {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(_)) => Err(None),
+            Err(reason) => Err(Some(reason)),
         }
     }
 
@@ -1155,6 +1205,46 @@ fn must_cut(
     }
 }
 
+/// Resolves when the session must be cut: a positive conflict of its cluster or the end of shutdown.
+/// It never resolves when neither can happen any more.
+async fn wait_cut(
+    routes: &mut watch::Receiver<RouteView>,
+    phase: &mut watch::Receiver<Phase>,
+    cluster: &ClusterId,
+) -> EndReason {
+    let mut routes_alive = true;
+    let mut phase_alive = true;
+    loop {
+        if let Some(reason) = must_cut(routes, phase, cluster) {
+            return reason;
+        }
+        if !routes_alive && !phase_alive {
+            std::future::pending::<()>().await;
+        }
+        tokio::select! {
+            changed = routes.changed(), if routes_alive => routes_alive = changed.is_ok(),
+            changed = phase.changed(), if phase_alive => phase_alive = changed.is_ok(),
+        }
+    }
+}
+
+/// Runs `work` (a write toward a peer that may not read) unless the session must be cut first.
+///
+/// `work` is polled first, so a write that fits completes even when the cut is
+/// already due; a write that waits is abandoned as soon as the cut comes.
+async fn guarded<F: std::future::Future>(
+    work: F,
+    routes: &mut watch::Receiver<RouteView>,
+    phase: &mut watch::Receiver<Phase>,
+    cluster: &ClusterId,
+) -> Result<F::Output, EndReason> {
+    tokio::select! {
+        biased;
+        done = work => Ok(done),
+        reason = wait_cut(routes, phase, cluster) => Err(reason),
+    }
+}
+
 /// Copies exactly `len` bytes through the relay buffer, one buffer at a time, and stops when a conflict or
 /// the end of shutdown arrives in the middle.
 async fn copy_exact<R, W>(
@@ -1193,8 +1283,10 @@ where
             Ok(0) | Err(_) => return Copied::SourceGone,
             Ok(n) => n,
         };
-        if destination.write_all(&buffer[..n]).await.is_err() {
-            return Copied::DestinationGone;
+        match guarded(destination.write_all(&buffer[..n]), routes, phase, cluster).await {
+            Ok(Ok(())) => {}
+            Ok(Err(_)) => return Copied::DestinationGone,
+            Err(reason) => return Copied::Cut(reason),
         }
         left -= n;
     }
