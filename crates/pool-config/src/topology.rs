@@ -1,9 +1,10 @@
 //! The keys `[control]`, `[[cluster]]`, `[[node]]` and `[[identity]]`: their
 //! raw shapes, their validation and the records a validated file exposes.
 //!
-//! The contract is spec 0003, section "Configuration". No text read from the
-//! file reaches a finding, and the records that hold such text print it as
-//! `[REDACTED]` in their `Debug` output.
+//! The contract is spec 0003, section "Configuration", with the keys and the
+//! name rule that spec 0004 adds. No text read from the file reaches a
+//! finding, and the records that hold such text print it as `[REDACTED]` in
+//! their `Debug` output.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt;
@@ -12,9 +13,10 @@ use std::path::{Path, PathBuf};
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use toml::Spanned;
 
+use crate::serving::{self, RawClusterMonitor, RawNodeTls, RawServing, Serving};
 use crate::{
-    AuthorityId, ClusterId, Finding, FindingCode, IdentityId, KnownField, LineIndex, Location,
-    NodeId, SystemIdentifier,
+    AuthorityId, ClusterId, Finding, FindingCode, Findings, IdentityId, KnownField, LineIndex,
+    Location, NodeId, SystemIdentifier,
 };
 
 const KEY_STATE_DIRECTORY: &str = "control.state_directory";
@@ -40,7 +42,7 @@ const MAX_PATH_BYTES: usize = 4096;
 const MAX_HOST_BYTES: usize = 253;
 
 /// Stands in for text from the file in a hand written `Debug`.
-struct Redacted;
+pub(crate) struct Redacted;
 
 impl fmt::Debug for Redacted {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -87,11 +89,14 @@ impl fmt::Debug for ControlConfig {
 ///
 /// Restart rule: read and validated again from the file at each start.
 /// Nothing is remembered from the last run.
-#[derive(Debug)]
 pub struct ClusterConfig {
     id: ClusterId,
     system_identifier: SystemIdentifier,
     expected_writer: NodeId,
+    monitor_login: Option<String>,
+    monitor_database: String,
+    monitor_credential: Option<SecretReference>,
+    entry: EntryAt,
 }
 
 impl ClusterConfig {
@@ -110,6 +115,58 @@ impl ClusterConfig {
     pub fn expected_writer(&self) -> &NodeId {
         &self.expected_writer
     }
+
+    /// The login the probe uses on every node of the cluster, from
+    /// `cluster.monitor_login`. It never appears in default telemetry.
+    pub fn monitor_login(&self) -> Option<&str> {
+        self.monitor_login.as_deref()
+    }
+
+    /// The database the probe opens, from `cluster.monitor_database`, or
+    /// `postgres` when the key is left out.
+    pub fn monitor_database(&self) -> &str {
+        &self.monitor_database
+    }
+
+    /// The reference to the secret of the monitor login, from
+    /// `cluster.monitor_credential_file`. This crate never opens it.
+    pub fn monitor_credential(&self) -> Option<&SecretReference> {
+        self.monitor_credential.as_ref()
+    }
+
+    /// Where the entry starts in the file.
+    pub(crate) fn entry_at(&self) -> EntryAt {
+        self.entry
+    }
+}
+
+impl fmt::Debug for ClusterConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ClusterConfig")
+            .field("id", &self.id)
+            .field("system_identifier", &self.system_identifier)
+            .field("expected_writer", &self.expected_writer)
+            .field(
+                "monitor_login",
+                &self.monitor_login.as_ref().map(|_| Redacted),
+            )
+            .field("monitor_database", &Redacted)
+            .field("monitor_credential", &self.monitor_credential)
+            .finish()
+    }
+}
+
+/// The line and column where an entry of a repeated table starts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct EntryAt {
+    pub(crate) line: u32,
+    pub(crate) column: u32,
+}
+
+impl EntryAt {
+    fn new((line, column): (u32, u32)) -> Self {
+        EntryAt { line, column }
+    }
 }
 
 /// One validated `[[node]]` entry: a configured PostgreSQL server.
@@ -121,6 +178,9 @@ pub struct NodeConfig {
     cluster: ClusterId,
     host: String,
     port: u16,
+    tls_ca_file: Option<PathBuf>,
+    tls_server_name: String,
+    entry: EntryAt,
 }
 
 impl NodeConfig {
@@ -143,6 +203,24 @@ impl NodeConfig {
     pub fn port(&self) -> u16 {
         self.port
     }
+
+    /// The PEM file with the CA certificates that the node's certificate
+    /// must chain to, from `node.tls_ca_file`. This crate never opens it.
+    pub fn tls_ca_file(&self) -> Option<&Path> {
+        self.tls_ca_file.as_deref()
+    }
+
+    /// The name the node's certificate must hold, from
+    /// `node.tls_server_name`, or the host when the key is left out. It
+    /// never appears in default telemetry.
+    pub fn tls_server_name(&self) -> &str {
+        &self.tls_server_name
+    }
+
+    /// Where the entry starts in the file.
+    pub(crate) fn entry_at(&self) -> EntryAt {
+        self.entry
+    }
 }
 
 impl fmt::Debug for NodeConfig {
@@ -152,6 +230,8 @@ impl fmt::Debug for NodeConfig {
             .field("cluster", &self.cluster)
             .field("host", &Redacted)
             .field("port", &Redacted)
+            .field("tls_ca_file", &self.tls_ca_file.as_ref().map(|_| Redacted))
+            .field("tls_server_name", &Redacted)
             .finish()
     }
 }
@@ -167,11 +247,13 @@ impl fmt::Debug for NodeConfig {
 /// Nothing is remembered from the last run.
 pub struct IdentityRoute {
     id: IdentityId,
+    principal: String,
     cluster: ClusterId,
     backend_database: String,
     backend_login: String,
     credential: SecretReference,
     routing_profile: RoutingProfile,
+    entry: EntryAt,
 }
 
 impl IdentityRoute {
@@ -205,6 +287,16 @@ impl IdentityRoute {
     pub fn routing_profile(&self) -> RoutingProfile {
         self.routing_profile
     }
+
+    /// The principal name, for the views of this crate only.
+    pub(crate) fn principal(&self) -> &str {
+        &self.principal
+    }
+
+    /// Where the entry starts in the file.
+    pub(crate) fn entry_at(&self) -> EntryAt {
+        self.entry
+    }
 }
 
 impl fmt::Debug for IdentityRoute {
@@ -220,8 +312,10 @@ impl fmt::Debug for IdentityRoute {
     }
 }
 
-/// A reference to a secret file, from `identity.credential_file`. This build
-/// checks its form only and never opens the file.
+/// A reference to a secret file, from `identity.credential_file`,
+/// `cluster.monitor_credential_file`, `principal.verifier_file` or
+/// `listener.tls_private_key_file`. This crate checks its form only and never
+/// opens the file.
 ///
 /// Restart rule: read and validated again from the file at each start.
 /// Nothing is remembered from the last run.
@@ -230,6 +324,10 @@ pub struct SecretReference {
 }
 
 impl SecretReference {
+    pub(crate) fn new(path: PathBuf) -> Self {
+        SecretReference { path }
+    }
+
     /// The path of the secret file. It never appears in default telemetry.
     pub fn path(&self) -> &Path {
         &self.path
@@ -287,6 +385,7 @@ pub(crate) struct Topology {
     pub(crate) nodes: Vec<NodeConfig>,
     pub(crate) identities: Vec<IdentityRoute>,
     pub(crate) identity_index: IdentityIndex,
+    pub(crate) serving: Serving,
 }
 
 // Raw shapes read from the file. Like the structures of spec 0001, each one
@@ -333,6 +432,8 @@ macro_rules! raw_table {
     };
 }
 
+pub(crate) use raw_table;
+
 raw_table!(RawControl {
     state_directory: Spanned<String>,
     authority_id: Spanned<String>,
@@ -342,6 +443,9 @@ raw_table!(RawCluster {
     id: Spanned<String>,
     system_identifier: Spanned<String>,
     expected_writer: Spanned<String>,
+    monitor_login: Spanned<String>,
+    monitor_database: Spanned<String>,
+    monitor_credential_file: Spanned<String>,
 });
 
 raw_table!(RawNode {
@@ -349,6 +453,8 @@ raw_table!(RawNode {
     cluster: Spanned<String>,
     host: Spanned<String>,
     port: Spanned<u16>,
+    tls_ca_file: Spanned<String>,
+    tls_server_name: Spanned<String>,
 });
 
 raw_table!(RawIdentity {
@@ -368,35 +474,36 @@ pub(crate) struct RawTopology {
     pub(crate) clusters: Vec<Spanned<RawCluster>>,
     pub(crate) nodes: Vec<Spanned<RawNode>>,
     pub(crate) identities: Vec<Spanned<RawIdentity>>,
+    pub(crate) serving: RawServing,
 }
 
 /// A value that passed its own check, with the position where it starts.
-struct At<T> {
-    value: T,
-    line: u32,
-    column: u32,
+pub(crate) struct At<T> {
+    pub(crate) value: T,
+    pub(crate) line: u32,
+    pub(crate) column: u32,
 }
 
 /// Collects findings and turns spans into positions.
-struct Checker<'a> {
+pub(crate) struct Checker<'a> {
     positions: LineIndex<'a>,
-    findings: &'a mut Vec<Finding>,
+    pub(crate) findings: &'a mut Findings,
 }
 
 impl Checker<'_> {
-    fn push(&mut self, code: FindingCode, key: &'static str, line: u32, column: u32) {
+    pub(crate) fn push(&mut self, code: FindingCode, key: &'static str, line: u32, column: u32) {
         self.findings.push(Finding {
             code,
             location: Location::KeyAt { key, line, column },
         });
     }
 
-    fn start<T>(&self, spanned: &Spanned<T>) -> (u32, u32) {
+    pub(crate) fn start<T>(&self, spanned: &Spanned<T>) -> (u32, u32) {
         self.positions.line_column(spanned.span().start)
     }
 
     /// Checks a required string key of an entry that starts at `entry`.
-    fn required<T>(
+    pub(crate) fn required<T>(
         &mut self,
         raw: Option<&Spanned<String>>,
         entry: (u32, u32),
@@ -411,7 +518,7 @@ impl Checker<'_> {
     }
 
     /// Checks a string key that is present.
-    fn optional<T>(
+    pub(crate) fn optional<T>(
         &mut self,
         raw: &Spanned<String>,
         key: &'static str,
@@ -432,20 +539,20 @@ impl Checker<'_> {
     }
 }
 
-/// Name syntax: 1 to 63 bytes of UTF-8 with no control character.
-fn parse_name(text: &str) -> Option<String> {
+/// Name syntax: 1 to 63 bytes of UTF-8 with no refused character.
+pub(crate) fn parse_name(text: &str) -> Option<String> {
     let fits = (1..=MAX_NAME_BYTES).contains(&text.len()) && !has_control(text);
     fits.then(|| text.to_owned())
 }
 
-/// Path syntax: 1 to 4096 bytes, starts with `/`, no control character.
-fn parse_path(text: &str) -> Option<PathBuf> {
+/// Path syntax: 1 to 4096 bytes, starts with `/`, no refused character.
+pub(crate) fn parse_path(text: &str) -> Option<PathBuf> {
     let fits = text.len() <= MAX_PATH_BYTES && text.starts_with('/') && !has_control(text);
     fits.then(|| PathBuf::from(text))
 }
 
 /// Host syntax: 1 to 253 bytes, each an ASCII letter, a digit, `.`, `-` or `:`.
-fn parse_host(text: &str) -> Option<String> {
+pub(crate) fn parse_host(text: &str) -> Option<String> {
     let fits = (1..=MAX_HOST_BYTES).contains(&text.len())
         && text
             .bytes()
@@ -453,18 +560,36 @@ fn parse_host(text: &str) -> Option<String> {
     fits.then(|| text.to_owned())
 }
 
+/// The closed list of characters that no name and no path may hold (spec
+/// 0004, "Names and paths"): the control characters U+0000 to U+001F and
+/// U+007F to U+009F, the characters that change the direction of text, and
+/// the line and paragraph separators. It needs no Unicode table.
 fn has_control(text: &str) -> bool {
-    text.chars()
-        .any(|scalar| scalar <= '\u{1f}' || scalar == '\u{7f}')
+    text.chars().any(|scalar| {
+        matches!(
+            scalar,
+            '\u{0}'..='\u{1f}'
+                | '\u{7f}'..='\u{9f}'
+                | '\u{61c}'
+                | '\u{200e}'
+                | '\u{200f}'
+                | '\u{202a}'..='\u{202e}'
+                | '\u{2066}'..='\u{2069}'
+                | '\u{2028}'
+                | '\u{2029}'
+        )
+    })
 }
 
 struct ClusterEntry {
+    entry: EntryAt,
     id: Option<At<ClusterId>>,
     system_identifier: Option<SystemIdentifier>,
     expected_writer: Option<At<NodeId>>,
 }
 
 struct NodeEntry {
+    entry: EntryAt,
     id: Option<At<NodeId>>,
     cluster: Option<At<ClusterId>>,
     host: Option<At<String>>,
@@ -472,6 +597,7 @@ struct NodeEntry {
 }
 
 struct IdentityEntry {
+    entry: EntryAt,
     id: Option<At<IdentityId>>,
     principal: Option<At<String>>,
     database: Option<String>,
@@ -482,10 +608,11 @@ struct IdentityEntry {
     routing_profile: Option<RoutingProfile>,
 }
 
-/// Runs steps 2 to 6 of the validation order of spec 0003 and returns the
-/// records. The records are complete only when no finding was added; the
-/// caller must not use them otherwise.
-pub(crate) fn check(text: &str, raw: RawTopology, findings: &mut Vec<Finding>) -> Topology {
+/// Runs steps 2 to 6 of the validation order of spec 0003, with the checks
+/// that spec 0004 adds after its item 5 and at the end of its item 6, and
+/// returns the records. The records are complete only when no finding was
+/// added; the caller must not use them otherwise.
+pub(crate) fn check(text: &str, raw: RawTopology, findings: &mut Findings) -> Topology {
     let mut checker = Checker {
         positions: LineIndex::new(text),
         findings,
@@ -517,8 +644,34 @@ pub(crate) fn check(text: &str, raw: RawTopology, findings: &mut Vec<Finding>) -
         .map(|entry| check_identity(&mut checker, entry))
         .collect();
 
+    let monitors: Vec<RawClusterMonitor<'_>> = raw
+        .clusters
+        .iter()
+        .map(|entry| {
+            let raw = entry.get_ref();
+            RawClusterMonitor {
+                login: raw.monitor_login.as_ref(),
+                database: raw.monitor_database.as_ref(),
+                credential_file: raw.monitor_credential_file.as_ref(),
+            }
+        })
+        .collect();
+    let node_tls: Vec<RawNodeTls<'_>> = raw
+        .nodes
+        .iter()
+        .map(|entry| {
+            let raw = entry.get_ref();
+            RawNodeTls {
+                ca_file: raw.tls_ca_file.as_ref(),
+                server_name: raw.tls_server_name.as_ref(),
+            }
+        })
+        .collect();
+    let serving = serving::check(&mut checker, &raw.serving, &monitors, &node_tls);
+
     cross_check(&mut checker, &clusters, &nodes, &identities);
-    build(control, clusters, nodes, identities)
+    serving::cross_check(&mut checker, &raw.serving);
+    build(control, clusters, nodes, identities, serving)
 }
 
 fn check_control(checker: &mut Checker<'_>, raw: &RawControl, has_cluster: bool) -> ControlConfig {
@@ -563,6 +716,7 @@ fn check_cluster(checker: &mut Checker<'_>, entry: &Spanned<RawCluster>) -> Clus
     let at = checker.start(entry);
     let raw = entry.get_ref();
     ClusterEntry {
+        entry: EntryAt::new(at),
         id: checker.required(raw.id.as_ref(), at, KEY_CLUSTER_ID, ClusterId::parse),
         system_identifier: checker
             .required(
@@ -600,6 +754,7 @@ fn check_node(checker: &mut Checker<'_>, entry: &Spanned<RawNode>) -> NodeEntry 
         Some(port) => Some(*port.get_ref()),
     };
     NodeEntry {
+        entry: EntryAt::new(at),
         id,
         cluster,
         host,
@@ -665,6 +820,7 @@ fn check_identity(checker: &mut Checker<'_>, entry: &Spanned<RawIdentity>) -> Id
         },
     };
     IdentityEntry {
+        entry: EntryAt::new(at),
         id,
         principal,
         database,
@@ -708,7 +864,7 @@ fn cross_check(
         .collect();
 
     // 2. A node names a cluster the file does not define.
-    let before = checker.findings.len();
+    let before = checker.findings.total();
     if every_cluster_id_valid {
         for cluster in nodes.iter().filter_map(|entry| entry.cluster.as_ref()) {
             if !cluster_ids.contains(&cluster.value) {
@@ -721,7 +877,7 @@ fn cross_check(
             }
         }
     }
-    let node_cluster_found_something = checker.findings.len() > before;
+    let node_cluster_found_something = checker.findings.total() > before;
 
     // 3. `expected_writer` names no node of its own cluster. When an id
     // repeats, the reference resolves to the first entry.
@@ -817,25 +973,40 @@ fn build(
     clusters: Vec<ClusterEntry>,
     nodes: Vec<NodeEntry>,
     identities: Vec<IdentityEntry>,
+    mut serving: Serving,
 ) -> Topology {
+    let monitors = std::mem::take(&mut serving.monitors);
     let clusters = clusters
         .into_iter()
-        .filter_map(|entry| {
+        .zip(monitors)
+        .filter_map(|(entry, monitor)| {
+            let monitor = monitor?;
             Some(ClusterConfig {
                 id: entry.id?.value,
                 system_identifier: entry.system_identifier?,
                 expected_writer: entry.expected_writer?.value,
+                monitor_login: monitor.login,
+                monitor_database: monitor.database,
+                monitor_credential: monitor.credential,
+                entry: entry.entry,
             })
         })
         .collect();
+    let node_tls = std::mem::take(&mut serving.node_tls);
     let nodes = nodes
         .into_iter()
-        .filter_map(|entry| {
+        .zip(node_tls)
+        .filter_map(|(entry, tls)| {
+            let tls = tls?;
+            let host = entry.host?.value;
             Some(NodeConfig {
                 id: entry.id?.value,
                 cluster: entry.cluster?.value,
-                host: entry.host?.value,
+                tls_server_name: tls.server_name.unwrap_or_else(|| host.clone()),
+                host,
                 port: entry.port?,
+                tls_ca_file: tls.ca_file,
+                entry: entry.entry,
             })
         })
         .collect();
@@ -847,13 +1018,13 @@ fn build(
             let database = entry.database?;
             let route = IdentityRoute {
                 id: entry.id?.value,
+                principal: principal.clone(),
                 cluster: entry.cluster?.value,
                 backend_database: entry.backend_database?,
                 backend_login: entry.backend_login?,
-                credential: SecretReference {
-                    path: entry.credential_file?,
-                },
+                credential: SecretReference::new(entry.credential_file?),
                 routing_profile: entry.routing_profile?,
+                entry: entry.entry,
             };
             Some((principal, database, route))
         })();
@@ -871,6 +1042,7 @@ fn build(
         nodes,
         identities: routes,
         identity_index: IdentityIndex(index),
+        serving,
     }
 }
 
@@ -881,18 +1053,35 @@ mod edge_tests {
     use super::*;
 
     #[test]
-    fn ac2_name_syntax_counts_bytes_and_refuses_only_the_listed_controls() {
+    fn ac2_name_syntax_counts_bytes_and_refuses_only_the_listed_characters() {
         assert_eq!(parse_name(&"a".repeat(63)).map(|n| n.len()), Some(63));
         assert_eq!(parse_name(&"a".repeat(64)), None);
         assert_eq!(parse_name(""), None);
         assert_eq!(parse_name(&"\u{e9}".repeat(32)), None);
         assert!(parse_name(&format!("a{}", "\u{e9}".repeat(31))).is_some());
-        for scalar in (0_u32..=0x1f).chain([0x7f]) {
+        // covers: 0004 AC-6. The closed list, written out rather than taken
+        // from the code.
+        let refused = (0_u32..=0x1f)
+            .chain(0x7f..=0x9f)
+            .chain([0x61c, 0x200e, 0x200f])
+            .chain(0x202a..=0x202e)
+            .chain(0x2066..=0x2069)
+            .chain([0x2028, 0x2029]);
+        for scalar in refused {
             let text = format!("a{}b", char::from_u32(scalar).expect("scalar"));
             assert_eq!(parse_name(&text), None, "{scalar:#x}");
+            assert_eq!(parse_path(&format!("/{text}")), None, "{scalar:#x}");
         }
-        for text in [" ", " a ", "\u{80}", "\u{85}", "\u{a0}", "\u{2028}"] {
+        // The neighbours of each range stay allowed.
+        for text in [" ", " a ", "\u{e9}"] {
             assert_eq!(parse_name(text), Some(text.to_owned()), "{text:?}");
+        }
+        for scalar in [
+            0xa0_u32, 0x61b, 0x61d, 0x200d, 0x2010, 0x2027, 0x202f, 0x2065, 0x206a,
+        ] {
+            let text = char::from_u32(scalar).expect("scalar").to_string();
+            assert!(parse_name(&text).is_some(), "{scalar:#x}");
+            assert!(parse_path(&format!("/{text}")).is_some(), "{scalar:#x}");
         }
     }
 

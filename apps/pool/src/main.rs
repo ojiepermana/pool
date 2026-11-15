@@ -8,7 +8,7 @@ mod cli;
 mod report;
 
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::{self, BufWriter, Read, Write};
 use std::path::Path;
 use std::process::ExitCode;
 
@@ -69,16 +69,20 @@ fn write_stdout(bytes: &[u8]) -> io::Result<()> {
 fn check_config(path: &Path, format: Format) -> io::Result<u8> {
     let outcome = match read_bounded(path) {
         Ok(bytes) => match pool_config::validate(&bytes) {
-            Ok(config) => Outcome::Valid(config),
+            Ok(config) => Outcome::Valid(Box::new(config)),
             Err(rejection) => Outcome::Invalid(rejection),
         },
         Err(error) => Outcome::Error(IoFinding::from_kind(error.kind())),
     };
-    let mut stdout = io::stdout().lock();
+    // One buffer around the locked handle, so a report of 20000 findings is
+    // not one system call per line. Each writer flushes it at its end, and a
+    // failed flush is exit status 3 like any failed write.
+    let mut stdout = BufWriter::new(io::stdout().lock());
     match format {
         Format::Human => report::write_human(&outcome, &mut stdout, &mut io::stderr().lock())?,
         Format::Json => report::write_json(&outcome, &mut stdout)?,
     }
+    stdout.flush()?;
     Ok(outcome.exit_status())
 }
 

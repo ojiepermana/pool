@@ -53,8 +53,9 @@ impl IoFinding {
 
 /// The outcome of reading and judging the file.
 pub enum Outcome {
-    /// The file was accepted.
-    Valid(ValidatedConfig),
+    /// The file was accepted. Boxed, because a validated configuration is
+    /// far larger than the other two variants.
+    Valid(Box<ValidatedConfig>),
     /// The file was rejected.
     Invalid(Rejection),
     /// The file could not be read.
@@ -79,6 +80,11 @@ struct JsonReport<'a> {
     result: &'static str,
     config_version: Option<u32>,
     capabilities: Option<JsonCapabilities>,
+    /// The findings after the first `MAX_FINDINGS`, counted and not listed.
+    /// Absent when there are none, so a report with fewer findings is the
+    /// same as before, byte for byte.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    findings_omitted: Option<u64>,
     findings: &'a [JsonFinding],
 }
 
@@ -139,6 +145,9 @@ pub fn write_human(
             for finding in rejection.findings() {
                 writeln!(stdout, "{finding}")?;
             }
+            if rejection.omitted() > 0 {
+                writeln!(stdout, "findings omitted: {}", rejection.omitted())?;
+            }
             stdout.flush()
         }
         Outcome::Error(io_finding) => {
@@ -155,6 +164,10 @@ pub fn write_human(
 
 /// Writes the JSON format: one object on one line of stdout.
 pub fn write_json(outcome: &Outcome, stdout: &mut impl Write) -> io::Result<()> {
+    let findings_omitted = match outcome {
+        Outcome::Invalid(rejection) if rejection.omitted() > 0 => Some(rejection.omitted()),
+        _ => None,
+    };
     let (result, config_version, capabilities, findings) = match outcome {
         Outcome::Valid(config) => (
             "valid",
@@ -194,6 +207,7 @@ pub fn write_json(outcome: &Outcome, stdout: &mut impl Write) -> io::Result<()> 
         result,
         config_version,
         capabilities,
+        findings_omitted,
         findings: &findings,
     };
     serde_json::to_writer(&mut *stdout, &report).map_err(io::Error::from)?;

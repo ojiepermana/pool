@@ -8,10 +8,12 @@
 
 use std::fmt;
 
-/// The largest length, in bytes, of a [`ClusterId`], [`NodeId`] or [`IdentityId`].
+/// The largest length, in bytes, of a [`ClusterId`], [`NodeId`], [`IdentityId`]
+/// or [`PrincipalId`].
 const MAX_NAME_ID_BYTES: usize = 63;
 
-/// Checks the syntax shared by [`ClusterId`], [`NodeId`] and [`IdentityId`]:
+/// Checks the syntax shared by [`ClusterId`], [`NodeId`], [`IdentityId`] and
+/// [`PrincipalId`]:
 /// 1 to 63 bytes, the first `a` to `z`, the rest `a` to `z`, `0` to `9`, `_`
 /// or `-`.
 fn is_name_id(text: &str) -> bool {
@@ -78,6 +80,19 @@ name_id! {
     /// `[[identity]]` entry. It may appear in telemetry in place of the login
     /// it stands for. It compares only with another `IdentityId`.
     IdentityId
+}
+
+name_id! {
+    /// The identifier of one frontend principal, the `id` of a
+    /// `[[principal]]` entry. Logs may show it in place of the user name. It
+    /// compares only with another `PrincipalId`:
+    ///
+    /// ```compile_fail
+    /// fn same(principal: &pool_config::PrincipalId, identity: &pool_config::IdentityId) -> bool {
+    ///     principal == identity
+    /// }
+    /// ```
+    PrincipalId
 }
 
 /// The PostgreSQL system identifier of a cluster: a whole number from 1 to
@@ -177,6 +192,7 @@ mod tests {
             );
             assert!(NodeId::parse(text).is_some());
             assert!(IdentityId::parse(text).is_some());
+            assert!(PrincipalId::parse(text).is_some());
         }
     }
 
@@ -189,6 +205,7 @@ mod tests {
             assert_eq!(ClusterId::parse(text), None, "{text:?}");
             assert_eq!(NodeId::parse(text), None, "{text:?}");
             assert_eq!(IdentityId::parse(text), None, "{text:?}");
+            assert_eq!(PrincipalId::parse(text), None, "{text:?}");
         }
     }
 
