@@ -180,7 +180,9 @@ fn usage_errors_of_the_new_commands_exit_2() {
         &["show-authority", "--format", "xml", "--config", "p"],
         &["bootstrap", "--config", "p", "extra"],
         &["show-authority", "--config"],
-        &["run", "--config", "p"],
+        &["run", "--config", "p", "--format", "json"],
+        &["run", "--format", "human", "--config", "p"],
+        &["run"],
     ] {
         let run = pool(args);
         assert_eq!(run.code, 2, "{args:?}");
@@ -547,4 +549,129 @@ fn ac11_bootstrap_against_a_node_that_does_not_answer_creates_no_journal() {
         )
     );
     assert!(!layout.journal().exists());
+}
+
+// `pool run` in the states that do not serve (`0004 AC-13`). Step 3 ends
+// before any protected file is read, so the files the configuration names
+// need not exist, and nothing ever binds.
+
+impl Layout {
+    /// A configuration that `serving()` accepts, with a listener on `port`.
+    fn write_serving_config(&self, witness: Option<&str>, port: u16) {
+        let extra = format!(
+            "\n[listener]\nhost = \"127.0.0.1\"\nport = {port}\n\
+             tls_certificate_file = \"{root}/pool.pem\"\ntls_private_key_file = \"{root}/pool.key\"\n\n\
+             [[principal]]\nid = \"it-principal\"\nname = \"pz7_principal\"\nverifier_file = \"{root}/principal.verifier\"\n\n\
+             [[identity]]\nid = \"it-identity\"\nprincipal = \"pz7_principal\"\ndatabase = \"pz7_db\"\ncluster = \"main\"\n\
+             backend_database = \"pz7_appdb\"\nbackend_login = \"pz7_rw\"\ncredential_file = \"{root}/rw.password\"\n",
+            root = self.root.display(),
+        );
+        self.write_config(witness, closed_port(), CA, &extra);
+    }
+}
+
+/// `pool run` on the layout; it has no `--format`.
+fn run_daemon(layout: &Layout) -> Run {
+    pool(&[
+        "run",
+        "--config",
+        layout.config.to_str().expect("utf-8 path"),
+    ])
+}
+
+#[track_caller]
+fn assert_not_serving(layout: &Layout, code: &str, port: u16) {
+    let started = Instant::now();
+    let run = run_daemon(layout);
+    assert_eq!(run.code, 1, "{} {}", run.stdout, run.stderr);
+    assert_eq!(
+        run.stdout,
+        format!("run refused\nfindings: 1\n{code}: the journal state does not allow serving\n")
+    );
+    assert_eq!(run.stderr, "");
+    assert!(started.elapsed() < Duration::from_secs(5));
+    assert_no_path(&run, layout);
+    // The listener was never bound.
+    TcpListener::bind(("127.0.0.1", port)).expect("the port is still free");
+}
+
+#[test]
+fn ac13_run_refuses_every_state_it_can_reach_without_a_journal_and_never_binds() {
+    // covers: 0004 AC-13. Uninitialized, missing and unreadable here;
+    // unconfirmed, mismatch and ready need a real journal (integration.rs).
+    let layout = Layout::new("run-states");
+    let port = closed_port();
+    layout.write_serving_config(None, port);
+    assert_not_serving(&layout, "authority.uninitialized", port);
+    assert!(!layout.journal().exists(), "run never creates the journal");
+    assert_eq!(layout.entries(), ["pool.lock"]);
+
+    write_mode(&layout.journal(), b"", 0o600);
+    assert_not_serving(&layout, "authority.uninitialized", port);
+    assert_eq!(fs::metadata(layout.journal()).expect("journal").len(), 0);
+
+    fs::remove_file(layout.journal()).expect("remove");
+    layout.write_serving_config(Some(X), port);
+    assert_not_serving(&layout, "authority.missing", port);
+
+    write_mode(
+        &layout.journal(),
+        b"not a database at all, only its name",
+        0o600,
+    );
+    let before = fs::read(layout.journal()).expect("read");
+    assert_not_serving(&layout, "authority.unreadable", port);
+    assert_eq!(
+        fs::read(layout.journal()).expect("read"),
+        before,
+        "unchanged"
+    );
+}
+
+#[test]
+fn ac13_run_reports_the_configuration_the_view_and_the_state_directory_first() {
+    // covers: 0004 AC-8, AC-9 through `pool run`.
+    let layout = Layout::new("run-first");
+    let run = run_daemon(&layout);
+    assert_eq!(run.code, 1);
+    assert_eq!(
+        run.stdout,
+        "configuration invalid\nfindings: 2\n\
+         config.incomplete at listener.host: a key that this command needs is missing\n\
+         config.incomplete at identity.id: a key that this command needs is missing\n"
+    );
+    layout.write_serving_config(None, closed_port());
+    fs::set_permissions(&layout.state, fs::Permissions::from_mode(0o750)).expect("chmod");
+    let run = run_daemon(&layout);
+    assert_eq!(run.code, 3);
+    assert_eq!(run.stdout, "");
+    assert_eq!(
+        run.stderr,
+        format!("error: state.permissions: {STATE_PERMISSIONS}\n")
+    );
+    fs::set_permissions(&layout.state, fs::Permissions::from_mode(0o700)).expect("chmod");
+
+    let lock_path = layout.state.join("pool.lock");
+    write_mode(&lock_path, b"", 0o600);
+    let lock = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&lock_path)
+        .expect("open the lock");
+    lock.try_lock().expect("take the lock");
+    let run = run_daemon(&layout);
+    assert_eq!(run.code, 3);
+    assert_eq!(
+        run.stderr,
+        "error: state.locked: another process is using the state directory\n"
+    );
+    drop(lock);
+
+    let missing = layout.root.join("absent.toml");
+    let run = pool(&["run", "--config", missing.to_str().expect("utf-8")]);
+    assert_eq!(run.code, 3);
+    assert_eq!(
+        run.stderr,
+        "error: io.not_found: the configuration file does not exist\n"
+    );
 }

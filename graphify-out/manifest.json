@@ -432,15 +432,15 @@
     "semantic_hash": "3272a30f1bf33357cf06d21aadf0b069"
   },
   "apps/pool/src/cli.rs": {
-    "mtime": 1794741896.4160867,
-    "seen": 1794742006.438307,
-    "ast_hash": "50b44cf10f10f0f22b4d44cc0398c94e",
+    "mtime": 1794743181.0197115,
+    "seen": 1794743240.802507,
+    "ast_hash": "9d01be2d9bc80096932e97626fe4ff2b",
     "semantic_hash": ""
   },
   "apps/pool/src/main.rs": {
-    "mtime": 1794741896.4202964,
-    "seen": 1794742006.438313,
-    "ast_hash": "19d4520bdd110dd0b0e8a0a32d68c18d",
+    "mtime": 1794743181.0211763,
+    "seen": 1794743240.802516,
+    "ast_hash": "3df58ea5c2fc0e4a951ca86400202d61",
     "semantic_hash": ""
   },
   "apps/pool/src/report.rs": {
@@ -450,9 +450,9 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/check_config.rs": {
-    "mtime": 1794741896.4216468,
-    "seen": 1794742006.438318,
-    "ast_hash": "6f443ab65a4863aceca8e0ebd5dcca11",
+    "mtime": 1794743181.0266044,
+    "seen": 1794743240.8025181,
+    "ast_hash": "13c14768b8b9ab5a36f8a640a7ad2b35",
     "semantic_hash": ""
   },
   "crates/pool-config/Cargo.toml": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "apps/pool/src/commands.rs": {
-    "mtime": 1794741896.416627,
-    "seen": 1794742006.4383109,
-    "ast_hash": "30b3b5c87d8e766c4350b345bbf6c4ee",
+    "mtime": 1794743181.019942,
+    "seen": 1794743240.8025112,
+    "ast_hash": "c5e988863d32a23e6e956a03d589278f",
     "semantic_hash": ""
   },
   "apps/pool/src/output.rs": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "apps/pool/src/probe.rs": {
-    "mtime": 1794741896.420609,
-    "seen": 1794742006.438315,
-    "ast_hash": "598eb3f24081869c43e9387604b13be6",
+    "mtime": 1794743181.0259597,
+    "seen": 1794743240.802517,
+    "ast_hash": "8f391d0783efb7b31a438a51160a86ee",
     "semantic_hash": ""
   },
   "apps/pool/src/state.rs": {
@@ -1092,27 +1092,45 @@
     "semantic_hash": ""
   },
   "apps/pool/tests/commands.rs": {
-    "mtime": 1794741896.4218173,
-    "seen": 1794742006.4383192,
-    "ast_hash": "61f3f6ae96533cfdf47cb83cc74ff859",
+    "mtime": 1794743181.0269864,
+    "seen": 1794743240.8025181,
+    "ast_hash": "ec756565c1a97393dab61e7d69a4a46b",
     "semantic_hash": ""
   },
   "apps/pool/tests/integration.rs": {
-    "mtime": 1794741896.4220746,
-    "seen": 1794742006.4383202,
-    "ast_hash": "ec4a5bfa850f069e7afa676116afa7c9",
+    "mtime": 1794743181.0272424,
+    "seen": 1794743240.802519,
+    "ast_hash": "0c7c83fb1434cb7e72a6769b85966ba8",
     "semantic_hash": ""
   },
   "scripts/integration/run.sh": {
-    "mtime": 1794741896.4298985,
-    "seen": 1794742006.438325,
-    "ast_hash": "8450e56dea8b775083c7bc0e5d5a956e",
+    "mtime": 1794743181.0279706,
+    "seen": 1794743240.80252,
+    "ast_hash": "c8ebfc4f6cc94f5ecd4f3f8bf8491db7",
     "semantic_hash": ""
   },
   "scripts/integration/initdb/10-pool-fixture.sh": {
     "mtime": 1794741896.4274685,
     "seen": 1794742006.4383261,
     "ast_hash": "513fec4992777907d34583ea6b99c444",
+    "semantic_hash": ""
+  },
+  "apps/pool/src/control.rs": {
+    "mtime": 1794743181.0204642,
+    "seen": 1794743240.802512,
+    "ast_hash": "97c15aee749a061b8f5ad27d24e43d7f",
+    "semantic_hash": ""
+  },
+  "apps/pool/src/daemon.rs": {
+    "mtime": 1794743181.0207844,
+    "seen": 1794743240.802513,
+    "ast_hash": "64791df3b8d0fe6266f1ebdda8f27e43",
+    "semantic_hash": ""
+  },
+  "apps/pool/src/log.rs": {
+    "mtime": 1794743181.0209672,
+    "seen": 1794743240.8025138,
+    "ast_hash": "47ad311b2b6a8e7bcecb95e923957432",
     "semantic_hash": ""
   }
 }
