@@ -421,14 +421,29 @@ impl<C: Connector> Server<C> {
             .await
             .is_err()
         {
-            self.phase.send_replace(Phase::Ending);
-            if tokio::time::timeout(END_TIMEOUT, self.wait_idle())
-                .await
-                .is_err()
-            {
-                self.abort.send_replace(true);
-                self.wait_idle().await;
-            }
+            self.end_now().await;
+        }
+    }
+
+    /// Shutdown from step 4 on, as if `limits.shutdown_timeout_ms` had passed already: for a
+    /// daemon whose own task ended (spec 0004, decision 86). No accept after it; every session is
+    /// ended at once (`57P01` at a message boundary with no query in flight, `08007` with one);
+    /// returns when every connection task ended, and drops the tasks that are left when
+    /// [`END_TIMEOUT`] has passed.
+    pub async fn shutdown_now(&self) {
+        self.phase.send_replace(Phase::Draining);
+        self.end_now().await;
+    }
+
+    /// Step 4: every session is ended; the tasks left after [`END_TIMEOUT`] are dropped.
+    async fn end_now(&self) {
+        self.phase.send_replace(Phase::Ending);
+        if tokio::time::timeout(END_TIMEOUT, self.wait_idle())
+            .await
+            .is_err()
+        {
+            self.abort.send_replace(true);
+            self.wait_idle().await;
         }
     }
 

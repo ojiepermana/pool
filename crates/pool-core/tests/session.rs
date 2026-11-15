@@ -2279,3 +2279,52 @@ async fn ac30_silence_without_the_mark_ends_no_session() {
         .await
         .expect("within the test limit");
 }
+
+// ---- shutdown from step 4 on, for a daemon whose own task ended (decision 86) ----
+
+#[tokio::test]
+async fn shutdown_now_ends_every_session_at_once_and_returns_within_its_limit() {
+    let run = async {
+        // A deadline far beyond the limit of the test: shutdown_now must not wait for it.
+        let h = Harness::new("shutdown_timeout_ms = 600000");
+        let (_events, _guard) = capture();
+        let (mut idle, _) = login(&h).await.ready();
+        let (mut in_tx, _) = login(&h).await.ready();
+        query(&mut in_tx, "begin").await;
+        let (mut busy, _) = login(&h).await.ready();
+        busy.write_all(&encode_query("a slow statement"))
+            .await
+            .expect("write");
+        settle().await;
+        let started = std::time::Instant::now();
+        tokio::time::timeout(Duration::from_secs(5), h.server.shutdown_now())
+            .await
+            .expect("shutdown_now returns");
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "{:?}",
+            started.elapsed()
+        );
+        for tls in [&mut idle, &mut in_tx] {
+            assert_eq!(
+                last_error(&read_until_ready(tls).await).as_deref(),
+                Some("57P01")
+            );
+        }
+        assert_eq!(
+            last_error(&read_until_ready(&mut busy).await).as_deref(),
+            Some("08007")
+        );
+        assert_eq!(h.server.sessions(), 0);
+        assert_eq!(h.server.connections(), 0);
+        assert!(
+            eventually(|| h.log(|l| l.closed + l.terminated) == 3).await,
+            "every backend is closed"
+        );
+        let (_c, s) = tokio::io::duplex(64);
+        assert!(h.server.accept_stream(s).is_none(), "no accept after it");
+    };
+    tokio::time::timeout(Duration::from_secs(15), run)
+        .await
+        .expect("within the test limit");
+}
