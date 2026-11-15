@@ -334,3 +334,37 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `0003 AC-7` to `AC-12`, `AC-14`, `AC-16` | `tests/walkthroughs.rs` (four walks, `ac9_*`, `ac11_*`, `ac16_*`) and `tests/admission_model.rs` (8192 cases) run unchanged; no rule of `classify_startup`, `plan_bootstrap` or `writer_admission` changed | pass on the workstation |
 
 **One reading.** When the snapshot generation cannot advance, `Controller::round` returns every cluster closed, as the spec says, but the spec names no reason for that case. The round builds its snapshot from the state `Unreadable`, so each cluster is closed with the existing `authority.unreadable` and no new reason name is added. The generation stays at 9223372036854775807. At one round per millisecond, it takes about 292 million years to get there. The unit test `a_round_whose_generation_cannot_advance_closes_every_cluster` locks it.
+
+### Build plan step 7: secrets, TLS and the backend connection
+
+Build plan step 7, on 2026-11-15, on macOS (workstation) and in the Linux builder image. Commit `24d1c8f`, on top of `main` at `8332451`. Tools: `rustc 1.100.0`. Every test is hermetic: the node is a scripted peer inside the test that speaks TLS over an in memory stream (`tokio::io::duplex`), plus one loopback TCP connection. No container and no PostgreSQL; the first real contact is step 8. The certificates and the key under `crates/pool-core/tests/fixtures/` were made with `openssl` for these tests only (a CA, a node certificate for `node.test` valid until 2126, and a second CA).
+
+#### UI / manual
+
+None for step 7.
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-core --locked` | exit 0 | exit 0: 25 tests passed, 0 failed | pass |
+| `cargo clippy -p pool-core --all-targets --locked -- -D warnings` | exit 0 | exit 0; Cargo prints `unused dependency tracing`, the known exception that ends with Build plan step 10 | pass |
+| `scripts/check.sh all` before the commit | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok` | pass |
+| `scripts/check.sh linux-build` at `24d1c8f` | exit 0 | exit 0 in 85 s; the `pool-core` tests ran in the image with AWS-LC compiled by its C compiler, 25 passed | pass |
+
+What the tests hold:
+
+- `secret.rs`: a credential, a verifier and a private key are read only from a regular file (after links) with mode `0600` or `0400` and the owner that the caller passes; each group or other bit, a directory, another owner and a link to a loose file are `secret.permissions`; a missing file and a dangling link are `secret.not_found`; a file over its limit (4096 bytes for a credential or verifier, 1048576 for a certificate file) is `secret.invalid`. The password rule (one trailing line end dropped, 1 to 1024 printable ASCII bytes), the verifier form of PostgreSQL with its ranges, exactly one private key, and at least one certificate. `Debug` of `Password`, `Verifier`, `PrivateKey`, `MockKey`, `ScramKeys`, `ExpectedSignature` and `Credential` prints `[REDACTED]`.
+- `scram.rs`: the RFC 7677 vector on both sides (proof `dHzb...`, signature `6rri...`), a client and the server of this crate agreeing, a wrong password failing, a name that is no principal getting a stable salt of 16 bytes and the first principal's count and always failing after the full exchange, and the refusals of `p=` and of a malformed final message.
+- `tls.rs`: the server configuration needs the key of the leaf and offers no ALPN; a node name must be a DNS name or an address; `Debug` of the node setup names no host.
+- `backend/tests.rs`: a session opens with `n,,n=,r=<18 random bytes in base64>`, the startup packet holds exactly the login, the database and the forwarded parameter, parameter status and the key are kept, and the one row query returns the text columns; `SCRAM-SHA-256` is chosen beside `SCRAM-SHA-256-PLUS`; the keys are derived once for three logins with one salt and count; no startup packet is sent after `N`, a wrong CA or a wrong name; clear text, MD5, GSS, no method at all and a list without `SCRAM-SHA-256` end the attempt; a wrong password ends it with the node's `28P01`; a foreign nonce, a count of 0 or 600001, `e=` and a wrong server signature end it; a session needs `in_hot_standby` `off` (the probe does not) and the status `I`; more than 64 parameters end it; a silent node runs into the deadline; TCP to a closed port is `connect`.
+
+#### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0004 AC-9`, secret half | the `secret.rs` tests above; the state directory checks and the lock are step 8 | pass for the secret half on the workstation and in the Linux image; the rest not run |
+| `0004 AC-15`, library half | the TLS and backend tests above: no startup packet unless the node answered `S`, the chain leads to the configured CA and the name matches | pass for the library half; the listener side and `psql` are steps 9 and 10 |
+| `0004 AC-16`, library half | the SCRAM tests above: the right password passes, a wrong one and an unknown name fail after the same exchange; the backend password and the frontend verifier are separate types | pass for the library half; the message sequence over the listener is step 9 |
