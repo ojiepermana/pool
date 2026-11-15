@@ -1733,7 +1733,7 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 
 ### Round five
 
-On 2026-11-16 from 02:20 to 03:05 WIB, by the tester session: the findings of [the review](../../reviews/2026-11-16-scope-004-one-real-primary-path.md) that round four left for `crates/pool-core/tests/session.rs` (t1, t3, and the parts of t4 and t8 in that file), and decision 94 of [Fuzzing](index.md#fuzzing). On `main` at `ce67e27`, commit `9818739` of the branch. macOS 27.0.1, arm64.
+On 2026-11-16 from 02:20 to 02:55 WIB, by the tester session: the findings of [the review](../../reviews/2026-11-16-scope-004-one-real-primary-path.md) that round four left for `crates/pool-core/tests/session.rs` (t1, t3, and the parts of t4 and t8 in that file), and decision 94 of [Fuzzing](index.md#fuzzing). On `main` at `ce67e27`, commit `9818739` of the branch. macOS 27.0.1, arm64.
 
 #### The tests
 
