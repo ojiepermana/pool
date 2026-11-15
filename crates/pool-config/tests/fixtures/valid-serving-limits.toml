@@ -25,6 +25,7 @@ frontend_message_max_bytes = 1024
 period_ms = 100
 timeout_ms = 100
 observation_expiry_ms = 1000
+node_loss_timeout_ms = 1000
 
 [[cluster]]
 id = "main"

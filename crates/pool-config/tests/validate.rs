@@ -972,7 +972,7 @@ fn ac4_validated_config_debug_holds_only_states() {
          backend_wait_max_count: 100, node_backend_max_count: 100, startup_timeout_ms: 5000, \
          backend_acquire_timeout_ms: 5000, shutdown_timeout_ms: 30000, startup_packet_max_bytes: 8192, \
          frontend_message_max_bytes: 16777216 }, probe: ProbeConfig { period_ms: 2000, timeout_ms: 1000, \
-         observation_expiry_ms: 6000 }, principals: [], principal_index: PrincipalIndex { entries: 0 } }"
+         observation_expiry_ms: 6000, node_loss_timeout_ms: 30000 }, principals: [], principal_index: PrincipalIndex { entries: 0 } }"
     );
     assert_eq!(config.automatic_promotion().as_str(), "disabled");
     assert_eq!(config.result_cache().as_str(), "disabled");
@@ -2732,6 +2732,7 @@ fn ac5_left_out_tables_and_keys_have_their_defaults() {
     assert_eq!(probe.period(), Duration::from_millis(2000));
     assert_eq!(probe.timeout(), Duration::from_millis(1000));
     assert_eq!(probe.observation_expiry(), Duration::from_millis(6000));
+    assert_eq!(probe.node_loss_timeout(), Duration::from_millis(30_000));
     let cluster = &config.clusters()[0];
     assert_eq!(cluster.monitor_login(), None);
     assert_eq!(cluster.monitor_database(), "postgres");
@@ -2809,6 +2810,7 @@ fn ac5_valid_serving_limits_has_every_lowest_value() {
     assert_eq!(probe.period(), Duration::from_millis(100));
     assert_eq!(probe.timeout(), Duration::from_millis(100));
     assert_eq!(probe.observation_expiry(), Duration::from_millis(1000));
+    assert_eq!(probe.node_loss_timeout(), Duration::from_millis(1000));
     let names: Vec<&str> = config
         .nodes()
         .iter()
@@ -2823,7 +2825,7 @@ fn ac5_valid_serving_limits_has_every_lowest_value() {
 
 /// Each number key of `[limits]` and `[probe]`: its table, its name, its
 /// lowest and its highest allowed value, from the table under "Keys".
-const NUMBER_KEYS: [(&str, &str, u64, u64); 12] = [
+const NUMBER_KEYS: [(&str, &str, u64, u64); 13] = [
     ("limits", "session_max_count", 1, 100_000),
     ("limits", "handshake_max_count", 1, 10_000),
     ("limits", "backend_wait_max_count", 0, 100_000),
@@ -2836,6 +2838,7 @@ const NUMBER_KEYS: [(&str, &str, u64, u64); 12] = [
     ("probe", "period_ms", 100, 30_000),
     ("probe", "timeout_ms", 100, 30_000),
     ("probe", "observation_expiry_ms", 1000, 60_000),
+    ("probe", "node_loss_timeout_ms", 1000, 3_600_000),
 ];
 
 /// The key path of a number key, as a finding names it.
@@ -2854,6 +2857,7 @@ fn number_key(table: &str, key: &str) -> &'static str {
         "probe.period_ms",
         "probe.timeout_ms",
         "probe.observation_expiry_ms",
+        "probe.node_loss_timeout_ms",
     ]
     .into_iter()
     .find(|known| *known == path)
@@ -2867,6 +2871,7 @@ fn probe_table(key: &str, value: &str) -> String {
         "period_ms = 100".to_owned(),
         "timeout_ms = 100".to_owned(),
         "observation_expiry_ms = 60000".to_owned(),
+        "node_loss_timeout_ms = 30000".to_owned(),
     ];
     let line = format!("{key} = {value}");
     let index = lines
