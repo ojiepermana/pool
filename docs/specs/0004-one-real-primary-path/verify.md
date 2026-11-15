@@ -2111,6 +2111,41 @@ On macOS unless a row says otherwise; Docker running. `0004 AC-29` and `0004 AC-
 | `scripts/check.sh linux-build` | `bfc4a00` | 0 | the four tests of `commands.rs` pass in the image |
 | `scripts/prove-checks.sh --with-linux-build` | `bfc4a00` | 0 | 36 of 36 cases rejected their bad change, `linux-build` proven |
 
+**Decisions 109 and 116, on 2026-11-16.** Finding r2 of the second review, and the empty database name.
+
+- **Decision 109, the loss time** (`b7e3627`).
+  - `check_probe` in `crates/pool-config/src/serving.rs` refuses `probe.node_loss_timeout_ms` below twice `probe.period_ms` plus `probe.timeout_ms`. The finding is `config.invalid_value` at that key.
+  - The rule runs after the cross rule of the expiry, and only on values that passed their range, so the default counts when the key is absent.
+  - The fixture `invalid-serving-node-loss.toml` (period 20000, timeout 5000, expiry 30000, loss time 44999) gives that one finding. `validate.rs` checks it in the fixture table and `check_config.rs` through the binary.
+  - `ac5_the_loss_time_must_cover_two_periods_and_the_timeout` covers:
+    - 44999 refused and 45000 accepted;
+    - 89999 and 90000 at the largest period and timeout;
+    - the default 30000 at a period of 14500 and 14501;
+    - 4999 and 5000 with the default period and timeout;
+    - no second finding for a key that failed its range;
+    - the order after the expiry.
+  - Three range tests now set a loss time of 90000: `probe_table` in `validate.rs` and two rows of `ac5_each_new_number_key_...` in `check_config.rs`. Their largest period or timeout no longer fits the default of 30000.
+  - `it_ac30_a_paused_writer_...` in `integration.rs` held 2000, below the 5400 of its file. The tester changed it to 6000 (`6c1b5af`), merged here in `19642f8`.
+  - Wrong changes, each caught by `ac5_each_invalid_serving_fixture_has_its_one_finding` and the new test:
+    - the factor 2 left out;
+    - the finding never pushed.
+  - The fixtures, the configurations in the daemon tests and the defaults all pass the rule. The `validate` fuzz target is seeded from the fixture folder, and `linux-build` picks fixtures by prefix, so neither has a list to change.
+- **Decision 116, the empty database name** (`678c96f`).
+  - `parse_startup` in `crates/pool-protocol/src/startup.rs` skips a `database` with an empty value, so the database keeps the value of `user`.
+  - One row in `parameter_rows`. Wrong change: the arm disabled, caught by `parameter_rows`.
+  - No golden test and no fuzz target held the old behavior.
+  - The empty `user` is unchanged (decision 115). The hermetic login belongs to the tester.
+
+| Command | Tree | Exit | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | `b7e3627` | 0 | fmt, clippy, test, deny, guards, docs |
+| `scripts/check.sh fuzz` | `b7e3627` | 0 | five targets, 31 s each, no crash file |
+| `scripts/check.sh all` | the tree of `678c96f` (on `19642f8`, main with `6c1b5af` and `6f69ae2`) | 0 | fmt, clippy, test, deny, guards, docs |
+| `scripts/check.sh fuzz` | the tree of `678c96f` | 0 | five targets, 31 s each, no crash file |
+| `scripts/check.sh integration` | the tree of `678c96f` | 0 | 30 of 30 against PostgreSQL 18.7 of the pinned image, `it_ac30_a_paused_writer_...` with a loss time of 6000 among them |
+| `scripts/check.sh linux-build` | `678c96f` | 0 | `invalid-serving-node-loss.toml` exits 1 in both formats |
+| `scripts/prove-checks.sh --with-linux-build` | `678c96f` | 0 | 36 of 36 cases rejected their bad change, `linux-build` proven (case 20) |
+
 
 ### Checker run of step 15
 
