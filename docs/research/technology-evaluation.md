@@ -149,14 +149,14 @@ Versions observed in the build, on 2026-11-14, on the final tree of Build plan s
 
 ## Adopted in scope 004
 
-Scope 004 adopts the first runtime, TLS and SQLite dependencies, and with them the first native code in the product. The decisions are in [spec 0004](../specs/0004-one-real-primary-path/index.md#adopted-dependencies), with the alternatives in its [rationale](../specs/0004-one-real-primary-path/rationale.md). Build plan step 3 declared them on 2026-11-15, and Cargo 1.100.0 locked exactly the versions below in the real workspace. Until the steps that use them are built, Cargo prints `unused dependency` warnings; that exception ends with Build plan step 10.
+Scope 004 adopts the first runtime, TLS and SQLite dependencies, and with them the first native code in the product. The decisions are in [spec 0004](../specs/0004-one-real-primary-path/index.md#adopted-dependencies), with the alternatives in its [rationale](../specs/0004-one-real-primary-path/rationale.md). Build plan step 3 declared them on 2026-11-15, and Cargo 1.100.0 locked exactly the versions below in the real workspace. Until the steps that used them were built, Cargo printed `unused dependency` warnings. That exception ended with Build plan step 10 (corrected on 2026-11-16: the sentence still spoke of the future).
 
 | Dependency | Locked version and features | Used by | Native code |
 |---|---|---|---|
 | tokio | 1.54.1, no default features, features `rt-multi-thread`, `net`, `io-util`, `io-std`, `time`, `sync`, `signal`, `macros` | `pool-core`, `pool` | None |
 | rustls | 0.23.46, no default features, features `std`, `tls12`, `aws_lc_rs` | `pool-core` | Through `aws-lc-rs` |
 | tokio-rustls | 0.26.6, no default features | `pool-core` | None |
-| aws-lc-rs | 1.19.0, no default features, features `aws-lc-sys`, `prebuilt-nasm` | `pool-core`, and `rustls` | Yes: AWS-LC 0.47.0 through `aws-lc-sys` |
+| aws-lc-rs | 1.19.0, no default features, features `aws-lc-sys`, `prebuilt-nasm` | `pool-core`, and `rustls` | Yes: AWS-LC 5.12.0, as bundled in `aws-lc-sys` 0.47.0 |
 | rusqlite | 0.42.0, no default features, feature `bundled` | `pool-control` | Yes: SQLite 3.54.1 through `libsqlite3-sys` 0.40.0 |
 | tracing | 0.1.44, no default features, feature `std` | `pool-core`, `pool` | None |
 
