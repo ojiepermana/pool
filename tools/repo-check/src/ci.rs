@@ -187,6 +187,8 @@ fn shape(ci: &str, report: &mut Report) {
     };
     let mut names: BTreeSet<String> = job_ids(ci).into_iter().map(|(_, id)| id).collect();
     names.insert("tools".to_string());
+    // Spec 0004: the fuzz job installs its tools with this name.
+    names.insert("fuzz-tools".to_string());
     let mut last_run: Vec<(&str, usize, String)> = Vec::new();
     for (at, line) in lines.iter().enumerate() {
         let text = line.text;
@@ -738,6 +740,31 @@ mod tests {
             "      - run: scripts/check.sh tools\n      - run: scripts/check.sh deny\n",
         );
         assert_ok(&tree);
+    }
+
+    #[test]
+    fn c3_accepts_fuzz_tools_and_nothing_like_it() {
+        // Spec 0004: the fuzz job installs its tools with scripts/check.sh fuzz-tools.
+        let mut tree = good();
+        tree.replace(
+            CI,
+            "      - run: rustup toolchain install\n",
+            "      - run: scripts/check.sh fuzz-tools\n",
+        );
+        assert_ok(&tree);
+        for value in [
+            "scripts/check.sh fuzz-tool",
+            "scripts/check.sh fuzz-tools-x",
+            "scripts/check.sh fuzz_tools",
+        ] {
+            let mut tree = good();
+            tree.replace(
+                CI,
+                "      - run: rustup toolchain install\n",
+                &format!("      - run: {value}\n"),
+            );
+            assert_problem(&tree, "C3", &[CI, "job fmt", value]);
+        }
     }
 
     #[test]
