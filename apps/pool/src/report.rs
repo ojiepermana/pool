@@ -32,7 +32,8 @@ impl IoFinding {
         }
     }
 
-    fn code(self) -> &'static str {
+    /// The finding code.
+    pub fn code(self) -> &'static str {
         match self {
             IoFinding::NotFound => "io.not_found",
             IoFinding::PermissionDenied => "io.permission_denied",
@@ -40,7 +41,8 @@ impl IoFinding {
         }
     }
 
-    fn message(self) -> &'static str {
+    /// The constant message of the finding.
+    pub fn message(self) -> &'static str {
         match self {
             IoFinding::NotFound => "the configuration file does not exist",
             IoFinding::PermissionDenied => {
