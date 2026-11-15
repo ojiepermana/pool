@@ -15,7 +15,7 @@ pub const SCRAM_SHA_256_PLUS: &str = "SCRAM-SHA-256-PLUS";
 pub const AUTH_MESSAGE_MAX_BYTES: u32 = 1024;
 
 /// An `Authentication` message (tag `R`) from a node.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Authentication {
     /// `AuthenticationOk`.
     Ok,
@@ -27,6 +27,28 @@ pub enum Authentication {
     SaslFinal(Vec<u8>),
     /// Any other method, by its code: clear text (3), MD5 (5), GSS, SSPI and so on.
     Other(i32),
+}
+
+impl std::fmt::Debug for Authentication {
+    /// The kind, the mechanism names a node offered, and the length of a SCRAM message; never the message.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ok => f.write_str("Authentication::Ok"),
+            Self::Sasl(mechanisms) => f
+                .debug_tuple("Authentication::Sasl")
+                .field(&mechanisms.len())
+                .finish(),
+            Self::SaslContinue(data) => f
+                .debug_struct("Authentication::SaslContinue")
+                .field("len", &data.len())
+                .finish(),
+            Self::SaslFinal(data) => f
+                .debug_struct("Authentication::SaslFinal")
+                .field("len", &data.len())
+                .finish(),
+            Self::Other(code) => f.debug_tuple("Authentication::Other").field(code).finish(),
+        }
+    }
 }
 
 const OK: i32 = 0;
@@ -102,12 +124,22 @@ pub fn encode_authentication_other(code: i32, data: &[u8]) -> Vec<u8> {
 }
 
 /// The body of a `SASLInitialResponse` (tag `p`) from a client.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SaslInitialResponse {
     /// The chosen mechanism.
     pub mechanism: String,
     /// The client-first message, or `None` when the length field is -1.
     pub data: Option<Vec<u8>>,
+}
+
+impl std::fmt::Debug for SaslInitialResponse {
+    /// The length of the client-first message; never the message, which holds a nonce and a name.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SaslInitialResponse")
+            .field("mechanism", &"[REDACTED]")
+            .field("data_len", &self.data.as_ref().map(Vec::len))
+            .finish()
+    }
 }
 
 /// Parses the body of a `SASLInitialResponse`.
@@ -167,12 +199,22 @@ pub fn encode_negotiate_protocol_version(minor: u16, unsupported: &[Vec<u8>]) ->
 }
 
 /// The body of a `NegotiateProtocolVersion`, for scripted clients in tests.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct NegotiateProtocolVersion {
     /// The newest minor version the server speaks.
     pub minor: u32,
     /// The options it does not support.
     pub unsupported: Vec<Vec<u8>>,
+}
+
+impl std::fmt::Debug for NegotiateProtocolVersion {
+    /// The minor version and the count of option names; never the names, which a client wrote.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NegotiateProtocolVersion")
+            .field("minor", &self.minor)
+            .field("unsupported", &self.unsupported.len())
+            .finish()
+    }
 }
 
 /// Parses the body of a `NegotiateProtocolVersion`. The count is checked against the names, never reserved from.
@@ -232,12 +274,22 @@ pub fn encode_ready_for_query(status: TransactionStatus) -> Vec<u8> {
 }
 
 /// One `ParameterStatus` (tag `S`): a name and a value.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ParameterStatus {
     /// The parameter name.
     pub name: Vec<u8>,
     /// Its value.
     pub value: Vec<u8>,
+}
+
+impl std::fmt::Debug for ParameterStatus {
+    /// The lengths of name and value; never their text.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ParameterStatus")
+            .field("name_len", &self.name.len())
+            .field("value_len", &self.value.len())
+            .finish()
+    }
 }
 
 /// Parses the body of a `ParameterStatus`: two texts each ended by a zero byte, and nothing after.

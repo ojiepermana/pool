@@ -156,12 +156,22 @@ impl Handshake {
 }
 
 /// A parameter that POOL forwards to the backend unchanged.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Forwarded {
     /// `application_name` or `client_encoding`.
     pub name: &'static str,
     /// The value, as the client sent it.
     pub value: Vec<u8>,
+}
+
+impl std::fmt::Debug for Forwarded {
+    /// The parameter name, which is one of two constants, and the length of the value; never the value.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Forwarded")
+            .field("name", &self.name)
+            .field("value_len", &self.value.len())
+            .finish()
+    }
 }
 
 /// A startup packet that POOL accepts.
@@ -282,13 +292,24 @@ pub enum FirstPacket {
 /// and for a `CancelRequest`, which is counted and dropped, never stored.
 /// The reader never takes a byte after the packet it is reading. After an
 /// error or a final packet it accepts nothing more.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FirstPacketReader {
     max_len: u32,
     handshake: Handshake,
     header: [u8; FIRST_HEADER_LEN],
     filled: usize,
     body: Option<(FirstKind, Vec<u8>, usize)>,
+}
+
+impl std::fmt::Debug for FirstPacketReader {
+    /// The handshake state and how many bytes are wanted; never the body read so far.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FirstPacketReader")
+            .field("max_len", &self.max_len)
+            .field("tls", &self.handshake.is_tls())
+            .field("wanted", &self.wanted())
+            .finish()
+    }
 }
 
 impl FirstPacketReader {
