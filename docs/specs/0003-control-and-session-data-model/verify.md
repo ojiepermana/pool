@@ -354,7 +354,7 @@ Every criterion on the one revision `0a41060`. The test names are in the milesto
 | `0003 AC-6` | unit tests and `compile_fail` doc tests of `pool-config`, in `scripts/check.sh all` | pass |
 | `0003 AC-7` to `0003 AC-10` | `cargo test -p pool-control --locked walk_` and the rest of `tests/walkthroughs.rs` in `scripts/check.sh all` | pass |
 | `0003 AC-11` | row e of walk 3 and `freshness_rule`; the `grep` above prints nothing | pass |
-| `0003 AC-12` | `open_only_on_full_agreement` and the four `compile_fail,E0451` doc tests | pass |
+| `0003 AC-12` | `open_only_on_full_agreement` and the four `compile_fail,E0451` doc tests. Note of 2026-11-15 by the checker (`chk-f3-verify`, review item t3): the code `E0451` is not checked by the stable toolchain. Rust 1.100.0 on the stable channel ignores the error code after the comma, so on `0a41060` each of these four tests showed only that its snippet does not compile, for any reason. Since `52c0312` each of them has a passing twin right below it that does the same through the public functions (`admission.rs:104` and `:169`, `authority.rs:138`, `bootstrap.rs:67`), so the failing snippet can fail only because the fields are private. The eight doc tests passed on the pull request, see [Remote evidence: pull request 4](#remote-evidence-pull-request-4) | pass |
 | `0003 AC-13` | `cargo metadata` and the manifest comparison above; `scripts/check.sh all` and `scripts/prove-checks.sh --with-linux-build` pass | pass on the workstation; CI evidence waits for the pull request |
 | `0003 AC-14` | code half: the types and lines listed under milestone 3, unchanged since `f98d634`. Document half: the row "Identifier and generation types" of the [shared conventions](../../engineering-standards.md#shared-conventions) names the rule and links to [Identifier and generation types](index.md#identifier-and-generation-types); `scripts/check.sh docs` passes | pass |
 
@@ -657,6 +657,8 @@ Recorded by the checker session `chk-f3-verify` on 2026-11-15 for revision `4c61
 
 **Verdict: PASS.** All sixteen criteria are met on the workstation, and the workspace tests pass in the Linux container. One kind of evidence is not there: the seven checks on a pull request. It is listed under "Not run" with its owner.
 
+**Note of 2026-11-15, after the merge of pull request 4.** That evidence is there now. The seven checks passed on https://github.com/ojiepermana/pool/pull/4 in run https://github.com/ojiepermana/pool/actions/runs/43693676908 on `dfc9bbc`, and the pull request is merged as `f975862`. The checker read it from GitHub and recorded it under [Remote evidence: pull request 4](#remote-evidence-pull-request-4). The sentences of this section still say what was true on `4c61e3b`; where they name the CI evidence as `NOT_RUN`, that section is the later result. The verdict stays `PASS`, now with nothing left open for scope 003 itself.
+
 **Two revisions.** The run started on `aaad537`, where the checkout had the same tree as `main`. While it ran, `main` moved to `4c61e3b`. `git diff aaad537 4c61e3b` names one file under `apps`, `crates` and `tools`, the test file `crates/pool-control/tests/admission_model.rs` (73 lines added: `open_only_on_full_agreement` now compares the exact list of reasons of every closed answer with a rule of its own). Beside it there are two lines in the tester's part of this file and two files under `docs/scope/`. No production code, manifest, script, baseline or fixture changed. The checker merged `main` and ran these again on its checkout `e7c914d`, whose tree is the tree of `4c61e3b` plus the first version of this section (`git diff 4c61e3b e7c914d` names this file only): `scripts/check.sh all`, `cargo test -p pool-control --locked`, `scripts/check.sh linux-build`, `scripts/prove-checks.sh --with-linux-build` and the 60 mutations. Every other step below ran on `aaad537`, and no file on its path differs in `4c61e3b`.
 
 **What was run again, and what was not.** The checker runs of milestones 1 to 4 above passed at `60fcb08`, `198a1cd` and `d26016c`. A step of those runs is not repeated here unless code on its path changed. Since `d26016c` the production code changed in three files only:
@@ -699,7 +701,7 @@ Everything else that `git diff d26016c aaad537 -- apps crates tools` shows is te
 
 | Evidence | Status | Reason | Owner |
 |---|---|---|---|
-| The seven checks (`fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards`, `docs`) on a pull request for scope 003 | `NOT_RUN` | The user holds back the permission to write to GitHub (`F3-1` of the manual file, answered "Belum, lokal dulu" on 2026-11-15). No session may push or open a pull request. The same seven commands pass on the workstation, and `linux-build` passes in the container | user |
+| The seven checks (`fmt`, `clippy`, `test`, `deny`, `linux-build`, `guards`, `docs`) on a pull request for scope 003 | `NOT_RUN` on `4c61e3b`. Since 2026-11-15: `PASS`, seven jobs with `success` in run 43693676908 on `dfc9bbc`, see [Remote evidence: pull request 4](#remote-evidence-pull-request-4) | The user holds back the permission to write to GitHub (`F3-1` of the manual file, answered "Belum, lokal dulu" on 2026-11-15). No session may push or open a pull request. The same seven commands pass on the workstation, and `linux-build` passes in the container. Note of 2026-11-15: this reason ended the same day. The lead reports that the user gave the permission for scope 003, and the lead pushed, opened and merged pull request 4 | user (done by the lead on 2026-11-15) |
 | The refusal of an unmapped pair on a real connection (the other half of `PRD-001 AC-1`) | outside this slice | `0003 AC-5` asks for the library half only and gives the connection half to scope 004 | scope 004 |
 
 The manual step, as the lead recorded it: with `gh auth status` signed in as the owner, a clean main checkout and `HEAD` on `main`, run `git push origin main:scope/003-control-and-session-data-model`, then `gh pr create --base main --head scope/003-control-and-session-data-model`, wait for `gh pr checks scope/003-control-and-session-data-model`, then `gh pr merge scope/003-control-and-session-data-model --merge` and `git pull --ff-only origin main`. It passes when the seven checks pass on that pull request and it is merged with a merge commit. Only this step can show that the change passes CI on a runner.
@@ -729,7 +731,7 @@ Nothing is `BLOCKED`.
 | `0003 AC-10` | met | Milestone 3. Again in this run: the walk and the probes |
 | `0003 AC-11` | met | Milestone 3. Again in this run: the freshness probe, and both `grep` commands print nothing |
 | `0003 AC-12` | met | Milestone 3. Again in this run: 8192 cases with 130 open answers, 65536 cases with 474, and the four `compile_fail` doc tests |
-| `0003 AC-13` | met | Milestone 1 (`60fcb08`). Again in this run: `cargo metadata`, the lockfile, `scripts/check.sh all`, `scripts/prove-checks.sh --with-linux-build` and the Linux build. Evidence from CI is `NOT_RUN` |
+| `0003 AC-13` | met | Milestone 1 (`60fcb08`). Again in this run: `cargo metadata`, the lockfile, `scripts/check.sh all`, `scripts/prove-checks.sh --with-linux-build` and the Linux build. Evidence from CI is `NOT_RUN`. Since 2026-11-15 it is `PASS`: the seven checks on pull request 4, see [Remote evidence: pull request 4](#remote-evidence-pull-request-4) |
 | `0003 AC-14` | met | Milestones 3 and 4. Again in this run: the restart rules at the listed lines, and `scripts/check.sh docs` |
 | `0003 AC-15` | met | The checker run of milestone 5, and the `ac15_` tests on macOS and in the Linux container |
 | `0003 AC-16` | met | The checker run of milestone 5, and the `ac16_` tests on macOS and in the Linux container |
@@ -741,3 +743,121 @@ Every public type, key, fixture and package that the spec names was found where 
 - The human report writes one line per call to the operating system, and a file at the limit can give two million findings (the first finding outside the criteria in the checker run of milestone 5).
 - The three `ac15_` comments that still say "(proposed)", and the count of 91 where the tree has 95 in the record of the tester.
 - The two offers to the architect above: the control characters U+0080 to U+009F in a name, and where a lockfile entry ends for rule W4.
+
+## Remote evidence: pull request 4
+
+Recorded by the checker session `chk-f3-verify` on 2026-11-15 (15:27 WIB by `date`, 08:27 UTC). The checker did not write the code and ran none of the remote steps. The lead pushed the local `main` (`dfc9bbc`) to the branch `scope/003-control-and-session-data-model`, opened pull request 4 and merged it. That the repository owner gave the permission to write to GitHub for scope 003 on 2026-11-15 is **reported by the lead**. The checker then read each result back from GitHub with `gh`, with read requests only, and ran the workstation commands listed below. Everything that is not marked **reported by the lead** was read by the checker. All times are UTC.
+
+**Verdict: `PASS` for the CI evidence.** The seven checks passed on a pull request to `main` on the hosted runner, on the tree that is now on `main`. This is the evidence that the full verification above listed as `NOT_RUN`. No criterion changes its verdict: `0003 AC-13` now also has its CI evidence, and `0003 AC-15` has passed on a Linux runner.
+
+**Repository**: `ojiepermana/pool`. Pull request: https://github.com/ojiepermana/pool/pull/4, "Scope 003: control and session data model", base `main`, head branch `scope/003-control-and-session-data-model`, 82 commits, not a draft.
+
+**Revision on `main`**: `f975862ac4db21f10d883a863b28857dac9c9818`, the merge commit of pull request 4, with the parents `ca9a89717e0250e8db28986bace47421a44548de` (the earlier `main`) and `dfc9bbc35d83b8b1b58f8e376a2b4d5f2686cfa3` (the head of the pull request). `git diff --quiet dfc9bbc f975862` exits 0, and both commits have the tree `d32ed2d1b4561f15884a8ddda02919f04f38137c`. So the tree on `main` is the tree the seven checks passed on. `git rev-parse main origin/main` and `git ls-remote origin refs/heads/main` all give `f975862`.
+
+### What happened, in order
+
+| Time (2026-11-15) | Event | Read from |
+|---|---|---|
+| 08:15:47 | Pull request 4 is opened on `dfc9bbc` | `gh pr view 4` |
+| 08:15:51 to 08:16:28 | `ci` run 43693676908, run number 7, attempt 1, event `pull_request`, `success` | `gh run view`, `gh api .../actions/runs/43693676908` |
+| 08:16:01 | The `Copilot` review run 43693690036 starts, `success` | `gh run list --branch scope/003-control-and-session-data-model` |
+| 08:19:28 | The automatic Copilot review is submitted on `dfc9bbc`, state `COMMENTED`, with no review thread | `gh api repos/ojiepermana/pool/pulls/4/reviews` |
+| 08:19:52 | Pull request 4 is merged by `ojiepermana`: `main` goes from `ca9a897` to `f975862`, activity type `pr_merge`, rule suite `pass` | `gh pr view 4`, activity list, rule suite list |
+| 08:19:56 to 08:20:32 | `ci` run 43693993861, run number 8, attempt 1, for the push to `main`, `success` | `gh run view`, `gh run list --branch main --event push --limit 3` |
+
+The two runs have the numbers 7 and 8 and one attempt each, so neither was run a second time to get a pass.
+
+### The tested commit against the revision of the full verification
+
+The full verification above is for `4c61e3b`. The seven checks ran on `dfc9bbc`, 22 commits later (14 without the merges). The checker read what those commits change.
+
+- [x] `git diff --stat 4c61e3b dfc9bbc -- crates apps tools scripts Cargo.toml Cargo.lock deny.toml .github` → twelve files, all under `apps/` and `crates/`, 603 lines added and 25 removed. Nothing under `tools/`, `scripts/` or `.github/`, no manifest, no lockfile, no `deny.toml`, no `rust-toolchain.toml`, no fixture and no baseline changed
+- [x] The three test files → `apps/pool/tests/check_config.rs` (117 added, 2 removed, one new test), `crates/pool-config/tests/validate.rs` (244 added, 9 removed, six new tests) and `crates/pool-control/tests/walkthroughs.rs` (1 added, 5 removed)
+- [x] The four context files → `apps/pool/AGENTS.md`, `crates/pool-config/AGENTS.md`, `crates/pool-control/AGENTS.md` and `crates/pool-control/CLAUDE.md`. No code
+- [x] The five files under `src/` → `git diff 4c61e3b dfc9bbc -- crates/pool-config/src crates/pool-control/src`, with the lines that are a `///` comment or empty taken out, leaves two things only. One is the new module `line_index_tests` in `crates/pool-config/src/lib.rs`, under `#[cfg(test)]` after the last line of the file, with three tests. The other is two lines in `crates/pool-config/src/topology.rs` inside `mod edge_tests`, which is under `#[cfg(test)]` at line 877. Every other changed line is a documentation comment: the passing twins of the `compile_fail` doc tests in `admission.rs` (32 lines), `authority.rs` (14), `bootstrap.rs` (10) and at `ValidatedConfig` in `lib.rs`
+
+So no production line changed between the full verification and the tested commit. The checker agrees with the reading of the lead: tests, test modules and documentation comments only. The steps of the full verification that were not run again (the fixtures against the table, the checker's model, the 60 mutations, the proof cases, the fuzz run) therefore still describe the production code that is on `main`.
+
+**The release binary has another hash, and the checker reads that as expected.** The Linux build of `4c61e3b` gave `9e23011e…` (above), and the one of `dfc9bbc` gives `cd221aa1…` (below). `strings target/release/pool` shows that the binary holds the path `crates/pool-config/src/lib.rs`, which is how Rust records where a panic comes from, together with a line number. The longer comment at `ValidatedConfig` moves every line after line 41 of that file down by eleven. The checker did not prove this cause with a second build. What it did prove is that the hash is reproducible: the workstation container gives the same `cd221aa1…` for `f975862` as both CI runs.
+
+### The seven checks on the pull request (`0003 AC-13`)
+
+- [x] `gh pr view 4 --json url,state,baseRefName,headRefName,headRefOid,isDraft` → https://github.com/ojiepermana/pool/pull/4, base `main`, head `dfc9bbc35d83b8b1b58f8e376a2b4d5f2686cfa3`, not a draft
+- [x] `gh run view 43693676908 --json event,headSha,conclusion,jobs` and `gh api repos/ojiepermana/pool/actions/runs/43693676908/jobs` → https://github.com/ojiepermana/pool/actions/runs/43693676908, workflow `ci`, event `pull_request`, head `dfc9bbc35d83b8b1b58f8e376a2b4d5f2686cfa3`, conclusion `success`. Seven jobs, each with the label `ubuntu-24.04-arm` and the runner group `GitHub Actions`:
+
+| Job | Job ID | Result | Time |
+|---|---|---|---|
+| `fmt` | 132749446043 | `success` | 10 s |
+| `clippy` | 132749446149 | `success` | 16 s |
+| `test` | 132749446151 | `success` | 22 s |
+| `deny` | 132749446161 | `success` | 11 s |
+| `linux-build` | 132749446191 | `success` | 31 s |
+| `guards` | 132749446148 | `success` | 11 s |
+| `docs` | 132749446182 | `success` | 10 s |
+
+- [x] `gh pr checks 4` → seven lines marked `pass`, one for each of `clippy`, `deny`, `docs`, `fmt`, `guards`, `linux-build` and `test`, all from run 43693676908, with the same times
+- [x] The jobs are short, and the logs show why that is not a skipped step: `linux-build` downloads sixteen crates and compiles them and the two packages of the release build in 6.33 s, and `test` compiles `pool-config`, `pool-control`, `pool` and `pool-repo-check` before it runs them. No line says a command was skipped
+
+### The Linux build lines (`0003 AC-13`, `0003 AC-15`)
+
+- [x] `gh run view 43693676908 --job 132749446191 --log`, in this order → `runner: Linux aarch64`, `rustc 1.100.0 (0ef1bc386 2026-11-09)`, `host: aarch64-unknown-linux-gnu`, `release: 1.100.0`, 255 tests passed, `cd221aa12775d3239e692f6e2685edd4777419cbbc9836da4facee9824a23960  target/release/pool`, `pool 0.1.0`, the 56 fixture lines (28 fixtures in two formats: 12 with `exit=0` and 44 with `exit=1`), `linux build check passed`, and then the one line that `scripts/check.sh` adds, `== ok: linux-build`
+- [x] The set up lines of that job → runner image `ubuntu-24.04-arm`, version `20261111.182.1`. The container image is pulled by digest, `rust:1.100.0-slim-bookworm@sha256:7c7d4eb4d05b7781187a327809466cfddf29753f6defdc3d19a0e291951b7a37`. The runner and the target have the same architecture, so nothing is emulated
+- [x] The canary → `grep -iE 'CANARY|9f2c7b1e|not-a-real'` on that log matches eleven lines, and each is the name of a test that passed (`ac4_…canary…`, `ac9_sec11_…canary…`, `secret_fixtures_never_leak_the_canary`). No fixture output line holds a canary value → `0003 AC-4`
+- [x] The time limit on a Linux runner → the five `ac15_` tests and the three `ac16_` tests are `ok` in both jobs. `tests/validate.rs` ran its 101 tests in 2.70 s in `test` and in 2.75 s in `linux-build`, and `tests/check_config.rs` its 81 in 1.55 s and 1.56 s → `0003 AC-15`, `0003 AC-16`
+
+### Test counts
+
+- [x] The job `test` → **465 tests passed, 0 failed, 0 ignored**: 255 in the workspace and 210 in `pool-repo-check` (100 unit tests and 110 integration tests)
+- [x] The job `linux-build` → **255 tests passed, 0 failed, 0 ignored**, the same 255: `pool` 3 and 81, `pool-config` 28 and 101, `pool-control` 0, 3 and 26, and the doc tests 1 and 4 (`pool-config`) and 4 and 4 (`pool-control`)
+- [x] Against the full verification → 448 on the workstation and 240 in the container at `4c61e3b`; 463 on the workstation (below) and 255 in the container now. The fifteen new tests are the ones the diff shows: one in `check_config.rs`, six in `validate.rs`, three in `line_index_tests`, and five passing twins of `compile_fail` doc tests (four in `pool-control`, one in `pool-config`)
+- [x] The eight doc tests of `pool-control` in both jobs → four that pass (`admission.rs` lines 104 and 169, `authority.rs` line 138, `bootstrap.rs` line 67) and four marked `compile fail` (`admission.rs` lines 89 and 159, `authority.rs` line 128, `bootstrap.rs` line 57) → `0003 AC-12`
+
+### The review on the pull request
+
+- [x] `gh api repos/ojiepermana/pool/pulls/4/reviews` → one review, by `copilot-pull-request-reviewer[bot]`, state `COMMENTED`, at 08:19:28, on `dfc9bbc`. `gh pr view 4 --json reviewDecision` → empty
+- [x] `gh api repos/ojiepermana/pool/pulls/4/comments` → 0 review comments, so there is no review thread. `gh api repos/ojiepermana/pool/issues/4/comments` → 0 comments
+- [x] The text of the review → it says "No open issues". Above that line it has one paragraph under the heading "Needs a closer look": it asks for a sign off by a person who knows databases and infrastructure on the quarantine exception of the writer authority design and on the risk that is left when a journal is rolled back, because tests in memory do not show that these are safe in operation. This is a note, not a thread. It does not block the merge and it names no file or line (see [For the lead](#for-the-lead-pull-request-4))
+
+### The merge and the run on `main`
+
+- [x] `gh pr view 4 --json state,mergeCommit,mergedAt,mergedBy` → `MERGED`, merge commit `f975862ac4db21f10d883a863b28857dac9c9818`, at 08:19:52, by `ojiepermana`. `gh api repos/ojiepermana/pool/pulls/4` → `base.sha` is `ca9a897`, the `main` of that moment, so the branch was up to date
+- [x] `gh api repos/ojiepermana/pool/rulesets/rule-suites/5128075084` → the update of `refs/heads/main` from `ca9a897` to `f975862` has the result `pass`, with `pass` for `required_status_checks`, `pull_request`, `non_fast_forward` and `deletion`, all from ruleset 27266107 with the enforcement `active`. `gh api "repos/ojiepermana/pool/activity?ref=refs/heads/main"` → the newest entry is `pr_merge`, `ca9a897` to `f975862`. So the merge went through the branch rule of spec 0002 and not around it
+- [x] `gh run list --branch main --event push --limit 3` and `gh run view 43693993861` → https://github.com/ojiepermana/pool/actions/runs/43693993861, workflow `ci`, event `push`, branch `main`, head `f975862ac4db21f10d883a863b28857dac9c9818`, conclusion `success`. The run had ended when the checker read it. Seven jobs with `success` on `ubuntu-24.04-arm`: `fmt` 12 s, `clippy` 17 s, `test` 21 s, `deny` 11 s, `linux-build` 31 s, `guards` 11 s, `docs` 12 s
+- [x] The logs of `test` and `linux-build` in that run → 465 and 255 tests passed, the same sums as on the pull request. `linux-build` prints `runner: Linux aarch64`, `host: aarch64-unknown-linux-gnu`, `release: 1.100.0`, the same `cd221aa1…  target/release/pool` line, 56 fixture lines and `linux build check passed`
+- [x] `git ls-remote origin 'refs/heads/*'` → `main` at `f975862` and `scope/003-control-and-session-data-model` at `dfc9bbc` (the branch stays), beside three branches that do not belong to this scope
+
+### Workstation runs on the merged tree
+
+The checker merged `main` into its checkout (a fast forward to `f975862`) and ran the cheapest commands that show the merged tree is the tested one. Workstation: macOS 27.0.1, `arm64`, `rustc 1.100.0 (0ef1bc386 2026-11-09)`, `cargo-deny 0.20.2`, Docker server 29.9.2 (`linux/aarch64`), `git 2.54.0`, `gh 2.96.0`, with `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`. Not Linux and not CI, except the container.
+
+- [x] `scripts/check.sh all` at `f975862` → exit 0. `fmt`, `clippy`, `test`, `deny`, `guards` and `docs` each end with `== ok: <name>`, and the summary repeats the six lines. **463 tests passed, 0 failed**: 253 in the workspace and 210 in `pool-repo-check`. Both `cargo deny` runs print `advisories ok, bans ok, licenses ok, sources ok`, with the one known warning `license-exception-not-encountered`. `pool-repo-check workspace: ok`, `pool-repo-check ci: ok`, `pool-repo-check docs: ok` → `0003 AC-13`
+- [x] `cargo test -p pool-control --locked --doc` at `f975862` → exit 0, 4 passed and 4 passed, the second four each marked `compile fail`, at the lines listed under "Test counts" → `0003 AC-12`
+- [x] `scripts/check.sh linux-build` at `f975862`, in Docker → exit 0, `host: aarch64-unknown-linux-gnu`, `release: 1.100.0`, 255 tests passed with the same eleven sums as in CI, `cd221aa12775d3239e692f6e2685edd4777419cbbc9836da4facee9824a23960  target/release/pool`, `linux build check passed`. The 56 fixture lines are the same as in the CI log, line for line (`diff` prints nothing). Its first line is `runner: Darwin arm64`, so this run is not the CI half; it shows that the workstation and the runner build the same binary from this tree
+- [x] `scripts/check.sh docs` with this section in place → exit 0, `pool-repo-check docs: ok`, so every link and ID written here resolves → `0003 AC-14`
+
+The 463 tests here and the 465 in CI are the same tests: two tests of `apps/pool/tests/check_config.rs` exist on Linux only (`#[cfg(target_os = "linux")]` at lines 549 and 1813; 79 against 81).
+
+Cargo prints the one manifest warning that the full verification names, `warning: unused workspace dependency pool-control`, in the CI jobs as on the workstation. No job fails on it. It ends in scope 004.
+
+### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0003 AC-13`, CI evidence | Pull request https://github.com/ojiepermana/pool/pull/4 to `main`. Seven jobs with `success` on the hosted runner `ubuntu-24.04-arm` in https://github.com/ojiepermana/pool/actions/runs/43693676908 on `dfc9bbc35d83b8b1b58f8e376a2b4d5f2686cfa3`. Merged as `f975862ac4db21f10d883a863b28857dac9c9818` through the branch rule, and the run for that push, https://github.com/ojiepermana/pool/actions/runs/43693993861, is `success` | `PASS` |
+| `0003 AC-15`, `0003 AC-16` on Linux | The `ac15_` and `ac16_` tests are `ok` in `test` and in `linux-build` of both runs, on a runner and not only in the workstation container | `PASS` |
+| `0003 AC-12`, the doc tests | Eight doc tests of `pool-control` pass in both runs: each `compile_fail` test with its passing twin | `PASS` |
+| `0003 AC-1` to `0003 AC-11`, `0003 AC-14` | Their tests are in the 465. The steps of the full verification were not run again, because no production line changed since `4c61e3b` | as in the full verification |
+
+### For the lead (pull request 4)
+
+None of these goes against a criterion.
+
+- The Copilot review is not only "No open issues". Its first paragraph asks for a human sign off on the quarantine exception and on the journal rollback risk of the writer authority design. Nothing on GitHub is open because of it, and scope 003 builds no journal and no connection, so no criterion of this spec can settle it. The checker suggests that the lead shows the paragraph to the user and that the architect decides whether it becomes a follow-up of this spec for scope 004, where the durable writer check is built against a real journal.
+- The row for `0003 AC-12` that the brief placed in "Checker run" of milestone 4 is in the record of the developer (the table "Acceptance-criteria coverage" of milestone 4, commit `a315976`). The checker added the dated note there because the brief asks for it, and changed no other word of the row.
+- The pull request was merged 24 seconds after the review was submitted and 3 minutes 24 seconds after the seven checks had passed. Both are read from GitHub; nothing here says whether a person read the review first.
+
+### Not run
+
+- `scripts/prove-checks.sh` on `f975862`: not run again. No script, guard, baseline, manifest or CI file changed since `4c61e3b`, where the 28 cases passed.
+- `scripts/check.sh fuzz`, the checker's model and the 60 mutations: not run again, for the same reason.
+- The past value of `mergeStateStatus` before the merge cannot be read back. The rule suite above is the evidence that the merge met the rule.
