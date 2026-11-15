@@ -12,7 +12,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use pool_config::{ClusterId, ValidatedConfig};
+use pool_config::{ClusterId, NodeId, ValidatedConfig};
 use pool_control::{
     ClosedReason, Controller, Journal, LatchReceipt, MonotonicTime, Observation, TopologySnapshot,
     WriterAdmission,
@@ -20,6 +20,8 @@ use pool_control::{
 use pool_core::route::{Route, RouteState, RouteView};
 use tokio::sync::{mpsc, watch};
 use tokio::time::Instant;
+
+use crate::probe::{FailureClass, Sample};
 
 /// The reasons that end the running sessions of a cluster (spec 0004, "When
 /// a running session is ended"). Silence alone does not.
@@ -37,11 +39,21 @@ fn is_conflict(reason: ClosedReason) -> bool {
 
 /// The route view of a snapshot: an open answer with its freshness becomes
 /// an open route, every other answer a closed one, with the conflict flag.
+/// No cluster is marked lost. The tests use it.
+#[cfg(test)]
 pub fn route_view(snapshot: &TopologySnapshot) -> RouteView {
+    route_view_with(snapshot, &[])
+}
+
+/// The route view of a snapshot, with the flag `lost` on each closed
+/// cluster in `lost`: its approved writer gave the probe no answer for
+/// `probe.node_loss_timeout_ms`. An open answer stays open.
+pub fn route_view_with(snapshot: &TopologySnapshot, lost: &[ClusterId]) -> RouteView {
     let routes = snapshot
         .clusters()
         .iter()
         .map(|cluster| {
+            let is_lost = lost.contains(cluster.cluster());
             let state = match (cluster.admission(), cluster.fresh_until()) {
                 (WriterAdmission::Open(primary), Some(fresh_until)) => RouteState::Open(Route {
                     node: primary.node().clone(),
@@ -53,11 +65,11 @@ pub fn route_view(snapshot: &TopologySnapshot) -> RouteView {
                 }),
                 (WriterAdmission::Open(_), None) => RouteState::Closed {
                     conflict: false,
-                    lost: false,
+                    lost: is_lost,
                 },
                 (WriterAdmission::Closed(closed), _) => RouteState::Closed {
                     conflict: closed.reasons().iter().any(|reason| is_conflict(*reason)),
-                    lost: false,
+                    lost: is_lost,
                 },
             };
             (cluster.cluster().clone(), state)
@@ -83,6 +95,11 @@ pub struct ControlLoop {
     origin: Instant,
     seen: HashMap<ClusterId, Seen>,
     unrecorded: Vec<ClusterId>,
+    /// Per node, the time of the first failure of the class `connect` or
+    /// `timeout` since its last other outcome.
+    silent_since: HashMap<NodeId, MonotonicTime>,
+    /// The nodes marked as lost. A mark goes with the first good sample.
+    lost: Vec<NodeId>,
 }
 
 impl ControlLoop {
@@ -102,7 +119,63 @@ impl ControlLoop {
             origin,
             seen: HashMap::new(),
             unrecorded: Vec::new(),
+            silent_since: HashMap::new(),
+            lost: Vec::new(),
         }
+    }
+
+    /// Takes one sample of a probe task: the observation goes to the
+    /// controller, and the class keeps the time of silence of its node. A
+    /// failure of the class `connect` or `timeout` starts that time when it
+    /// is not running. Any other outcome starts it again, and a good sample
+    /// also removes the mark `lost`.
+    pub fn record(&mut self, observation: Observation, class: Option<FailureClass>) {
+        let node = observation.node().clone();
+        match class {
+            Some(class) if class.is_silence() => {
+                self.silent_since
+                    .entry(node)
+                    .or_insert(observation.sampled_at());
+            }
+            Some(_) => {
+                self.silent_since.remove(&node);
+            }
+            None => {
+                self.silent_since.remove(&node);
+                self.lost.retain(|marked| *marked != node);
+            }
+        }
+        self.controller.record(observation);
+    }
+
+    /// The clusters whose expected writer is marked lost at `now`, marking
+    /// each writer whose silence reached `probe.node_loss_timeout_ms` and
+    /// writing `node.lost` once for it.
+    ///
+    /// The writer is the `expected_writer` of the configuration. A cluster
+    /// opens only while it names the approved writer of the journal, so a
+    /// running session is only ever on that node.
+    fn lost_clusters(&mut self, now: MonotonicTime) -> Vec<ClusterId> {
+        let limit = self.config.probe().node_loss_timeout();
+        let mut clusters = Vec::new();
+        for cluster in self.config.clusters() {
+            let writer = cluster.expected_writer();
+            let silent = self.silent_since.get(writer).is_some_and(|since| {
+                now.since_origin().saturating_sub(since.since_origin()) >= limit
+            });
+            if silent && !self.lost.contains(writer) {
+                self.lost.push(writer.clone());
+                tracing::warn!(
+                    event = "node.lost",
+                    node_id = writer.as_str(),
+                    cluster_id = cluster.id().as_str()
+                );
+            }
+            if self.lost.contains(writer) {
+                clusters.push(cluster.id().clone());
+            }
+        }
+        clusters
     }
 
     /// Runs rounds until `stop` changes: after each sample, and at least
@@ -110,7 +183,7 @@ impl ControlLoop {
     /// the journal does not hold yet, and returns the journal, to be closed.
     pub async fn run(
         mut self,
-        mut samples: mpsc::Receiver<Observation>,
+        mut samples: mpsc::Receiver<Sample>,
         mut stop: watch::Receiver<bool>,
     ) -> Option<Journal> {
         let mut tick = tokio::time::interval(self.config.probe().period());
@@ -120,7 +193,7 @@ impl ControlLoop {
                 biased;
                 _ = stop.changed() => break,
                 sample = samples.recv() => match sample {
-                    Some(observation) => self.controller.record(observation),
+                    Some((observation, class)) => self.record(observation, class),
                     None => break,
                 },
                 _ = tick.tick() => {}
@@ -152,7 +225,8 @@ impl ControlLoop {
     async fn round(&mut self) {
         let now = MonotonicTime::from_origin(self.origin.elapsed());
         let snapshot = self.controller.round(&self.config, now);
-        self.routes.send_replace(route_view(&snapshot));
+        let lost = self.lost_clusters(now);
+        self.routes.send_replace(route_view_with(&snapshot, &lost));
         self.log_changes(&snapshot);
         for cluster in self.controller.unrecorded_latches() {
             if !self.unrecorded.contains(cluster) {
@@ -759,5 +833,108 @@ mod tests {
                 lost: false
             }
         );
+    }
+
+    // ---- node loss (spec 0004 step 15, decision 84, `0004 AC-30`) ----
+
+    fn at_ms(ms: u64) -> MonotonicTime {
+        MonotonicTime::from_origin(std::time::Duration::from_millis(ms))
+    }
+
+    /// The default `probe.node_loss_timeout_ms` of the test configuration.
+    const LOSS_MS: u64 = 30_000;
+
+    #[tokio::test]
+    async fn ac30_connect_and_timeout_for_the_whole_time_mark_the_writer_lost_once() {
+        // covers: 0004 AC-30, the control loop: failures of the class
+        // `connect` or `timeout` for the whole time mark the node lost and
+        // write `node.lost` once.
+        let (events, _guard) = capture();
+        let (mut control, _) = control_loop(&journal_file("loss-marked"));
+        control.record(failed("pg1", at_ms(0)), Some(FailureClass::Connect));
+        control.record(failed("pg1", at_ms(10_000)), Some(FailureClass::Timeout));
+        control.record(failed("pg1", at_ms(20_000)), Some(FailureClass::Connect));
+        assert!(control.lost_clusters(at_ms(LOSS_MS - 1)).is_empty());
+        assert_eq!(control.lost_clusters(at_ms(LOSS_MS)), [main_cluster()]);
+        assert_eq!(
+            control.lost_clusters(at_ms(LOSS_MS + 5_000)),
+            [main_cluster()]
+        );
+        assert_eq!(
+            named(&events, "node.lost"),
+            [pairs(&[("node_id", "pg1"), ("cluster_id", "main")])]
+        );
+    }
+
+    #[tokio::test]
+    async fn ac30_a_failure_of_another_class_starts_the_time_again() {
+        // covers: 0004 AC-30: `tls`, `login` and `answer` mean that the node
+        // answered, so each one starts the time again, and alone they never
+        // mark the node.
+        let (events, _guard) = capture();
+        let (mut control, _) = control_loop(&journal_file("loss-other-class"));
+        for (index, class) in [FailureClass::Tls, FailureClass::Login, FailureClass::Answer]
+            .into_iter()
+            .enumerate()
+        {
+            let start = u64::try_from(index).expect("small") * 100_000;
+            control.record(failed("pg1", at_ms(start)), Some(FailureClass::Connect));
+            control.record(failed("pg1", at_ms(start + 20_000)), Some(class));
+            control.record(
+                failed("pg1", at_ms(start + 25_000)),
+                Some(FailureClass::Timeout),
+            );
+            assert!(
+                control
+                    .lost_clusters(at_ms(start + LOSS_MS + 1_000))
+                    .is_empty(),
+                "{class:?} did not start the time again"
+            );
+            control.record(failed("pg1", at_ms(start + 26_000)), Some(class));
+            assert!(
+                control.lost_clusters(at_ms(start + 90_000)).is_empty(),
+                "{class:?} alone"
+            );
+        }
+        assert!(named(&events, "node.lost").is_empty());
+    }
+
+    #[tokio::test]
+    async fn ac30_a_good_sample_starts_the_time_again_and_removes_the_mark() {
+        // covers: 0004 AC-30: a good sample starts the time again, and the
+        // mark goes with the first good sample.
+        let (mut control, _) = control_loop(&journal_file("loss-good-sample"));
+        control.record(failed("pg1", at_ms(0)), Some(FailureClass::Connect));
+        control.record(reached("pg1", at_ms(20_000), false), None);
+        control.record(failed("pg1", at_ms(21_000)), Some(FailureClass::Connect));
+        assert!(control.lost_clusters(at_ms(LOSS_MS + 1_000)).is_empty());
+        assert_eq!(
+            control.lost_clusters(at_ms(21_000 + LOSS_MS)),
+            [main_cluster()]
+        );
+        control.record(reached("pg1", at_ms(60_000), false), None);
+        assert!(control.lost_clusters(at_ms(60_000)).is_empty());
+    }
+
+    #[tokio::test]
+    async fn ac30_only_the_writer_counts_and_the_view_carries_the_mark() {
+        // covers: 0004 AC-30: silence of a node that is not the writer marks
+        // nothing, and a lost writer is a closed route with `lost`.
+        let (mut control, _) = control_loop(&journal_file("loss-view"));
+        control.record(failed("pg2", at_ms(0)), Some(FailureClass::Connect));
+        assert!(control.lost_clusters(at_ms(LOSS_MS * 2)).is_empty());
+        control.record(failed("pg1", at_ms(0)), Some(FailureClass::Connect));
+        let lost = control.lost_clusters(at_ms(LOSS_MS));
+        let snapshot = control.controller.round(&control.config, at_ms(LOSS_MS));
+        let view = route_view_with(&snapshot, &lost);
+        assert_eq!(
+            view.state(&main_cluster()),
+            RouteState::Closed {
+                conflict: false,
+                lost: true
+            }
+        );
+        assert!(view.is_lost(&main_cluster()));
+        assert!(!route_view(&snapshot).is_lost(&main_cluster()));
     }
 }
