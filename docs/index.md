@@ -191,6 +191,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/specs/0004-one-real-primary-path/index.md](specs/0004-one-real-primary-path/index.md) | 0004. One real primary path |
 | [docs/specs/0004-one-real-primary-path/rationale.md](specs/0004-one-real-primary-path/rationale.md) | One real primary path rationale |
+| [docs/specs/0004-one-real-primary-path/verify.md](specs/0004-one-real-primary-path/verify.md) | 0004. Verification record |
 
 ## docs/testing
 
