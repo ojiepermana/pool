@@ -26,9 +26,7 @@ use pool_protocol::message::{
     BackendAction, FrontendAction, HEADER_LEN, HeaderReader, encode_message, encode_terminate,
 };
 use pool_protocol::sqlstate::PoolError;
-use pool_protocol::startup::{
-    FIRST_HEADER_LEN, Handshake, HandshakeStep, StartupRequest, decode_first_header, parse_startup,
-};
+use pool_protocol::startup::{FirstPacket, FirstPacketReader, StartupRequest};
 use rustls::ServerConfig;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpListener;
@@ -459,34 +457,25 @@ impl<C: Connector> Server<C> {
     where
         S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
     {
-        let mut handshake = Handshake::new();
-        // Before TLS: exact reads of the eight header bytes, and a body only for CancelRequest.
+        // One reader for the connection, before and after TLS. It decides on the
+        // eight header bytes and reads a body only for a CancelRequest and, over
+        // TLS, for a StartupMessage.
+        let mut reader = FirstPacketReader::new(self.startup_packet_max);
         loop {
-            let mut header = [0u8; FIRST_HEADER_LEN];
-            stream
-                .read_exact(&mut header)
-                .await
-                .map_err(|_| Refused::silent(Refusal::Protocol))?;
-            let step = match decode_first_header(header, self.startup_packet_max)
-                .and_then(|h| handshake.next(h.kind).map(|step| (h, step)))
-            {
-                Ok(step) => step,
+            match read_first(&mut stream, &mut reader).await? {
+                Ok(FirstPacket::GssEncRequest) => write_plain(&mut stream, b"N").await?,
+                Ok(FirstPacket::SslRequest) => {
+                    write_plain(&mut stream, b"S").await?;
+                    break;
+                }
+                Ok(FirstPacket::CancelRequest) => {
+                    return Err(Refused::silent(Refusal::CancelIgnored));
+                }
+                Ok(FirstPacket::Startup(_)) => return Err(Refused::silent(Refusal::Protocol)),
                 Err(error) => {
                     send_error(&mut stream, error).await;
                     return Err(Refused::from_protocol(error).without_send());
                 }
-            };
-            match step {
-                (_, HandshakeStep::AnswerGssEnc) => write_plain(&mut stream, b"N").await?,
-                (_, HandshakeStep::AnswerSsl) => {
-                    write_plain(&mut stream, b"S").await?;
-                    break;
-                }
-                (h, HandshakeStep::DropCancel) => {
-                    drain(&mut stream, h.body_len).await;
-                    return Err(Refused::silent(Refusal::CancelIgnored));
-                }
-                (_, HandshakeStep::ReadStartup) => return Err(Refused::silent(Refusal::Protocol)),
             }
         }
         let mut tls = self
@@ -497,37 +486,10 @@ impl<C: Connector> Server<C> {
         tls.get_mut()
             .1
             .set_buffer_limit(Some(TLS_SEND_BUFFER_BYTES));
-        // Over TLS: a StartupMessage or a CancelRequest.
-        let mut header = [0u8; FIRST_HEADER_LEN];
-        tls.read_exact(&mut header)
-            .await
-            .map_err(|_| Refused::silent(Refusal::Protocol))?;
-        let (first, step) = match decode_first_header(header, self.startup_packet_max)
-            .and_then(|h| handshake.next(h.kind).map(|step| (h, step)))
-        {
-            Ok(step) => step,
-            Err(error) => {
-                send_error(&mut tls, error).await;
-                return Err(Refused::from_protocol(error).without_send());
-            }
-        };
-        let minor = match (first.kind, step) {
-            (_, HandshakeStep::DropCancel) => {
-                drain(&mut tls, first.body_len).await;
-                return Err(Refused::silent(Refusal::CancelIgnored));
-            }
-            (pool_protocol::startup::FirstKind::Startup { minor }, HandshakeStep::ReadStartup) => {
-                minor
-            }
-            _ => return Err(Refused::silent(Refusal::Protocol)),
-        };
-        // The length was checked against the limit before this reservation.
-        let mut body = vec![0u8; first.body_len as usize];
-        tls.read_exact(&mut body)
-            .await
-            .map_err(|_| Refused::silent(Refusal::Protocol))?;
-        let request = match parse_startup(minor, &body) {
-            Ok(request) => request,
+        let request = match read_first(&mut tls, &mut reader).await? {
+            Ok(FirstPacket::Startup(request)) => request,
+            Ok(FirstPacket::CancelRequest) => return Err(Refused::silent(Refusal::CancelIgnored)),
+            Ok(_) => return Err(Refused::silent(Refusal::Protocol)),
             Err(error) => {
                 send_error(&mut tls, error).await;
                 return Err(Refused::from_protocol(error).without_send());
@@ -891,16 +853,21 @@ async fn send_now<S: AsyncWrite + Unpin>(stream: &mut S, refused: Refused) -> Re
     refused.without_send()
 }
 
-/// Reads and drops `len` bytes, for the body of a `CancelRequest`.
-async fn drain<S: AsyncRead + Unpin>(stream: &mut S, len: u32) {
-    let mut left = len as usize;
-    let mut buffer = [0u8; 1024];
-    while left > 0 {
-        let take = left.min(buffer.len());
-        if stream.read_exact(&mut buffer[..take]).await.is_err() {
-            return;
+/// Reads exactly what the first packet reader asks for, until it decides. A closed stream ends the connection silently.
+async fn read_first<S: AsyncRead + Unpin>(
+    stream: &mut S,
+    reader: &mut FirstPacketReader,
+) -> Result<Result<FirstPacket, PoolError>, Refused> {
+    let mut buffer = [0u8; 4096];
+    loop {
+        let want = reader.wanted().clamp(1, buffer.len());
+        stream
+            .read_exact(&mut buffer[..want])
+            .await
+            .map_err(|_| Refused::silent(Refusal::Protocol))?;
+        if let (_, Some(result)) = reader.feed(&buffer[..want]) {
+            return Ok(result);
         }
-        left -= take;
     }
 }
 
@@ -1071,9 +1038,8 @@ where
                 let _ = self.backend.flush().await;
                 Ok(())
             }
-            FrontendAction::Terminate { body_len } => {
+            FrontendAction::Terminate => {
                 let _ = self.backend.write_all(&header).await;
-                let _ = self.copy_to_backend(body_len).await;
                 let _ = self.backend.flush().await;
                 Err(Stop::End(EndReason::ClientTerminate))
             }
