@@ -913,7 +913,7 @@ fn ac9_a_lock_held_by_another_pool_process_gives_state_locked_and_changes_nothin
         );
     }
     assert_eq!(layout.entries(), before, "nothing changed");
-    let output = holder.wait_with_output().expect("wait for the holder");
+    let output = wait_within(holder, 20);
     assert_eq!(
         output.status.code(),
         Some(1),
@@ -933,53 +933,33 @@ fn ac9_a_lock_held_by_another_pool_process_gives_state_locked_and_changes_nothin
 fn ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_leave_only_the_lock()
  {
     // covers: 0004 AC-9 (finding 2 of milestone 3, with bootstrap). Eight
-    // `pool bootstrap` read their configuration from named pipes and are
-    // released together; the one that takes the lock holds it for the probe
-    // timeout. Exactly one reaches the node and is refused for missing
-    // evidence; the seven others get `state.locked`.
-    use std::io::Write;
+    // `pool bootstrap` are started one right after another on a state
+    // directory without `pool.lock`. The one that takes the lock holds it for
+    // the probe timeout of 3 seconds, against a node that never answers, so
+    // the seven others meet a held lock. Exactly one reaches the node and is
+    // refused for missing evidence; the seven others get `state.locked`.
+    // (Round two: the first version released the eight through named pipes,
+    // and on macOS a child once waited for ever for the end of its pipe.
+    // Every wait here has a limit.)
     for round in 0..3 {
         let layout = Layout::new(&format!("bootstrap-race-{round}"));
         let silent = TcpListener::bind("127.0.0.1:0").expect("bind");
         let port = silent.local_addr().expect("address").port();
         layout.write_slow_probe_config(port);
-        let text = fs::read(&layout.config).expect("read the configuration");
-        let pipes: Vec<PathBuf> = (0..8)
-            .map(|index| layout.root.join(format!("bootstrap-{index}.toml")))
-            .collect();
-        for pipe in &pipes {
-            let made = start("mkfifo", &[pipe.to_str().expect("utf-8")])
-                .wait()
-                .expect("mkfifo");
-            assert!(made.success());
-        }
-        let children: Vec<_> = pipes
-            .iter()
-            .map(|pipe| {
+        let config = layout.config.to_str().expect("utf-8").to_owned();
+        let children: Vec<_> = (0..8)
+            .map(|_| {
                 start(
                     env!("CARGO_BIN_EXE_pool"),
-                    &["bootstrap", "--config", pipe.to_str().expect("utf-8")],
+                    &["bootstrap", "--config", &config],
                 )
             })
             .collect();
-        let mut writers: Vec<fs::File> = pipes
-            .iter()
-            .map(|pipe| {
-                fs::OpenOptions::new()
-                    .write(true)
-                    .open(pipe)
-                    .expect("open the pipe")
-            })
-            .collect();
-        for writer in &mut writers {
-            writer.write_all(&text).expect("write the configuration");
-        }
-        drop(writers);
         let _connection =
             accept_within(&silent, Duration::from_secs(5)).expect("one bootstrap reached the node");
         let (mut refused, mut locked) = (0, 0);
         for child in children {
-            let output = child.wait_with_output().expect("wait");
+            let output = wait_within(child, 20);
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
             match output.status.code() {
@@ -1108,4 +1088,76 @@ fn ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_le
         );
         assert_no_path(&run, &layout);
     }
+}
+
+// ---- added by the tests of scope 004, round two ----
+
+/// Runs `pool` with `args` and waits at most `seconds` for it; a child that
+/// is still running then is killed and the test fails.
+fn pool_within(args: &[&str], seconds: u64) -> Run {
+    let output = wait_within(start(env!("CARGO_BIN_EXE_pool"), args), seconds);
+    Run {
+        code: output.status.code().expect("exit status, not a signal"),
+        stdout: String::from_utf8(output.stdout).expect("utf-8"),
+        stderr: String::from_utf8(output.stderr).expect("utf-8"),
+    }
+}
+
+/// Waits at most `seconds` for a child; one that still runs then is killed and the test fails.
+fn wait_within(mut child: std::process::Child, seconds: u64) -> Output {
+    let started = Instant::now();
+    while child.try_wait().expect("try_wait").is_none() {
+        if started.elapsed() > Duration::from_secs(seconds) {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("a child did not end within {seconds} s");
+        }
+        pause();
+    }
+    child.wait_with_output().expect("output")
+}
+
+#[test]
+fn ac10_a_run_that_stops_at_a_missing_protected_file_does_not_use_up_a_start_sequence() {
+    // covers: 0004 AC-10 ("Each pool run that finds the state Ready advances
+    // the start sequence by one before it listens. In every other state the
+    // content of journal.sqlite3 does not change") and the order of
+    // "pool run": the protected files of step 4 come before the journal is
+    // opened for writing in step 5. The listener certificate is missing.
+    let layout = Layout::new("run-missing-key");
+    let port = closed_port();
+    layout.write_serving_config(None, port);
+    real_journal(&layout);
+    layout.write_serving_config(Some(X), port);
+    let show = command("show-authority", &layout.config, "human");
+    assert_eq!(show.code, 0, "{}", show.stderr);
+    assert!(
+        show.stdout.starts_with("authority state: ready\n"),
+        "{}",
+        show.stdout
+    );
+    let before = fs::read(layout.journal()).expect("read the journal");
+    for _ in 0..2 {
+        let run = pool_within(
+            &["run", "--config", layout.config.to_str().expect("utf-8")],
+            10,
+        );
+        assert_eq!(run.code, 3, "{} {}", run.stdout, run.stderr);
+        assert_eq!(run.stdout, "");
+        assert_eq!(
+            run.stderr,
+            "error: secret.not_found at listener.tls_certificate_file: a file named by the configuration does not exist\n"
+        );
+        assert_no_path(&run, &layout);
+    }
+    assert_eq!(
+        fs::read(layout.journal()).expect("read the journal"),
+        before,
+        "the start sequence was not advanced"
+    );
+    let wal = layout.state.join("journal.sqlite3-wal");
+    assert!(
+        fs::metadata(&wal).map_or(true, |m| m.len() == 0),
+        "nothing waits in the write-ahead log"
+    );
 }

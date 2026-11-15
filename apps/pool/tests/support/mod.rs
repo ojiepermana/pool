@@ -8,7 +8,7 @@
 
 use std::io;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU8, AtomicU16, AtomicUsize, Ordering};
 use std::time::Duration;
 
 use pool_core::backend::{self, BackendConnection, BackendError, Credential, Login, Node, Purpose};
@@ -164,6 +164,7 @@ pub struct Relay {
     stage: Arc<AtomicU8>,
     cut: Arc<Notify>,
     refuse_tls_from: Arc<AtomicUsize>,
+    target: Arc<AtomicU16>,
 }
 
 impl Relay {
@@ -180,18 +181,21 @@ impl Relay {
             stage: Arc::new(AtomicU8::new(PASS)),
             cut: Arc::new(Notify::new()),
             refuse_tls_from: Arc::new(AtomicUsize::new(usize::MAX)),
+            target: Arc::new(AtomicU16::new(target_port)),
         };
         let shared = relay.shared();
+        let target = Arc::clone(&relay.target);
         runtime.spawn(async move {
             while let Ok((pool_side, _)) = listener.accept().await {
                 let index = shared.connections.fetch_add(1, Ordering::SeqCst) + 1;
                 let shared = shared.clone();
+                let port = target.load(Ordering::SeqCst);
                 tokio::spawn(async move {
                     if index >= shared.refuse_tls_from.load(Ordering::SeqCst) {
                         refuse_tls(pool_side).await;
                         return;
                     }
-                    if let Ok(pg_side) = TcpStream::connect(("127.0.0.1", target_port)).await {
+                    if let Ok(pg_side) = TcpStream::connect(("127.0.0.1", port)).await {
                         pass(index, pool_side, pg_side, shared).await;
                     }
                 });
@@ -230,6 +234,18 @@ impl Relay {
     /// and closes, so TLS never starts.
     pub fn refuse_tls_from(&self, index: usize) {
         self.refuse_tls_from.store(index, Ordering::SeqCst);
+    }
+
+    /// Passes the connections that come from now on to `port` on 127.0.0.1,
+    /// and those before it on to where they went (added in round two of the
+    /// tests of scope 004, for a writer that changes its identity).
+    pub fn retarget(&self, port: u16) {
+        self.target.store(port, Ordering::SeqCst);
+    }
+
+    /// Lets every new connection through again, after [`Relay::refuse_tls_from`].
+    pub fn accept_tls_again(&self) {
+        self.refuse_tls_from.store(usize::MAX, Ordering::SeqCst);
     }
 }
 

@@ -1757,3 +1757,405 @@ fn it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next() {
         format!("authority state: unconfirmed\nauthority_id: {id}\n")
     );
 }
+
+// ---- added by the tests of scope 004, round two (`/test one real primary path`) ----
+
+/// Ends every connection of the monitor login on container 1, as a restart
+/// of the node or a cut network would. Returns how many it ended.
+fn end_monitor_connections() -> u32 {
+    psql(
+        &var("POOL_IT_CONTAINER"),
+        "SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity WHERE usename = 'pz7_monitor'",
+    )
+    .parse()
+    .expect("a count")
+}
+
+/// The number of log lines that hold every part.
+fn lines_with(daemon: &Daemon, parts: &[&str]) -> usize {
+    daemon
+        .log()
+        .lines()
+        .filter(|line| parts.iter().all(|part| line.contains(part)))
+        .count()
+}
+
+/// Waits, asking every 50 ms for at most `seconds`, until more lines than
+/// `before` hold every part: a line written after the moment `before` was counted.
+fn wait_for_more(daemon: &Daemon, parts: &[&str], before: usize, seconds: u64) {
+    eventually(seconds, &format!("a new line with {parts:?}"), || {
+        lines_with(daemon, parts) > before
+    });
+}
+
+impl Daemon {
+    /// Sends SIGTERM and waits at most `seconds` for the exit status; a daemon
+    /// that is still running then is killed and the test fails.
+    fn stop_within(mut self, seconds: u64) -> i32 {
+        let status = Command::new("kill")
+            .args(["-TERM", &self.child.id().to_string()])
+            .status()
+            .expect("kill");
+        assert!(status.success());
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+        loop {
+            if let Some(status) = self.child.try_wait().expect("try_wait") {
+                std::mem::forget(self);
+                return status.code().expect("an exit status");
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the daemon did not stop within {seconds} s"
+            );
+            pause();
+        }
+    }
+}
+
+/// Lets the probe run for `seconds`: an observation window, not a wait for an event.
+fn watch_for(seconds: u64) {
+    let until = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+    while std::time::Instant::now() < until {
+        pause();
+    }
+}
+
+fn session_login(
+    runtime: &tokio::runtime::Runtime,
+    port: u16,
+) -> pool_core::backend::BackendConnection<tokio::net::TcpStream> {
+    let host = var("POOL_IT_LISTEN_HOST");
+    let ca = ca_pem();
+    let right = password("principal.password");
+    runtime
+        .block_on(support::login(
+            &host,
+            port,
+            &ca,
+            "host.docker.internal",
+            "pz7_principal",
+            "pz7_db",
+            &right,
+        ))
+        .expect("a session through POOL")
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac12_a_probe_that_lost_its_connection_opens_a_new_one_and_logs_each_class_once() {
+    // covers: 0004 AC-12 and "The probe": a connection that failed is
+    // dropped and the next round opens a new one; `probe.failed` is written
+    // when the class of a failure changes, not for every sample, and
+    // `probe.recovered` when the node answers again.
+    let runtime = support::runtime();
+    let relay = support::Relay::start(&runtime, var("POOL_IT_PG_PORT").parse().expect("port"));
+    let (_case, _port, daemon) = serving_case(
+        "probe-reconnect",
+        NodeAt {
+            id: "pg1",
+            port: relay.port,
+        },
+        None,
+        "",
+        true,
+    );
+    // The kept connection is ended under the probe: one failure, then a new connection.
+    assert_eq!(end_monitor_connections(), 1);
+    daemon.wait_for(&["\"event\":\"probe.failed\"", "\"node_id\":\"pg1\""], 10);
+    daemon.wait_for(
+        &["\"event\":\"probe.recovered\"", "\"node_id\":\"pg1\""],
+        10,
+    );
+    // Then no new connection gets TLS for about ten rounds: one line for the class `tls`.
+    relay.refuse_tls_from(relay.connections() + 1);
+    assert_eq!(end_monitor_connections(), 1);
+    daemon.wait_for(&["\"event\":\"probe.failed\"", "\"class\":\"tls\""], 10);
+    watch_for(2);
+    assert_eq!(
+        lines_with(
+            &daemon,
+            &["\"event\":\"probe.failed\"", "\"class\":\"tls\""]
+        ),
+        1,
+        "{}",
+        daemon.log()
+    );
+    relay.accept_tls_again();
+    eventually(10, "the probe recovers a second time", || {
+        lines_with(&daemon, &["\"event\":\"probe.recovered\""]) == 2
+    });
+    assert_eq!(
+        lines_with(&daemon, &["\"event\":\"probe.failed\""]),
+        3,
+        "one line per change of class (answer, answer, tls):\n{}",
+        daemon.log()
+    );
+    assert_eq!(daemon.stop_within(20), 0);
+    drop(relay);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac14_a_writer_that_falls_silent_keeps_running_sessions_and_refuses_new_logins() {
+    // covers: 0004 AC-14, "When a running session is ended": silence
+    // (`evidence.writer_missing` alone) closes the cluster for new logins
+    // and ends no running session.
+    let runtime = support::runtime();
+    let relay = support::Relay::start(&runtime, var("POOL_IT_PG_PORT").parse().expect("port"));
+    let (_case, port, daemon) = serving_case(
+        "silence",
+        NodeAt {
+            id: "pg1",
+            port: relay.port,
+        },
+        None,
+        "",
+        true,
+    );
+    let mut running = session_login(&runtime, port);
+    assert!(
+        runtime
+            .block_on(running.query_one_row("SELECT 1"))
+            .expect("a row")
+            .is_some()
+    );
+    // The probe can no longer reach the node; the session's own connection
+    // still can. The daemon wrote one closed line before its first sample,
+    // so the test waits for a new one.
+    let closed = [
+        "\"event\":\"admission.changed\"",
+        "\"state\":\"closed\"",
+        "\"reasons\":\"evidence.writer_missing\"",
+    ];
+    let before = lines_with(&daemon, &closed);
+    relay.refuse_tls_from(relay.connections() + 1);
+    assert_eq!(end_monitor_connections(), 1);
+    wait_for_more(&daemon, &closed, before, 20);
+    assert_eq!(
+        runtime
+            .block_on(running.query_one_row("SELECT 2"))
+            .expect("the running session goes on"),
+        Some(vec![Some("2".to_owned())])
+    );
+    let (code, _, stderr) = client(
+        &pool_conninfo(port),
+        &password("principal.password"),
+        "SELECT 1;",
+    );
+    assert_ne!(code, 0);
+    assert_eq!(fatal(&stderr), [NOT_ADMITTED.to_owned()], "{stderr}");
+    assert_eq!(
+        lines_with(&daemon, &["\"event\":\"session.ended\""]),
+        0,
+        "no session ended:\n{}",
+        daemon.log()
+    );
+    relay.accept_tls_again();
+    drop(running);
+    assert_eq!(daemon.stop_within(20), 0);
+    drop(relay);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac14_a_writer_that_changes_its_identity_ends_running_sessions_through_the_daemon() {
+    // covers: 0004 AC-14, "When a running session is ended": a positive
+    // conflict ends every running session of the cluster. The relay sends
+    // the probe's next connection to container 2, which has another system
+    // identifier, while the session stays on container 1.
+    let runtime = support::runtime();
+    let relay = support::Relay::start(&runtime, var("POOL_IT_PG_PORT").parse().expect("port"));
+    let (_case, port, daemon) = serving_case(
+        "identity-changes",
+        NodeAt {
+            id: "pg1",
+            port: relay.port,
+        },
+        None,
+        "",
+        true,
+    );
+    let mut running = session_login(&runtime, port);
+    assert!(
+        runtime
+            .block_on(running.query_one_row("SELECT 1"))
+            .expect("a row")
+            .is_some()
+    );
+    relay.retarget(var("POOL_IT_PG_PORT_2").parse().expect("port"));
+    assert_eq!(end_monitor_connections(), 1);
+    daemon.wait_for(
+        &[
+            "\"event\":\"admission.changed\"",
+            "\"state\":\"closed\"",
+            "evidence.writer_identity",
+        ],
+        20,
+    );
+    let ended = runtime.block_on(async {
+        tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            support::next_error(running.stream_mut()),
+        )
+        .await
+    });
+    assert_eq!(
+        ended
+            .expect("the running session is ended within 10 s")
+            .as_deref(),
+        Some("57P01")
+    );
+    daemon.wait_for(
+        &[
+            "\"event\":\"session.ended\"",
+            "\"reason\":\"conflict\"",
+            "\"status\":\"idle\"",
+        ],
+        10,
+    );
+    assert_eq!(daemon.stop_within(20), 0);
+    drop(relay);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac13_run_refuses_a_journal_on_hold_for_a_restore_and_never_binds() {
+    // covers: 0004 AC-13, AC-10: the hold `restore_pending` gives its own
+    // finding. No command of this slice sets the hold, so the test sets it
+    // with the `sqlite3` tool of the host.
+    let (case, port, _id) = ready_case("restore-pending");
+    let set = Command::new("sqlite3")
+        .arg(case.journal())
+        .arg("UPDATE store SET hold = 'restore_pending' WHERE singleton = 1;")
+        .output()
+        .expect("the sqlite3 tool of the host (needed by this test)");
+    assert!(
+        set.status.success(),
+        "{}",
+        String::from_utf8_lossy(&set.stderr)
+    );
+    let before = fs::read(case.journal()).expect("read");
+    let show = pool("show-authority", &case.config, "human");
+    assert!(
+        show.stdout
+            .starts_with("authority state: restore_pending\n"),
+        "{}",
+        show.stdout
+    );
+    let run = Command::new(env!("CARGO_BIN_EXE_pool"))
+        .args(["run", "--config", case.config.to_str().expect("utf-8")])
+        .stdin(Stdio::null())
+        .output()
+        .expect("run");
+    assert_eq!(run.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&run.stdout),
+        "run refused\nfindings: 1\nauthority.restore_pending: the journal state does not allow serving\n"
+    );
+    assert_eq!(fs::read(case.journal()).expect("read"), before);
+    TcpListener::bind((var("POOL_IT_LISTEN_HOST").as_str(), port))
+        .expect("the listener was never bound");
+}
+
+/// The fields that each event may carry after `ts`, `level` and `event`
+/// (spec 0004, "Log events").
+fn allowed_fields(event: &str) -> Option<&'static [&'static str]> {
+    Some(match event {
+        "daemon.started" => &["start_sequence", "configuration_generation", "authority_id"],
+        "daemon.stopping" => &["sessions"],
+        "daemon.stopped" => &[],
+        "log.dropped" => &["count"],
+        "admission.changed" => &[
+            "cluster_id",
+            "state",
+            "node_id",
+            "reasons",
+            "snapshot_generation",
+        ],
+        "authority.conflict_latched" => &["cluster_id", "recorded"],
+        "journal.write_failed" => &["class"],
+        "probe.failed" => &["node_id", "class"],
+        "probe.recovered" => &["node_id"],
+        "session.started" => &[
+            "session",
+            "principal_id",
+            "identity_id",
+            "cluster_id",
+            "node_id",
+            "lease_generation",
+            "topology_epoch",
+        ],
+        "session.ended" => &["session", "reason", "status", "duration_ms"],
+        "session.refused" => &["reason", "count"],
+        "backend.failed" => &["node_id", "class", "sqlstate", "count"],
+        _ => return None,
+    })
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_ac24_the_log_holds_only_the_fields_of_the_table_and_no_text_from_postgresql() {
+    // covers: 0004 AC-24: every line is an event of the table with only its
+    // fields, each a string, a whole number or a boolean; a canary in the
+    // error text of PostgreSQL, in SQL and in a refused login reaches no line.
+    let (case, port, daemon) = serving_case("log-fields", primary_node(), None, "", true);
+    let canary = "CANARY-9f2c7b1e";
+    let sql = format!(
+        "SELECT 1;\nDO $$ BEGIN RAISE EXCEPTION '{canary} raised'; END $$;\nSELECT '{canary}'::int;\n"
+    );
+    let (_, _, stderr) = client(&pool_conninfo(port), &password("principal.password"), &sql);
+    assert!(
+        stderr.contains(canary),
+        "the client sees the error of PostgreSQL: {stderr}"
+    );
+    let (code, _, _) = client(&pool_conninfo(port), canary, "SELECT 1;");
+    assert_ne!(code, 0, "a wrong password");
+    daemon.wait_for(
+        &[
+            "\"event\":\"session.refused\"",
+            "\"reason\":\"authentication\"",
+        ],
+        10,
+    );
+    daemon.wait_for(&["\"event\":\"session.ended\""], 10);
+    let log = daemon.log();
+    assert_eq!(daemon.stop_within(20), 0);
+    let log = format!(
+        "{log}{}",
+        fs::read_to_string(case.log_file()).unwrap_or_default()
+    );
+    assert!(!log.contains(canary), "the canary reached the log:\n{log}");
+    let mut seen = std::collections::BTreeSet::new();
+    for line in log.lines() {
+        let value: serde_json::Value = serde_json::from_str(line).expect("one JSON object");
+        let object = value.as_object().expect("an object");
+        let event = object["event"].as_str().expect("event is a string");
+        let allowed =
+            allowed_fields(event).unwrap_or_else(|| panic!("an event outside the table: {line}"));
+        for (key, field) in object {
+            if ["ts", "level", "event"].contains(&key.as_str()) {
+                continue;
+            }
+            assert!(
+                allowed.contains(&key.as_str()),
+                "{key} is not a field of {event}: {line}"
+            );
+            assert!(
+                field.is_string() || field.is_u64() || field.is_i64() || field.is_boolean(),
+                "{key} of {event} is not a string, a whole number or a boolean: {line}"
+            );
+        }
+        seen.insert(event.to_owned());
+    }
+    for event in [
+        "daemon.started",
+        "admission.changed",
+        "session.started",
+        "session.ended",
+        "session.refused",
+        "daemon.stopped",
+    ] {
+        assert!(seen.contains(event), "{event} missing from:\n{log}");
+    }
+    assert_log_is_clean(&case, &log);
+}
