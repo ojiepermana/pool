@@ -315,6 +315,43 @@ Notes that are not failures:
 - The encoders that call `encode_message` (`encode_query`, the authentication encoders, `PoolError::encode` and others) can panic on a body above 4 GiB like it does, and do not repeat its `# Panics` section. No caller builds such a body.
 - CI evidence does not exist yet. It waits for the pull request.
 
+### Checker run of the changes to step 4 (decisions 52, 53, 54 and 71)
+
+On 2026-11-15, by the checker session, on the tree `3b58997` (the files of `crates/pool-protocol/` are the same on `ecd0ee5`, the tip after the last merge). macOS 27.0.1, arm64, `rustc 1.100.0`, with Docker 29.9.2 running. The commits looked at are `87a068a` (decisions 52, 53 and 54), `cc77c34` (the session reads its first packets with one `FirstPacketReader`), `8f64f5a` (`Debug` written by hand) and `795775f` (decision 71). Every command below was run in this session, after the pause of the usage limit. The probe is the checker's own program outside the repository. It calls the public functions of `pool-protocol` with packets written out as bytes by the probe itself, and it repeats the probes of the first run of milestone 2 that showed the problems. The bytes of the real server were recorded in this session from the PostgreSQL 18.7 of the fixture of `scripts/check.sh integration`, with a raw socket of the probe over TLS, and from no other database.
+
+**Verdict: the changes to step 4 PASS.** The byte level halves of `0004 AC-15`, `AC-16` and `AC-23` hold after decisions 52, 53, 54 and 71, and no type of `pool-protocol` prints what a log may not show (`0004 AC-24`).
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` on `ecd0ee5` | exit 0 | exit 0, all six `ok`, 24 test results `ok`, none failed | pass |
+| `scripts/check.sh linux-build` on `3b58997` | exit 0 | exit 0, 22 test results `ok`, `linux build check passed` | pass |
+| `Terminate` with a length field of 4, then of 5, 6, 100, 1024, 1025, 65536 and 4294967295 (decision 52) | 4 ends the session, every other length is `08P01` | `FrontendAction::Terminate` for 4, `08P01` for the seven others, also for the ones above the size limit, so no `54000` | pass |
+| Every tag byte (256) with seven lengths against the table of the spec, with the new row for `Terminate` | the action of the table | all 1792 cases as the table says | pass |
+| Client first messages with a user name that PostgreSQL takes and the old code refused (decision 53): `n=a=b`, `n==`, `n=user=name=`, `n=a=2Cb`, an empty name, and the header `y,,` | accepted | accepted, all six | pass |
+| Client first messages that must stay refused: channel binding `p=`, an authorization identity, an extension after the nonce, `m=`, a comma inside the name, an empty nonce | refused | refused, all six | pass |
+| One reader for one connection (decision 54): a `StartupMessage` before TLS, 73 bytes long | `28000` after the 8 header bytes, and the body is never taken | `28000`, and the reader took 8 of 73 bytes | pass |
+| Ten orders of first packets (`SSLRequest`, `GSSENCRequest`, `CancelRequest`, `StartupMessage`, and the orders that are not allowed) through one reader, each whole, split at every position (454 splits) and byte by byte | the same result in every split | the same result in every split: the allowed orders pass, the others end with `28000` or `08P01` | pass |
+| `NegotiateProtocolVersion` against a real server (decision 71). PostgreSQL 18.7, asked for 3.0 with the option `_pq_.zq9`, sent the body `00030000000000015f70715f2e7a713900` (first number 196608, one name) | POOL sends the same bytes for the same request | `encode_negotiate_protocol_version` gives the same 17 bytes | pass |
+| The same for a request for 3.9. PostgreSQL 18.7 sent `0003000200000000` (196610, its own 3.2, no name), and for 3.9 with two options `00030002000000025f70715f2e7a7139005f70715f2e7a713800` | POOL sends the same shape with the code of 3.0 | `0003000000000000` (196608, no name) | pass |
+| The parser on the recorded messages of the real server, and on a first number that is a bare minor 0, and on a code with major 4 | it reads both recorded messages and refuses the two others | minor 2 with no name and minor 0 with one name are read; the bare 0 and the major 4 are refused | pass |
+| `Debug`, in both forms, of each type of `pool-protocol` that holds content, filled with a canary text: `StartupRequest`, `Forwarded`, `FirstPacket`, `FirstPacketReader` and `MessageReader` with half a packet inside, `Message`, `Authentication` (three kinds), `SaslInitialResponse`, `NegotiateProtocolVersion`, `ParameterStatus`, `BackendKeyData`, `ClientFirst`, `ServerFirst`, `ClientFinal` | no canary in any output | no canary; the outputs show counts and lengths, for example `Message { tag: 'Q', body_len: 20 }` and `BackendKeyData([REDACTED])` | pass |
+| `scripts/check.sh integration` on `ecd0ee5`, which holds the test of step 11 where `psql` 18.7 asks for protocol 3.2 | exit 0 | exit 0, 21 of 21 | pass |
+
+| Criterion | What was checked | Verdict |
+|---|---|---|
+| `0004 AC-15`, byte level half | The first packets through one reader, in every split; the answer to a newer minor version compared with the bytes of a real server | met |
+| `0004 AC-16`, byte level half | The SCRAM client first message with any user name, and the forms that stay refused | met |
+| `0004 AC-23`, byte level half | The table of frontend tags with the row for `Terminate`, every tag with seven lengths | met |
+| `0004 AC-24`, in `pool-protocol` | `Debug` of fourteen types with a canary | met |
+
+**Notes that are not failures.**
+
+- The first run of milestone 2 took the bare minor number 0 from the text of the spec and passed it. A real server sends the whole protocol code, and `psql` 18.7 refused the old bytes. This run compared with bytes that a real PostgreSQL 18.7 sent, as the rule "A golden message is not proof of a wire format" asks.
+- POOL answers 3.0 where PostgreSQL 18.7 answers 3.2, so the first number differs from the real server by design. The shape, the count and the names are the same.
+- `Debug` of `SaslInitialResponse` prints the mechanism as `[REDACTED]`. The mechanism is not a secret, so this hides a little more than it has to. It is not a fault.
+
+**For the tester.** No mutation run was done for these changes. The record of the developer names a unit or golden test for each change, and the test of step 11 with `psql` covers decision 71 against a real client. I did not try whether those tests catch a wrong change. One gap: no test in the repository compares the bytes of `encode_negotiate_protocol_version` with bytes recorded from a real server. The recorded bodies above can serve as a golden value.
+
 ## Milestone 3: Authority on disk and the first contact with PostgreSQL
 
 ### Build plan step 6: authority on disk and the control loop
@@ -589,6 +626,131 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 **Follow up of 2026-11-15, the lock file race** (the second finding of the verification of milestone 3): when `pool.lock` did not exist and several commands started together, the losers of `create_new` got `AlreadyExists`, which became `state.permissions` instead of `state.locked`. Commit `fd62cf4`: the file that the other command made is opened and `try_lock` decides; the opened file is checked on its descriptor (a regular file, mode `0600`, the owner of the directory, and the same inode as the path read without following a link), and every other failure stays `state.permissions`. The test `ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked` in `tests/commands.rs` releases eight `show-authority` together through named pipes that carry their configurations, in 25 rounds, and accepts only exit 0 or `state.locked`. In a container of the pinned image of `linux-build` (`rust:1.100.0-slim-bookworm`, the test run 30 times each): 0 of 30 failed with the fix, 30 of 30 failed on the old `state.rs`, each with `state.permissions`. On macOS: 10 of 10 failed on the old code; with the fix it passed, and 24 to 57 of the 200 processes of a run got `state.locked`.
 
 **Readings.** The JSON of `bootstrap` when it is refused uses the shape of spec 0001 (`config_version` and `capabilities` `null`, `result` `refused`), since the spec gives its fields only for exit 0. The state directory and the four journal files are checked without following links, so a link in their place is `state.permissions`. A bootstrap whose runtime could not start has no sample and is refused with `bootstrap.evidence_missing`, writing nothing.
+
+### Checker run of milestone 3
+
+Build plan step 8, the follow up of step 6 (decisions 57, 59 and 61) and the changes to step 7 (decisions 62 to 69), on 2026-11-15, by the checker session. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 from `postgres:18.7-bookworm` by the digest of `scripts/check.sh`. The Linux runs used the pinned build image. None of it is CI. Every command below was run in this session. The probes are the checker's own programs and scripts outside the repository: one drives the built `pool` binary with no database, one takes the place of the test command inside `scripts/integration/run.sh` and drives `pool` against the fixture, and one calls the public functions of `pool-core` and `pool-control`. The session contacted only the two PostgreSQL containers that `scripts/integration/run.sh` started for it, with the fixture credentials.
+
+**The run was cut in two by a usage limit.** The table says which part ran when. Before the pause the tree was `08091ec`. After it the tree was `3b58997`, which differs from `08091ec` in documents only, so the results before the pause hold for it. The first finding was then fixed on `main` (`b33f155`), and the last runs are on `ecd0ee5`, which differs from `3b58997` in `apps/pool/src/state.rs` (the fix) and in the tests of `apps/pool/tests/`.
+
+**Verdict: milestone 3 FAIL, for one small open finding against `0004 AC-9`.** On a new state directory, a command that loses the race to create `pool.lock` ends with `state.permissions`, where `state.locked` is right (finding 2). It fails closed, and the lock itself never let two commands in. Everything else is met: `0004 AC-10`, `AC-11`, `AC-12` and `AC-26`, `0003 AC-17` and `AC-19` after decisions 57, 59 and 61, and the changes to step 7. Finding 1 (a stopped bootstrap blocked the next one) failed on `3b58997`, was fixed in `b33f155` and passes on `ecd0ee5`.
+
+| Command or probe | Tree and time | Expected | Observed | Result |
+|---|---|---|---|---|
+| `scripts/check.sh all` | `08091ec`, before the pause, and again on `ecd0ee5` | exit 0 | exit 0 both times, all six `ok`; on `ecd0ee5` 24 test results `ok`, none failed | pass |
+| `scripts/check.sh integration` | `08091ec`, before the pause | exit 0, nothing left behind | exit 0, 8 of 8 tests against PostgreSQL 18.7, about 11 seconds in all; no `pool-it-` container of this run, no new volume, no temporary directory | pass |
+| `scripts/check.sh integration` | `ecd0ee5`, after | exit 0, nothing left behind | exit 0, 21 of 21 in 45 seconds, with `it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next`; 89 volumes before and after, no container of this run, no temporary directory | pass |
+| `scripts/check.sh linux-build` | `3b58997`, after | exit 0 | exit 0, 22 test results `ok`, none failed, `linux build check passed` | pass |
+| The command probe with no database, 100 checks | `08091ec`, before the pause | every check as the spec says | 100 checks, 0 mismatches (details below) | pass |
+| The fixture probe, 34 checks | first run on `08091ec` before the pause, second run on `3b58997` after | every check as the spec says | second run: 33 as expected, 1 mismatch, which is finding 1. The first run had five more mismatches that were mistakes of the probe (it damaged a copy of the wrong file), corrected for the second run | **fail** (finding 1) |
+| The fixture probe again | `ecd0ee5`, after | 34 as expected | 34 checks, 0 mismatches | pass |
+| `scripts/integration/run.sh` with a test command that fails | `3b58997`, after | exit 1, nothing left | exit 1; its two containers and its temporary directory are gone | pass |
+| `scripts/integration/run.sh` stopped with SIGTERM while the test command ran | `3b58997`, after | exit 1, nothing left | exit 1; its two containers and its temporary directory are gone, but only when the test command had ended by itself (see the notes) | pass |
+| `DOCKER_HOST=tcp://127.0.0.1:1 scripts/check.sh integration` | `3b58997`, after | exit 3 | exit 3, `integration: the Docker daemon is not running; start it and run scripts/check.sh integration again`, `== FAILED: integration` | pass |
+| The lock probe on Linux: a release `pool` in the pinned image, processes only, with a listener that accepts and never answers as the node | `3b58997`, after | one holder at a time, `state.locked` for the others | see "The lock" below; 38 commands in 70 rounds ended with `state.permissions` | **fail** (finding 2) |
+| `tests/commands.rs` 200 times in the pinned image | `ecd0ee5`, after | 200 runs pass | 200 runs, 0 failed, each `12 passed` | pass |
+| The probe of the changes to step 7 and of decision 61, 61 checks with the ones of step 4 | `3b58997`, after | every check as the spec says | 0 mismatches | pass |
+| The guard probe, 125 changed lines, each in a private copy | `3b58997`, after | each refused or accepted as rule W3 says | 125 of 125 | pass |
+| The whole session probe of step 9, again | `3b58997`, after | as in the run of step 9 | 101 checks, 99 as expected; the 2 others are known mistakes of the probe (it counts the closed backends of two sessions as one, and compares a decimal number with a hexadecimal one) | pass |
+
+#### The state directory and the lock (`0004 AC-9`)
+
+Before the pause, on macOS, with no database:
+
+- A state directory that does not exist gives `state.not_found`. A directory with mode 0755, 0750, 0701, 0600, 0500, 0770 or 01700, a regular file in its place and a link to a good directory all give `state.permissions`, exit 3.
+- Each of `journal.sqlite3`, `journal.sqlite3-wal`, `journal.sqlite3-shm` and `pool.lock` with mode 0644, 0400 or 0660, as a directory and as a link, gives `state.permissions`, and the directory is the same afterwards. Other entries in the directory are not looked at.
+- `pool.lock` is made with mode 0600, also under a umask of 0.
+- Ten problems with the monitor credential file (missing, mode 0644, mode 0640, empty, a tab inside, a named pipe) and the CA file (missing, no certificate inside, a named pipe, not readable) each end bootstrap at once with exit 3 and `error: <code> at <key>: <message>`, with the key `cluster.monitor_credential_file` or `node.tls_ca_file`. A named pipe as the credential is `secret.permissions` and as the CA is `secret.invalid`, and neither blocks.
+
+The lock, as the product takes it (`File::try_lock` on `pool.lock`):
+
+| Probe | Runs | Two holders | No holder | `state.locked` where it was not expected | Another result |
+|---|---|---|---|---|---|
+| macOS, before the pause: while one bootstrap held the lock inside its probe, 118 other commands | 118 | 0 | 0 | 0 (all 118 got `state.locked`, as expected) | 0 |
+| macOS, before the pause: eight bootstraps started together, each holding the lock for 0.8 seconds, then `show-authority` at once | 30 rounds | 0 | 0 | 0 of 30 after the round | 0 |
+| Linux: a bootstrap holds the lock for 0.15 seconds, one command during it and one right after the holder ended | 300 cycles | 0 | 0 | 0 of 300 after the holder ended (300 of 300 during it, as expected) | 0 |
+| Linux: eight bootstraps started together on a state directory where `pool.lock` exists | 40 rounds, 320 commands | 0 | 0 | 0 | 0 |
+| Linux: the same on a new state directory with no `pool.lock`, first run | 30 rounds, 240 commands | 0 | 0 | 0 | 11 commands with `state.permissions` |
+| Linux: the same, second run | 40 rounds, 320 commands | 0 | 0 | 0 | 27 commands with `state.permissions` |
+
+So the lock is exclusive in every run, and a command never got `state.locked` once the holder had ended.
+
+**Finding 2 (open, sent to the developer of step 8).** On a new state directory, commands that start together race to create `pool.lock`. `StateDirectory::open` creates the file with `create_new`, and `create_protected` turns every error into `StateError::Permissions`, also the one that says the file exists by now. The loser then prints `error: state.permissions: the state directory or a file in it has the wrong type, mode or owner`, which is not true, and `0004 AC-9` gives `state.locked` for a second command. Nothing is written and never two commands pass, so this is a wrong code and not a safety fault. It was not seen on macOS in 30 rounds. `apps/pool/src/state.rs` of `ecd0ee5` has the same lines.
+
+**The unstable test.** `ac9_a_second_command_while_the_lock_is_held_is_state_locked_and_changes_nothing` failed once in `linux-build` on `cc58ae3`. In this session it passed in the one `linux-build` run on `3b58997`. My reading before I saw the fix: the test takes the lock inside the test process, which runs other tests on other threads, and a child that another thread starts keeps a copy of the lock descriptor until its exec. That is the cause `dbg-f4-fix` found, and commit `2590ba6` lets one child start at a time. With it the test binary passed 200 of 200 runs in the pinned image. The product lock is not the cause: the table above has no late `state.locked` in 330 runs.
+
+#### Bootstrap, `show-authority` and the probe on the fixture (`0004 AC-10`, `AC-11`, `AC-12`)
+
+On PostgreSQL 18.7 from the pinned digest, second run of the fixture probe:
+
+- The monitor login has LOGIN and no other attribute, is a member of no role and has no member (`t|f|f|f|f|f|0|0` for login, superuser, replication, create role, create database, bypass of row security, roles it is a member of, and members it has). The frontend principal is no role of PostgreSQL. The two servers have different system identifiers.
+- `pool bootstrap` exits 0 with its four lines and an authority ID of 32 hexadecimal digits. Every file in the state directory has mode 0600. The journal has `application_id` 1347374924, `user_version` 1, WAL mode, four tables, revision 1, start sequence 0, no hold, and the topology row with the system identifier of the server and timeline 1.
+- `show-authority` says `unconfirmed` with the same ID in both formats and changes no byte. With the ID as `control.authority_id` it says `ready`, and with another ID `mismatch`.
+- A second bootstrap exits 1 with `bootstrap.store_present`, and with the witness set also `bootstrap.witness_present`. The JSON of a bootstrap is one line with the keys `output_version`, `command`, `result`, `authority_id`, `clusters` and `findings`.
+- The server log shows each probe connection as the monitor login over TLS with `application_name=pool-probe`, and one statement with `pg_control_system` per connection. No other login of POOL appears.
+- A node that cannot be reached, a wrong CA, a wrong server name and a wrong monitor password each give `bootstrap.evidence_missing`, exit 1, and no journal. The second server, and a wrong configured system identifier, give `bootstrap.identity_mismatch`.
+- Without a database (before the pause): `show-authority` says `uninitialized`, `missing` or `unreadable` with exit 0 and `authority_id` `null` in JSON; bootstrap against a closed port is `bootstrap.evidence_missing` with no journal; a configured witness adds `bootstrap.witness_present`; a store that cannot be read gives `bootstrap.store_present`.
+
+#### A bootstrap that stopped (decision 59)
+
+| Case | `show-authority` | `pool bootstrap` on `3b58997` | `pool bootstrap` on `ecd0ee5` |
+|---|---|---|---|
+| A journal file of one page that holds only the WAL setting (4096 bytes), which is what a bootstrap leaves when it stops after setting the journal mode | `uninitialized` | **exit 3, `state.permissions`** (finding 1) | exit 0, a new authority ID, the journal complete |
+| A copy taken while a writer was inside its first transaction, with `-wal` and `-shm` | `uninitialized` | **exit 3, `state.permissions`** | exit 0 |
+| The main file alone of a journal that was created | `unconfirmed` | exit 1, `bootstrap.store_present` | the same |
+| A created journal cut to one page, cut to two pages, with its header overwritten, with its marks set to zero | `unreadable` | exit 1, `bootstrap.store_present`, no byte changed | the same |
+
+**Finding 1 (fixed).** `create_empty_journal` took only a file of 0 bytes, so the one page file was refused as `state.permissions` before `Journal::create` could apply the rule of decision 59. The library met the decision and the command did not. Commit `b33f155` hands a file that exists to `Journal::create`. The rows for a damaged journal show that this did not open a way to write over a journal that holds something: those cases are refused by `bootstrap_plan` before any file is touched.
+
+#### The follow up of step 6 (decisions 57 and 61)
+
+- `apps/pool/src/commands.rs` calls `read.bootstrap_plan(...)`. A line with `read.plan_bootstrap(` in that file is refused by rule W3 (`forbidden text plan_bootstrap`), and the same line with `bootstrap_plan` is accepted. `StoreProbe`, `StoredAuthority`, `classify_startup` and `writer_admission` are still refused in every crate but `pool-control`. No `.rs` file outside `crates/pool-control` holds the text `plan_bootstrap`.
+- Two latch receipts with revisions 2 and 3, handed to the controller in reverse order: the state holds 3 after the first and still 3 after the second, and both clusters leave the list of latches the journal does not hold.
+
+#### The changes to step 7 (decisions 62 to 69)
+
+| Probe | Expected | Observed | Result |
+|---|---|---|---|
+| `in_hot_standby` reported `off` and then `on` to a session connection (decision 66) | refused as not a primary | `not_primary`; `on` and then `off` passes; the probe connection accepts both, as before | pass |
+| Eight first logins at the same time with one new credential (decision 64) | one derivation of the keys | 8 backends opened, 1 derivation | pass |
+| A named pipe as the credential file, the CA file and the certificate file (decision 67) | refused without reading it | `Permissions`, `Invalid`, `Invalid`, all three in under a millisecond | pass |
+| `derive_keys` and `verifier_text` with a count (decision 68) | the count is a `NonZeroU32`, so 0 cannot be passed | the probe had to change its calls to compile; a count of 0 no longer compiles | pass |
+| `Debug`, in both forms, of `ServerExchange`, `ClientExchange`, `ServerCredential` (known and unknown), `CertificateChain`, `TrustRoots`, `PoolKey`, `Node`, `Login`, `Credential` and an open `BackendConnection`, each filled with a canary (decision 69) | no canary, no nonce, no certificate text | none; for example `ServerExchange([REDACTED])` and `CertificateChain { certificates: 1 }` | pass |
+| The test key `crates/pool-core/tests/fixtures/node.key` (decision 62) | its first line says what it is | `test key for node.test, used only by the tests of pool-core; it protects nothing` | pass |
+| A CA file that exists and cannot be read (decision 63) | `secret.permissions` at its key | `error: secret.permissions at node.tls_ca_file: ...`, exit 3 | pass |
+
+#### Output of the two commands
+
+In 226 outputs of the command probe and 29 of the fixture probe, human and JSON, there is no password, no path, no host, no server name, no login and no database name. The key names of the configuration appear, which the shared conventions allow. Usage errors and `--help` exit 2 and 0 as for `check-config`, and a configuration with findings is reported with the command name before any state is touched.
+
+#### Criteria
+
+| Criterion | What was checked | Verdict |
+|---|---|---|
+| `0004 AC-9` | The directory and file checks, the secret files, the lock on macOS and Linux | **not met in one case**: the wrong code in the race to create `pool.lock` (finding 2). The rest is met |
+| `0004 AC-10` | The journal of a real bootstrap, read with SQLite from outside | met |
+| `0004 AC-11` | Bootstrap, second bootstrap, `show-authority` in each state, refusals that write nothing, a stopped bootstrap | met on `ecd0ee5` (finding 1 fixed) |
+| `0004 AC-12` | The attributes of the monitor login, the server log of the probe, wrong CA, name and password, the second server | met |
+| `0004 AC-14`, library half | The last report of `in_hot_standby` decides | met |
+| `0004 AC-24`, in `pool-core` | `Debug` of ten types with a canary | met |
+| `0004 AC-26` | The check passes, fails, is stopped and has no Docker; the image is taken by digest | met; the CI job is manual step M2 |
+| `0003 AC-17` and `AC-19`, after decisions 57, 59 and 61 | The method name against the guard, the receipts in reverse, the stopped bootstrap in the reader | met |
+
+#### Notes that are not failures
+
+- **Read in the code only.** `random.failed` cannot be made to happen from outside. In `commands.rs` the authority ID comes from `pool_core::random::fill_random` before `create_empty_journal` is called, so a failure leaves no journal file. `pool.lock` exists by then, because the lock is taken first. The check of a secret file on the open file (decision 67) was also read, and the named pipe probe supports it.
+- **SIGTERM to `run.sh` alone.** The shell runs its trap only after the test command returns. With a stand in test command that slept 60 seconds, the containers were removed 60 seconds after the signal. A signal to the whole process group, as from a terminal or a cancelled CI job, ends the test command too.
+- **Other runs on this machine.** While this session ran, other sessions ran the same check, and their `pool-it-` containers were visible. This session judged "nothing left" by the process ID in the container names of its own runs, and touched no other container.
+- **A wrong CA or name toward the node** shows at the command as `bootstrap.evidence_missing`. The class of the probe failure is not in the output of `bootstrap`, by the rule that the output names no deployment detail.
+
+#### For the tester
+
+No mutation run was done for the code of step 8 in this item. Test gaps seen:
+
+- Before `b33f155` no test put a one page journal file in front of `pool bootstrap`. `it_a_bootstrap_that_stopped_after_the_wal_mode_does_not_block_the_next` now does. A hermetic twin in `tests/commands.rs` is not possible while bootstrap needs a node that answers.
+- No test starts several commands together on a state directory that has no `pool.lock` yet (finding 2).
+- No test puts a journal that was cut or whose marks were changed in front of `pool bootstrap`. The tests use a file of plain text for the state `unreadable`, and only with `show-authority` and `pool run`. The probe compared the files before and after.
+- The lock test holds the lock inside the test process. A helper process that holds it would test the product the way two daemons meet it.
 
 ## Milestone 4: The session path
 
