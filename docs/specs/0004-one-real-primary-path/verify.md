@@ -2006,6 +2006,28 @@ After `git merge main` at `7a67c93`: `d41d25c`, **a copy of the test CA in the c
 - `f11f4f3`, **the race in the second primary test** (the failure recorded above, one run in three). The writer now falls silent, and its monitor connection is ended and counted while pg2 is still refused. pg2 answers only after that, so its own monitor login can no longer be counted. What the test proves is unchanged: a second primary beside a silent writer, `57P01` for the session, the latch with `recorded` true, and closed after a restart. `2f960cd` adds `POOL_IT_FILTER` to `scripts/integration/run.sh`, a filter of test names. With it, `POOL_IT_FILTER=it_ac14_a_second_primary_beside_a_silent_writer scripts/check.sh integration` was run 10 times in a row: 10 of 10 exit 0, each with 1 passed and 29 filtered out. Then on `2f960cd`: `scripts/check.sh all` exit 0, and the full `scripts/check.sh integration` exit 0 with 30 of 30 and no container left.
 - `8fffb40`, **the filter says so** (decision 104). With `POOL_IT_FILTER` set, `scripts/integration/run.sh` writes `integration: POOL_IT_FILTER is set, only matching tests run` on stderr before the tests. `POOL_IT_FILTER=it_bootstrap_json_prints_the_new_id scripts/check.sh integration`: the line on stderr, exit 0, 1 passed and 29 filtered out. Without the variable: no such line on stdout or stderr, exit 0, 30 of 30, no container left.
 - `ce61930`, **the watchdog ends with the script** (found by `chk-f4-verify` on `099a597`). `kill` of the watchdog subshell left its `sleep 1800` running for up to 30 minutes, holding the stdout and stderr of the caller open, and `cleanup` did not stop the watchdog after a signal. The watchdog now runs in a process group of its own with stdin and stdout closed, and the script ends that group at the normal end and in `cleanup`. Checked on each path, with stdout and stderr through a pipe, counting the processes left whose working directory is this worktree: a normal end (`POOL_IT_FILTER`, 1 test) closed the pipe when the script ended, with nothing left; SIGTERM to the script while the tests ran gave exit 1, with nothing left; a temporary limit of 25 seconds ended the tests after 28 seconds with the line `the tests did not end within 25 seconds`, with nothing left. The `sleep 1800` already on the machine came from runs of the older script, in the folder of another session, and were left alone.
+- `f24ed57`, **no job control** (finding r1 of the second review). The watchdog fix above still relied on `set -m`, and `dash` turns job control off without a terminal. The script now finds every process under the test command and under the watchdog by their parent process IDs (`ps -A -o pid= -o ppid=` where `ps` exists, `/proc/*/stat` where it does not; the pinned image has no `ps`). It stops that tree with SIGSTOP until no new process appears in it, so that none escapes when its parent ends first. Then it sends SIGTERM and SIGCONT, and SIGKILL to what still runs after 5 seconds. A process that still runs after that is named on stderr and the script exits 1, so a cleanup that cannot be made sure is never silent. All the tools are POSIX (`ps`, `awk`, `sleep` in whole seconds, `kill`), and nothing new is installed.
+
+  Runs on macOS, each without a terminal: stdin from `/dev/null`, stdout and stderr through a pipe into a file. The interpreter was forced by running the script as `/bin/dash scripts/integration/run.sh` or `/bin/bash scripts/integration/run.sh`, with `POOL_IT_IMAGE` set as `scripts/check.sh integration` sets it. The inner `sh -c` of the test command is `/bin/sh` in both. Containers were counted by the name the run gave them (`pool-it-1-<pid>`, `pool-it-2-<pid>`), and processes by a working directory inside this worktree, after the run.
+
+  | Shell | Case | Exit | Pipe closed after | Containers left | Processes left |
+  |---|---|---|---|---|---|
+  | `/bin/dash` | full run | 0, 30 of 30 | 76 s | 0 | 0 |
+  | `/bin/dash` | watchdog, a copy with a limit of 25 s | 1, `the tests did not end within 25 seconds` | 29 s | 0 | 0 |
+  | `/bin/dash` | SIGTERM to the script while the tests ran | 1 | 3 s | 0 | 0 |
+  | `/bin/bash` | full run | 0, 30 of 30 | 65 s | 0 | 0 |
+  | `/bin/bash` | watchdog, the same copy | 1, the same line | 28 s | 0 | 0 |
+  | `/bin/bash` | SIGTERM to the script while the tests ran | 1 | 4 s | 0 | 0 |
+
+  "Processes left" excludes the harness that ran the cases and the process of Claude Code, which also have their working directory here. Every `cargo test`, test binary, `pool` daemon, `docker exec` and `sleep` of these runs had ended. The one `sleep 1800` on the machine afterwards belonged to a mutation run in the folder of the reviewer.
+
+  In the pinned image `postgres:18.7-bookworm` (`/bin/sh` is `dash`, `tty` says `not a tty`, no `ps`), the functions of the script, taken from `run.sh` with `sed`, were driven with stand-in commands in place of the tests. 14 of 14 checks passed:
+  - a normal end of a tree of three levels and of a watchdog with a long `sleep`;
+  - a watchdog that ends a tree that never ends by itself, within 5 seconds and not with status 0;
+  - a process that ignores SIGTERM, ended by SIGKILL;
+  - SIGTERM to a script that uses the functions as `run.sh` does, which ended within 3 seconds with status 1 and nothing left.
+
+  **Not proven:** the full `scripts/check.sh integration` on Linux. It needs Docker and Rust inside Linux, which this machine has only through the CI job, so it stays `NOT_RUN` until that job exists (`F4-3`). The path in which a process cannot be ended at all was not reached in any run. Its message is read from the code, not observed.
 
 ### Crates, tooling and build (developer A)
 
@@ -2249,7 +2271,7 @@ Not run again, with the reason:
 - **A stderr that nobody reads.** When the reader of stderr goes away, every write of the log fails without a sign and the daemon serves on: 15 s later it still took a login, and SIGTERM ended it with exit 0. The log task ends only when it panics, so `daemon.failed` with the task `log` is not what a closed stderr gives. The spec does not ask for more. For the architect, since an operator then has a daemon with no log.
 - **One of ten.** In one pass, made while the wrong changes were built beside it, the session with a statement in flight got no message at the shutdown deadline and was closed. In the nine other runs of that case it got `08007`, and never `57P01`. The statement of the probe sends a notice every 0.2 s and the deadline fell on such a moment; the spec allows a close without a message when a message is partly written. Not shown to be that, and not seen again in eight runs made for it.
 - **A configuration that expects another writer than the journal approves** also sets a conflict latch when that other node answers as a primary: it is a primary that the journal did not approve. The cluster was closed anyway. Seen in the probe for decision 105.
-- **`node.lost` for a writer that never answered** comes 3 s after the start in the probe, as the paragraph of decision 105 says it can.
+- **`node.lost` for a writer that never answered** is written in the probe, as the paragraph of decision 105 says it can be. (Corrected on 2026-11-16 at 04:20 WIB: this line first gave a time that was not measured. The measured time is in the part on decisions 104 and 105 below.)
 - **The identity question is visible on the node**: one more statement per login in a log with `log_statement = 'all'`, as the spec says.
 - **Mistakes of the probe in earlier passes**, corrected before the clean pass: it read only the first line of a statement in the PostgreSQL log; its relay accepted a connection and closed it where it meant to refuse the connect, which gives the class `tls` and not `connect`; it expected a closed stderr to end the log task; it did not know the event `node.lost`; and a statement left asleep by one section was counted by another.
 
@@ -2260,3 +2282,21 @@ Not run again, with the reason:
 - **The daemon's own path for a task that ends** (S7, S8): `Server::shutdown_now` is tested in `pool-core`, the watch on the tasks, `daemon.failed` and exit 3 are not. A test needs a task that can be made to end, which the product does not offer; the checker put a fault into a private copy.
 - **The last try for a latch at shutdown** (S9) has no test. The unit test with a second holder of the journal can stop the loop and look for the line.
 - **`0004 AC-29` on the fixture** has a test for another system identifier only, by the nature of the fixture. The error case (the right to run the function taken away) can be made there, as the probe did.
+
+#### Decisions 104 and 105, on the text of `813fc30`
+
+On 2026-11-16 at 04:20 WIB, by the checker session, after the lead asked for these two to be judged against the new text. The tree of the run above (`c66cac7`) already held `813fc30`, so the text judged there was this text. Two points of the new paragraph under [When a running session is ended](index.md#when-a-running-session-is-ended) had no probe of their own yet, and were run now on `1492e17`, which has the same code.
+
+**Verdict: the code fits the text of decision 105, and the script fits decision 104. No finding.**
+
+| Sentence of the text | Probe | Observed | Result |
+|---|---|---|---|
+| The loop takes the node from `expected_writer` of the configuration | A journal that approves `pg1`, a configuration that expects `pg2`; first `pg1` refuses every connect, then `pg2` | no `node.lost` while `pg1` is silent; `node.lost` with `node_id` `pg2` when `pg2` is | as the text says |
+| A cluster whose two values differ never opens in that run and has no session to end | the same | closed with `authority.config_conflict` from the first round to the last, no session started | as the text says |
+| The mark goes only with a good sample | The writer paused, then running again | a session that starts after the first good sample is not ended; a second pause writes `node.lost` a second time | pass |
+| A failure of the class `tls`, `login` or `answer` starts the time again and leaves a mark that is already set | A marked node, then a `tls` failure for 1.5 s, then `connect` failures for 4.5 s, with a loss time of 3 s | one `node.lost` line in all: the node was not marked a second time, so the mark stayed; the cluster stayed closed and a login got `57P03` | pass |
+| The time runs from the arrival of the first failure, not from the last good sample | The writer paused with a probe timeout of 1 s and a loss time of 3 s | `node.lost` 4.2 s after the pause: the first failure arrives when the question times out, about 1 s after the pause, and the 3 s run from there | pass |
+| `node.lost` can be written for a writer that never answered in this run | An expected writer that refuses every connect from the start, with a loss time of 2 s | `node.lost` 2.1 s after the start of the daemon; it ends nothing, the cluster never opened | pass |
+| Decision 104: the script says when `POOL_IT_FILTER` is set, and a filter that matches no test still fails | `POOL_IT_FILTER=zq9_no_such_test scripts/check.sh integration` on `c66cac7` | `integration: POOL_IT_FILTER is set, only matching tests run` on stderr, then `integration: no test ran`, exit 1 | pass |
+
+**Evidence of this record that used the filter.** One row of the run above ran `scripts/check.sh integration` with `POOL_IT_FILTER` set, and it names the filter: the row for a filter that matches no test. One more run, with `POOL_IT_FILTER=it_bootstrap_json_prints_the_new_id` on `099a597`, was made only to see a filter that matches (exit 0, 1 passed, 29 filtered out); it is in no table. Neither is counted as a run of the check. The two rows for `scripts/check.sh integration` in "The four checks" ran with no filter, 30 of 30 each. The probes of the checker do not use the filter at all: they put their own program in the place of the test command, and the record says so where it describes them.
