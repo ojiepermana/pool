@@ -624,3 +624,96 @@ fn journal_errors_have_stable_names_and_no_text() {
     );
     assert!(!debug.contains("journal.sqlite3"), "{debug}");
 }
+
+// The rule for an empty database (spec 0004, decision 59): a bootstrap that
+// stopped after setting the WAL mode leaves one page with no mark and no
+// table. That counts as absent, and no damaged journal ever does.
+
+#[test]
+fn ac10_a_file_left_after_only_the_wal_mode_is_absent_and_can_be_created() {
+    // covers: 0004 AC-10.
+    let folder = folder("only-wal-mode");
+    let path = empty_journal(&folder);
+    let mode: String = sql(&path)
+        .query_row("PRAGMA journal_mode = WAL", [], |row| row.get(0))
+        .expect("WAL mode");
+    assert_eq!(mode, "wal");
+    assert!(
+        std::fs::metadata(&path).expect("file").len() > 0,
+        "one page now"
+    );
+    let read = Journal::read(&path);
+    assert_eq!(read.authority_id(), None);
+    assert_eq!(read.classify(&config(None)).name(), "uninitialized");
+    let plan = plan(&path);
+    Journal::create(&path, &plan, id(X), 0).expect("create over the stopped bootstrap");
+    assert_eq!(ready(&path).name(), "ready");
+}
+
+#[test]
+fn ac10_a_journal_cut_to_one_or_two_pages_is_unreadable() {
+    // covers: 0004 AC-10.
+    for pages in [1_u64, 2] {
+        let (_folder, path) = created(&format!("cut-{pages}"));
+        let file = std::fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .expect("open");
+        file.set_len(4096 * pages).expect("cut");
+        drop(file);
+        assert_eq!(
+            Journal::read(&path).classify(&config(Some(X))).name(),
+            "unreadable",
+            "{pages} pages"
+        );
+    }
+}
+
+/// The main file of a created journal with `range` set to zero.
+fn zeroed(name: &str, range: std::ops::Range<usize>) -> PathBuf {
+    let (folder, path) = created(name);
+    let mut bytes = std::fs::read(&path).expect("read");
+    for byte in &mut bytes[range] {
+        *byte = 0;
+    }
+    let copy = folder.join("zeroed.sqlite3");
+    std::fs::write(&copy, &bytes).expect("write");
+    copy
+}
+
+#[test]
+fn ac10_a_journal_without_its_marks_or_its_header_is_unreadable() {
+    // covers: 0004 AC-10. The marks gone with the tables in place, and the
+    // whole header gone.
+    let mut both = zeroed("no-marks", 60..64);
+    let mut bytes = std::fs::read(&both).expect("read");
+    for byte in &mut bytes[68..72] {
+        *byte = 0;
+    }
+    std::fs::write(&both, &bytes).expect("write");
+    assert_eq!(
+        Journal::read(&both).classify(&config(Some(X))).name(),
+        "unreadable"
+    );
+    both = zeroed("no-header", 0..100);
+    assert_eq!(
+        Journal::read(&both).classify(&config(Some(X))).name(),
+        "unreadable"
+    );
+}
+
+#[test]
+fn ac10_after_create_the_main_file_alone_is_the_journal() {
+    // covers: 0004 AC-10. The checkpoint after the commit moved everything
+    // into the main file, so a copy without the side files is complete.
+    let (folder, path) = created("main-file-alone");
+    let copy_folder = folder.join("copy");
+    std::fs::create_dir_all(&copy_folder).expect("folder");
+    let copy = copy_folder.join("journal.sqlite3");
+    std::fs::copy(&path, &copy).expect("copy the main file only");
+    assert!(!copy_folder.join("journal.sqlite3-wal").exists());
+    let read = Journal::read(&copy);
+    assert_eq!(read.authority_id(), Some(id(X)));
+    assert_eq!(read.classify(&config(None)).name(), "unconfirmed");
+    assert_eq!(ready(&copy).name(), "ready");
+}
