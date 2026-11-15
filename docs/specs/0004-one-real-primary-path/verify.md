@@ -368,3 +368,46 @@ What the tests hold:
 | `0004 AC-9`, secret half | the `secret.rs` tests above; the state directory checks and the lock are step 8 | pass for the secret half on the workstation and in the Linux image; the rest not run |
 | `0004 AC-15`, library half | the TLS and backend tests above: no startup packet unless the node answered `S`, the chain leads to the configured CA and the name matches | pass for the library half; the listener side and `psql` are steps 9 and 10 |
 | `0004 AC-16`, library half | the SCRAM tests above: the right password passes, a wrong one and an unknown name fail after the same exchange; the backend password and the frontend verifier are separate types | pass for the library half; the message sequence over the listener is step 9 |
+
+## Milestone 4: The session path
+
+Build plan steps 9 to 11. Each step keeps its own part of this section.
+
+### Build plan step 9: the session
+
+Build plan step 9, on 2026-11-15, on macOS (workstation) and in the Linux builder image. Commit `05c76fa`, on top of `main` at `34e9054`. Tools: `rustc 1.100.0`. Every test is hermetic: `crates/pool-core/tests/session.rs` runs the whole session over `tokio::io::duplex` streams, with a scripted client (the encoders of `pool-protocol` and the SCRAM client of `pool-core`) and a scripted node behind a test `Connector`. No socket, no container, no PostgreSQL; the real fixture is steps 10 and 11.
+
+#### UI / manual
+
+None for step 9.
+
+#### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-core --locked` | exit 0 | exit 0: 29 unit tests and 27 in `tests/session.rs` passed, 0 failed, in 0.4 s | pass |
+| `cargo clippy -p pool-core --all-targets --locked -- -D warnings` | exit 0 | exit 0 | pass |
+| `scripts/check.sh all` before the commit | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok`; rule W3 accepts the runtime in `crates/pool-core` and finds no thread | pass |
+| `scripts/check.sh linux-build` at `05c76fa` | exit 0 | exit 0; the 29 unit and 27 session tests also passed in the image | pass |
+
+#### Acceptance-criteria coverage
+
+| Criterion | Tests in `tests/session.rs` | Result |
+|---|---|---|
+| `0004 AC-14`, hermetic half | `a_closed_or_stale_route_refuses_with_57p03_and_opens_no_backend` (closed and stale: `57P03`, no backend opened), `a_route_that_changed_while_the_backend_opened_refuses_at_step_9` (the epoch moved during step 8: `57P03`, the backend closed, no query reached it), `a_node_in_recovery_gives_08006` (`in_hot_standby` `on`), `a_positive_conflict_ends_running_sessions_and_silence_does_not` (closed without a conflict: the running session goes on; with a conflict: `57P01` idle, `08007` with a query in flight) | pass for the hermetic half; the fixture half is steps 10 and 11 |
+| `0004 AC-15`, hermetic half | `startup_without_tls_is_refused_with_28000_and_no_authentication_request`, `gssenc_is_answered_with_n_and_a_version_3_2_gets_negotiation`, `refused_versions_and_parameters` (major 2 and 4, `replication`, `options`: `0A000`), `a_cancel_request_is_read_and_dropped` (no answer, no backend), `a_wrong_node_certificate_gives_08006` (no startup packet toward the node) | pass for the hermetic half |
+| `0004 AC-16`, hermetic half | the frontend offers exactly `SCRAM-SHA-256` (checked in every login); `a_wrong_password_and_an_unknown_name_fail_after_the_same_sequence` (both `R`, `R`, `E` with `28P01`); `an_authentication_message_over_1024_bytes_is_refused` (a body of 1024 bytes is read, 1025 gives `08P01`) | pass for the hermetic half |
+| `0004 AC-17`, hermetic half | `a_database_without_an_identity_entry_gets_28000_and_no_backend`; `a_mapped_principal_gets_a_session_on_its_backend_login` (the node saw the backend login and database of the entry, never the principal) | pass for the hermetic half |
+| `0004 AC-19`, hermetic half | `a_client_that_leaves_inside_a_transaction_closes_its_backend_and_returns_its_permit` (with `session_max_count = 1` the next login succeeds); the clean `Terminate` in `a_mapped_principal_gets_a_session_on_its_backend_login` | pass for the hermetic half |
+| `0004 AC-20`, hermetic half | `a_query_over_the_message_limit_gets_54000_and_never_reaches_the_node`, `a_startup_packet_over_its_limit_is_refused`, `the_session_limit_gives_53300`, `waiters_and_the_acquire_deadline` (one waiter more: `53300` at once; a waiter: `53300` after 300 ms, within 2 s), `a_client_that_sends_nothing_is_closed_at_the_startup_deadline`, `the_handshake_limit_closes_a_new_socket_at_once`; `a_large_row_streams_through_the_relay_buffer` (a 200000 byte row through the 65536 byte buffer) | pass for the hermetic half |
+| `0004 AC-22`, hermetic half | `a_lost_commit_answer_gives_08007_and_no_second_attempt` (one backend opened, the COMMIT sent once) | pass for the hermetic half |
+| `0004 AC-23`, hermetic half | `unsupported_and_broken_frontend_messages_end_the_session` (`P`, `F`, `d`: `0A000`; an unknown tag and a length below 4: `08P01`; nothing reaches the node, the backend is closed), `a_copy_response_and_a_broken_backend_message_end_the_session`, the greeting `S S S Z` without `BackendKeyData`; unit tests `the_pool_key_has_eight_parts_and_hides_the_database_and_the_login` and `lease_generations_start_at_1_and_never_wrap` | pass for the hermetic half |
+| `0004 AC-25`, hermetic half | `shutdown_ends_idle_sessions_with_57p01_and_waits_for_the_others` (idle: `57P01`; in a transaction: goes on until idle, then `57P01`; no accept after), `at_the_shutdown_deadline_a_query_in_flight_gets_08007_never_57p01`, `shutdown_closes_connections_before_their_session_started` | pass for the hermetic half; signals and the exit status are step 10 |
+
+**Readings.**
+- Before TLS the session reads only the eight header bytes and asks `Handshake`; a body is read only for `CancelRequest` and, over TLS, for `StartupMessage`. `FirstPacketReader` is not used on the session path, so a startup packet without TLS gets `28000` before its parameters are read.
+- Each message of the node from SCRAM up to `ReadyForQuery` has a body of at most 16384 bytes (`BACKEND_STARTUP_MESSAGE_MAX_BYTES`); the one row query of the probe keeps 65536.
+- `Terminate` is classified by its tag only, as `pool-protocol` does today; the rule for a length other than 4 and the user name rule of SCRAM change in `pool-protocol` in a later item, and the session follows without change.
+- Refusals and backend failures are counted in `Counters` and written by `Counters::flush`, which the daemon calls once a second (step 10).
