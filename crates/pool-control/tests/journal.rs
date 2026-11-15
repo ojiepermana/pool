@@ -807,3 +807,57 @@ fn nix_root() -> bool {
     use std::os::unix::fs::MetadataExt;
     std::fs::metadata(env!("CARGO_TARGET_TMPDIR")).is_ok_and(|m| m.uid() == 0)
 }
+
+// ---- added by the tests of scope 004, round four (review findings t6, t7) ----
+
+#[test]
+fn ac10_a_journal_on_hold_for_a_restore_classifies_as_restore_pending() {
+    // covers: 0004 AC-10, AC-13 (review finding t6): the hold is read from
+    // the file, without Docker and without a tool of the host.
+    let (_folder, path) = created("hold-restore");
+    damage(
+        &path,
+        "UPDATE store SET hold = 'restore_pending' WHERE singleton = 1;",
+    );
+    assert_eq!(
+        Journal::read(&path).classify(&config(Some(X))).name(),
+        "restore_pending"
+    );
+    damage(&path, "UPDATE store SET hold = 'none' WHERE singleton = 1;");
+    assert_eq!(ready(&path).name(), "ready");
+}
+
+#[test]
+fn ac10_open_ready_refuses_a_journal_whose_authority_id_changed() {
+    // covers: 0004 AC-10 (review finding t7): the ID is compared again when
+    // the journal is opened for writing, not only the revision and the start
+    // sequence.
+    let (_folder, path) = created("open-id-changed");
+    let state = ready(&path);
+    damage(&path, &format!("UPDATE store SET authority_id = X'{Y}';"));
+    assert_eq!(
+        Journal::open_ready(&path, authority(&state)).map(|(_, sequence)| sequence),
+        Err(JournalError::Changed)
+    );
+    assert_eq!(integer(&path, "SELECT start_sequence FROM store"), 0);
+}
+
+#[test]
+fn ac10_a_latch_write_refuses_a_journal_whose_authority_id_changed() {
+    // covers: 0004 AC-10, 0003 AC-17 (review finding t7).
+    let (_folder, path) = created("latch-id-changed");
+    let state = ready(&path);
+    let (mut journal, _) = Journal::open_ready(&path, authority(&state)).expect("open");
+    damage(&path, &format!("UPDATE store SET authority_id = X'{Y}';"));
+    assert_eq!(
+        journal.set_conflict_latch(&cluster("main"), 0),
+        Err(JournalError::Changed)
+    );
+    assert_eq!(
+        integer(
+            &path,
+            "SELECT conflict_latched FROM approved_topology WHERE cluster_id = 'main'"
+        ),
+        0
+    );
+}

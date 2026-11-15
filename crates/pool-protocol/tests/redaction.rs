@@ -12,6 +12,17 @@ const CANARY: &str = "CANARY-9f2c7b1e";
 
 fn assert_hidden(what: &str, debug: String) {
     assert!(!debug.contains(CANARY), "{what} shows its content: {debug}");
+    // Round four (review finding t2): a derived `Debug` prints a `Vec<u8>` as
+    // a list of numbers, which holds no text. The canary as such a list.
+    let as_bytes = CANARY
+        .bytes()
+        .map(|b| b.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    assert!(
+        !debug.contains(&as_bytes),
+        "{what} shows its content as bytes: {debug}"
+    );
     assert!(
         !debug.contains("Q0FOQVJZ"),
         "{what} shows its content in base64: {debug}"
@@ -117,4 +128,45 @@ fn startup_values_and_a_reader_in_the_middle_of_a_body_print_no_value() {
     partial.feed(&encode_ssl_request());
     partial.feed(&startup[..startup.len() - 3]);
     assert_hidden("FirstPacketReader", format!("{partial:?}"));
+}
+
+// ---- added by the tests of scope 004, round four (review finding t2) ----
+
+#[test]
+fn the_startup_types_print_exactly_their_counts_and_constant_names() {
+    let startup = encode_startup(&[
+        ("user", CANARY.as_bytes()),
+        ("database", CANARY.as_bytes()),
+        ("application_name", CANARY.as_bytes()),
+        ("_pq_.x", CANARY.as_bytes()),
+    ]);
+    let mut reader = FirstPacketReader::new(8192);
+    reader.feed(&encode_ssl_request());
+    let Some(Ok(FirstPacket::Startup(request))) = reader.feed(&startup).1 else {
+        panic!("a startup packet");
+    };
+    assert_eq!(
+        format!("{request:?}"),
+        "StartupRequest { minor: 0, forwarded: 1, protocol_options: 1, .. }"
+    );
+    assert_eq!(
+        format!("{:?}", request.forwarded),
+        format!(
+            "[Forwarded {{ name: \"application_name\", value_len: {} }}]",
+            CANARY.len()
+        )
+    );
+    let parameter =
+        auth::parse_parameter_status(&auth::encode_parameter_status(CANARY, CANARY)[5..])
+            .expect("valid");
+    assert_hidden("ParameterStatus", format!("{parameter:?}"));
+    assert_hidden("ParameterStatus", format!("{parameter:#?}"));
+    let mut partial = FirstPacketReader::new(8192);
+    partial.feed(&encode_ssl_request());
+    partial.feed(&startup[..startup.len() - 3]);
+    assert_hidden("FirstPacketReader", format!("{partial:#?}"));
+    let mut partial = MessageReader::new(1 << 16);
+    let bytes = encode_query(&format!("select '{CANARY}'"));
+    partial.feed(&bytes[..bytes.len() - 2]);
+    assert_hidden("MessageReader", format!("{partial:#?}"));
 }
