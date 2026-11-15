@@ -1800,6 +1800,26 @@ On 2026-11-16 until 03:05 WIB, by the tester session: the rest of finding t10 of
 | `scripts/check.sh all > <file> 2>&1; echo $?` on `d90869b` (`582431d` with `main` at `0ef7f69` merged) | exit status 0, all six checks `ok` | pass |
 | `scripts/check.sh linux-build` on `d90869b` | exit status 0, `linux build check passed` | pass |
 
+### Round seven
+
+On 2026-11-16 until 04:40 WIB, by the tester session: the part of finding t8 of the review that lives on the fixture, and decision 109. On `main` at `099a597`, commits `887a3bc` and `bf56885`. macOS 27.0.1, arm64, with other sessions using Docker at the same time.
+
+- **The waiter test.** `it_waiters_are_limited_and_time_out_after_the_acquire_deadline` no longer has five pauses that decide which client waits. Two clients of the test log in through POOL at the same moment, with the code of `pool-core`, while one session holds the only backend. One is refused at once and one at the deadline, and the test does not decide which. Each clock starts when the TCP connection of that client is made (`timed_login`), not before a `psql` process starts, so "not before the deadline" of `0004 AC-20` is measured from the earliest moment a client can see. Wrong changes on the fixture: a deadline of two thirds of `limits.backend_acquire_timeout_ms` (`not before the deadline: 2.052s`), and no limit on the waiters (`one waiter too many is refused at once: 3.032s`): both caught.
+- **The order of decision 12.** `ac14_the_conflict_view_is_published_before_the_latch_is_written` in `apps/pool/src/control.rs` (in `mod tests` only) no longer polls the round once and needs the latch write to be still running. A subscriber of the test reads the route view at the moment `authority.conflict_latched` with `recorded` true is logged, which is after the write. M2 of round two (the view published after the write) is caught by it.
+- **Decision 109.** `it_ac30_a_paused_writer_is_marked_lost_and_its_sessions_end` used `probe.node_loss_timeout_ms = 2000` with a period of 200 and a timeout of 5000, which the new rule refuses (at least 5400). It now uses 6000, which the old rule accepts too. The probe timeout stays 5000, so that no probe before the pause times out on a busy machine. The configuration of the unit tests of `control.rs` (period 100, timeout 100, the default loss time) and every other configuration of `apps/pool/tests/` meet the rule.
+- **Left as it is.** `it_ac14_a_second_primary_beside_a_silent_writer_ends_sessions_and_latches_the_journal` after `f11f4f3` of the developer: only the order changed (the writer is silenced and its monitor connection counted while `pg2` is still refused), and the test still asks for both reasons, `57P01`, the recorded latch and a closed restart, so its intent is unchanged.
+
+| Command | Observed | Result |
+|---|---|---|
+| `POOL_IT_FILTER=it_waiters_are_limited scripts/check.sh integration`, 10 runs in a row | 10 of 10 | pass |
+| `cargo test -p pool --locked --bin pool control::tests::ac14_the_conflict_view_is_published`, 10 runs | 10 of 10 | pass |
+| `POOL_IT_FILTER=it_ac30_a_paused_writer scripts/check.sh integration`, 5 runs in a row | 5 of 5, about 12 s each | pass |
+| `scripts/check.sh all > <file> 2>&1; echo $?` | exit status 0 | pass |
+| `scripts/check.sh integration > <file> 2>&1; echo $?` | exit status 0, 30 of 30 | pass |
+| `scripts/check.sh linux-build` on `bf56885` | exit status 0 | pass |
+
+The first two mutation runs of the waiter test ran into the limit of 600 s of my mutation runner, because the copy rebuilt everything on a busy machine. Run again with a limit of 1500 s, each took about 19 to 24 minutes and was caught. The old `run.sh` in that copy left two `sleep 1800` processes of my runs behind, which I ended.
+
 ## Full verification
 
 The `Verify it` box of feature 4 (`/check verify one real primary path`), on 2026-11-16 from 00:14 to 00:45 WIB, by the checker session, on `main` at `af23fa4`. macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`, and the pinned build image for Linux. The workstation and the Linux image are not CI. Every command below was run in this session.
