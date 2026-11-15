@@ -1,6 +1,6 @@
 # Engineering standards
 
-These requirements govern implementation. The workspace they apply to today is `apps/pool`, `crates/pool-config` and `crates/pool-control`. The checks that enforce them are fixed in [spec 0002](specs/0002-standards-and-tooling/index.md#required-checks).
+These requirements govern implementation. The workspace they apply to today has five members: `apps/pool`, `crates/pool-config`, `crates/pool-control`, `crates/pool-core` and `crates/pool-protocol`. The checks that enforce them are fixed in [spec 0002](specs/0002-standards-and-tooling/index.md#required-checks).
 
 ## Rust and runtime
 
@@ -53,7 +53,7 @@ Some surfaces are extended by every later slice. The slice that first exposes on
 | Process exit status, and command output for people and as JSON | [001](scope/001-stack-and-workspace.md) | Exit 0 success, 1 input rejected, 2 usage error, 3 could not complete. The result goes to stdout, usage errors to stderr. JSON is one object on one line that starts with `output_version`, `command` and `result` and ends with `findings`. Output is constant text and never repeats input. Full rule: [spec 0001, exit status and output](specs/0001-initial-architecture/index.md#exit-status-and-output) |
 | Log event fields and redaction | [001](scope/001-stack-and-workspace.md) | One JSON object per line on stderr with `ts`, `level` and `event`, and named fields for anything that varies. Secrets are redacted by type, not by filter. Credentials, cancellation keys, SQL, database error text and configuration content are never logged by default. Fixed ahead of the first log event. Full rule: [spec 0001, log events and redaction](specs/0001-initial-architecture/index.md#log-events-and-redaction) |
 | Identifier and generation types | [003](scope/003-control-and-session-data-model.md) | One type per identifier and per generation, which never compares with or converts into another kind. An identifier is built only by a function that checks its syntax. A generation advances by one and fails closed at the top. Types that more than one crate needs live in `pool-config`. A generation kept in memory is only comparable inside one start sequence. Full rule: [spec 0003, identifier and generation types](specs/0003-control-and-session-data-model/index.md#identifier-and-generation-types) |
-| SQLSTATEs and messages that POOL itself generates | [004](scope/004-one-real-primary-path.md) | Pending |
+| SQLSTATEs and messages that POOL itself generates | [004](scope/004-one-real-primary-path.md) | Every error that POOL generates is `FATAL` and has the fields `S`, `V`, `C` and `M` only. The message is constant text. Each situation has one SQLSTATE from a fixed table. An error that PostgreSQL sends during a query is passed on unchanged. Full rule: [spec 0004, SQLSTATEs that POOL generates](specs/0004-one-real-primary-path/index.md#sqlstates-that-pool-generates) |
 | Metric names, units and bounded labels | The first slice that exports a metric, no later than [006](scope/006-protocol-breadth-and-cancellation.md) | Pending |
 | Administration API versioning, error body and request ID | [009](scope/009-safe-topology-administration.md) | Pending |
 

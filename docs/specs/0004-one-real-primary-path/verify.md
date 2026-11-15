@@ -855,6 +855,18 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 | `scripts/check.sh linux-build` at `87be008` | exit 0 | exit 0 | pass |
 | `scripts/check.sh integration` at `87be008` | exit 0 | exit 0: 8 of 8 against PostgreSQL 18 in Docker | pass |
 
+**The final tree.** After commits `8e71ae5` (the flag on both fuzz lockfile commands) and `795775f` (`NegotiateProtocolVersion` carries the whole protocol code, `0004 AC-15`), and `main` merged in `d556e98`:
+
+| Command at `d556e98` | Observed | Result |
+|---|---|---|
+| `cargo test -p pool-protocol --locked` | 22 unit, 11 golden (with `negotiation_carries_the_whole_protocol_code_as_postgresql_18_7_sends_it`) and 4 redaction tests passed | pass |
+| `cargo test -p pool-core --locked` | 37 unit and 29 session tests passed | pass |
+| `scripts/check.sh all` | exit 0 | pass |
+| `scripts/check.sh fuzz` | exit 0: `validate` 92047 runs, `startup` 1362502, `frontend_message` 427525, `scram` 3685731, each 31 s, no crash file | pass |
+| `scripts/check.sh integration` | exit 0, 8 of 8 | pass |
+| `scripts/check.sh linux-build` | first run exit 1: `ac9_a_second_command_while_the_lock_is_held_is_state_locked_and_changes_nothing` in `apps/pool/tests/commands.rs:403` got exit 3 `state.locked` after the test dropped its lock; second run exit 0. The test is not of this step and passed at `87be008` | flaky, reported to the lead |
+| `scripts/prove-checks.sh --with-linux-build` | exit 0: `all checks reject their bad change`, cases 1 to 35 `PASS`, case 20 run with Docker | pass |
+
 **What the targets hold.** `startup` feeds the first packet reader before or after TLS (the first input byte says which) and asks the same results for the whole input, three pieces cut where the next two bytes say, and single bytes; it also runs the parameter parser on the rest. `frontend_message` does the same for the whole message reader (limit 1024) and for the header reader with the classification of client and backend headers. `scram` runs the four SCRAM parsers and checks that base64 decodes what it encodes and encodes back what it decodes. That closes the gaps the checker named: three pieces and random input on the first packets and the messages, from raw bytes. The regression inputs under `crates/pool-protocol/fuzz/regressions/<target>/` are the golden packets and messages of the tests (33 files); `crates/pool-config/fuzz/regressions/validate/` starts with the minimal fixture.
 
 **The `deny` command of the fuzz lockfiles.** `cargo deny check` on `crates/pool-protocol/fuzz/Cargo.lock` with the `deny.toml` of the repository failed only with `license-not-encountered` for `Unicode-3.0`: the lockfile holds the same ten third party packages as `crates/pool-config/fuzz/Cargo.lock`, at the same versions, and none of them is under that license. On the decision of the architect (spec 0004 "Dependency policy", commit `7b93379` of the spec branch), both fuzz lockfile commands of `scripts/check.sh deny` now run with `-A license-not-encountered` after `check`; the command of the product lockfile is unchanged, and so is `deny.toml`. With the flag both fuzz lockfiles give `advisories ok, bans ok, licenses ok, sources ok`.
@@ -865,3 +877,16 @@ Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREM
 |---|---|---|
 | `0004 AC-27` | `crates/pool-protocol/fuzz/` with the targets `startup`, `frontend_message` and `scram`, its lockfile and committed regression inputs; `scripts/check.sh fuzz` builds every target of both fuzz packages and runs each on its committed inputs for 30 s, and ends without a crash file | pass on the workstation; the CI job is manual step M2 |
 | `0004 AC-24`, the `pool-protocol` types | `tests/redaction.rs` puts `CANARY-9f2c7b1e` into every content field of `Message`, `MessageReader`, `Authentication`, `SaslInitialResponse`, `NegotiateProtocolVersion`, `ParameterStatus`, `ClientFirst`, `ServerFirst`, `ClientFinal`, `ServerFinal`, `Forwarded`, `FirstPacket` and `FirstPacketReader` and finds it in no `Debug` text | pass |
+
+### Build plan step 13: document corrections
+
+On 2026-11-15, on top of `main` with step 12 merged. Items 1 and 2 of [Document corrections](index.md#document-corrections), and nothing else in the two files.
+
+| Item | File | Change | Result |
+|---|---|---|---|
+| 1 | `docs/engineering-standards.md` | The row "SQLSTATEs and messages that POOL itself generates" of the shared conventions table now holds the rule (`FATAL`, the fields `S`, `V`, `C` and `M` only, constant text, one SQLSTATE per situation from a fixed table, a server error during a query passed on unchanged) and links to [SQLSTATEs that POOL generates](index.md#sqlstates-that-pool-generates). The first paragraph names the five workspace members | done |
+| 2 | `docs/repository-structure.md` | The first paragraph adds `crates/pool-protocol` and `crates/pool-core` to the paths that exist | done |
+
+`scripts/check.sh docs`: exit 0 (links and anchors D1 and D2, scope status D3, IDs D4 to D6).
+
+Two sentences of the same files are no longer exact and are left to the "Document it" box of scope 004, as item 5 of the corrections says: the paragraph on the fuzz package in "Rust and runtime" of `docs/engineering-standards.md` names only `crates/pool-config/fuzz/`, and `crates/pool-protocol/fuzz/` now exists too; the row of `apps/pool` in the crate table of `docs/repository-structure.md` says it depends on all four internal crates, and today it depends on `pool-config`, `pool-control` and `pool-core`, not on `pool-protocol`.
