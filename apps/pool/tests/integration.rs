@@ -2267,13 +2267,17 @@ fn it_ac14_a_second_primary_beside_a_silent_writer_ends_sessions_and_latches_the
             .is_some()
     );
 
+    // The writer falls silent first, and its monitor connection is ended
+    // while pg2 is still refused, so the count can only see pg1. Only then
+    // does pg2 answer: counted after it, its own monitor login could be in
+    // the count too.
     writer.refuse_tls_from(writer.connections() + 1);
-    second.accept_tls_again();
     assert_eq!(
         end_monitor_connections(),
         1,
         "the monitor connection of pg1"
     );
+    second.accept_tls_again();
     daemon.wait_for(
         &[
             "\"event\":\"admission.changed\"",
