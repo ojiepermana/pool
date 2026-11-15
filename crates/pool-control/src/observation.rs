@@ -172,7 +172,7 @@ impl ObservationBoard {
     }
 
     /// The later of `now` and the latest sample time: the now that
-    /// [`crate::build_snapshot`] and [`crate::JournalRead::plan_bootstrap`]
+    /// [`crate::build_snapshot`] and [`crate::JournalRead::bootstrap_plan`]
     /// use. A later now only makes samples older, so it can close and never
     /// open.
     pub(crate) fn clamp(&self, now: MonotonicTime) -> MonotonicTime {

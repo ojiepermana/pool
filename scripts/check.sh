@@ -188,6 +188,8 @@ fuzz_target() {
   max_len=$3
   seed=${4:-}
   mkdir -p "$crate/fuzz/corpus/$target"
+  # cargo-fuzz 0.13.2 has no --locked: refuse a lockfile that the build would have to change first.
+  run cargo "+$FUZZ_TOOLCHAIN" metadata --locked --format-version 1 --manifest-path "$crate/fuzz/Cargo.toml" >/dev/null || return 1
   run env CARGO_TARGET_DIR="$ROOT/target/fuzz" sh -c 'CDPATH= cd -- "$1" && shift && exec cargo "+$1" fuzz run "$2" "fuzz/corpus/$2" "fuzz/regressions/$2" $5 -- "-max_total_time=$3" "-max_len=$4"' \
     fuzz "$crate" "$FUZZ_TOOLCHAIN" "$target" "$seconds" "$max_len" "$seed" || return 1
   # cargo-fuzz creates the directory even when nothing crashed, so only a file in it is a finding.
@@ -208,6 +210,14 @@ check_fuzz() {
     missing "the toolchain $FUZZ_TOOLCHAIN is required; run scripts/check.sh fuzz-tools" || return 1
   fi
   seconds=${POOL_FUZZ_SECONDS:-30}
+  # libFuzzer reads -max_total_time=0 as no limit, so 0 and anything but a positive number are refused.
+  case $seconds in
+    '' | 0* | *[!0-9]*)
+      echo "fuzz: POOL_FUZZ_SECONDS must be a whole number of seconds above 0" >&2
+      status=1
+      return 1
+      ;;
+  esac
   fuzz_target crates/pool-config validate 4096 tests/fixtures || return 1
   fuzz_target crates/pool-protocol startup 16384 || return 1
   fuzz_target crates/pool-protocol frontend_message 16384 || return 1
