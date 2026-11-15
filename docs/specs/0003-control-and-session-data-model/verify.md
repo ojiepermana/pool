@@ -575,19 +575,20 @@ Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15. The 
 
 ### Test counts
 
-`#[test]` functions per file, before on `79de174` and after on `26210ce`.
+`#[test]` functions per file, counted with `grep -c '#\[test\]'`: before on `79de174`, after the first round on `26210ce`, and after the round for the review gaps (below). The first version of this table said 91 and 257 for the second column; `validate.rs` has 95 on `26210ce`, so the total is 261 (review n6). The row for `lib.rs` is new; without it the totals are 198, 261 and 268.
 
-| File | Before | After |
-|---|---|---|
-| `crates/pool-config/tests/validate.rs` | 75 | 91 |
-| `crates/pool-config/src/identifier.rs` (unit) | 7 | 11 |
-| `crates/pool-config/src/generation.rs` (unit) | 4 | 7 |
-| `crates/pool-config/src/topology.rs` (unit) | 0 | 4 |
-| `apps/pool/tests/check_config.rs` | 74 | 80 |
-| `crates/pool-control/tests/walkthroughs.rs` | 7 | 26 |
-| `crates/pool-control/tests/admission_model.rs` | 1 | 3 |
-| `tools/repo-check/src/workspace.rs` (unit) | 30 | 35 |
-| Total | 198 | 257 |
+| File | Before | After `26210ce` | After the review gaps |
+|---|---|---|---|
+| `crates/pool-config/tests/validate.rs` | 75 | 95 | 101 |
+| `crates/pool-config/src/lib.rs` (unit) | 3 | 3 | 6 |
+| `crates/pool-config/src/identifier.rs` (unit) | 7 | 11 | 11 |
+| `crates/pool-config/src/generation.rs` (unit) | 4 | 7 | 7 |
+| `crates/pool-config/src/topology.rs` (unit) | 0 | 4 | 4 |
+| `apps/pool/tests/check_config.rs` | 74 | 80 | 81 |
+| `crates/pool-control/tests/walkthroughs.rs` | 7 | 26 | 26 |
+| `crates/pool-control/tests/admission_model.rs` | 1 | 3 | 3 |
+| `tools/repo-check/src/workspace.rs` (unit) | 30 | 35 | 35 |
+| Total | 201 | 264 | 274 |
 
 The existing `open_only_on_full_agreement` now asserts the exact number of open answers, 130, worked out by hand from the rules (65 per approved writer), where it asserted only that one opened. On every closed answer of its 8192 cases it also compares the exact list of reasons with `expected_reasons`, a rule of the test written from the table under "Writer admission", where it checked only that the list was not empty. `scripts/check.sh all` passes after that change too: 448 tests, 0 failed.
 
@@ -624,6 +625,31 @@ The `pool-config` run skipped the three slow tests, because on `32a7b24` they to
 
 1. **`validate` took time that grew with the square of the number of entries** (`0003 AC-15`). On `32a7b24`, before step 8, `ac15_large_valid_inputs_validate_within_ten_seconds` failed. Step 8 (`be8bcf1`, on `main` through `ebc9228`) fixes it; on `26210ce` every `ac15_` test passes in under 2 seconds.
 2. **W4 counts a table after the last entry as part of that entry.** `w4_a_table_after_the_last_entry_counts_as_part_of_it` pins it: a local package that is not a member, written last and followed by a `[[patch.unused]]` table with its own `source` line, is not reported. By the text of spec 0003 ("an entry is the lines from one `[[package]]` line to the next, or to the end of the file") this is the specified behaviour, not a defect. It is a gap: Cargo writes such tables after the packages. Changing it changes the rule text, so it is for the architect.
+
+### Review gaps: tests added after the review of 2026-11-15
+
+Written by `tst-f3-test` (tester, `claude-opus-5-5 · high`) on 2026-11-15, for t1, t2, t4, t5 and the test nits n5, n6 and n17 of [the review](../../reviews/2026-11-15-scope-003-control-and-session-data-model.md). The tree is `main` at `d2e8548` plus this branch's commit. No production line changed: `crates/pool-config/src/lib.rs` gained the module `line_index_tests` at its end, and the `edge_tests` module of `topology.rs` changed inside.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | every check ok | exit 0, `ok` for fmt, clippy, test, deny, guards and docs; 458 tests passed, 0 failed | pass |
+| `cargo test -p pool-config --locked --test validate -- --skip ac15_`, once per mutation of `topology.rs` below | each mutation fails a new test | 4 of 4 caught | pass |
+| `cargo test -p pool-config --locked --lib line_index`, once per mutation of `LineIndex` below | each mutation fails a new test | 3 of 3 caught | pass |
+| `cargo test -p pool-control --locked --doc` with `compile_fail,E0451` at `admission.rs:89` changed to `E0308` | the doc test fails | 4 passed: the code after the comma is not checked | as the review says, t3 |
+
+| Group | Criteria | Mutation it catches (put back after each run) |
+|---|---|---|
+| `validate.rs`: `ac2_a_repeated_cluster_id_is_reported_at_each_later_entry`, `ac3_repeated_ids_are_reported_clusters_then_nodes_then_identities` | `0003 AC-2`, `AC-3`: a repeated cluster `id` at each later entry; cross check 1 runs over clusters, nodes, identities even when the file has the tables in the reverse order (t1) | the call of `duplicate_ids` for clusters removed (`topology.rs:688`) |
+| `validate.rs`: `ac2_a_bad_cluster_id_skips_only_the_writer_check_of_that_cluster` | `0003 AC-2`: the `expected_writer` check still runs for every other cluster (t2) | `every_cluster_id_valid &&` added to the condition at `topology.rs:731` |
+| `validate.rs`: `ac2_a_node_with_a_bad_cluster_skips_every_writer_check` | `0003 AC-2`: a node with a bad `cluster` skips cross check 3 as a whole, also when it is not the writer (t2) | `&& entry.cluster.is_some()` removed at `topology.rs:728` |
+| `validate.rs`: `ac2_a_node_whose_port_failed_is_left_out_of_the_endpoint_check` | `0003 AC-2`, `AC-15`: two nodes with one host and port 0 give the two port findings only (t2) | `entry.port` read as `Some(entry.port.unwrap_or(0))` at `topology.rs:772` |
+| `validate.rs`: `ac4_a_canary_outside_a_value_never_reaches_rejection_text`; `check_config.rs`: `ac4_a_canary_outside_a_value_never_reaches_the_output` | `0003 AC-4`: the canary in a key that is not in the schema inside `[control]`, `[[cluster]]`, `[[node]]`, `[[identity]]` and an inline entry, a quoted and a dotted key, a table and an array table name, `[control.<canary>]`, a comment, an array entry, values of the wrong type, a string that does not end and a key without a value; refused, and no part of the canary in `Debug`, `Display` or either output format (t4) | none run; the code prints no file text today |
+| `lib.rs` unit module `line_index_tests` | `0003 AC-3`, `AC-15`: `LineIndex::line_column` equals `line_column` at every byte offset up to two past the end of texts with CRLF, tabs, empty lines, lines of more than 256 and 512 bytes, lengths of 256 and 512, and two, three and four byte characters across the strides at 256, 512 and 768; `line_column` equals a count by `str` methods at every char boundary; offsets at and past the end, `usize::MAX`, the empty text (t5) | the tail counted in bytes instead of scalars; `start < offset` in place of `start <= offset`; the offset clamped one byte short of the end |
+| `validate.rs`: `ac3_positions_count_scalars_with_crlf_and_at_block_boundaries`, `ac4_validate_opens_no_file`; `walkthroughs.rs`: `bootstrap_refusals_need_every_node_and_a_cluster`; `topology.rs` `edge_tests` | n17: the loop asserts every target instead of skipping one with `continue`; `validate` also accepts paths that exist (a fixture holding the canary as the credential file, the package directory as the state directory) and the canary stays out of `Debug`; the exact name `bootstrap.no_cluster`; the allowed host bytes written out instead of taken from the code | none run |
+
+Eight comment lines in the tests said `0003 AC-15` was proposed or not yet accepted (n5); they now name `0003 AC-15`.
+
+The `compile_fail` doc tests (`admission.rs:89`, `:137`, `authority.rs:128`, `bootstrap.rs:57`, `lib.rs:44`) prove only that their snippet does not compile. Rust 1.100.0 on the stable channel does not check the error code after the comma: with `E0308` written in place of `E0451` the test still passed. So the sentence under milestone 3 that these tests "cannot pass for an unrelated compile error" does not hold, and the rows that cite "the four `compile_fail,E0451` doc tests" for `0003 AC-12` rest on each snippet having no other error. The `ValidatedConfig` snippet at `lib.rs:44` names three of the eight fields: with every field made public it still fails to compile (missing fields), so it no longer guards the private fields. A doc comment change that closes this is reported to the lead for the developer, because the tests sit in production files.
 
 ## Full verification: /check verify
 
