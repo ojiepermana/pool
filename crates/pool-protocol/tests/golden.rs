@@ -587,3 +587,180 @@ fn negotiation_carries_the_whole_protocol_code_as_postgresql_18_7_sends_it() {
         None
     );
 }
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+/// A header of `tag` with the length field `len`.
+fn tag_header(tag: u8, len: u32) -> [u8; 5] {
+    let mut out = [tag, 0, 0, 0, 0];
+    out[1..].copy_from_slice(&len.to_be_bytes());
+    out
+}
+
+#[test]
+fn ac23_every_tag_from_the_client_gets_the_action_of_its_row() {
+    use pool_protocol::message::{FrontendAction, classify_frontend};
+    // The rows under "Messages after login", written out again from the spec.
+    let unsupported = b"PBDECHSFdcf";
+    for tag in 0..=255u8 {
+        for len in [4u32, 5, 100, 1024] {
+            let expected = match tag {
+                b'Q' => FrontendAction::Query { body_len: len - 4 },
+                b'X' if len == 4 => FrontendAction::Terminate,
+                b'X' => FrontendAction::Refuse(PoolError::ProtocolViolation),
+                t if unsupported.contains(&t) => {
+                    FrontendAction::Refuse(PoolError::FeatureNotSupported)
+                }
+                _ => FrontendAction::Refuse(PoolError::ProtocolViolation),
+            };
+            assert_eq!(
+                classify_frontend(tag_header(tag, len), 1024),
+                expected,
+                "tag {tag:#04x}, length {len}"
+            );
+        }
+        // A length below 4 is 08P01 whatever the tag.
+        for len in [0u32, 1, 3] {
+            assert_eq!(
+                classify_frontend(tag_header(tag, len), 1024),
+                FrontendAction::Refuse(PoolError::ProtocolViolation),
+                "tag {tag:#04x}, length {len}"
+            );
+        }
+    }
+    // The size limit is asked of a Query only.
+    assert_eq!(
+        classify_frontend(tag_header(b'Q', 1025), 1024),
+        FrontendAction::Refuse(PoolError::MessageTooLarge)
+    );
+    assert_eq!(
+        classify_frontend(tag_header(b'P', u32::MAX), 1024),
+        FrontendAction::Refuse(PoolError::FeatureNotSupported)
+    );
+}
+
+#[test]
+fn ac23_every_tag_from_the_backend_gets_the_action_of_its_row() {
+    use pool_protocol::message::{BackendAction, classify_backend};
+    let forwarded = b"TDCIENSA";
+    let copy = b"GHW";
+    for tag in 0..=255u8 {
+        for len in [4u32, 5, 6, 100] {
+            let expected = match tag {
+                t if forwarded.contains(&t) => BackendAction::Forward { body_len: len - 4 },
+                b'Z' if len == 5 => BackendAction::ReadyForQuery,
+                t if copy.contains(&t) => BackendAction::CopyResponse,
+                _ => BackendAction::Lost,
+            };
+            assert_eq!(
+                classify_backend(tag_header(tag, len)),
+                expected,
+                "tag {tag:#04x}, length {len}"
+            );
+        }
+        for len in [0u32, 3] {
+            assert_eq!(
+                classify_backend(tag_header(tag, len)),
+                BackendAction::Lost,
+                "tag {tag:#04x}, length {len}"
+            );
+        }
+    }
+}
+
+#[test]
+fn ac23_terminate_with_any_length_but_4_is_08p01() {
+    use pool_protocol::message::{FrontendAction, classify_frontend};
+    for len in [0u32, 3, 5, 8, 1024, 1025, u32::MAX] {
+        assert_eq!(
+            classify_frontend(tag_header(b'X', len), 1024),
+            FrontendAction::Refuse(PoolError::ProtocolViolation),
+            "length {len}"
+        );
+    }
+}
+
+#[test]
+fn ac15_every_order_of_up_to_four_first_packets_follows_the_rule_of_the_spec() {
+    use pool_protocol::startup::{FirstKind, Handshake, HandshakeStep};
+    #[derive(Clone, Copy, PartialEq)]
+    enum Phase {
+        First,
+        AfterGss,
+        Tls,
+        Closed,
+    }
+    // The rule of "Startup", written out again: an optional GSSENCRequest, then SSLRequest,
+    // then over TLS a StartupMessage or a CancelRequest; a CancelRequest may be the very first
+    // packet; a StartupMessage before TLS is 28000; every other order is 08P01; nothing after the end.
+    let model = |phase: Phase, kind: FirstKind| -> (Phase, Result<HandshakeStep, PoolError>) {
+        let violation = (Phase::Closed, Err(PoolError::ProtocolViolation));
+        match (phase, kind) {
+            (Phase::Closed, _) => violation,
+            (Phase::First, FirstKind::GssEncRequest) => {
+                (Phase::AfterGss, Ok(HandshakeStep::AnswerGssEnc))
+            }
+            (Phase::First | Phase::AfterGss, FirstKind::SslRequest) => {
+                (Phase::Tls, Ok(HandshakeStep::AnswerSsl))
+            }
+            (Phase::First | Phase::Tls, FirstKind::CancelRequest) => {
+                (Phase::Closed, Ok(HandshakeStep::DropCancel))
+            }
+            (Phase::First | Phase::AfterGss, FirstKind::Startup { .. }) => {
+                (Phase::Closed, Err(PoolError::TlsRequired))
+            }
+            (Phase::Tls, FirstKind::Startup { .. }) => {
+                (Phase::Closed, Ok(HandshakeStep::ReadStartup))
+            }
+            _ => violation,
+        }
+    };
+    let kinds = [
+        FirstKind::SslRequest,
+        FirstKind::GssEncRequest,
+        FirstKind::CancelRequest,
+        FirstKind::Startup { minor: 0 },
+        FirstKind::Startup { minor: 2 },
+    ];
+    let mut checked = 0;
+    for length in 1..=4u32 {
+        for index in 0..kinds.len().pow(length) {
+            let mut handshake = Handshake::new();
+            let mut phase = Phase::First;
+            let mut rest = index;
+            for _ in 0..length {
+                let kind = kinds[rest % kinds.len()];
+                rest /= kinds.len();
+                let (next, expected) = model(phase, kind);
+                assert_eq!(handshake.next(kind), expected, "{kind:?} at step {checked}");
+                assert_eq!(handshake.is_tls(), next == Phase::Tls);
+                phase = next;
+                checked += 1;
+            }
+        }
+    }
+    assert_eq!(checked, 5 + 2 * 25 + 3 * 125 + 4 * 625);
+}
+
+#[test]
+fn ac15_negotiation_bytes_for_a_request_with_a_pq_option_match_a_real_server() {
+    // PostgreSQL 18.7, asked for 3.0 with the option `_pq_.zq9`, sent this body
+    // (verify.md, checker run of the changes to step 4): first number 196608, one name.
+    let mut reader = FirstPacketReader::new(STARTUP_MAX);
+    reader.feed(&encode_ssl_request());
+    let Some(Ok(FirstPacket::Startup(request))) = reader
+        .feed(&encode_startup(&[("user", b"alice"), ("_pq_.zq9", b"1")]))
+        .1
+    else {
+        panic!("a startup packet");
+    };
+    let message = request.negotiation().expect("a negotiation");
+    assert_eq!(message[0], b'v');
+    assert_eq!(
+        message[5..],
+        [
+            0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x5f, 0x70, 0x71, 0x5f, 0x2e, 0x7a,
+            0x71, 0x39, 0x00
+        ]
+    );
+}

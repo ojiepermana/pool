@@ -574,3 +574,40 @@ fn ac17_receipts_handed_over_in_reverse_keep_the_higher_revision() {
         other => panic!("{}", other.name()),
     }
 }
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+#[test]
+fn ac12_a_probe_row_of_exactly_4096_bytes_of_text_is_read_and_one_byte_more_is_not() {
+    // covers: 0004 AC-12. 19 bytes of system identifier, 5 of `false`, and a
+    // timeline padded with zeros to the rest.
+    for (len, reached) in [(4096usize - 24, true), (4096 - 23, false)] {
+        let timeline = format!("{}3", "0".repeat(len - 1));
+        let row = [Some(SYSTEM_ID), Some("false"), Some(timeline.as_str())];
+        let observation = observation_from_row(node("pg1"), at(5), Some(&row));
+        assert_eq!(
+            matches!(observation.outcome(), ObservationOutcome::Reached(_)),
+            reached,
+            "{len}"
+        );
+    }
+}
+
+#[test]
+fn ac12_the_probe_query_is_the_text_of_the_spec() {
+    // covers: 0004 AC-12. The one query under "The probe" in spec 0004, byte for byte.
+    let spec = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../docs/specs/0004-one-real-primary-path/index.md"
+    ))
+    .expect("spec 0004");
+    let section = spec.split_once("\n## The probe\n").expect("the section").1;
+    let block = section
+        .split_once("```sql\n")
+        .expect("the sql block")
+        .1
+        .split_once("\n```")
+        .expect("the end of the block")
+        .0;
+    assert_eq!(pool_control::PROBE_QUERY, block);
+}
