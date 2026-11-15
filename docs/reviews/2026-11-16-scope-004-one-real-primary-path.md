@@ -403,3 +403,23 @@ Nits of this round:
 ### What holds the verdict
 
 One finding: r1, major. When the integration script works under `/bin/sh` of Linux with no terminal, and one run there is on record, I have no open blocker and no open major finding, and the verdict becomes "Approved". The minor findings r2 to r5, t8 and n15 do not hold it.
+
+### Addendum, the documents up to `bbcf7c1`
+
+After the second review was written, `main` gained documents only: the range `1492e17..bbcf7c1` changes `index.md`, `rationale.md` and `verify.md` of spec 0004 and no code. It adds decisions 106 to 108 and a checker note for decisions 104 and 105. I read the diff, and `claude-opus-5-5` read it apart from me and checked each decision against the code. Neither of us found a blocker or a major point in it. The verdict does not change: r1 is in a script that this range does not touch.
+
+| Decision | What it says | Judgement |
+|---|---|---|
+| 106 | A daemon whose stderr has no reader serves on with no log. Accepted for this slice, written under the log events and under Consequences, and scope 008 counts the failed writes (Follow-up 6) | Right, and it matches the code: the log task ignores a failed write (`apps/pool/src/log.rs:90`) and ends only on a panic. This closes the part of r5 that said the note of the checker had no owner. One line is missing (a3). |
+| 107 | A primary that the journal did not approve sets the conflict latch, also while the cluster is closed with `authority.config_conflict`. Declared as intended (`docs/specs/0004-one-real-primary-path/index.md:847`) | Right. The rule for a latch never reads `expected_writer` (`crates/pool-control/src/admission.rs:351`), a configuration is not an authority, and a latch can only close. The words around it leave two things out (a2). |
+| 108 | The proof that an accepted socket has keepalive on is the pending timer in `/proc/net/tcp`, and the limit of that proof is written (`index.md:1100`) | Right, and the limit is honest: the timer shows that keepalive is on, not that the kernel ends a dead connection. The row that names the evidence is still wrong for a reader of the rendered page (a1). |
+
+New points from this range, all minor or less:
+
+- 🟡 a1. `index.md:1375`: the second cell of the row for `0004 AC-30` still says `ss -tno`. The correction sits in a fourth cell of a table with three columns, so a rendered page drops it. It is the fault of the triage notes in r5 once more. Rewrite the second cell and drop the fourth. Owner: the architect.
+- 🟡 a2. `index.md:847`: "the one way to make that node the writer is a new bootstrap" leaves out that `pool bootstrap` refuses while a journal or a witness is present, so the operator first stops the daemon and takes both away, as Consequences says at `index.md:1515`. And "it costs nothing in this slice" is true only against a correct configuration: a latch that was set stays when `expected_writer` is put right again, and the cluster stays closed until scope 009. Say both. Owner: the architect.
+- 🟡 a3. `index.md:1251`: a daemon with no log is not in the list of what the slice does not defend, and `docs/security/` does not name it. A latch shows only in the log. With stderr closed, a latched cluster answers `57P03`, `pool show-authority` says `ready`, and nothing tells the operator why. One line in the security model, with a pointer to the paragraph on stderr and to Follow-up 6. Owner: the architect.
+- ⚪ A reader of stderr that stalls, and does not go away, is another case than the one decision 106 covers. The write may then hold one of the four blocking threads of the runtime for good. Neither of us ran it, so take it as a question for scope 008.
+- ⚪ The section on the integration check now says the watchdog has a process group of its own and that nothing of a run outlives the script (`index.md:1300`). Under `dash` with no terminal that is not true, which is r1. So r1 is now also a place where the spec says more than the script does.
+
+The rationale counts 108 decisions, 40 of them heavy. That fits the table.
