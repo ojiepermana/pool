@@ -607,29 +607,64 @@ mod tests {
         assert!(view.fresh_route(&main_cluster(), fresh_until).is_none());
     }
 
+    /// Keeps, at each `authority.conflict_latched` with `recorded` true, the
+    /// state of the cluster in the route view as it is at that moment, which
+    /// is after the latch was written.
+    struct ViewAtRecord {
+        routes: watch::Receiver<RouteView>,
+        seen: Arc<Mutex<Vec<RouteState>>>,
+    }
+
+    impl tracing::Subscriber for ViewAtRecord {
+        fn enabled(&self, _: &tracing::Metadata<'_>) -> bool {
+            true
+        }
+
+        fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
+            tracing::span::Id::from_u64(1)
+        }
+
+        fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
+
+        fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
+
+        fn event(&self, event: &tracing::Event<'_>) {
+            let mut fields = Fields(Vec::new());
+            event.record(&mut fields);
+            let has = |k: &str, v: &str| fields.0.iter().any(|(a, b)| a == k && b == v);
+            if has("event", "authority.conflict_latched") && has("recorded", "true") {
+                let state = self.routes.borrow().state(&main_cluster());
+                self.seen.lock().expect("lock").push(state);
+            }
+        }
+
+        fn enter(&self, _: &tracing::span::Id) {}
+
+        fn exit(&self, _: &tracing::span::Id) {}
+    }
+
     #[tokio::test]
     async fn ac14_the_conflict_view_is_published_before_the_latch_is_written() {
         // covers: 0004 AC-14 and decision 12: in memory first, published at
-        // once, then the disk. The round is polled once: the latch write is
-        // still on its blocking thread, and the view is already out.
+        // once, then the disk. Round seven (review finding t8): the view is
+        // read at the moment the latch was recorded, which is after the
+        // write, so the order is held with no window of time.
         let path = journal_file("published-first");
         let (mut control, receiver) = control_loop(&path);
+        let seen: Arc<Mutex<Vec<RouteState>>> = Arc::default();
+        let _guard = tracing::subscriber::set_default(ViewAtRecord {
+            routes: receiver.clone(),
+            seen: Arc::clone(&seen),
+        });
         control.sample(true);
-        {
-            // Exactly one poll: a timer would give the blocking write time to finish.
-            let mut round = std::pin::pin!(control.round());
-            let mut context = std::task::Context::from_waker(std::task::Waker::noop());
-            assert!(
-                round.as_mut().poll(&mut context).is_pending(),
-                "the round waits for its latch write"
-            );
-        }
+        control.round().await;
         assert_eq!(
-            receiver.borrow().state(&main_cluster()),
-            RouteState::Closed {
+            *seen.lock().expect("lock"),
+            [RouteState::Closed {
                 conflict: true,
                 lost: false
-            }
+            }],
+            "the view with the conflict was out when the latch was recorded"
         );
     }
 
