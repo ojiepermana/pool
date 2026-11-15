@@ -184,7 +184,12 @@ async fn run_node(
             record.client_first = String::from_utf8(data.clone()).expect("utf-8");
             let _ = seen.send(record);
             let verifier = Verifier::parse(
-                verifier_text(&password(script.password), b"node salt", 4096).as_bytes(),
+                verifier_text(
+                    &password(script.password),
+                    b"node salt",
+                    std::num::NonZeroU32::new(4096).expect("count"),
+                )
+                .as_bytes(),
             )
             .expect("verifier");
             let (exchange, mut server_first) =

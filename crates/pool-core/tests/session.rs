@@ -226,9 +226,15 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
         .startups
         .push((text(&request.user), text(&request.database)));
     // SCRAM as PostgreSQL does it, against the backend password.
-    let verifier =
-        Verifier::parse(verifier_text(&password(BACKEND_PASSWORD), b"node salt", 4096).as_bytes())
-            .expect("verifier");
+    let verifier = Verifier::parse(
+        verifier_text(
+            &password(BACKEND_PASSWORD),
+            b"node salt",
+            std::num::NonZeroU32::new(4096).expect("count"),
+        )
+        .as_bytes(),
+    )
+    .expect("verifier");
     let _ = tls
         .write_all(&auth::encode_authentication_sasl(&[auth::SCRAM_SHA_256]))
         .await;
@@ -353,7 +359,12 @@ impl Harness {
         let chain = CertificateChain::parse(&fixture("node.pem")).expect("chain");
         let key = PrivateKey::parse(&fixture("node.key")).expect("key");
         let verifier = Verifier::parse(
-            verifier_text(&password(PRINCIPAL_PASSWORD), b"principal salt", 4096).as_bytes(),
+            verifier_text(
+                &password(PRINCIPAL_PASSWORD),
+                b"principal salt",
+                std::num::NonZeroU32::new(4096).expect("count"),
+            )
+            .as_bytes(),
         )
         .expect("verifier");
         let roots = TrustRoots::parse(&fixture("ca.pem")).expect("roots");
@@ -567,7 +578,7 @@ async fn scram_and_ready(mut tls: TlsStream<DuplexStream>, secret: &str) -> Logi
     let keys = derive_keys(
         &password(secret),
         &server_first.salt,
-        server_first.iterations,
+        std::num::NonZeroU32::new(server_first.iterations).expect("count"),
     );
     let (fin, expected) = client.client_final(&server_first, &keys);
     tls.write_all(&auth::encode_sasl_response(fin.as_bytes()))

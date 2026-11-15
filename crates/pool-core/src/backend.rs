@@ -160,13 +160,15 @@ impl Credential {
         {
             return Ok(cached.keys.clone());
         }
+        // The parser of the server-first message accepts 1 to 600000 only.
+        let count = std::num::NonZeroU32::new(iterations).ok_or(BackendError::Protocol)?;
         let credential = Arc::clone(self);
         let owned_salt = salt.to_vec();
         let keys = tokio::task::spawn_blocking(move || {
             credential
                 .derivations
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            derive_keys(&credential.password, &owned_salt, iterations)
+            derive_keys(&credential.password, &owned_salt, count)
         })
         .await
         .map_err(|_| BackendError::Closed)?;
