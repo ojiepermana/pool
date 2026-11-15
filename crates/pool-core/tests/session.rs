@@ -2328,3 +2328,32 @@ async fn shutdown_now_ends_every_session_at_once_and_returns_within_its_limit() 
         .await
         .expect("within the test limit");
 }
+
+#[tokio::test]
+async fn step_12_closes_the_backend_before_the_client_that_does_not_read() {
+    // Review nit n1: the close of a client that does not read may take CLOSE_TIMEOUT (1 s); the
+    // backend is closed before it starts, while the session is still counted.
+    let run = async {
+        let h = Harness::new("");
+        let _stuck = a_stuck_client(&h).await;
+        h.close(true);
+        let started = std::time::Instant::now();
+        while h.log(|l| l.closed) == 0 && started.elapsed() < Duration::from_millis(600) {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        assert_eq!(
+            h.log(|l| l.closed),
+            1,
+            "the backend is closed within 600 ms of the cut"
+        );
+        assert_eq!(
+            h.server.sessions(),
+            1,
+            "while the close of the client still waits"
+        );
+        assert!(eventually(|| h.server.sessions() == 0).await);
+    };
+    tokio::time::timeout(Duration::from_secs(15), run)
+        .await
+        .expect("within the test limit");
+}

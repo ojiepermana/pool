@@ -848,10 +848,10 @@ impl<C: Connector> Server<C> {
             }
         };
         drop(relay);
-        // Step 12: close the backend, give every permit back. A client that does
-        // not read cannot hold the end of its session: the close is bounded.
-        let _ = tokio::time::timeout(CLOSE_TIMEOUT, stream.shutdown()).await;
+        // Step 12: close the backend first, then the client, then give every permit back.
+        // A client that does not read cannot hold the end of its session: its close is bounded.
         drop(lease);
+        let _ = tokio::time::timeout(CLOSE_TIMEOUT, stream.shutdown()).await;
         drop(permits);
         tracing::info!(
             event = "session.ended",
