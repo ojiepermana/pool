@@ -116,7 +116,7 @@ fn prepare(path: &Path) -> Result<Prepared, Report> {
     };
     // 4. Every protected file, and the key of the made up verifiers.
     let listener = view.listener();
-    let chain = secret::read_certificate_chain(listener.tls_certificate_file())
+    let chain = secret::read_certificate_chain(listener.tls_certificate_file(), owner)
         .map_err(|error| secret_error(error, "listener.tls_certificate_file"))?;
     let key = secret::read_private_key(listener.tls_private_key().path(), owner)
         .map_err(|error| secret_error(error, "listener.tls_private_key_file"))?;
@@ -136,7 +136,8 @@ fn prepare(path: &Path) -> Result<Prepared, Report> {
     }
     let mut nodes = Vec::new();
     for node in config.nodes() {
-        let loaded = load::node(node).map_err(|error| secret_error(error, "node.tls_ca_file"))?;
+        let loaded =
+            load::node(node, owner).map_err(|error| secret_error(error, "node.tls_ca_file"))?;
         nodes.push((node.id().clone(), loaded));
     }
     let mut targets = Vec::new();
@@ -226,7 +227,7 @@ async fn serve(prepared: Prepared) -> Outcome {
         start_sequence,
         authority_id,
     } = prepared;
-    let server = match Server::new(server_parts) {
+    let server = match Server::with_identity_query(server_parts, pool_control::PROBE_QUERY) {
         Ok(server) => server,
         Err(error) => return Outcome::Report(server_error(error)),
     };

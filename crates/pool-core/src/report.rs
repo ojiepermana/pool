@@ -96,6 +96,8 @@ pub enum EndReason {
     MessageLimit,
     /// The cluster closed with a positive conflict.
     Conflict,
+    /// The control loop marked the approved writer of the cluster as lost (spec 0004, decision 84).
+    NodeLost,
     /// The daemon shut down.
     Shutdown,
 }
@@ -111,6 +113,7 @@ impl EndReason {
             Self::Protocol => "protocol",
             Self::MessageLimit => "message_limit",
             Self::Conflict => "conflict",
+            Self::NodeLost => "node_lost",
             Self::Shutdown => "shutdown",
         }
     }

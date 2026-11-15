@@ -11,6 +11,7 @@
 use std::fmt;
 use std::sync::Arc;
 
+use pool_config::SystemIdentifier;
 use pool_protocol::auth::{
     self, Authentication, BackendKeyData, ParameterStatus, TransactionStatus,
 };
@@ -18,7 +19,7 @@ use pool_protocol::message::{self, Message};
 use pool_protocol::sqlstate::error_sqlstate;
 use pool_protocol::startup::{encode_ssl_request, encode_startup};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite};
-use tokio::net::TcpStream;
+use tokio::net::{TcpSocket, TcpStream};
 use tokio::time::Instant;
 use tokio_rustls::TlsConnector;
 use tokio_rustls::client::TlsStream;
@@ -63,6 +64,9 @@ pub enum BackendError {
     Protocol,
     /// `in_hot_standby` was not reported as `off`, for a session.
     NotPrimary,
+    /// Step 8, for a session: the node did not name the system identifier and the timeline of
+    /// the route, or said it is in recovery, or answered the question in any other way.
+    Identity,
     /// The first `ReadyForQuery` did not report `I`.
     NotIdle,
     /// The stream ended or failed after the TLS handshake.
@@ -84,6 +88,7 @@ impl BackendError {
             Self::Server { .. } => "server_error",
             Self::Protocol => "protocol",
             Self::NotPrimary => "not_primary",
+            Self::Identity => "identity",
             Self::NotIdle => "not_idle",
             Self::Closed => "closed",
             Self::Random => "random",
@@ -346,6 +351,44 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
     }
 }
 
+impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
+    /// Step 8 of the backend connection, for a session (spec 0004, decision 85, `0004 AC-29`):
+    /// sends `query`, the question of the probe, and checks its answer by the rules of the probe.
+    ///
+    /// Exactly one row of three columns with no null and at most 4096 bytes; the first is the
+    /// system identifier of the route, the second is exactly `false`, the third is the timeline of
+    /// the route in decimal digits; the status after it is `I`. Any other answer, an error or a
+    /// broken message is [`BackendError::Identity`], and the connection must then be closed.
+    pub async fn verify_identity(
+        &mut self,
+        query: &str,
+        system_identifier: SystemIdentifier,
+        timeline: u32,
+    ) -> Result<(), BackendError> {
+        let row = self
+            .query_one_row(query)
+            .await
+            .map_err(|_| BackendError::Identity)?
+            .ok_or(BackendError::Identity)?;
+        let [Some(named), Some(in_recovery), Some(named_timeline)] = row.as_slice() else {
+            return Err(BackendError::Identity);
+        };
+        let same_system = SystemIdentifier::parse(named) == Some(system_identifier);
+        let same_timeline = !named_timeline.is_empty()
+            && named_timeline.bytes().all(|b| b.is_ascii_digit())
+            && named_timeline.parse::<u32>() == Ok(timeline);
+        if same_system
+            && in_recovery == "false"
+            && same_timeline
+            && self.status == TransactionStatus::Idle
+        {
+            Ok(())
+        } else {
+            Err(BackendError::Identity)
+        }
+    }
+}
+
 /// Reads the text columns of a `DataRow`.
 fn data_row(body: &[u8]) -> Result<Vec<Option<String>>, BackendError> {
     let count = body.get(..2).ok_or(BackendError::Protocol)?;
@@ -418,14 +461,40 @@ pub async fn connect(
     deadline: Instant,
 ) -> Result<BackendConnection<TcpStream>, BackendError> {
     tokio::time::timeout_at(deadline, async {
-        let tcp = TcpStream::connect((node.host.as_str(), node.port))
-            .await
-            .map_err(|_| BackendError::Connect)?;
+        let tcp = connect_tcp(&node.host, node.port).await?;
         let _ = tcp.set_nodelay(true);
         handshake(tcp, &node.tls, login, purpose).await
     })
     .await
     .map_err(|_| BackendError::Timeout)?
+}
+
+/// Step 1: resolves the name at each attempt and tries the addresses in the order they come back,
+/// each on a socket with TCP keepalive on before it connects (spec 0004, "A peer that vanished").
+async fn connect_tcp(host: &str, port: u16) -> Result<TcpStream, BackendError> {
+    let addresses = tokio::net::lookup_host((host, port))
+        .await
+        .map_err(|_| BackendError::Connect)?;
+    for address in addresses {
+        let Ok(socket) = node_socket(address) else {
+            continue;
+        };
+        if let Ok(tcp) = socket.connect(address).await {
+            return Ok(tcp);
+        }
+    }
+    Err(BackendError::Connect)
+}
+
+/// A socket for one address of a node, with TCP keepalive on, not connected yet.
+pub(crate) fn node_socket(address: std::net::SocketAddr) -> std::io::Result<TcpSocket> {
+    let socket = if address.is_ipv4() {
+        TcpSocket::new_v4()?
+    } else {
+        TcpSocket::new_v6()?
+    };
+    socket.set_keepalive(true)?;
+    Ok(socket)
 }
 
 /// Steps 2 to 7 of the backend connection over an open stream, before `deadline`.

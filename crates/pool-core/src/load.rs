@@ -19,7 +19,7 @@ pub fn listener_tls(
     listener: &ListenerConfig,
     owner: u32,
 ) -> Result<Arc<ServerConfig>, SecretError> {
-    let chain = secret::read_certificate_chain(listener.tls_certificate_file())?;
+    let chain = secret::read_certificate_chain(listener.tls_certificate_file(), owner)?;
     let key = secret::read_private_key(listener.tls_private_key().path(), owner)?;
     server_config(&chain, &key)
 }
@@ -38,9 +38,9 @@ pub fn credential(reference: &SecretReference, owner: u32) -> Result<Arc<Credent
 ///
 /// A node without a CA file is [`SecretError::NotFound`]; the serving and
 /// probing views of `pool-config` already refuse such a configuration.
-pub fn node(node: &NodeConfig) -> Result<Node, SecretError> {
+pub fn node(node: &NodeConfig, owner: u32) -> Result<Node, SecretError> {
     let ca = node.tls_ca_file().ok_or(SecretError::NotFound)?;
-    let roots = secret::read_trust_roots(ca)?;
+    let roots = secret::read_trust_roots(ca, owner)?;
     let tls = NodeTls::new(&roots, node.tls_server_name())?;
     Ok(Node::new(node.host(), node.port(), tls))
 }

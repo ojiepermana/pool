@@ -159,7 +159,8 @@ fn targets(config: &ValidatedConfig, owner: u32) -> Result<Vec<Target>, Report> 
             .iter()
             .filter(|node| node.cluster() == cluster.id())
         {
-            let target = load::node(node).map_err(|error| secret_error(error, KEY_NODE_CA))?;
+            let target =
+                load::node(node, owner).map_err(|error| secret_error(error, KEY_NODE_CA))?;
             targets.push(Target::new(node.id().clone(), target, login.clone()));
         }
     }

@@ -48,10 +48,16 @@ pub fn route_view(snapshot: &TopologySnapshot) -> RouteView {
                     topology_epoch: primary.topology_epoch(),
                     authority_revision: primary.authority_revision(),
                     fresh_until: fresh_until.since_origin(),
+                    system_identifier: primary.system_identifier(),
+                    timeline: primary.writer_timeline().get(),
                 }),
-                (WriterAdmission::Open(_), None) => RouteState::Closed { conflict: false },
+                (WriterAdmission::Open(_), None) => RouteState::Closed {
+                    conflict: false,
+                    lost: false,
+                },
                 (WriterAdmission::Closed(closed), _) => RouteState::Closed {
                     conflict: closed.reasons().iter().any(|reason| is_conflict(*reason)),
+                    lost: false,
                 },
             };
             (cluster.cluster().clone(), state)
@@ -480,14 +486,20 @@ mod tests {
         let snapshot = controller.round(&config, at);
         assert_eq!(
             route_view(&snapshot).state(&main_cluster()),
-            RouteState::Closed { conflict: true }
+            RouteState::Closed {
+                conflict: true,
+                lost: false
+            }
         );
         let mut silent = Controller::new(ready(&path));
         let later = MonotonicTime::from_origin(Duration::from_secs(20));
         let snapshot = silent.round(&config, later);
         assert_eq!(
             route_view(&snapshot).state(&main_cluster()),
-            RouteState::Closed { conflict: false }
+            RouteState::Closed {
+                conflict: false,
+                lost: false
+            }
         );
     }
 
@@ -540,7 +552,10 @@ mod tests {
         }
         assert_eq!(
             receiver.borrow().state(&main_cluster()),
-            RouteState::Closed { conflict: true }
+            RouteState::Closed {
+                conflict: true,
+                lost: false
+            }
         );
     }
 
@@ -556,7 +571,10 @@ mod tests {
         control.round().await;
         assert_eq!(
             receiver.borrow().state(&main_cluster()),
-            RouteState::Closed { conflict: true }
+            RouteState::Closed {
+                conflict: true,
+                lost: false
+            }
         );
         assert!(control.controller.unrecorded_latches().is_empty());
         assert_eq!(
@@ -611,7 +629,10 @@ mod tests {
         control.round().await;
         assert_eq!(
             receiver.borrow().state(&main_cluster()),
-            RouteState::Closed { conflict: true }
+            RouteState::Closed {
+                conflict: true,
+                lost: false
+            }
         );
         assert_eq!(control.controller.unrecorded_latches(), [main_cluster()]);
         assert_eq!(
@@ -701,7 +722,10 @@ mod tests {
             }
             assert_eq!(
                 route_view(&snapshot).state(&main_cluster()),
-                RouteState::Closed { conflict: true },
+                RouteState::Closed {
+                    conflict: true,
+                    lost: false
+                },
                 "writer failed: {writer_failed}"
             );
         }
@@ -730,7 +754,10 @@ mod tests {
         );
         assert_eq!(
             route_view(&snapshot).state(&main_cluster()),
-            RouteState::Closed { conflict: true }
+            RouteState::Closed {
+                conflict: true,
+                lost: false
+            }
         );
     }
 }

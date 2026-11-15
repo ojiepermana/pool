@@ -16,7 +16,7 @@
 //!
 //! Other crates never hold a journal value. They get a [`JournalRead`] from
 //! [`Journal::read`], an [`AuthorityState`] from [`JournalRead::classify`]
-//! and a [`BootstrapPlan`] from [`JournalRead::plan_bootstrap`]. A source
+//! and a [`BootstrapPlan`] from [`JournalRead::bootstrap_plan`]. A source
 //! guard keeps the names of the journal value and of the three rule
 //! functions out of every other crate (spec 0003, `AC-18` and `AC-19`).
 //!

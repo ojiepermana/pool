@@ -26,6 +26,7 @@ const KEY_LISTENER_PRIVATE_KEY: &str = "listener.tls_private_key_file";
 const KEY_PROBE_PERIOD: &str = "probe.period_ms";
 const KEY_PROBE_TIMEOUT: &str = "probe.timeout_ms";
 const KEY_PROBE_EXPIRY: &str = "probe.observation_expiry_ms";
+const KEY_PROBE_NODE_LOSS: &str = "probe.node_loss_timeout_ms";
 const KEY_CLUSTER_MONITOR_LOGIN: &str = "cluster.monitor_login";
 const KEY_CLUSTER_MONITOR_DATABASE: &str = "cluster.monitor_database";
 const KEY_CLUSTER_MONITOR_CREDENTIAL: &str = "cluster.monitor_credential_file";
@@ -184,6 +185,7 @@ pub struct ProbeConfig {
     period_ms: u32,
     timeout_ms: u32,
     observation_expiry_ms: u32,
+    node_loss_timeout_ms: u32,
 }
 
 impl ProbeConfig {
@@ -192,6 +194,7 @@ impl ProbeConfig {
         period_ms: 2000,
         timeout_ms: 1000,
         observation_expiry_ms: 6000,
+        node_loss_timeout_ms: 30_000,
     };
 
     /// The time between two probes of one node, from `probe.period_ms`.
@@ -209,6 +212,13 @@ impl ProbeConfig {
     /// the timeout.
     pub fn observation_expiry(&self) -> Duration {
         millis(self.observation_expiry_ms)
+    }
+
+    /// How long the approved writer of a cluster may give the probe no answer at all before
+    /// its node is lost and its running sessions end, from `probe.node_loss_timeout_ms`
+    /// (spec 0004, decision 84). It has no cross rule with the other probe keys.
+    pub fn node_loss_timeout(&self) -> Duration {
+        millis(self.node_loss_timeout_ms)
     }
 }
 
@@ -302,6 +312,7 @@ crate::topology::raw_table!(RawProbe {
     period_ms: Spanned<u32>,
     timeout_ms: Spanned<u32>,
     observation_expiry_ms: Spanned<u32>,
+    node_loss_timeout_ms: Spanned<u32>,
 });
 
 crate::topology::raw_table!(RawPrincipal {
@@ -601,6 +612,13 @@ fn check_probe(checker: &mut Checker<'_>, raw: Option<&RawProbe>) -> ProbeConfig
         default.observation_expiry_ms,
         1000..=60_000,
     );
+    let node_loss = top_number(
+        checker,
+        raw.node_loss_timeout_ms.as_ref(),
+        KEY_PROBE_NODE_LOSS,
+        default.node_loss_timeout_ms,
+        1000..=3_600_000,
+    );
     // The cross rule comes last and reads only values that passed. An expiry
     // below the period plus the timeout could never see a fresh sample.
     if let (Some(period), Some(timeout), Some(expiry)) = (period, timeout, expiry)
@@ -612,6 +630,7 @@ fn check_probe(checker: &mut Checker<'_>, raw: Option<&RawProbe>) -> ProbeConfig
         period_ms: period.unwrap_or(default.period_ms),
         timeout_ms: timeout.unwrap_or(default.timeout_ms),
         observation_expiry_ms: expiry.unwrap_or(default.observation_expiry_ms),
+        node_loss_timeout_ms: node_loss.unwrap_or(default.node_loss_timeout_ms),
     }
 }
 
@@ -789,6 +808,7 @@ mod tests {
         assert_eq!(probe.period(), Duration::from_millis(2000));
         assert_eq!(probe.timeout(), Duration::from_millis(1000));
         assert_eq!(probe.observation_expiry(), Duration::from_millis(6000));
+        assert_eq!(probe.node_loss_timeout(), Duration::from_millis(30_000));
     }
 
     #[test]

@@ -717,3 +717,13 @@ fn read_stored(connection: &Connection) -> Result<StoredAuthority, ()> {
         quarantine,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    /// The SQLite that is linked is the one inside the locked `libsqlite3-sys`, never one of the
+    /// host (spec 0004, Native code, decision 87): `.cargo/config.toml` holds the switch.
+    #[test]
+    fn the_linked_sqlite_is_the_bundled_3_54_1() {
+        assert_eq!(rusqlite::version(), "3.54.1");
+    }
+}

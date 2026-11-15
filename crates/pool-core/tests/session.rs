@@ -8,7 +8,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use pool_config::{AuthorityRevision, ClusterId, NodeId, TopologyEpoch, ValidatedConfig};
+use pool_config::{
+    AuthorityRevision, ClusterId, NodeId, SystemIdentifier, TopologyEpoch, ValidatedConfig,
+};
 use pool_core::backend::{
     BackendConnection, BackendError, Connector, Credential, Login, Node, Purpose, establish,
 };
@@ -42,6 +44,12 @@ const PRINCIPAL_PASSWORD: &str = "client-secret";
 const BACKEND_LOGIN: &str = "orders_rw";
 const BACKEND_DATABASE: &str = "orders_db";
 const BACKEND_PASSWORD: &str = "backend-secret";
+/// The question of step 8 that the server asks the scripted node; the daemon passes the probe query.
+const IDENTITY_QUERY: &str = "who are you";
+/// The system identifier of the cluster in the configuration of these tests.
+const SYSTEM_IDENTIFIER: &str = "7412345678901234567";
+/// The approved writer timeline of the routes of these tests.
+const TIMELINE: u32 = 1;
 
 fn fixture(name: &str) -> Vec<u8> {
     std::fs::read(format!("{FIXTURES}/{name}")).expect("fixture")
@@ -168,6 +176,8 @@ struct NodeLog {
     queries: Vec<String>,
     terminated: usize,
     closed: usize,
+    /// How often the question of step 8 was asked; it is not in `queries`.
+    identity_questions: usize,
 }
 
 struct NodeState {
@@ -177,6 +187,54 @@ struct NodeState {
     after_open: Mutex<Option<RouteView>>,
     routes: watch::Sender<RouteView>,
     tls: Mutex<Option<NodeTls>>,
+    /// How the node answers the question of step 8.
+    identity: Mutex<Identity>,
+}
+
+/// The answer of the scripted node to the question of step 8.
+#[derive(Clone)]
+enum Identity {
+    /// These rows, then `CommandComplete` and `ReadyForQuery` with status `I`.
+    Rows(Vec<Vec<Option<String>>>),
+    /// An `ErrorResponse`, then `ReadyForQuery`.
+    Error,
+}
+
+impl Identity {
+    /// The answer of the approved writer: its system identifier, not in recovery, its timeline.
+    fn writer() -> Self {
+        Self::row(SYSTEM_IDENTIFIER, "false", &TIMELINE.to_string())
+    }
+
+    fn row(system_identifier: &str, in_recovery: &str, timeline: &str) -> Self {
+        Self::Rows(vec![vec![
+            Some(system_identifier.to_owned()),
+            Some(in_recovery.to_owned()),
+            Some(timeline.to_owned()),
+        ]])
+    }
+}
+
+fn system_identifier() -> SystemIdentifier {
+    SystemIdentifier::parse(SYSTEM_IDENTIFIER).expect("system identifier")
+}
+
+/// A `DataRow` of text columns, a column `None` being NULL.
+fn data_row(columns: &[Option<String>]) -> Vec<u8> {
+    let mut row = u16::try_from(columns.len())
+        .expect("small")
+        .to_be_bytes()
+        .to_vec();
+    for column in columns {
+        match column {
+            None => row.extend_from_slice(&(-1i32).to_be_bytes()),
+            Some(c) => {
+                row.extend_from_slice(&u32::try_from(c.len()).expect("small").to_be_bytes());
+                row.extend_from_slice(c.as_bytes());
+            }
+        }
+    }
+    encode_message(b'D', &row)
 }
 
 #[derive(Clone)]
@@ -335,6 +393,32 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
             _ => return,
         }
         let sql = text(&message.body[..message.body.len() - 1]);
+        if sql == IDENTITY_QUERY {
+            state.log.lock().expect("lock").identity_questions += 1;
+            let identity = state.identity.lock().expect("lock").clone();
+            let _ = tls.write_all(&encode_message(b'T', &[0, 3])).await;
+            match identity {
+                Identity::Rows(rows) => {
+                    for row in &rows {
+                        let _ = tls.write_all(&data_row(row)).await;
+                    }
+                    let _ = tls.write_all(&encode_message(b'C', b"SELECT 1\0")).await;
+                }
+                Identity::Error => {
+                    let _ = tls
+                        .write_all(&encode_message(
+                            b'E',
+                            b"SERROR\0VERROR\0C42501\0Mpermission denied\0\0",
+                        ))
+                        .await;
+                }
+            }
+            let _ = tls
+                .write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
+                .await;
+            let _ = tls.flush().await;
+            continue;
+        }
         state.log.lock().expect("lock").queries.push(sql.clone());
         match answer(&sql) {
             Answer::Rows(columns, status) => {
@@ -412,6 +496,15 @@ impl Harness {
     }
 
     fn with_config(config: ValidatedConfig) -> Self {
+        Self::build(config, Some(IDENTITY_QUERY))
+    }
+
+    /// A harness whose server got no question for step 8, as `Server::new` builds it.
+    fn without_identity_query() -> Self {
+        Self::build(config(""), None)
+    }
+
+    fn build(config: ValidatedConfig, identity_query: Option<&'static str>) -> Self {
         let config = Arc::new(config);
         let cluster = config.clusters()[0].id().clone();
         let node_id = config.nodes()[0].id().clone();
@@ -424,6 +517,7 @@ impl Harness {
             after_open: Mutex::new(None),
             routes,
             tls: Mutex::new(None),
+            identity: Mutex::new(Identity::writer()),
         });
         let chain = CertificateChain::parse(&fixture("node.pem")).expect("chain");
         let key = PrivateKey::parse(&fixture("node.key")).expect("key");
@@ -460,7 +554,11 @@ impl Harness {
             config,
         };
         let harness = Self {
-            server: Server::new(parts).expect("server"),
+            server: match identity_query {
+                Some(query) => Server::with_identity_query(parts, query),
+                None => Server::new(parts),
+            }
+            .expect("server"),
             node,
             cluster,
             node_id,
@@ -478,6 +576,8 @@ impl Harness {
                 topology_epoch: TopologyEpoch::from_stored(epoch).expect("epoch"),
                 authority_revision: AuthorityRevision::FIRST,
                 fresh_until: self.origin.elapsed() + fresh_for,
+                system_identifier: system_identifier(),
+                timeline: TIMELINE,
             }),
         )])
     }
@@ -489,9 +589,14 @@ impl Harness {
     }
 
     fn close(&self, conflict: bool) {
+        self.close_with(conflict, false);
+    }
+
+    /// Closes the cluster with both flags of the view, as the control loop does.
+    fn close_with(&self, conflict: bool, lost: bool) {
         self.node.routes.send_replace(RouteView::new(vec![(
             self.cluster.clone(),
-            RouteState::Closed { conflict },
+            RouteState::Closed { conflict, lost },
         )]));
     }
 
@@ -1313,6 +1418,8 @@ fn route_with(
             topology_epoch: TopologyEpoch::from_stored(epoch).expect("epoch"),
             authority_revision: AuthorityRevision::from_stored(revision).expect("revision"),
             fresh_until: h.origin.elapsed() + fresh_for,
+            system_identifier: system_identifier(),
+            timeline: TIMELINE,
         }),
     )])
 }
@@ -1369,7 +1476,10 @@ async fn ac14_a_second_look_at_a_closed_route_refuses_with_57p03() {
     let h = Harness::new("");
     let second = RouteView::new(vec![(
         h.cluster.clone(),
-        RouteState::Closed { conflict: false },
+        RouteState::Closed {
+            conflict: false,
+            lost: false,
+        },
     )]);
     refused_at_the_second_look(&h, second).await;
 }
@@ -1964,6 +2074,286 @@ async fn c1_a_positive_conflict_ends_a_session_whose_node_stopped_in_a_body() {
 #[tokio::test]
 async fn c1_the_shutdown_deadline_ends_a_session_whose_node_stopped_in_a_body() {
     tokio::time::timeout(TEST_LIMIT, a_node_that_stops_in_a_body(Cut::Shutdown))
+        .await
+        .expect("within the test limit");
+}
+
+// ---- step 8 of the backend connection: the node names the writer of the route (0004 AC-29) ----
+
+/// A login against a node that answers the question of step 8 with `identity`: refused with
+/// `08006` before `AuthenticationOk`, the backend closed, no `Query` of the client at the node,
+/// and `backend.failed` with the class `identity`.
+async fn refused_at_step_8(h: &Harness, identity: Identity) {
+    *h.node.identity.lock().expect("lock") = identity;
+    let (events, _guard) = capture();
+    let (tags, code) = login(h).await.refused();
+    assert_eq!(code, "08006");
+    assert!(!tags.contains(&b'Z'), "no ReadyForQuery");
+    assert_eq!(h.opened(), 1, "one backend, no second try");
+    assert_eq!(
+        h.log(|l| l.identity_questions),
+        1,
+        "the question was asked once"
+    );
+    assert_eq!(
+        h.log(|l| l.queries.len()),
+        0,
+        "no Query of the client reached the node"
+    );
+    assert!(
+        eventually(|| h.log(|l| l.closed + l.terminated) == 1).await,
+        "the backend is closed"
+    );
+    assert_eq!(h.server.sessions(), 0);
+    assert_eq!(h.server.counters().refused(Refusal::BackendUnavailable), 1);
+    h.server.counters().flush();
+    let failed = named(&events, "backend.failed");
+    assert_eq!(failed.len(), 1, "{failed:?}");
+    assert_eq!(value(&failed[0], "class"), "identity");
+}
+
+#[tokio::test]
+async fn ac29_the_answer_of_the_approved_writer_lets_the_session_open() {
+    let h = Harness::new("");
+    let (mut tls, _) = login(&h).await.ready();
+    assert_eq!(h.log(|l| l.identity_questions), 1);
+    assert_eq!(
+        query(&mut tls, "select 1").await.last().map(|m| m.tag),
+        Some(b'Z')
+    );
+    assert_eq!(h.log(|l| l.queries.clone()), ["select 1"]);
+}
+
+#[tokio::test]
+async fn ac29_another_system_identifier_is_refused_with_08006() {
+    refused_at_step_8(
+        &Harness::new(""),
+        Identity::row("7412345678901234568", "false", "1"),
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn ac29_another_timeline_is_refused_with_08006() {
+    refused_at_step_8(
+        &Harness::new(""),
+        Identity::row(SYSTEM_IDENTIFIER, "false", "2"),
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn ac29_a_node_in_recovery_is_refused_with_08006() {
+    refused_at_step_8(
+        &Harness::new(""),
+        Identity::row(SYSTEM_IDENTIFIER, "true", "1"),
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn ac29_an_error_is_refused_with_08006() {
+    refused_at_step_8(&Harness::new(""), Identity::Error).await;
+}
+
+#[tokio::test]
+async fn ac29_two_rows_are_refused_with_08006() {
+    let Identity::Rows(mut rows) = Identity::writer() else {
+        unreachable!()
+    };
+    rows.push(rows[0].clone());
+    refused_at_step_8(&Harness::new(""), Identity::Rows(rows)).await;
+}
+
+#[tokio::test]
+async fn ac29_a_null_is_refused_with_08006() {
+    let rows = vec![vec![
+        Some(SYSTEM_IDENTIFIER.to_owned()),
+        Some("false".to_owned()),
+        None,
+    ]];
+    refused_at_step_8(&Harness::new(""), Identity::Rows(rows)).await;
+}
+
+#[tokio::test]
+async fn ac29_no_row_is_refused_with_08006() {
+    refused_at_step_8(&Harness::new(""), Identity::Rows(Vec::new())).await;
+}
+
+#[tokio::test]
+async fn ac29_a_server_built_without_the_question_refuses_every_login() {
+    let h = Harness::without_identity_query();
+    let (events, _guard) = capture();
+    let (_, code) = login(&h).await.refused();
+    assert_eq!(code, "08006");
+    assert_eq!(h.log(|l| l.queries.len() + l.identity_questions), 0);
+    h.server.counters().flush();
+    assert_eq!(
+        value(&named(&events, "backend.failed")[0], "class"),
+        "identity"
+    );
+}
+
+// ---- a node marked as lost ends its running sessions as backend loss does (0004 AC-30) ----
+
+/// The limit of each of these tests, so a session that is not ended fails instead of hanging.
+const LOST_LIMIT: Duration = Duration::from_secs(15);
+
+#[tokio::test]
+async fn ac30_a_query_in_flight_on_a_lost_node_gets_08007() {
+    let run = async {
+        let (events, _guard) = capture();
+        let h = Harness::new("");
+        let (mut tls, _) = login(&h).await.ready();
+        tls.write_all(&encode_query("a statement that never ends"))
+            .await
+            .expect("write");
+        settle().await;
+        h.close_with(false, true);
+        assert_eq!(
+            last_error(&read_until_ready(&mut tls).await).as_deref(),
+            Some("08007")
+        );
+        assert!(eventually(|| h.server.sessions() == 0).await);
+        assert!(
+            eventually(|| h.log(|l| l.closed) == 1).await,
+            "the backend is closed"
+        );
+        assert_eq!(h.opened(), 1, "no second backend");
+        assert!(eventually(|| !named(&events, "session.ended").is_empty()).await);
+        assert_eq!(
+            value(&named(&events, "session.ended")[0], "reason"),
+            "node_lost"
+        );
+    };
+    tokio::time::timeout(LOST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn ac30_an_idle_session_on_a_lost_node_gets_08006() {
+    let run = async {
+        // Every test that ends a session holds a subscriber, so the event callsites stay enabled for the one that reads them.
+        let (_events, _guard) = capture();
+        let h = Harness::new("");
+        let (mut tls, _) = login(&h).await.ready();
+        h.close_with(false, true);
+        assert_eq!(
+            last_error(&read_until_ready(&mut tls).await).as_deref(),
+            Some("08006")
+        );
+        assert!(eventually(|| h.server.sessions() == 0).await);
+        assert!(
+            eventually(|| h.log(|l| l.closed + l.terminated) == 1).await,
+            "the backend is closed"
+        );
+    };
+    tokio::time::timeout(LOST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn ac30_silence_without_the_mark_ends_no_session() {
+    let run = async {
+        // Every test that ends a session holds a subscriber, so the event callsites stay enabled for the one that reads them.
+        let (_events, _guard) = capture();
+        let h = Harness::new("");
+        let (mut tls, _) = login(&h).await.ready();
+        h.close_with(false, false);
+        settle().await;
+        assert_eq!(h.server.sessions(), 1);
+        assert_eq!(
+            query(&mut tls, "select 1").await.last().map(|m| m.tag),
+            Some(b'Z')
+        );
+        // A positive conflict wins over the mark: 57P01 for an idle session, not 08006.
+        h.close_with(true, true);
+        assert_eq!(
+            last_error(&read_until_ready(&mut tls).await).as_deref(),
+            Some("57P01")
+        );
+    };
+    tokio::time::timeout(LOST_LIMIT, run)
+        .await
+        .expect("within the test limit");
+}
+
+// ---- shutdown from step 4 on, for a daemon whose own task ended (decision 86) ----
+
+#[tokio::test]
+async fn shutdown_now_ends_every_session_at_once_and_returns_within_its_limit() {
+    let run = async {
+        // A deadline far beyond the limit of the test: shutdown_now must not wait for it.
+        let h = Harness::new("shutdown_timeout_ms = 600000");
+        let (_events, _guard) = capture();
+        let (mut idle, _) = login(&h).await.ready();
+        let (mut in_tx, _) = login(&h).await.ready();
+        query(&mut in_tx, "begin").await;
+        let (mut busy, _) = login(&h).await.ready();
+        busy.write_all(&encode_query("a slow statement"))
+            .await
+            .expect("write");
+        settle().await;
+        let started = std::time::Instant::now();
+        tokio::time::timeout(Duration::from_secs(5), h.server.shutdown_now())
+            .await
+            .expect("shutdown_now returns");
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "{:?}",
+            started.elapsed()
+        );
+        for tls in [&mut idle, &mut in_tx] {
+            assert_eq!(
+                last_error(&read_until_ready(tls).await).as_deref(),
+                Some("57P01")
+            );
+        }
+        assert_eq!(
+            last_error(&read_until_ready(&mut busy).await).as_deref(),
+            Some("08007")
+        );
+        assert_eq!(h.server.sessions(), 0);
+        assert_eq!(h.server.connections(), 0);
+        assert!(
+            eventually(|| h.log(|l| l.closed + l.terminated) == 3).await,
+            "every backend is closed"
+        );
+        let (_c, s) = tokio::io::duplex(64);
+        assert!(h.server.accept_stream(s).is_none(), "no accept after it");
+    };
+    tokio::time::timeout(Duration::from_secs(15), run)
+        .await
+        .expect("within the test limit");
+}
+
+#[tokio::test]
+async fn step_12_closes_the_backend_before_the_client_that_does_not_read() {
+    // Review nit n1: the close of a client that does not read may take CLOSE_TIMEOUT (1 s); the
+    // backend is closed before it starts, while the session is still counted.
+    let run = async {
+        let h = Harness::new("");
+        let _stuck = a_stuck_client(&h).await;
+        h.close(true);
+        let started = std::time::Instant::now();
+        while h.log(|l| l.closed) == 0 && started.elapsed() < Duration::from_millis(600) {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        assert_eq!(
+            h.log(|l| l.closed),
+            1,
+            "the backend is closed within 600 ms of the cut"
+        );
+        assert_eq!(
+            h.server.sessions(),
+            1,
+            "while the close of the client still waits"
+        );
+        assert!(eventually(|| h.server.sessions() == 0).await);
+    };
+    tokio::time::timeout(Duration::from_secs(15), run)
         .await
         .expect("within the test limit");
 }

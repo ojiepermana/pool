@@ -86,8 +86,8 @@ fn open_error(error: &io::Error) -> SecretError {
 enum Kind {
     /// A regular file with no group or other permission bit, owned by the service account.
     Secret { owner: u32 },
-    /// A regular file that can be read.
-    Certificate,
+    /// A regular file with no write bit for group or others, owned by the service account or root.
+    Certificate { owner: u32 },
 }
 
 impl Kind {
@@ -95,7 +95,7 @@ impl Kind {
     fn not_regular(self) -> SecretError {
         match self {
             Kind::Secret { .. } => SecretError::Permissions,
-            Kind::Certificate => SecretError::Invalid,
+            Kind::Certificate { .. } => SecretError::Invalid,
         }
     }
 }
@@ -116,12 +116,30 @@ fn open_checked(path: &Path, kind: Kind) -> Result<File, SecretError> {
     if !metadata.is_file() {
         return Err(kind.not_regular());
     }
-    if let Kind::Secret { owner } = kind
-        && (metadata.permissions().mode() & 0o077 != 0 || metadata.uid() != owner)
-    {
+    let allowed = match kind {
+        Kind::Secret { owner } => {
+            secret_allowed(metadata.permissions().mode(), metadata.uid(), owner)
+        }
+        Kind::Certificate { owner } => {
+            certificate_allowed(metadata.permissions().mode(), metadata.uid(), owner)
+        }
+    };
+    if !allowed {
         return Err(SecretError::Permissions);
     }
     Ok(file)
+}
+
+/// A secret file: no group or other permission bit, owned by the service account.
+fn secret_allowed(mode: u32, uid: u32, owner: u32) -> bool {
+    mode & 0o077 == 0 && uid == owner
+}
+
+/// A certificate chain or a CA file (spec 0004, decision 88): readable by anyone, but no write bit
+/// for the group or others, and owned by the service account or root. An account that could write
+/// a CA file could add a root of its own and stand between POOL and the node.
+fn certificate_allowed(mode: u32, uid: u32, owner: u32) -> bool {
+    mode & 0o022 == 0 && (uid == owner || uid == 0)
 }
 
 /// Checks a secret file: a regular file after links, mode with no group or other bit, owned by `owner`.
@@ -143,8 +161,8 @@ fn read_open(file: File, limit: u64) -> Result<Vec<u8>, SecretError> {
     Ok(bytes)
 }
 
-fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>, SecretError> {
-    read_open(open_checked(path, Kind::Certificate)?, limit)
+fn read_certificate_file(path: &Path, owner: u32, limit: u64) -> Result<Vec<u8>, SecretError> {
+    read_open(open_checked(path, Kind::Certificate { owner })?, limit)
 }
 
 fn read_secret(path: &Path, owner: u32, limit: u64) -> Result<Vec<u8>, SecretError> {
@@ -326,9 +344,10 @@ impl CertificateChain {
     }
 }
 
-/// Reads the certificate chain file of the listener.
-pub fn read_certificate_chain(path: &Path) -> Result<CertificateChain, SecretError> {
-    CertificateChain::parse(&read_limited(path, CERTIFICATE_MAX_BYTES)?)
+/// Reads the certificate chain file of the listener. `owner` is the service account; the file may
+/// also belong to root, and no write bit for the group or others is allowed.
+pub fn read_certificate_chain(path: &Path, owner: u32) -> Result<CertificateChain, SecretError> {
+    CertificateChain::parse(&read_certificate_file(path, owner, CERTIFICATE_MAX_BYTES)?)
 }
 
 /// The trust roots for one node: the certificates of its CA file and nothing else. `Debug` prints the count only.
@@ -354,9 +373,9 @@ impl TrustRoots {
     }
 }
 
-/// Reads a CA file.
-pub fn read_trust_roots(path: &Path) -> Result<TrustRoots, SecretError> {
-    TrustRoots::parse(&read_limited(path, CERTIFICATE_MAX_BYTES)?)
+/// Reads a CA file, with the rule of [`read_certificate_chain`] for its mode and owner.
+pub fn read_trust_roots(path: &Path, owner: u32) -> Result<TrustRoots, SecretError> {
+    TrustRoots::parse(&read_certificate_file(path, owner, CERTIFICATE_MAX_BYTES)?)
 }
 
 #[cfg(test)]
@@ -552,28 +571,28 @@ mod tests {
             &std::fs::read(format!("{fixtures}/node.pem")).expect("pem"),
             0o644,
         );
-        assert!(read_certificate_chain(&chain).is_ok());
+        assert!(read_certificate_chain(&chain, owner).is_ok());
         let debug = format!(
             "{:?} {:?}",
-            read_certificate_chain(&chain).expect("chain"),
-            read_trust_roots(&chain).expect("roots")
+            read_certificate_chain(&chain, owner).expect("chain"),
+            read_trust_roots(&chain, owner).expect("roots")
         );
         assert_eq!(
             debug,
             "CertificateChain { certificates: 1 } TrustRoots { roots: 1 }"
         );
-        assert!(read_trust_roots(&chain).is_ok());
+        assert!(read_trust_roots(&chain, owner).is_ok());
         let empty = dir.file("empty", b"no certificate here\n", 0o644);
         assert_eq!(
-            read_certificate_chain(&empty).map(|_| ()),
+            read_certificate_chain(&empty, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
         assert_eq!(
-            read_trust_roots(&empty).map(|_| ()),
+            read_trust_roots(&empty, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
         assert_eq!(
-            read_trust_roots(&dir.0.join("missing")).map(|_| ()),
+            read_trust_roots(&dir.0.join("missing"), owner).map(|_| ()),
             Err(SecretError::NotFound)
         );
         let big = dir.file(
@@ -582,7 +601,7 @@ mod tests {
             0o644,
         );
         assert_eq!(
-            read_trust_roots(&big).map(|_| ()),
+            read_trust_roots(&big, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
     }
@@ -606,8 +625,8 @@ mod tests {
                     read_credential(&pipe, owner).map(|_| ()),
                     read_verifier(&pipe, owner).map(|_| ()),
                     read_private_key(&pipe, owner).map(|_| ()),
-                    read_certificate_chain(&pipe).map(|_| ()),
-                    read_trust_roots(&pipe).map(|_| ()),
+                    read_certificate_chain(&pipe, owner).map(|_| ()),
+                    read_trust_roots(&pipe, owner).map(|_| ()),
                 )
             }
         });
@@ -718,7 +737,7 @@ mod tests {
             Err(SecretError::Permissions)
         );
         assert_eq!(
-            read_certificate_chain(&inner).map(|_| ()),
+            read_certificate_chain(&inner, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
     }
@@ -767,14 +786,14 @@ mod tests {
         let limit = CERTIFICATE_MAX_BYTES as usize;
         let at = dir.file("pem-at", &padded(&pem, limit), 0o644);
         let over = dir.file("pem-over", &padded(&pem, limit + 1), 0o644);
-        assert!(read_certificate_chain(&at).is_ok());
-        assert!(read_trust_roots(&at).is_ok());
+        assert!(read_certificate_chain(&at, owner).is_ok());
+        assert!(read_trust_roots(&at, owner).is_ok());
         assert_eq!(
-            read_certificate_chain(&over).map(|_| ()),
+            read_certificate_chain(&over, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
         assert_eq!(
-            read_trust_roots(&over).map(|_| ()),
+            read_trust_roots(&over, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
         // A credential file stops at 4096 bytes: a line end may follow a password of 1024.
@@ -793,5 +812,50 @@ mod tests {
             read_verifier(&verifier, owner).map(|_| ()),
             Err(SecretError::Invalid)
         );
+    }
+
+    #[test]
+    fn c6_a_ca_file_or_chain_that_others_can_write_or_that_another_account_owns_is_refused() {
+        // covers: decision 88, finding c6 of the independent review. The committed fixture is copied
+        // into a folder of the test, so the mode of the checkout does not decide the result.
+        let pem = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/ca.pem"
+        ))
+        .expect("fixture");
+        let dir = TempDir::new("c6-modes");
+        let owner = dir.owner();
+        for mode in [0o644, 0o444, 0o600, 0o400, 0o640, 0o604] {
+            let path = dir.file(&format!("ok-{mode:o}"), &pem, mode);
+            assert!(read_trust_roots(&path, owner).is_ok(), "{mode:o}");
+            assert!(read_certificate_chain(&path, owner).is_ok(), "{mode:o}");
+        }
+        for mode in [0o664, 0o646, 0o666, 0o620, 0o602, 0o660] {
+            let path = dir.file(&format!("bad-{mode:o}"), &pem, mode);
+            assert_eq!(
+                read_trust_roots(&path, owner).map(|_| ()),
+                Err(SecretError::Permissions),
+                "{mode:o}"
+            );
+            assert_eq!(
+                read_certificate_chain(&path, owner).map(|_| ()),
+                Err(SecretError::Permissions),
+                "{mode:o}"
+            );
+        }
+        // Another account than the service account and root.
+        let path = dir.file("ok-other-owner", &pem, 0o644);
+        assert_eq!(
+            read_trust_roots(&path, owner.wrapping_add(1)).map(|_| ()),
+            Err(SecretError::Permissions)
+        );
+        // The rule itself, for the owner root that a test cannot create.
+        assert!(certificate_allowed(0o100_644, 0, 1000));
+        assert!(certificate_allowed(0o100_644, 1000, 1000));
+        assert!(!certificate_allowed(0o100_644, 1001, 1000));
+        assert!(!certificate_allowed(0o100_664, 0, 1000));
+        assert!(!certificate_allowed(0o100_646, 1000, 1000));
+        // A secret file keeps its own rule: root is not its owner.
+        assert!(!secret_allowed(0o100_600, 0, 1000));
     }
 }

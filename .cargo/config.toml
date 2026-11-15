@@ -1,0 +1,4 @@
+# The native libraries are built from the source inside the locked crates, never taken from the host (spec 0004, Native code).
+[env]
+AWS_LC_SYS_USE_SYSTEM = { value = "0", force = true }
+LIBSQLITE3_SYS_USE_PKG_CONFIG = { value = "0", force = true }
