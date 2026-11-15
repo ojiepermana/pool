@@ -59,6 +59,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/adr/0001-initial-architecture.md](adr/0001-initial-architecture.md) | ADR 0001. Initial architecture |
 | [docs/adr/0002-standards-and-tooling.md](adr/0002-standards-and-tooling.md) | ADR 0002. Standards and tooling |
 | [docs/adr/0003-control-and-session-data-model.md](adr/0003-control-and-session-data-model.md) | ADR 0003. Control and session data model |
+| [docs/adr/0004-one-real-primary-path.md](adr/0004-one-real-primary-path.md) | ADR 0004. One real primary path |
 
 ## docs/architecture
 
@@ -183,6 +184,13 @@ When one change crosses these boundaries, change the owner first and follow its 
 | [docs/specs/0003-control-and-session-data-model/index.md](specs/0003-control-and-session-data-model/index.md) | 0003. Control and session data model |
 | [docs/specs/0003-control-and-session-data-model/rationale.md](specs/0003-control-and-session-data-model/rationale.md) | Control and session data model rationale |
 | [docs/specs/0003-control-and-session-data-model/verify.md](specs/0003-control-and-session-data-model/verify.md) | 0003. Verification record |
+
+## docs/specs/0004-one-real-primary-path
+
+| Path | Document |
+|---|---|
+| [docs/specs/0004-one-real-primary-path/index.md](specs/0004-one-real-primary-path/index.md) | 0004. One real primary path |
+| [docs/specs/0004-one-real-primary-path/rationale.md](specs/0004-one-real-primary-path/rationale.md) | One real primary path rationale |
 
 ## docs/testing
 

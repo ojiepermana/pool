@@ -15,10 +15,10 @@
 | Verification depth | GA for data safety features | Confirmed: verification, tests, independent review, and documentation |
 | Process boundary | One daemon with separate modules; separate CLI | Confirmed; split processes deferred |
 | Routing | Primary default, explicit read only session profiles first | Confirmed; endpoint chosen at login, SQL admitted on pinned lease, lag screened at admission only, eventual reads, no primary fallback |
-| Frontend authentication | Terminated SCRAM over TLS and optional mTLS, separately provisioned backend credentials | Confirmed boundary; implementation needs a feature spec |
-| Local persistence | SQLite journal for operations, audit and approved writer/epoch/quarantine; never observed backend role truth | Confirmed; bootstrap once, reconcile durable authorization with fresh roles before restart admission. The records, the journal format and the start rules are settled in [spec 0003](../specs/0003-control-and-session-data-model/index.md) |
-| Runtime | Tokio with bounded tasks and queues | Confirmed |
-| TLS | rustls and tokio-rustls, one crypto provider | Confirmed; exact feature graph reviewed at dependency adoption |
+| Frontend authentication | Terminated SCRAM over TLS and optional mTLS, separately provisioned backend credentials | Confirmed boundary. The first implementation is designed in [spec 0004](../specs/0004-one-real-primary-path/index.md): SCRAM against a verifier file per principal, with no channel binding yet. Client certificates and channel binding wait for scope 006 |
+| Local persistence | SQLite journal for operations, audit and approved writer/epoch/quarantine; never observed backend role truth | Confirmed; bootstrap once, reconcile durable authorization with fresh roles before restart admission. The records, the journal format and the start rules are settled in [spec 0003](../specs/0003-control-and-session-data-model/index.md). The journal file, the bootstrap command and the probe are designed in [spec 0004](../specs/0004-one-real-primary-path/index.md) |
+| Runtime | Tokio with bounded tasks and queues | Confirmed. Adopted in [spec 0004](../specs/0004-one-real-primary-path/index.md), with the limits it bounds |
+| TLS | rustls and tokio-rustls, one crypto provider | Confirmed. The feature graph is fixed in [spec 0004](../specs/0004-one-real-primary-path/index.md): `aws-lc-rs` is the one provider, and it also does the SCRAM hashing. A person decides its two licenses before it is merged |
 | Parser | pg_query with PostgreSQL 18 grammar | Confirmed; native code isolated and reviewed |
 | Administration | Axum REST API plus CLI, protected local transport and mTLS for remote exposure | Confirmed; PCP compatibility deferred |
 | Observability | Prometheus metrics and tracing logs, optional OTLP later | Confirmed |
