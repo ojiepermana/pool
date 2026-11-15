@@ -777,7 +777,7 @@ On 2026-11-15 at 21:50 WIB, by the checker session, after the developer of step 
 
 ### Checker run of the lock file fix on `main`, with links, owners and the umask
 
-On 2026-11-15 at 22:20 WIB, by the checker session, on the tree `d4fdb62` (the tip of `main`; `apps/pool/src/state.rs` is the one of `fd62cf4`). All of it ran in the pinned build image, against a release `pool` built there, with the probe of the run above and three new parts. Parts A to E ran as a user that is not root, part F as root.
+On 2026-11-15 at 21:53 WIB, by the checker session, on the tree `d4fdb62` (the tip of `main`; `apps/pool/src/state.rs` is the one of `fd62cf4`). All of it ran in the pinned build image, against a release `pool` built there, with the probe of the run above and three new parts. Parts A to E ran as a user that is not root, part F as root.
 
 **Verdict: `0004 AC-9` is met, and milestone 3 PASSES.**
 
@@ -1038,6 +1038,213 @@ The SQLSTATEs of the psql cases are read from the message of the `FATAL` line, s
 - The notification line of `psql` names the process ID of the backend, which differs straight and through POOL. The test sets that number aside before it compares.
 - The fixture writes no new file for this step. The relay is a task of the test, in `apps/pool/tests/support/mod.rs`, and runs on a runtime of the test, since the source guard refuses threads of the standard library under `apps/`.
 
+### Checker run of steps 10 and 11, and of milestone 4
+
+Build plan steps 10 and 11, on 2026-11-15 from 22:00 to 22:55 WIB, by the checker session, on the tree `7d3e7fd` (the branch of the checker on top of `main` at `d4fdb62`; the code is the one of `d4fdb62`). macOS 27.0.1, arm64, `rustc 1.100.0`, Docker 29.9.2 running, PostgreSQL 18.7 and `psql` 18.7 of `postgres:18.7-bookworm` by the digest of `scripts/check.sh`. Nothing here is Linux or CI. Step 9 was verified before (see "Checker run" and "Checker run of the fix" under step 9). Its mutation runs were not repeated: the commits since then (`da51f43`, `cc77c34`) were verified in those two runs and in the run of milestone 3.
+
+The tests that the tester added (on `main` from `e9389cc`, see [Test it](#test-it)) came after this run. The wrong changes and the test gaps below are measured against the tests of `d4fdb62`, and some of them may be closed by now.
+
+Every command below was run in this session. The probe is the checker's own script. It takes the place of the test command inside `scripts/integration/run.sh`, so it runs against the two PostgreSQL containers that script started for it and against nothing else. It starts the built `pool run` with configurations of its own (23 runs of the daemon in one pass), and it drives them with `psql` of the image and with a client and a relay written for the probe in plain Python: TLS, `SCRAM-SHA-256` and the simple query protocol from the standard library, with no code of the repository. So the client side of every check is independent of `pool-core` and `pool-protocol`. The last pass of the whole probe, with nothing else running on the machine, had 131 checks and no mismatch, and its numbers are the ones below. The pass before it, without the section for a node that refuses TLS, had 129 checks and no mismatch. Earlier passes had mismatches that were mistakes of the probe, named under the notes.
+
+**Verdict: step 10 PASS, step 11 PASS, milestone 4 PASS** on the workstation. The CI job `integration` is manual step M2 and has not run.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo build --workspace --locked`, after touching every crate root, and again with `--release` | no warning | 0 warnings in both | pass |
+| The use check of [Adopted dependencies](index.md#adopted-dependencies), copied from the spec | no line | no line | pass |
+| `scripts/check.sh all` on `ecd0ee5` (earlier in this session; the files of steps 10 and 11 are the same) | exit 0 | exit 0, all six `ok` | pass |
+| `scripts/check.sh integration` on `aa10007` | exit 0, nothing left | exit 0, 21 of 21 in 76 s; no container of this run, no new volume, no temporary directory | pass |
+| `scripts/check.sh linux-build` on `aa10007` | exit 0 | exit 0, 22 test results `ok` | pass |
+| The daemon probe, all sections | every check as the spec says | 131 checks, 0 mismatches | pass |
+
+#### `pool run` without a ready authority (`0004 AC-13`)
+
+While `pool run` ran, a thread of the probe tried to connect to the listener port all the time. Each case was also tried with the port free afterwards.
+
+| State of the journal | How the probe made it | Observed |
+|---|---|---|
+| Uninitialized | no journal, no witness | exit 1, `run refused`, `findings: 1`, `authority.uninitialized`; 0 connections reached the port |
+| Unconfirmed | a real bootstrap, no witness in the configuration | exit 1, `authority.unconfirmed`; 0 connections |
+| Missing | a witness, no journal | exit 1, `authority.missing`; 0 connections |
+| Mismatch | a real bootstrap, another witness | exit 1, `authority.mismatch`; 0 connections |
+| Unreadable | a real journal with its header overwritten, and one cut to one page | exit 1, `authority.unreadable`; 0 connections |
+| Held | a real journal whose `hold` the probe set to `restore_pending` with SQLite | exit 1, `authority.restore_pending`; `show-authority` says `restore_pending`; 0 connections |
+
+In every case stdout holds the three lines and stderr is empty, `journal.sqlite3` has the same bytes afterwards, and the port can be bound afterwards. The first read of a journal makes the two side files of SQLite (an empty `-wal` and a `-shm` of 32768 bytes), which `0004 AC-10` allows. `pool run --format json` is a usage error, exit 2, as the spec says.
+
+When the state is ready and the start cannot go on: with the listener port taken by the probe, exit 3 `listener.failed`, and the start sequence in the journal is 1 (the journal is opened in step 5, the bind is step 7). With no listener key, no verifier or no credential file, exit 3 with `secret.not_found at` the key, and the start sequence is still 0.
+
+#### The walking result with another SQL file (`0004 AC-18`, `AC-17`)
+
+The SQL file of the probe is not the one of the developer. It has 27 statements and `psql` commands: `\set VERBOSITY verbose`, a transaction that inserts 2500 rows with text outside ASCII and updates five, an aggregate with `md5` over all rows, a row with NULL, an empty text, escapes, a large numeric and a `bytea`, a `DO` block with a NOTICE, three statements on one line, a transaction that fails on a duplicate key and is rolled back, a division by zero, a table that does not exist, a NULL into a column that forbids it, an empty statement, and `SHOW` before and after `SET`.
+
+- Straight to PostgreSQL as the backend login and through POOL as the principal: exit 0 and 0, stdout 1196 and 1196 bytes, stderr 1067 and 1067 bytes, each pair equal byte for byte. The output through POOL holds the SQLSTATEs 22012, 42P01, 23505, 23502 and 25P02 with the fields PostgreSQL sent.
+- Through POOL, `current_user` is `pz7_rw`, `current_database()` is `pz7_appdb`, `pg_is_in_recovery()` is `f`, and the system identifier is the configured one, the one of container 1.
+- The table holds the same 2500 rows after each run. The PostgreSQL log shows the session as `user=pz7_rw database=pz7_appdb` and never the principal or the requested database.
+- The raw client is offered `SCRAM-SHA-256` and nothing else, gets no `BackendKeyData` (`RRRR`, fifteen `S`, `Z`), and the server signature POOL sends is the one the password gives. `application_name` and `client_encoding` of the client reach PostgreSQL. An error of PostgreSQL arrives with all its fields and its own text.
+- The first view is closed with `evidence.writer_missing` at snapshot generation 1, and admission opens at generation 2, after the first sample. `daemon.started` carries start sequence 1, configuration generation 1 and the authority ID of the bootstrap. A second start has start sequence 2. SIGTERM and SIGINT with no session: exit 0 at once, `daemon.stopping` and `daemon.stopped` last, nothing on stdout.
+
+#### Startup, authentication and the identity map (`0004 AC-15`, `AC-16`, `AC-17`)
+
+All of these were sent to the real daemon on the fixture by the raw client:
+
+| What the client does | Observed |
+|---|---|
+| A startup packet without TLS | one error `28000` `TLS is required` with the fields `S`, `V`, `C`, `M`, no authentication request, closed |
+| `GSSENCRequest` | `N` |
+| `CancelRequest` | no byte, closed |
+| A wrong password; a user that is no principal; the backend login with its own password; the principal with the password of the backend login | `28P01` `authentication failed`, each |
+| A wrong password and two unknown users, message by message | the same three messages with the same lengths (`R` 19, `R` 88, `E` 45 bytes of body) |
+| A database with no identity entry; the backend database as the requested one; no `database` parameter | `28000` `no identity entry for this user and database`, each |
+| `replication`, `options`, another parameter (`DateStyle`) | `0A000`, each |
+| Protocol major 2 and major 4 | `0A000`, each |
+| A request for 3.2 with the option `_pq_.zq9` | `NegotiateProtocolVersion` first, body `00030000000000015f70715f2e7a713900`, then the login goes on and a query works |
+| A SASL message of more than 1024 bytes | `08P01` |
+
+Over all of it the PostgreSQL log shows three connections of the backend login, the three logins that passed. No refused login reached PostgreSQL. The principal is no role of PostgreSQL, and `psql` straight to PostgreSQL as the principal with its password is refused. The log of POOL counts the refusals as `plaintext` 1, `authentication` 7, `unmapped` 3, `unsupported` 5, `cancel_ignored` 1 and `protocol` 2.
+
+#### The node (`0004 AC-14`, `AC-15`)
+
+- **Another identity.** The journal is made against container 1 and the node then points at container 2. `admission.changed` is closed with `evidence.writer_identity`, three logins get `57P03`, the cluster was never open, and the log of container 2 shows the monitor login and no connection of the backend login.
+- **A CA that did not sign the node certificate, and a server name the certificate does not hold.** `probe.failed` with the class `tls`, a login gets `57P03`, PostgreSQL authorized no connection. This is the reading of decision 72.
+- **A node that refuses TLS on the session connection only.** The relay of the probe answers `N` to the `SSLRequest`. The client gets `08006` `the backend connection could not be established`. POOL sent the 8 bytes of the `SSLRequest` and not one byte after the `N`. The log has `backend.failed` with the class `tls`.
+- **A wrong password of the backend login.** The client gets `08006` with the constant message, and the log has `backend.failed` with `class` `login` and `sqlstate` `28P01`. No text of PostgreSQL reaches the client or the log.
+
+#### The control loop and the route view (`0004 AC-14`, decision 12)
+
+| Case | Observed |
+|---|---|
+| **Silence.** `docker pause` on the PostgreSQL container in the middle of a run, with the expiry at 2 s | closed with `evidence.writer_missing` after 1.1 s; `probe.failed` with the class `timeout`; a new login gets `57P03`; the session that was running is not ended. After `docker unpause`: open again, `probe.recovered`, the old session answers a query, a new login works |
+| **A positive conflict.** The node is a relay of the probe. With three sessions running (idle, idle in a transaction, a statement in flight), the relay cuts the connection the probe keeps and leads new ones to container 2 | closed with `evidence.writer_identity`; after 0.2 s (0.4 s in the pass before) the idle session and the one in a transaction get `57P01` and the one in flight gets `08007`; three `session.ended` lines with the reason `conflict`; a new login gets `57P03`; the backends are gone from container 1, the open transaction left no row, container 2 saw no connection of the backend login; no latch is set |
+| **A second primary.** A second node of the same cluster that leads to the same server | closed with `authority.conflict_latched` and `evidence.second_primary`; the log has that closed view first, then `authority.conflict_latched` with `recorded` false, then with `recorded` true; a login gets `57P03`; the journal afterwards has `conflict_latched` 1 and authority revision 2 |
+| **The same while the journal cannot be written.** The second node is not reachable at first, so the cluster opens on the first node and a session runs. The probe then takes the write lock of the journal with SQLite and lets the second node answer | closed 0.18 s after the switch (0.14 and 0.30 s in the passes before), the running session is ended with `57P01` at the same moment, a login gets `57P03`; `journal.write_failed` with the class `journal.busy`; the latch is logged with `recorded` false only. When the probe lets go, the next round writes it (`recorded` true), and the journal has revision 2 |
+| **The latch at the next start.** Back to the one good node | `show-authority` says `ready`, the cluster stays closed with `authority.conflict_latched`, a login gets `57P03`, the latch is not written again |
+
+So the cluster closes while the journal cannot be written, and the latch reaches the journal later. That the view is sent before the write, and not after it, is read in `apps/pool/src/control.rs`: the round sends the view first and writes the latch after it, on a blocking thread. From outside the two orders look the same, because the journal answers busy at once.
+
+#### Teardown, a lost COMMIT answer, limits and memory (`0004 AC-19` to `AC-22`)
+
+- **Teardown**, with `limits.session_max_count = 1`. After an INSERT in an open transaction the client closes its socket, or sends `Terminate`: the backend is gone from `pg_stat_activity` after 0.07 and 0.06 s, the row is not there, a second login meanwhile got `53300`, and the next login works. A client that leaves while a statement runs is noticed when the statement ends, as the spec says: the backend was still there after 0.5 s, and gone 0.2 s after the probe cancelled the statement.
+- **Lost COMMIT.** The relay of the probe passes the COMMIT on, drops the answer of PostgreSQL and closes. The client gets one message, the error `08007` with severity `FATAL`, and then the end of the connection. The PostgreSQL log holds that COMMIT once (by a marker in a comment), no new connection of the backend login follows, the row is there, and the log of POOL says `session.ended` with `backend_lost` and `in_flight`.
+- **Limits**, with `frontend_message_max_bytes = 2048`, `startup_packet_max_bytes = 512`, `startup_timeout_ms = 700`, `handshake_max_count = 4`, `node_backend_max_count = 1`, `backend_wait_max_count = 1` and `backend_acquire_timeout_ms = 2500`:
+
+| Case | Observed |
+|---|---|
+| A `Query` whose length field is exactly 2048 | passes |
+| A `Query` of 3031 bytes | `54000`, closed, and its text is not in the PostgreSQL log |
+| The 5 header bytes of a `Query` with the length 2049 and nothing more | `54000` at once |
+| A startup packet of more than 512 bytes, and one of about 450 | `54000`, and a login |
+| A client that sends nothing | closed with no byte after 0.70 s |
+| A client that stops after the authentication request | closed with no message after 0.70 s |
+| Four connections that say nothing, then a fifth | the fifth is closed at once with no byte |
+| The one backend of the node is taken: a first waiter, then a second | the first gets `53300` after 2.51 s, the second gets `53300` after 0.00 s |
+| A waiter, and the holder then leaves | the waiter is served |
+| `session_max_count = 2`, a third login; then a principal limit of 1 under it | `53300` (a wrong password still gets `28P01`); `53300`, counted as `principal_limit` |
+
+  A normal login worked after each case. The log counts `wait_limit`, `acquire_timeout`, `message_limit`, `startup_timeout` and `handshake_limit`.
+- **Memory.** 32 raw clients each asked for 4096 rows of 65536 bytes (256 MiB) and never read. PostgreSQL showed 32 active statements, all 32 waiting to write to the client. Resident memory of `pool` (`ps -o rss=`): 9920 KiB before, highest of 40 samples over 4 seconds 18192 KiB, lowest 17824 KiB. The two passes before gave 18048 and 18192 KiB. The budget is 98304 KiB. One of the clients then read its whole result: 4096 rows, and the md5 over all of them is the one PostgreSQL computes.
+- **One row of 64 MiB**, with content that does not repeat (`string_agg` of 2097152 `md5` texts): 67108865 bytes on stdout of `psql -At` straight and through POOL, with the same `md5sum`. Resident memory of `pool` afterwards 18240 KiB.
+
+#### Shutdown with sessions (`0004 AC-25`)
+
+With `shutdown_timeout_ms = 1500`, five sessions and one connection still in its startup, once with SIGTERM and once with SIGINT, and a second signal 0.3 s after the first:
+
+| Session | Observed (SIGTERM, SIGINT) |
+|---|---|
+| Idle | `57P01` after 0.00 and 0.00 s |
+| Idle in a transaction | `57P01` after 1.51 and 1.50 s, which is the deadline, as step 2 of the spec takes only the status `I` at once |
+| A statement that runs for 30 s | `08007` after 1.51 and 1.50 s, and never `57P01` |
+| A statement that ends 0.7 s after the signal | its whole answer, then `57P01`, after 0.68 and 0.69 s |
+| A client that asked for 256 MiB and stopped reading | whole messages and then the end of the connection, with no error message |
+| The connection in its startup | closed with no byte |
+
+The daemon exits 0 after 2.56 and 2.52 s. The log has one `daemon.stopping` with `sessions` 5, five `session.ended` with the reason `shutdown`, and `daemon.stopped` last. A connect after the signal is refused. No backend of the five is left on PostgreSQL and the open transaction left no row.
+
+#### Messages after login on a real server (`0004 AC-23`)
+
+Several statements in one `Query` with an error in the middle, `LISTEN` with `NOTIFY`, and a `ParameterStatus` after `SET` pass through. `COPY ... TO STDOUT` and `COPY ... FROM STDIN` end with `0A000`, the client gets no COPY message, and the backend is gone. Each of the tags `P`, `B`, `D`, `E`, `C`, `H`, `S`, `F`, `d`, `c`, `f` after login gets `0A000`. An unknown tag (`Z`, `q`, `!`, `R`), a `Query` with the length 3 and a `Terminate` with a body get `08P01`. Every backend of those sessions is gone afterwards and a normal login works.
+
+#### The log (`0004 AC-24`)
+
+Over the whole pass: 375 lines of 23 runs of the daemon, with canary texts in the application name, a user name, a database name, a password, SQL text, an error raised in PostgreSQL and an oversized message.
+
+- Every line is one JSON object. `ts`, `level` and `event` come first, in that order, and `ts` has the form of the spec.
+- Only events of the table appear, each with only its fields, in the order of the table. Every value is a string, a whole number or a boolean.
+- No line holds a password, the verifier, a canary, SQL text, error text of PostgreSQL, a name with `pz7`, a host name, `127.0.0.1`, a path, a system identifier or a port of the fixture.
+- stdout is empty in all 23 runs.
+- Events seen: `daemon.started`, `daemon.stopping`, `daemon.stopped`, `admission.changed`, `authority.conflict_latched`, `journal.write_failed`, `probe.failed`, `probe.recovered`, `session.started`, `session.ended`, `session.refused` and `backend.failed`. Only `log.dropped` was not produced.
+
+#### Criteria
+
+| Criterion | Verdict |
+|---|---|
+| `0004 AC-1`, last sentence | met: the use check prints nothing and the build has no warning |
+| `0004 AC-13` | met, for all six states |
+| `0004 AC-14` | met: the open path, the wrong identity on the fixture, and on the fixture also what the criterion asks only of a hermetic test (a running session is ended for a positive conflict and not for silence) |
+| `0004 AC-15` | met, with the reading of decision 72 for a wrong certificate |
+| `0004 AC-16`, `AC-17` | met |
+| `0004 AC-18` | met, with another SQL file than the tests use |
+| `0004 AC-19` | met |
+| `0004 AC-20` | met |
+| `0004 AC-21` | met, about 18 MiB against a budget of 96 MiB |
+| `0004 AC-22` | met |
+| `0004 AC-23`, real server half | met |
+| `0004 AC-24` | met over 375 lines |
+| `0004 AC-25` | met, with sessions in every state and a client that stopped reading |
+
+#### The readings of the developer
+
+- **A runtime that cannot be built is `listener.failed`.** Accepted. The spec has no code for step 6, nothing can listen without a runtime, and the case cannot be made to happen from outside. It was read in `daemon.rs` only.
+- **`serve` in the tests of spec 0001.** `run` is a command now, so the two tests of an unknown command use `serve`. Seen in `apps/pool/tests/check_config.rs`.
+- **The numbers of the fixture** (an acquire deadline of 3000 ms, a probe of 200, 5000 and 8000 ms) are written in the spec since decision 73. The probe used other numbers (2500 ms; 200, 1000 and 2000 ms) and the bounds held: 2.51 s for the deadline, 1.1 s to close on silence.
+- **The client of the memory case.** The spec now says a client that does not read. The probe used its own, with no code of `pool-core`, and got the same range as the developer (13 to 19 MiB).
+- **Hermetic only.** The record of step 11 lists the messages that only hermetic tests cover and says so, as the rule "A golden message is not proof of a wire format" asks. Its reason, that no real client of the fixture can be made to send them, holds for `psql`. The raw client of the probe did send five of them to the real daemon: `GSSENCRequest`, `CancelRequest`, another major version, a `_pq_.` parameter and a SASL message of more than 1024 bytes, each with the result of the spec. Another SCRAM header and a COPY of the tag `W` stay hermetic.
+
+#### Notes that are not failures
+
+- **`journal.write_failed` is written in every round while the write fails.** With two nodes and a period of 200 ms that was 16 lines in about a second, at the level `error`. The spec says the write is tried again after the next round and logged, so this is as written. The refusals are grouped per second for the reason that a flood must not flood the log, and a disk that stays broken does the same here. For the architect.
+- **Two errors when PostgreSQL ends an idle backend.** With `pg_terminate_backend` on the backend of an idle session, the client gets the `FATAL` `57P01` of PostgreSQL, passed on unchanged, and then `08006` of POOL. Both rules of the spec apply (a message of the backend is passed on; a lost backend gives one error of POOL), so a client sees two.
+- **A client that stopped reading costs one second more at shutdown.** The daemon exits about 1.1 s after the deadline, which is the `CLOSE_TIMEOUT` of the fix `da51f43`.
+- **A statement that produces nothing keeps its PostgreSQL backend** after POOL closed the connection, until the statement ends: PostgreSQL notices a closed client only when it writes. A first version of the probe used `pg_sleep(30)` and found that backend 5 seconds after the shutdown. With a statement that sends a notice every 0.2 s the backend is gone at once. This is PostgreSQL, not POOL, and `0004 AC-25` does not ask for more.
+- **A failed bind uses up a start sequence.** The journal is opened and advanced in step 5 and the listener is bound in step 7, as the spec orders it.
+- **No command shows a latch.** After the second primary, `show-authority` says `ready` while every login gets `57P03`. The reason is in the log of the daemon (`admission.changed`). A later scope may want it in a command.
+- **Mistakes of the probe in earlier passes**, corrected before the two clean passes: it gave `--format` to `pool run`; it compared the side files of SQLite; it expected the probe of the daemon to open a new connection each period, where the spec says it keeps one, so its relay had to cut that connection; it armed the relay on the connection of the probe too; and it counted the backends of an earlier section.
+
+#### For the tester: wrong changes that no test caught
+
+Twelve wrong changes to `apps/pool/src/`, one at a time, in a private copy, each against `cargo test -p pool --locked` and then `scripts/check.sh integration`:
+
+| Wrong change | Result |
+|---|---|
+| M1. `route_view` never sets the conflict flag, so a positive conflict ends no running session | **not caught** |
+| M2. The route view is published after the latch writes, not before (against decision 12) | **not caught** |
+| M3. A conflict latch is never written to the journal | **not caught** |
+| M4. An open route stays fresh for one hour more than its sample allows | **not caught** |
+| M5. The state `mismatch` is reported as `authority.unconfirmed` | caught by `it_run_refuses_a_journal_without_or_with_another_witness_and_never_binds` |
+| M6. The state `restore_pending` is reported as `authority.unreadable` | **not caught** |
+| M7. Shutdown does not end the sessions | caught by `it_shutdown_ends_idle_sessions_with_57p01_and_busy_ones_with_08007` |
+| M8. The probe keeps its connection after a failure | **not caught** |
+| M9. `probe.failed` is written for every failed sample, not only when the class changes | **not caught** |
+| M10. `admission.changed` is written only when open or closed changes, not when the reasons change | caught by `it_the_wrong_identity_closes_admission_before_any_login` |
+| M11. The counters of refusals are never flushed while the daemon serves | caught by `it_waiters_are_limited_and_time_out_after_the_acquire_deadline` |
+| M12. The start sequence is advanced before the protected files are read, so a missing key file uses one up | **not caught** |
+
+Eight of twelve were not caught. The probe of this run would have caught M1, M3, M6 and M12, which shows what a test needs. It would not have caught M2: the journal answers busy at once, so a view that is published after the write is late by nothing one can measure from outside. That order is read in the code only. M6, M10 and M11 were run a second time with nothing else on the machine, with the same result.
+
+Test gaps seen beside those:
+
+- No test on the fixture has a second node, so `evidence.second_primary`, the latch, its two log lines and the journal write are tested in `pool-control` only, and the path through `apps/pool/src/control.rs` is not.
+- No test ends a running session through the daemon for a positive conflict, and none shows that silence does not end one. `pool-core` tests both with a route view made by the test.
+- No test makes the journal write fail while the daemon runs.
+- No test starts `pool run` on a journal with the hold `restore_pending`.
+- The redaction test searches for `pz7`, the passwords, the hosts and three SQL words. It does not check that only the fields of the table appear, and it has no canary in the error text of PostgreSQL.
+
+#### One hang of a test, sent to the developer of step 8
+
+During the mutation runs, one run of `cargo test -p pool --locked` on macOS did not end. The test `ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked` of `tests/commands.rs` waited in `wait_with_output` for a child, and that child, `pool show-authority` with a named pipe as its configuration, was blocked in `read` on the pipe. No other process had the pipe open, so there was no writer left, and the read still got no end of file. It stayed so for 12 minutes, until the probe ended the child. The machine was very busy at that moment: the fuzz check and two builds ran beside it. The wrong change under test at that time (M6) cannot reach this path, and the product is not involved: the child did what it should with a file that never ended.
+
+It did not come back: 20 runs of that test alone, 30 runs of the whole test binary, and 80 runs of the whole binary with 24 busy loops on the 10 cores all passed. So it was seen once in 137 runs on macOS, and the cause is not established. A test that can wait without a bound stops a whole check, so it was sent to the developer with what was seen. It does not change a verdict of this run.
+
 ## Milestone 5: Fuzzing, documents and evidence
 
 Build plan steps 12 to 14. Each step keeps its own part of this section.
@@ -1101,6 +1308,48 @@ On 2026-11-15, on top of `main` with step 12 merged. Items 1 and 2 of [Document 
 `scripts/check.sh docs`: exit 0 (links and anchors D1 and D2, scope status D3, IDs D4 to D6).
 
 Two sentences of the same files are no longer exact and are left to the "Document it" box of scope 004, as item 5 of the corrections says: the paragraph on the fuzz package in "Rust and runtime" of `docs/engineering-standards.md` names only `crates/pool-config/fuzz/`, and `crates/pool-protocol/fuzz/` now exists too; the row of `apps/pool` in the crate table of `docs/repository-structure.md` says it depends on all four internal crates, and today it depends on `pool-config`, `pool-control` and `pool-core`, not on `pool-protocol`.
+
+### Checker run of steps 12 and 13
+
+Build plan step 12 (`0004 AC-27`) and step 13, on 2026-11-15, by the checker session, on the tree `7d3e7fd` (the code of `main` at `d4fdb62`). macOS 27.0.1, arm64, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`, `cargo-deny 0.20.2`. Nothing here is Linux or CI. Step 14 is not part of this run, and neither are the tests the tester added afterwards. Every command below was run in this session.
+
+**Verdict: step 12 PASS, step 13 PASS.** The CI job `fuzz` is manual step M2 and has not run.
+
+| Command or probe | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh fuzz-tools` | exit 0 | exit 0: `cargo-fuzz 0.13.2 is already available`, `the toolchain nightly-2026-10-17 is already installed` | pass |
+| `scripts/check.sh fuzz` | every target of both packages is built and run on its committed inputs for a bounded time, no crash file | exit 0: `validate` 256923 runs, `startup` 1021575, `frontend_message` 874753, `scram` 2434550, each 31 s; no file under any `fuzz/artifacts/`; `git status` clean afterwards | pass |
+| What each target started from, read in the output | its committed inputs | `validate`: 1 regression input and the 39 fixtures; `startup`: 11 inputs; `frontend_message`: 13; `scram`: 9 (33 for the three new targets) | pass |
+| Rule W1, in a private copy: a package added to `crates/pool-protocol/fuzz/Cargo.lock`; the last line taken from `protocol-fuzz-lock-packages.txt` | a W1 problem | `W1: crates/pool-protocol/fuzz/Cargo.lock: package zq9-extra is in the lockfile but not in the baseline`; `W1: ... package shlex is in the lockfile but not in the baseline` | pass |
+| Rule W6: a fifth `Cargo.lock` under `crates/pool-core/fuzz/` | a W6 problem | `W6: crates/pool-core/fuzz/Cargo.lock: unexpected Cargo.lock`; the unchanged copy with its four lockfiles is `ok` | pass |
+| Rule C3: a job `fuzz` in a copy of the workflow with the line `scripts/check.sh fuzz-tools`; then with `scripts/check.sh fuzz-toolsx`, `scripts/check.sh sbom` and `cargo install cargo-fuzz` in its place | the first is taken by C3, the three others are refused | no C3 problem for `fuzz-tools`; a C3 problem for each of the three others. (Each copy also has the C2 problem that the job is no required check yet, which is manual step M2) | pass |
+| The three `deny` commands of `scripts/check.sh deny` | `ok` | `advisories ok, bans ok, licenses ok, sources ok` for the product lockfile and for both fuzz lockfiles | pass |
+| Decision 70: the two fuzz commands with a copy of `deny.toml` that has no exception for the license of the fuzz runtime (NCSA) | a license that is not allowed still fails | exit 4 and `licenses FAILED` with one rejected package, for both fuzz lockfiles | pass |
+| The same with `MIT` taken from the allowed list | fails where a package needs it | `crates/pool-config/fuzz`: exit 4, `licenses FAILED`. `crates/pool-protocol/fuzz`: exit 0, because no package of that lockfile needs MIT alone | pass |
+| The fuzz commands without the flag `-A license-not-encountered` | the reason for the flag | `crates/pool-protocol/fuzz`: `licenses FAILED`, only for an allowed license that no package uses. `crates/pool-config/fuzz`: `ok` | as the decision says |
+| The product lockfile, which runs without the flag | `ok`, so the list of the product cannot grow unseen | `ok` | pass |
+| Step 13: `docs/engineering-standards.md` and `docs/repository-structure.md` against items 1 and 2 of [Document corrections](index.md#document-corrections) | the two changes and nothing else | the row for SQLSTATEs holds the rule and the link, the first paragraph names five members; the first paragraph of the other file adds `crates/pool-protocol` and `crates/pool-core`. The commit `d6bec25` changes those three lines and no other line of the two files | pass |
+
+#### Does a fuzz target catch a wrong change?
+
+Five wrong changes to `crates/pool-protocol/src/`, one at a time, in a private copy. Each was run against `cargo test -p pool-protocol --locked`, then against the committed inputs of the target alone (`-runs=0`), then for 25 seconds of fuzzing from those inputs.
+
+| Wrong change | `cargo test -p pool-protocol` | The fuzz target |
+|---|---|---|
+| `Terminate` with any length is taken as `Terminate` (the fault behind decision 52) | caught by `message::tests::frontend_rows` | **not caught** by `frontend_message`: its 13 committed inputs pass, also `terminate-with-body`, and 25 s of fuzzing find nothing |
+| `NegotiateProtocolVersion` carries the bare minor number (the fault behind decision 71) | caught by `auth::tests::negotiation_round_trips_and_checks_its_count` and `startup::tests::negotiation_only_when_needed` | **not caught**: no target calls the encoder |
+| The message reader does not ask its limit before it reserves the body | caught by `message::tests::a_reader_reserves_nothing_for_a_body_over_its_limit` | caught by a committed input of `frontend_message`: `ERROR: libFuzzer: out-of-memory (malloc(4294967291))` |
+| The first packet reader asks the size limit only when the 8 header bytes came in one piece | caught by `first_packets_split_at_every_byte_give_the_same_result` | caught by a committed input of `startup`: the pieces and the whole input give different results |
+| base64 takes padding in the middle of the text | caught by `base64::tests::strict_form_only` | no committed input fails; `scram` finds it within 25 s of fuzzing (what it decodes does not encode back to the same text) |
+
+What this shows: a target fails for a panic, for a large reservation, and for an answer that depends on how the bytes were cut. It does not know which answer is right. So the two faults that the verifications found by hand (decisions 52 and 71) are caught by the unit and golden tests that were added with their fixes, and not by a fuzz target. That is what the spec asks of the targets ("Must not panic, or reserve memory from a length field"), so it is a note for the tester and not a failure.
+
+#### Notes that are not failures
+
+- **`fuzz/corpus/` is not committed**, so a new checkout starts each of the three new targets from its regression inputs alone. That is the design of the spec. On this run `startup` started from its 11 inputs, `frontend_message` from 13 and `scram` from 9, and each ran 31 seconds with no crash.
+- **A lockfile that is missing** makes `pool-repo-check workspace` say `could not run`, not a W problem. That is how the tool treats every lockfile of W1.
+- **Spec 0002 still says three lockfiles** in the row of rule W6 of its table. Spec 0004 and the tool say four. A dated note in spec 0002 would close it. For the architect.
+- **The CI workflow has no `fuzz` and no `integration` job yet.** That is manual step M2, and `.github/` is no file of a session.
 
 ### Build plan step 14: evidence
 
