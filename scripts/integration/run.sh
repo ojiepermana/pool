@@ -160,6 +160,9 @@ export POOL_IT_CLIENT_HOST=host.docker.internal
 #    a signal to this script runs the trap at once, and a watchdog that ends
 #    them after TEST_LIMIT_SECONDS. Their output is kept to count the tests.
 OUT="$DIR/test-output.txt"
+if [ -n "${POOL_IT_FILTER:-}" ]; then
+  echo "integration: POOL_IT_FILTER is set, only matching tests run" >&2
+fi
 set -m
 #    POOL_IT_FILTER, when set, is passed on as the filter of test names, to
 #    run one test again and again; a filter that matches none fails below.
