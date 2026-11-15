@@ -434,6 +434,11 @@ append "$C/crates/pool-config/src/lib.rs" '// writer_admission'
 expect 35 guards 'W3' 'crates/pool-config/src/lib.rs' 'writer_admission'
 restore
 
+# 36: rusqlite named outside pool-control, in apps/pool (decision 93, finding g2: one writer in every crate).
+append "$C/apps/pool/src/main.rs" '// rusqlite'
+expect 36 guards 'W3' 'apps/pool/src/main.rs' 'rusqlite'
+restore
+
 if [ -n "$failed" ]; then
   echo "prove-checks: these cases were not rejected as expected:$failed"
   exit 1

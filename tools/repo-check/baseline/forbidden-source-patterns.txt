@@ -33,5 +33,8 @@ deny crates/pool-control/src Instant::now
 deny crates/pool-control/src SystemTime
 deny crates/pool-control/src std::fs
 deny crates/pool-control/src std::env
-deny crates/pool-control/src rusqlite
+rusqlite
 allow crates/pool-control/src/journal.rs rusqlite
+allow crates/pool-control/tests rusqlite
+aws_lc_rs
+allow crates/pool-core aws_lc_rs
