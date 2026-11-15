@@ -1152,3 +1152,128 @@ Each row names what proves the criterion on the final tree and the part of this 
 | `0003 AC-19` | `scripts/check.sh guards` and its case in `scripts/prove-checks.sh` | [Milestone 1](#milestone-1-guards-workspace-shape-and-dependencies) | pass |
 
 **Messages proved only hermetically.** Under the rule "A golden message is not proof of a wire format" of [The integration check](index.md#the-integration-check), these stay hermetic because no real client of the fixture can be made to send them: a `GSSENCRequest`, a `CancelRequest` and a startup packet with another major version (`gssenc_is_answered_with_n_and_a_version_3_2_gets_negotiation`, `a_cancel_request_is_read_and_dropped`, `refused_versions_and_parameters` in `pool-core/tests/session.rs`, and the golden tests of `pool-protocol`), and a `_pq_.` parameter, whose `NegotiateProtocolVersion` answer is compared with bytes captured from PostgreSQL 18.7 (`negotiation_carries_the_whole_protocol_code_as_postgresql_18_7_sends_it`). Every other message that POOL sends to a client or expects from a node has had a real `psql` 18.7 or PostgreSQL 18.7 on the other end in `integration`.
+
+## Test it
+
+The `Test it` box of feature 4 (`/test one real primary path`), on 2026-11-15 from 20:00 to 22:45 WIB, by the tester session, on `main` at `ec85719` and the six test commits of its branch (`7cc36d2`, `e6c6c36`, `028eee1`, `0f97302`, `306e5c6`, and ``7008b55`` for the `covers` lines of `0004 AC-28`). macOS 27.0.1, arm64, Docker 29.9.2 running; a workstation, not Linux and not CI, except where a row says the pinned Linux image. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`. No line of production code, script, manifest or baseline changed: the branch touches test files only, plus tests appended at the end of the existing `#[cfg(test)]` modules of `crates/pool-core/src/secret.rs` and `crates/pool-core/src/scram.rs`.
+
+### What was added
+
+The gaps that the checker runs of this record named, in their order. Each new test is named after the criterion it guards (`ac<n>_` or a `covers: 0004 AC-n` line).
+
+| Gap | Tests | File |
+|---|---|---|
+| 1. The four comparisons of the second route check | `ac14_a_second_look_that_names_another_node_refuses_with_57p03`, `..._with_another_topology_epoch_...`, `..._with_another_authority_revision_...`, `..._at_a_route_that_went_stale_...`, `..._at_a_closed_route_...`, and the positive control `ac14_the_same_route_published_again_or_only_fresher_lets_the_session_open`. Each refusal also checks that the opened backend is closed again and got no SQL | `crates/pool-core/tests/session.rs` |
+| 2. Log events | A `tracing::Subscriber` of the test keeps every event. `ac24_session_events_carry_exactly_the_fields_of_the_spec_and_ids_in_place_of_names` (the seven fields of `session.started` and the four of `session.ended` in order, the principal by its ID, the lease generation 1, 2, 3, the session ID with the start sequence in its high half), `ac24_the_end_reason_and_status_name_how_a_session_ended`, `ac24_refusals_are_written_once_per_reason_with_a_count_and_no_name`, `ac24_no_event_of_a_whole_run_holds_a_name_a_password_a_host_a_path_or_sql` (a canary search over every field of every event) | `crates/pool-core/tests/session.rs` |
+| 3. Endings, leases, limits, mechanisms, shutdown | `ac23_a_node_that_closes_in_the_middle_of_a_message_closes_the_client_with_no_error`, `ac14_a_positive_conflict_in_the_middle_of_a_message_...`, `ac25_the_shutdown_deadline_in_the_middle_of_a_message_...` (the client gets exactly the bytes of the node and then the end: no error after a cut message), `ac14_a_positive_conflict_closes_the_backend_of_every_session_it_ends`, `ac25_shutdown_closes_the_backend_of_every_session_it_ends`, `ac20_the_limit_of_a_principal_admits_exactly_its_count`, `ac16_a_mechanism_other_than_scram_sha_256_gets_08p01_and_no_server_first_message` (five names), `ac25_shutdown_closes_connections_before_their_session_without_waiting_for_the_startup_deadline` (startup deadline 60 s) | `crates/pool-core/tests/session.rs` |
+| 4. `pool-core` step 7 | `a_directory_with_mode_0700_is_not_a_secret_file`, `a_secret_file_that_its_owner_may_not_read_is_secret_permissions` (mode `0200`; skipped for root), `a_password_of_1024_characters_passes_and_1025_do_not`, `the_key_and_certificate_files_are_read_up_to_their_limit_and_not_one_byte_more` (65536 and 1048576 bytes, then one more), `the_salt_of_an_unknown_name_depends_on_the_mock_key_and_the_name_and_is_stable`; in the backend tests: a startup message of exactly 16384 bytes and 16385, the parameter bytes at 16384 and 16385, a probe answer of exactly 4096 bytes of bodies across messages and 4097, a second `BackendKeyData`, four `Authentication` codes in place of `AuthenticationOk`, an error inside the one row query, kept keys per salt and count, `Display` of every `BackendError` | `crates/pool-core/src/secret.rs`, `scram.rs` (appended to `mod tests`), `crates/pool-core/src/backend/tests.rs` |
+| 5. `pool-control` step 6 | `ac10_a_header_with_a_wrong_free_page_count_is_unreadable` (damage that only `quick_check` sees; the rows can still be read), `ac10_open_ready_does_not_wait_for_a_writer_that_holds_the_lock` and `ac10_the_reader_does_not_wait_for_a_connection_that_holds_the_file_exclusively` (both under 200 ms), `ac10_a_journal_file_that_cannot_be_written_is_still_read`, `ac12_a_probe_row_of_exactly_4096_bytes_of_text_is_read_and_one_byte_more_is_not`, `ac12_the_probe_query_is_the_text_of_the_spec` (`PROBE_QUERY` against the block under [The probe](index.md#the-probe)); in `commands.rs`, `ac10_a_journal_that_was_cut_or_whose_marks_changed_blocks_bootstrap_and_is_left_as_it_is` (a real journal made with the library, cut to one page, with another application ID, with a newer version; bootstrap refused with `bootstrap.store_present`, `show-authority` says `unreadable`, the bytes unchanged) | `crates/pool-control/tests/journal.rs`, `controller.rs`, `apps/pool/tests/commands.rs` |
+| 6. `pool-protocol` | `ac23_every_tag_from_the_client_gets_the_action_of_its_row` and `ac23_every_tag_from_the_backend_gets_the_action_of_its_row` (all 256 tags, several lengths, the rows written out again from the spec), `ac23_terminate_with_any_length_but_4_is_08p01`, `ac15_every_order_of_up_to_four_first_packets_follows_the_rule_of_the_spec` (2930 steps against a model written from the text of [Startup](index.md#startup)), `ac15_negotiation_bytes_for_a_request_with_a_pq_option_match_a_real_server` (the body PostgreSQL 18.7 sent for `_pq_.zq9`, from the checker run of the changes to step 4). `covers: 0004 AC-28` on the three split and reservation tests that had no ID | `crates/pool-protocol/tests/golden.rs` |
+| 7. Guard and fixtures | `ac2_the_committed_w3_baseline_is_the_block_of_spec_0004`, `ac2_the_committed_w3_baseline_allows_and_refuses_each_text_where_the_spec_says` (33 files and texts on a tree with the committed baseline, through the real binary, `apps/pool-cli` and `crates/pool-core-x` included); `ac5_every_fixture_gives_the_result_its_name_prefix_promises` (every file of the fixture folder, both formats), `ac5_each_new_number_key_takes_its_range_edges_and_refuses_one_past_them` (twelve keys, the expiry cross rule, `listener.port`, the principal limit), `ac6_raw_c1_direction_and_separator_characters_in_names_and_paths_are_refused_without_the_canary` (twelve raw characters in four keys) | `tools/repo-check/tests/repo_check/workspace.rs`, `apps/pool/tests/check_config.rs` |
+| 8. The lock | `ac9_a_lock_held_by_another_pool_process_gives_state_locked_and_changes_nothing` (a `pool bootstrap` holds the lock; its connection to the silent node of the test is the signal that it does), `ac9_bootstraps_started_together_on_a_new_state_directory_have_one_holder_and_leave_only_the_lock` (three rounds of eight, released together through named pipes: one refused for missing evidence, seven `state.locked`, one connection to the node, only `pool.lock` with mode `0600` left) | `apps/pool/tests/commands.rs` |
+
+### Test count
+
+Test attributes (`#[test]` and `#[tokio::test]`) under `apps/`, `crates/` and `tools/repo-check/`, fuzz targets and doc tests not counted.
+
+| File | Before (`ec85719`) | After |
+|---|---|---|
+| `crates/pool-core/tests/session.rs` | 29 | 47 |
+| `crates/pool-core/src/backend/tests.rs` | 16 | 24 |
+| `crates/pool-core/src/secret.rs` | 7 | 11 |
+| `crates/pool-core/src/scram.rs` | 7 | 8 |
+| `crates/pool-control/tests/journal.rs` | 19 | 23 |
+| `crates/pool-control/tests/controller.rs` | 12 | 14 |
+| `crates/pool-protocol/tests/golden.rs` | 11 | 16 |
+| `apps/pool/tests/check_config.rs` | 86 | 89 |
+| `apps/pool/tests/commands.rs` | 13 | 16 |
+| `tools/repo-check/tests/repo_check/workspace.rs` | 28 | 30 |
+| All | 475 | 520 |
+
+### Mutations
+
+Each change was made in a copy of the tree outside the repository, one at a time, and the named tests were run against it twice: with the test files of `ec85719` ("before") and with the test files of this branch ("after"). A file that holds both code and tests was mutated from its committed text. "Caught" means the run failed; the test that failed is named.
+
+| # | Change to the code | Tests run | Before | After, caught by |
+|---|---|---|---|---|
+| C1 | Second route check: the node is not compared (with the pool key, which holds the node) | `pool-core --test session` | survived | `ac14_a_second_look_that_names_another_node_refuses_with_57p03` |
+| C2 | The same for the topology epoch | the same | caught | `ac14_a_second_look_with_another_topology_epoch_...`, `a_route_that_changed_while_the_backend_opened_refuses_at_step_9` |
+| C3 | The authority revision is not compared | the same | survived | `ac14_a_second_look_with_another_authority_revision_...` |
+| C4 | The second look does not ask for freshness | the same | survived | `ac14_a_second_look_at_a_route_that_went_stale_...` |
+| C5 | The pool key comparison alone left out | the same | survived | survived: an equivalent change, because the node and the epoch, the only parts of the key a route can change, are compared beside it |
+| C6 | `session.started` carries the principal name in place of its ID | the same | survived | `ac24_session_events_carry_exactly_...`, `ac24_no_event_of_a_whole_run_holds_...` |
+| C7 | The same lease generation for every lease | the same | survived | `ac24_session_events_carry_exactly_...` |
+| C8 | The limit of a principal raised by one | the same | survived | `ac20_the_limit_of_a_principal_admits_exactly_its_count` |
+| C9 | Any SASL mechanism name accepted | the same | survived | `ac16_a_mechanism_other_than_scram_sha_256_...` |
+| C10 | The lease is never dropped (`mem::forget`), so the backend stays open | the same | caught | six tests, among them `ac14_a_positive_conflict_closes_the_backend_of_every_session_it_ends` and `ac25_shutdown_closes_the_backend_of_every_session_it_ends` |
+| C11 | An error is sent after a backend lost in the middle of a message | the same | survived | `ac23_a_node_that_closes_in_the_middle_of_a_message_...` |
+| C12 | An error is sent after a cut in the middle of a message | the same | survived | `ac14_a_positive_conflict_in_the_middle_of_a_message_...`, `ac25_the_shutdown_deadline_in_the_middle_of_a_message_...` |
+| C13 | Shutdown does not close connections before their session | the same | survived | `ac25_shutdown_closes_connections_before_their_session_...` |
+| C14 | `session.ended` reports `idle` in place of `in_transaction` | the same | survived | `ac24_the_end_reason_and_status_name_how_a_session_ended` |
+| S1 | A directory passes both type checks of a secret file | `pool-core --lib` | survived | `a_directory_with_mode_0700_is_not_a_secret_file` |
+| S2 | A secret file that cannot be opened is `secret.invalid` | the same | survived | `a_secret_file_that_its_owner_may_not_read_is_secret_permissions` |
+| S3 | The key file limit raised by one | the same | survived | `the_key_and_certificate_files_are_read_up_to_their_limit_...` |
+| S4 | Every file limit lowered by one (`>=`) | the same | survived | the same |
+| S5 | The password limit raised by one | the same | caught | `a_password_of_1024_characters_passes_and_1025_do_not`, `passwords` |
+| S6 | The made up salt does not depend on the mock key | the same | survived | `the_salt_of_an_unknown_name_depends_on_the_mock_key_...` |
+| B1 | A second `BackendKeyData` replaces the first | the same | survived | `a_second_backend_key_data_ends_the_attempt` |
+| B2 | No limit on the parameter bytes | the same | survived | `the_parameters_of_the_node_stop_at_16384_bytes_...` |
+| B3 | An error inside the one row query is dropped | the same | survived | `an_error_inside_the_one_row_query_is_a_server_error_with_its_sqlstate` |
+| B4 | Kept keys are used for another salt | the same | survived | `kept_keys_are_used_only_for_their_own_salt_and_count` |
+| B5 | Any `Authentication` message after the final one counts as `AuthenticationOk` | the same | survived | `an_authentication_message_after_the_final_one_that_is_not_ok_...` |
+| B6 | `Display` of a backend error prints its `Debug` form | the same | survived | `display_of_a_backend_error_is_its_constant_kind_and_no_debug_form` |
+| B7 | The limit of a startup message of the node raised by one | the same | survived | `a_startup_message_of_the_node_of_exactly_16384_bytes_...` |
+| B8 | The probe answer is not counted across messages | the same | survived | `a_probe_answer_of_exactly_4096_bytes_of_bodies_...` |
+| P1 | The reader without `PRAGMA quick_check` | `pool-control` | survived | `ac10_a_header_with_a_wrong_free_page_count_is_unreadable` |
+| P2 | `busy_timeout` 300 ms on the open that writes | the same | survived | `ac10_open_ready_does_not_wait_for_a_writer_that_holds_the_lock` |
+| P3 | `busy_timeout` 300 ms on the reader | the same | survived | `ac10_the_reader_does_not_wait_for_a_connection_that_holds_the_file_exclusively` |
+| P4 | The reader opens the file for writing | the same | survived | survived: SQLite falls back to read only by itself when a file opened for writing is write protected, so the flag cannot be seen from outside |
+| P5 | The probe answer limit raised by one | the same | survived | `ac12_a_probe_row_of_exactly_4096_bytes_...` |
+| P6 | Another text for `PROBE_QUERY` | the same | survived | `ac12_the_probe_query_is_the_text_of_the_spec` |
+| P7 | `synchronous = OFF` | the same | survived | survived: see the open gaps |
+| P8 | `wal_autocheckpoint = 10` | the same | survived | survived: see the open gaps |
+| R1 | `Terminate` with a length of 8 accepted | `pool-protocol --test golden` / whole package | survived / caught | `ac23_terminate_with_any_length_but_4_is_08p01` / and `message::tests::frontend_rows` |
+| R2 | `f` (`CopyFail`) is not refused as unsupported | the same | survived / caught | `ac23_every_tag_from_the_client_...` / and `frontend_rows` |
+| R3 | A notification (`A`) is not forwarded | the same | survived / caught | `ac23_every_tag_from_the_backend_...` / and `backend_rows` |
+| R4 | A `ReadyForQuery` of any length from 5 up | the same | survived / caught | the same / and `backend_rows` |
+| R5 | A `CancelRequest` keeps the state of the connection | the same | survived / caught | `ac15_every_order_of_up_to_four_first_packets_...` / and `startup::tests::handshake_order` |
+| R6 | A COPY response `W` is backend loss | the same | survived / caught | `ac23_every_tag_from_the_backend_...` / and `backend_rows` |
+| G1 | The baseline allows `std::thread` in `crates/pool-core` | `repo-check --test repo_check` | survived | both `ac2_the_committed_w3_baseline_...` tests |
+| G2 | The baseline allows `tokio` in `crates/pool-control` | the same | survived | both |
+| G3 | The baseline drops `deny crates/pool-control/src rusqlite` | the same | survived | both |
+| G5 | `covers` compares by prefix, not by whole components | the same | survived | `ac2_the_committed_w3_baseline_allows_and_refuses_...` (`crates/pool-core-x`); the unit tests of `src/workspace.rs` were not part of this run |
+| K1 | `limits.backend_wait_max_count` up to 100001 | `pool --test check_config` | survived | `ac5_each_new_number_key_takes_its_range_edges_...` |
+| K2 | `limits.backend_acquire_timeout_ms` from 99 | the same | survived | the same |
+| K3 | `limits.shutdown_timeout_ms` up to 599999 | the same | survived | the same |
+| K5 | The control characters end at U+009E | the same | survived | `ac6_raw_c1_direction_and_separator_characters_...` |
+| L1 | A held lock is not refused | `pool --test commands` | caught | four tests, among them `ac9_a_lock_held_by_another_pool_process_...` and `ac9_bootstraps_started_together_...` |
+| L2 | The command that loses the race to create `pool.lock` gets `state.permissions` | the same | caught | `ac9_commands_that_make_the_lock_file_at_the_same_moment_get_state_locked`, `ac9_bootstraps_started_together_...` |
+
+For R1 to R6 the unit tests beside the code already caught every change; the new golden tests are a second net that reads the rows of the spec again, and catch each change on their own.
+
+### Stability
+
+`crates/pool-core/tests/session.rs` ran five times in a row after it was written: 47 of 47 each time. `crates/pool-control` ran ten times after the fix below: no failure. `apps/pool/tests/commands.rs` ran four times: 15 of 15 (16 with the journal test, which came after). One fault of my own was found by repetition and fixed before the commit: a new journal test used the folder name `read-only` of an existing test, so the two raced; in 5 of 8 runs one of them failed. It now has a name of its own.
+
+### Gates on the final tree
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `7008b55`, between 22:24 and 22:39 WIB. The merge of `main` at `b8d5099` that followed (`d972c9b`) brought two documents only, the checker's record of the lock file fix and the coordination log, so these results hold for it. `scripts/check.sh docs` ran again on the record: `ok`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh all` | exit 0 | exit 0: fmt, clippy, test, deny, guards and docs all `ok`. Tests: `pool` 13 unit, 87 `check_config`, 16 `commands` (21 integration ignored here); `pool-config` 32 unit, 123 `validate`; `pool-control` 5 unit, 3 `admission_model`, 14 `controller`, 23 `journal`, 28 `walkthroughs`; `pool-core` 50 unit, 47 `session`; `pool-protocol` 22 unit, 16 golden, 4 redaction; `pool-repo-check` 108 unit, 112 integration. The first run of this command, on `306e5c6`, failed in `guards` and in `cli::every_command_passes_on_the_committed_tree`, both for one comment of mine in `commands.rs` that named the text `std::thread`; `7008b55` changed the comment | pass |
+| `scripts/check.sh integration` | exit 0, nothing left behind | exit 0: 21 of 21 against the pinned image in 39 s; no container of this run left afterwards | pass |
+| `scripts/check.sh fuzz` | no crash file | exit 0: `validate` 618497 runs, `startup` 3045689, `frontend_message` 939021, `scram` 4124179, 31 s each; no file under any `fuzz/artifacts/` | pass |
+| `scripts/check.sh linux-build` | exit 0 | exit 0: host `aarch64-unknown-linux-gnu`, 22 test results `ok` and none failed, among them `session` 47, `commands` 16 and `golden` 16; every fixture with its expected exit; `pool 0.1.0`, `linux build check passed` | pass |
+| `scripts/prove-checks.sh` | every case rejects its change | exit 0: `all checks reject their bad change (linux-build not proven)`, 34 cases `PASS`, case 20 skipped because the flag `--with-linux-build` was not given | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | exit 0 | exit 0, the valid report of spec 0001 | pass |
+| `git diff --stat main...HEAD` | test files and this record only | the ten test files of the table above and this record; 0 lines of production code, script, manifest or baseline. The 4 removed lines are harness lines of `backend/tests.rs` and `session.rs` | pass |
+
+### Gaps that stay open
+
+- **The four settings of every open that writes** (`synchronous`, `foreign_keys`, `wal_autocheckpoint`, `journal_size_limit`, P7 and P8) and **the read only flag of the reader** (P4). They live on the connection of the journal module, which no caller can reach, and SQLite reports them to that connection only. A test needs a way to ask the open connection, which is production code. A follow up for the owner of `crates/pool-control`, if the spec wants them locked by a test.
+- **A certificate that has expired or is not valid yet.** It needs a certificate signed by one of the test CAs, whose keys are in no repository by the rule under [Tests and who owns them](index.md#tests-and-who-owns-them), or a second CA and key made at test time, which needs `openssl` or a dependency in the test. The checker's probe covered it.
+- **Case 17 of `scripts/prove-checks.sh` on every status of scope 004.** The case is in the script, which this item may not change, and `scripts/prove-checks.sh` runs it on the status the tree has. A test in `tools/repo-check/` can only reach rule D3, not the script.
+- **The pool key comparison alone (C5)** is an equivalent change, as the table says.
+- **`0004 AC-26` and `0004 AC-27`** are proven by `scripts/check.sh integration` (also without a Docker daemon) and `scripts/check.sh fuzz`, not by a test that names them.
+- **No new integration test.** The gaps above were all reachable without a container. `scripts/check.sh integration` ran unchanged, as a gate.

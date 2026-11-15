@@ -52,6 +52,11 @@ fn password(text: &str) -> Password {
 }
 
 fn config(limits: &str) -> ValidatedConfig {
+    config_with(limits, "")
+}
+
+/// The test configuration with more lines at the end of the `[[principal]]` table.
+fn config_with(limits: &str, principal: &str) -> ValidatedConfig {
     let text = format!(
         r#"config_version = 1
 
@@ -95,6 +100,7 @@ credential_file = "/etc/pool/orders_rw"
 id = "orders-app"
 name = "{PRINCIPAL}"
 verifier_file = "/etc/pool/orders_app.scram"
+{principal}
 "#
     );
     pool_config::validate(text.as_bytes()).expect("a valid test configuration")
@@ -113,6 +119,8 @@ fn answer(sql: &str) -> Answer {
         "a big row" => Answer::Rows(vec!["x".repeat(200_000)], TransactionStatus::Idle),
         "a broken message" => Answer::Broken,
         "a flood" => Answer::Flood,
+        "half a row" => Answer::Half { cut: false },
+        "half a row, then the connection is cut" => Answer::Half { cut: true },
         _ => Answer::Hang,
     }
 }
@@ -124,7 +132,20 @@ enum Answer {
     Copy,
     Broken,
     Flood,
+    /// A `RowDescription`, then the first `HALF_ROW` bytes of a `DataRow`; then silence, or a cut.
+    Half {
+        cut: bool,
+    },
     Hang,
+}
+
+/// The `RowDescription` of a half answer, then the first bytes of a `DataRow` that claims 100 bytes of body.
+fn half_answer() -> Vec<u8> {
+    let mut bytes = encode_message(b'T', &[0, 1]);
+    bytes.extend_from_slice(&[
+        b'D', 0, 0, 0, 104, 0, 1, 0, 0, 0, 94, b'h', b'a', b'l', b'f',
+    ]);
+    bytes
 }
 
 #[derive(Default)]
@@ -345,6 +366,13 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
                     .write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
                     .await;
             }
+            Answer::Half { cut } => {
+                let _ = tls.write_all(&half_answer()).await;
+                let _ = tls.flush().await;
+                if cut {
+                    return;
+                }
+            }
             Answer::Hang => {}
         }
         let _ = tls.flush().await;
@@ -363,7 +391,11 @@ struct Harness {
 
 impl Harness {
     fn new(limits: &str) -> Self {
-        let config = Arc::new(config(limits));
+        Self::with_config(config(limits))
+    }
+
+    fn with_config(config: ValidatedConfig) -> Self {
+        let config = Arc::new(config);
         let cluster = config.clusters()[0].id().clone();
         let node_id = config.nodes()[0].id().clone();
         let origin = Instant::now();
@@ -1227,4 +1259,554 @@ async fn a_positive_conflict_ends_a_session_whose_client_stopped_reading() {
         .expect("the session ends although the client does not read");
     settle().await;
     assert_eq!(h.log(|l| l.closed), 1, "the backend is closed");
+}
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+/// Reads every byte the client gets until the stream ends, for at most five seconds.
+async fn read_rest(tls: &mut TlsStream<DuplexStream>) -> Vec<u8> {
+    let mut rest = Vec::new();
+    let _ = tokio::time::timeout(Duration::from_secs(5), tls.read_to_end(&mut rest)).await;
+    rest
+}
+
+/// Waits, asking every 20 ms for at most two seconds, until `done` holds.
+async fn eventually(mut done: impl FnMut() -> bool) -> bool {
+    for _ in 0..100 {
+        if done() {
+            return true;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    done()
+}
+
+/// A route that the second look of step 9 sees in place of the first.
+fn route_with(
+    h: &Harness,
+    node: &str,
+    epoch: u64,
+    revision: u64,
+    fresh_for: Duration,
+) -> RouteView {
+    RouteView::new(vec![(
+        h.cluster.clone(),
+        RouteState::Open(Route {
+            node: NodeId::parse(node).expect("node id"),
+            topology_epoch: TopologyEpoch::from_stored(epoch).expect("epoch"),
+            authority_revision: AuthorityRevision::from_stored(revision).expect("revision"),
+            fresh_until: h.origin.elapsed() + fresh_for,
+        }),
+    )])
+}
+
+/// The login is refused at step 9: `57P03`, no `AuthenticationOk`, the backend that was opened is closed
+/// again and got no byte after its login.
+async fn refused_at_the_second_look(h: &Harness, second: RouteView) {
+    *h.node.after_open.lock().expect("lock") = Some(second);
+    let (tags, code) = login(h).await.refused();
+    assert_eq!(code, "57P03");
+    assert!(!tags.contains(&b'Z'), "no ReadyForQuery");
+    assert_eq!(h.opened(), 1, "the backend was opened once");
+    assert!(
+        eventually(|| h.log(|l| l.closed + l.terminated) == 1).await,
+        "the backend is closed again"
+    );
+    assert_eq!(h.log(|l| l.queries.len()), 0, "no SQL reached the node");
+    assert_eq!(h.server.sessions(), 0);
+    assert_eq!(h.server.counters().refused(Refusal::Closed), 1);
+}
+
+// Gap 1 of the checker: each comparison of the second route check on its own.
+
+#[tokio::test]
+async fn ac14_a_second_look_that_names_another_node_refuses_with_57p03() {
+    let h = Harness::new("");
+    let second = route_with(&h, "pg2", 1, 1, Duration::from_secs(3600));
+    refused_at_the_second_look(&h, second).await;
+}
+
+#[tokio::test]
+async fn ac14_a_second_look_with_another_topology_epoch_refuses_with_57p03() {
+    let h = Harness::new("");
+    let second = route_with(&h, "pg1", 2, 1, Duration::from_secs(3600));
+    refused_at_the_second_look(&h, second).await;
+}
+
+#[tokio::test]
+async fn ac14_a_second_look_with_another_authority_revision_refuses_with_57p03() {
+    let h = Harness::new("");
+    let second = route_with(&h, "pg1", 1, 2, Duration::from_secs(3600));
+    refused_at_the_second_look(&h, second).await;
+}
+
+#[tokio::test]
+async fn ac14_a_second_look_at_a_route_that_went_stale_refuses_with_57p03() {
+    let h = Harness::new("");
+    let second = route_with(&h, "pg1", 1, 1, Duration::ZERO);
+    refused_at_the_second_look(&h, second).await;
+}
+
+#[tokio::test]
+async fn ac14_a_second_look_at_a_closed_route_refuses_with_57p03() {
+    let h = Harness::new("");
+    let second = RouteView::new(vec![(
+        h.cluster.clone(),
+        RouteState::Closed { conflict: false },
+    )]);
+    refused_at_the_second_look(&h, second).await;
+}
+
+#[tokio::test]
+async fn ac14_the_same_route_published_again_or_only_fresher_lets_the_session_open() {
+    for fresh_for in [Duration::from_secs(3600), Duration::from_secs(7200)] {
+        let h = Harness::new("");
+        *h.node.after_open.lock().expect("lock") = Some(route_with(&h, "pg1", 1, 1, fresh_for));
+        let (mut tls, _) = login(&h).await.ready();
+        assert_eq!(
+            query(&mut tls, "select 1").await.last().map(|m| m.tag),
+            Some(b'Z')
+        );
+    }
+}
+
+// Gap 3: endings in the middle of a message, leases that are dropped, the principal limit, the
+// mechanism name, connections before their session at shutdown.
+
+#[tokio::test]
+async fn ac23_a_node_that_closes_in_the_middle_of_a_message_closes_the_client_with_no_error() {
+    let h = Harness::new("");
+    let (mut tls, _) = login(&h).await.ready();
+    tls.write_all(&encode_query("half a row, then the connection is cut"))
+        .await
+        .expect("write");
+    // Exactly the bytes of the node, then the end: no error message after a cut message.
+    assert_eq!(read_rest(&mut tls).await, half_answer());
+    assert_eq!(h.opened(), 1, "no second backend");
+    assert!(eventually(|| h.server.sessions() == 0).await);
+}
+
+#[tokio::test]
+async fn ac14_a_positive_conflict_in_the_middle_of_a_message_closes_the_client_with_no_error() {
+    let h = Harness::new("");
+    let (mut tls, _) = login(&h).await.ready();
+    tls.write_all(&encode_query("half a row"))
+        .await
+        .expect("write");
+    settle().await;
+    h.close(true);
+    assert_eq!(read_rest(&mut tls).await, half_answer());
+    assert!(eventually(|| h.server.sessions() == 0).await);
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 1).await,
+        "the backend is closed"
+    );
+}
+
+#[tokio::test]
+async fn ac25_the_shutdown_deadline_in_the_middle_of_a_message_closes_the_client_with_no_error() {
+    let h = Harness::new("shutdown_timeout_ms = 200");
+    let (mut tls, _) = login(&h).await.ready();
+    tls.write_all(&encode_query("half a row"))
+        .await
+        .expect("write");
+    settle().await;
+    tokio::time::timeout(Duration::from_secs(5), h.server.shutdown())
+        .await
+        .expect("shutdown returns");
+    assert_eq!(read_rest(&mut tls).await, half_answer());
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 1).await,
+        "the backend is closed"
+    );
+}
+
+#[tokio::test]
+async fn ac14_a_positive_conflict_closes_the_backend_of_every_session_it_ends() {
+    let h = Harness::new("");
+    let (mut first, _) = login(&h).await.ready();
+    let (mut second, _) = login(&h).await.ready();
+    h.close(true);
+    assert_eq!(
+        last_error(&read_until_ready(&mut first).await).as_deref(),
+        Some("57P01")
+    );
+    assert_eq!(
+        last_error(&read_until_ready(&mut second).await).as_deref(),
+        Some("57P01")
+    );
+    // Every backend that was opened is closed: a lease that is never dropped keeps it open.
+    assert_eq!(h.opened(), 2);
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 2).await,
+        "closed {} of 2",
+        h.log(|l| l.closed)
+    );
+}
+
+#[tokio::test]
+async fn ac25_shutdown_closes_the_backend_of_every_session_it_ends() {
+    let h = Harness::new("shutdown_timeout_ms = 2000");
+    let (mut first, _) = login(&h).await.ready();
+    let (mut second, _) = login(&h).await.ready();
+    tokio::time::timeout(Duration::from_secs(5), h.server.shutdown())
+        .await
+        .expect("shutdown returns");
+    for tls in [&mut first, &mut second] {
+        assert_eq!(
+            last_error(&read_until_ready(tls).await).as_deref(),
+            Some("57P01")
+        );
+    }
+    assert_eq!(h.opened(), 2);
+    assert!(
+        eventually(|| h.log(|l| l.closed) == 2).await,
+        "closed {} of 2",
+        h.log(|l| l.closed)
+    );
+}
+
+#[tokio::test]
+async fn ac20_the_limit_of_a_principal_admits_exactly_its_count() {
+    let h = Harness::with_config(config_with("", "session_max_count = 2"));
+    let (_one, _) = login(&h).await.ready();
+    let (_two, _) = login(&h).await.ready();
+    let (_, code) = login(&h).await.refused();
+    assert_eq!(code, "53300");
+    assert_eq!(h.server.counters().refused(Refusal::PrincipalLimit), 1);
+    assert_eq!(h.server.counters().refused(Refusal::SessionLimit), 0);
+    assert_eq!(h.opened(), 2, "no backend for the refused login");
+}
+
+#[tokio::test]
+async fn ac16_a_mechanism_other_than_scram_sha_256_gets_08p01_and_no_server_first_message() {
+    for mechanism in [
+        "SCRAM-SHA-256-PLUS",
+        "PLAIN",
+        "scram-sha-256",
+        "SCRAM-SHA-1",
+        "",
+    ] {
+        let h = Harness::new("");
+        let mut tls = upgrade(h.raw()).await;
+        tls.write_all(&encode_startup(&[
+            ("user", PRINCIPAL.as_bytes()),
+            ("database", b"orders"),
+        ]))
+        .await
+        .expect("write");
+        let sasl = read_msg(&mut tls, 4096).await.expect("sasl");
+        assert_eq!(sasl.tag, b'R');
+        let (_, first) = ClientExchange::start().expect("random");
+        tls.write_all(&auth::encode_sasl_initial_response(
+            mechanism,
+            first.as_bytes(),
+        ))
+        .await
+        .expect("write");
+        let reply = read_msg(&mut tls, 1 << 20).await.expect("a reply");
+        assert_eq!(reply.tag, b'E', "{mechanism:?}: no SASLContinue");
+        assert_eq!(
+            error_sqlstate(&reply.body),
+            Some(*b"08P01"),
+            "{mechanism:?}"
+        );
+        assert!(closed(&mut tls).await);
+        assert_eq!(h.opened(), 0);
+    }
+}
+
+#[tokio::test]
+async fn ac25_shutdown_closes_connections_before_their_session_without_waiting_for_the_startup_deadline()
+ {
+    let h = Harness::new("startup_timeout_ms = 60000\nshutdown_timeout_ms = 5000");
+    // One connection that sent nothing, one that stopped after the SASL request.
+    let mut silent = h.raw();
+    let mut tls = upgrade(h.raw()).await;
+    tls.write_all(&encode_startup(&[
+        ("user", PRINCIPAL.as_bytes()),
+        ("database", b"orders"),
+    ]))
+    .await
+    .expect("write");
+    assert_eq!(read_msg(&mut tls, 4096).await.expect("sasl").tag, b'R');
+    settle().await;
+    let started = std::time::Instant::now();
+    tokio::time::timeout(Duration::from_secs(2), h.server.shutdown())
+        .await
+        .expect("shutdown returns");
+    let mut rest = Vec::new();
+    let read = tokio::time::timeout(Duration::from_secs(2), silent.read_to_end(&mut rest)).await;
+    assert!(read.is_ok(), "the silent connection is closed by shutdown");
+    assert!(rest.is_empty(), "closed with no byte");
+    assert!(closed(&mut tls).await);
+    assert!(started.elapsed() < Duration::from_secs(3));
+    assert_eq!(h.server.connections(), 0);
+}
+
+// Gap 2: the log events, read through a subscriber of the test.
+
+type Events = Arc<Mutex<Vec<Vec<(String, String)>>>>;
+
+/// Keeps every event as its fields, in the order the code gave them. Spans are not used by this slice.
+struct Capture(Events);
+
+struct Fields(Vec<(String, String)>);
+
+impl tracing::field::Visit for Fields {
+    fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+        self.0.push((field.name().to_string(), value.to_string()));
+    }
+
+    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+        self.0
+            .push((field.name().to_string(), format!("{value:?}")));
+    }
+}
+
+impl tracing::Subscriber for Capture {
+    fn enabled(&self, _: &tracing::Metadata<'_>) -> bool {
+        true
+    }
+
+    fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
+        tracing::span::Id::from_u64(1)
+    }
+
+    fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
+
+    fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
+
+    fn event(&self, event: &tracing::Event<'_>) {
+        let mut fields = Fields(Vec::new());
+        event.record(&mut fields);
+        self.0.lock().expect("lock").push(fields.0);
+    }
+
+    fn enter(&self, _: &tracing::span::Id) {}
+
+    fn exit(&self, _: &tracing::span::Id) {}
+}
+
+fn capture() -> (Events, tracing::subscriber::DefaultGuard) {
+    let events: Events = Arc::default();
+    let guard = tracing::subscriber::set_default(Capture(Arc::clone(&events)));
+    (events, guard)
+}
+
+fn named(events: &Events, name: &str) -> Vec<Vec<(String, String)>> {
+    events
+        .lock()
+        .expect("lock")
+        .iter()
+        .filter(|e| e.first().is_some_and(|(k, v)| k == "event" && v == name))
+        .cloned()
+        .collect()
+}
+
+fn keys(event: &[(String, String)]) -> Vec<&str> {
+    event.iter().map(|(k, _)| k.as_str()).collect()
+}
+
+fn value<'a>(event: &'a [(String, String)], key: &str) -> &'a str {
+    event
+        .iter()
+        .find(|(k, _)| k == key)
+        .map_or("", |(_, v)| v.as_str())
+}
+
+/// What no event may hold (`SEC-11`): the names, the passwords, the host, the paths and the SQL of the harness.
+const CANARIES: [&str; 9] = [
+    PRINCIPAL,
+    PRINCIPAL_PASSWORD,
+    BACKEND_LOGIN,
+    BACKEND_DATABASE,
+    BACKEND_PASSWORD,
+    "node.test",
+    "/etc/pool",
+    "select 1",
+    "mallory",
+];
+
+#[tokio::test]
+async fn ac24_session_events_carry_exactly_the_fields_of_the_spec_and_ids_in_place_of_names() {
+    let (events, _guard) = capture();
+    let h = Harness::new("");
+    for _ in 0..3 {
+        let (mut tls, _) = login(&h).await.ready();
+        query(&mut tls, "select 1").await;
+        tls.write_all(&encode_terminate()).await.expect("terminate");
+        assert!(closed(&mut tls).await);
+        assert!(eventually(|| h.server.sessions() == 0).await);
+    }
+    assert!(eventually(|| named(&events, "session.ended").len() == 3).await);
+    let started = named(&events, "session.started");
+    assert_eq!(started.len(), 3);
+    for (n, event) in started.iter().enumerate() {
+        assert_eq!(
+            keys(event),
+            [
+                "event",
+                "session",
+                "principal_id",
+                "identity_id",
+                "cluster_id",
+                "node_id",
+                "lease_generation",
+                "topology_epoch"
+            ]
+        );
+        // The principal by its ID, never by the name the client sent.
+        assert_eq!(value(event, "principal_id"), "orders-app");
+        assert_eq!(value(event, "identity_id"), "orders-app");
+        assert_eq!(value(event, "cluster_id"), "main");
+        assert_eq!(value(event, "node_id"), "pg1");
+        assert_eq!(value(event, "topology_epoch"), "1");
+        // A new lease generation for each lease, rising by one.
+        assert_eq!(value(event, "lease_generation"), (n + 1).to_string());
+        // 32 hex characters: the start sequence (3) in the high half, the counter in the low one.
+        assert_eq!(value(event, "session"), format!("{:016x}{:016x}", 3, n + 1));
+    }
+    let ended = named(&events, "session.ended");
+    for (event, start) in ended.iter().zip(&started) {
+        assert_eq!(
+            keys(event),
+            ["event", "session", "reason", "status", "duration_ms"]
+        );
+        assert_eq!(value(event, "session"), value(start, "session"));
+        assert_eq!(value(event, "reason"), "client_terminate");
+        assert_eq!(value(event, "status"), "idle");
+        assert!(value(event, "duration_ms").parse::<u64>().is_ok());
+    }
+}
+
+#[tokio::test]
+async fn ac24_the_end_reason_and_status_name_how_a_session_ended() {
+    let (events, _guard) = capture();
+    let h = Harness::new("");
+    // A client that leaves inside a transaction, one whose backend is lost with a query in flight, and a conflict.
+    let (mut tls, _) = login(&h).await.ready();
+    query(&mut tls, "begin").await;
+    drop(tls);
+    let (mut tls, _) = login(&h).await.ready();
+    query(&mut tls, "commit, then the connection is cut").await;
+    let (mut idle, _) = login(&h).await.ready();
+    h.close(true);
+    read_until_ready(&mut idle).await;
+    assert!(eventually(|| named(&events, "session.ended").len() == 3).await);
+    let mut seen: Vec<(String, String)> = named(&events, "session.ended")
+        .iter()
+        .map(|e| {
+            (
+                value(e, "reason").to_string(),
+                value(e, "status").to_string(),
+            )
+        })
+        .collect();
+    seen.sort();
+    assert_eq!(
+        seen,
+        [
+            ("backend_lost".to_string(), "in_flight".to_string()),
+            ("client_closed".to_string(), "in_transaction".to_string()),
+            ("conflict".to_string(), "idle".to_string()),
+        ]
+    );
+}
+
+#[tokio::test]
+async fn ac24_refusals_are_written_once_per_reason_with_a_count_and_no_name() {
+    let (events, _guard) = capture();
+    let h = Harness::new("");
+    // Two authentication failures, one unmapped database, one closed route.
+    for (user, database) in [(PRINCIPAL, "orders"), ("mallory", "orders")] {
+        login_with(upgrade(h.raw()).await, user, "not the password", database)
+            .await
+            .refused();
+    }
+    login_with(
+        upgrade(h.raw()).await,
+        PRINCIPAL,
+        PRINCIPAL_PASSWORD,
+        BACKEND_DATABASE,
+    )
+    .await
+    .refused();
+    h.close(false);
+    login(&h).await.refused();
+    h.server.counters().flush();
+    let refused = named(&events, "session.refused");
+    let mut seen: Vec<(String, String)> = refused
+        .iter()
+        .map(|e| {
+            assert_eq!(keys(e), ["event", "reason", "count"]);
+            (
+                value(e, "reason").to_string(),
+                value(e, "count").to_string(),
+            )
+        })
+        .collect();
+    seen.sort();
+    assert_eq!(
+        seen,
+        [
+            ("authentication".to_string(), "2".to_string()),
+            ("closed".to_string(), "1".to_string()),
+            ("unmapped".to_string(), "1".to_string()),
+        ]
+    );
+}
+
+#[tokio::test]
+async fn ac24_no_event_of_a_whole_run_holds_a_name_a_password_a_host_a_path_or_sql() {
+    let (events, _guard) = capture();
+    let h = Harness::new("session_max_count = 2");
+    let (mut tls, _) = login(&h).await.ready();
+    query(&mut tls, "select 1").await;
+    login_with(
+        upgrade(h.raw()).await,
+        "mallory",
+        PRINCIPAL_PASSWORD,
+        "orders",
+    )
+    .await
+    .refused();
+    *h.node.hot_standby.lock().expect("lock") = "on";
+    login(&h).await.refused();
+    *h.node.hot_standby.lock().expect("lock") = "off";
+    h.close(true);
+    read_until_ready(&mut tls).await;
+    h.server.counters().flush();
+    assert!(eventually(|| !named(&events, "session.ended").is_empty()).await);
+    let all = events.lock().expect("lock").clone();
+    assert!(all.len() >= 4, "{all:?}");
+    for event in &all {
+        let event_name = value(event, "event");
+        assert!(
+            [
+                "session.started",
+                "session.ended",
+                "session.refused",
+                "backend.failed"
+            ]
+            .contains(&event_name),
+            "an event outside the table: {event:?}"
+        );
+        for (key, text) in event {
+            for canary in CANARIES {
+                assert!(
+                    !text.contains(canary),
+                    "{key} of {event_name} holds {canary:?}"
+                );
+            }
+            assert_ne!(
+                text, "orders",
+                "{key} of {event_name} holds the database name"
+            );
+        }
+    }
+    let failed = named(&events, "backend.failed");
+    assert_eq!(failed.len(), 1);
+    assert_eq!(keys(&failed[0]), ["event", "node_id", "class", "count"]);
+    assert_eq!(value(&failed[0], "class"), "not_primary");
 }

@@ -1,12 +1,12 @@
 # Graph Report - pool  (2026-11-15)
 
 ## Corpus Check
-- 2 files · ~445,246 words
+- 10 files · ~461,643 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5389 nodes · 16943 edges · 126 communities (100 shown, 26 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1494 edges (avg confidence: 0.88)
+- 5489 nodes · 17263 edges · 126 communities (100 shown, 26 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1514 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -149,14 +149,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `0003 full verification: scripts/check.sh linux-build passes on aaad537 and on the tree of 4c61e3b in rust:1.100.0-slim-bookworm (linux/arm64): cargo test --workspace 240 passed with the ac15_ and ac16_ tests; Linux evidence for the time limit of AC-15` --references--> `linux-build.sh script`  [INFERRED]
   docs/specs/0003-control-and-session-data-model/verify.md → scripts/linux-build.sh
-- `Reading: JSON field order is checked on the raw line (agreed, also done byte for byte)` --references--> `ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
-- `Extra runs beyond the spec: mode 000 file exits 3 io.permission_denied; closed stdout or stderr pipe exits 3 with no output and no panic (not the /dev/full case)` --references--> `ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
-- `Extra runs beyond the spec: mode 000 file exits 3 io.permission_denied; closed stdout or stderr pipe exits 3 with no output and no panic (not the /dev/full case)` --references--> `ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic()`  [INFERRED]
-  docs/specs/0001-initial-architecture/verify.md → apps/pool/tests/check_config.rs
-- `io.permission_denied test under cfg(unix): file of mode 000; returns as passed when the process can still open it (root in the container), else checks exit 3 and exact output in both formats` --references--> `ac11_a_file_that_cannot_be_opened_is_permission_denied()`  [INFERRED]
-  docs/specs/0001-initial-architecture/index.md → apps/pool/tests/check_config.rs
+- `Scope 003 review Minor t3 (admission.rs:89, pool-config lib.rs:44): the compile_fail,E0451 documentation tests do not check the error code on Rust 1.100.0 (E0308 also passed) although verify.md:206 says so; fix: correct verify.md and pair each with a passing test` --references--> `Closed`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
+- `Scope 003 review Minor t3 (admission.rs:89, pool-config lib.rs:44): the compile_fail,E0451 documentation tests do not check the error code on Rust 1.100.0 (E0308 also passed) although verify.md:206 says so; fix: correct verify.md and pair each with a passing test` --references--> `EligiblePrimary`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
+- `Scope 003 review nits in pool-control code: n1 a cluster left out of the bootstrap plan gets no reason, n2 expiry Duration::MAX makes every sample fresh, n3 BootstrapRefused lacks a compile_fail test, n9 unreachable Ready arm, n10 EligiblePrimary can be cloned and kept` --references--> `state_reason()`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
+- `Scope 003 review question 1: nothing gets Open without full agreement from honest inputs; writer_admission returns Open only at admission.rs:305 and Authority is made only at authority.rs:183; three caller limits remain (m1, m2, m3)` --references--> `state_reason()`  [INFERRED]
+  docs/reviews/2026-11-15-scope-003-control-and-session-data-model.md → crates/pool-control/src/admission.rs
 
 ## Import Cycles
 - 2-file cycle: `crates/pool-config/src/serving.rs -> crates/pool-config/src/topology.rs -> crates/pool-config/src/serving.rs`
@@ -243,11 +243,11 @@
 
 ### Community 0 - "check-config Integration Tests"
 Cohesion: 0.05
-Nodes (118): Command, a_value_after_config_is_always_the_path(), ac10_every_outcome_that_opens_the_file_prints_one_json_line_with_fields_in_order(), ac10_help_and_usage_errors_are_not_json_even_when_json_was_asked(), ac10_valid_capabilities_object_lists_result_cache_first(), ac11_a_closed_stderr_pipe_exits_3_without_stdout_or_panic(), ac11_a_closed_stdout_pipe_exits_3_without_stderr_or_panic(), ac11_a_directory_given_without_a_trailing_slash_cannot_be_read() (+110 more)
+Nodes (122): Command, Child, PathBuf, String, Vec, Child, Expected, I (+114 more)
 
 ### Community 1 - "repo_check/docs.rs"
 Cohesion: 0.05
-Nodes (78): line_of(), base_could_not_run_for_a_revision_that_does_not_exist(), base_could_not_run_when_an_owner_file_at_the_base_cannot_be_read(), base_could_not_run_when_the_root_is_a_folder_inside_a_repository(), base_could_not_run_when_the_root_is_not_a_git_repository(), base_refuses_a_revision_that_starts_with_a_hyphen_as_not_a_commit(), d1_checks_images_reference_definitions_and_links_to_directories(), d1_decodes_percent_twenty_and_drops_angle_brackets() (+70 more)
+Nodes (84): line_of(), base_could_not_run_for_a_revision_that_does_not_exist(), base_could_not_run_when_an_owner_file_at_the_base_cannot_be_read(), base_could_not_run_when_the_root_is_a_folder_inside_a_repository(), base_could_not_run_when_the_root_is_not_a_git_repository(), base_refuses_a_revision_that_starts_with_a_hyphen_as_not_a_commit(), d1_checks_images_reference_definitions_and_links_to_directories(), d1_decodes_percent_twenty_and_drops_angle_brackets() (+76 more)
 
 ### Community 2 - "pool-config Validation Tests"
 Cohesion: 0.03
@@ -279,7 +279,7 @@ Nodes (66): F-030 Validation and reset (close uncertain sessions), F-033 SQL AST
 
 ### Community 9 - "pool-config Validation Library"
 Cohesion: 0.01
-Nodes (648): bootstrap(), bootstrap_file(), load_config(), new_authority_id(), Path, Report, Result, ValidatedConfig (+640 more)
+Nodes (661): bootstrap(), bootstrap_file(), load_config(), new_authority_id(), Path, Report, Result, ValidatedConfig (+653 more)
 
 ### Community 10 - "Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories"
 Cohesion: 0.09
@@ -314,8 +314,8 @@ Cohesion: 0.06
 Nodes (46): Audit of reused pgwire components in frontend authentication, Allowed downloads and installs (crates adopted by spec 0002, pinned toolchain, cargo-deny, cargo-fuzz), Single rustls crypto provider (aws-lc-rs feature family), actions/cache v6.1.0 pinned by commit (keeps built cargo-deny), actions/checkout v7.0.1 pinned by commit, Adopted in scope 001 (three direct dependencies reviewed 2026-11-14), Adopted in scope 002 (tools, not product dependencies; pool and pool-config gain none), axum 0.8.9 (administration endpoints) (+38 more)
 
 ### Community 18 - "ids.rs"
-Cohesion: 0.08
-Nodes (51): JsonLog, AtomicU64, AtomicUsize, Attributes, Event, Metadata, Record, Subscriber (+43 more)
+Cohesion: 0.06
+Nodes (53): JsonLog, AtomicU64, AtomicUsize, Attributes, Event, Metadata, Record, Subscriber (+45 more)
 
 ### Community 19 - "Spec 0002: Standards and tooling"
 Cohesion: 0.10
@@ -427,7 +427,7 @@ Nodes (30): Delegated (berat) 0003 section The journal (built in 004): one SQLit
 
 ### Community 46 - "check-config Exit Status and AC-11 Readings"
 Cohesion: 0.16
-Nodes (24): ac11_a_first_argument_that_is_not_a_command_is_unknown(), AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full), The check-config command (arguments and usage errors), --format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument, First argument compared whole: --help=x, -h=x, --version=x and -V=x as the first argument are unknown command, Option name is the text before the first equals sign: --help=x and -h=x after check-config print the help; --version and -V there are unknown option, Clarification evidence: review record docs/reviews/2026-11-14-scope-001-stack-and-workspace.md (rows 1 to 7); debug pool build at 07f7994 rerun for rows 2, 3, 4, 6 (81-part key config.syntax null location, 80-part key config.schema, x = "éé" junk at column 10), AC-11 passes on the workstation; /dev/full part waits for the Linux build (+16 more)
+Nodes (24): AC-11 Exit status and streams (usage 2, io errors 3, help and version 0, /dev/full), The check-config command (arguments and usage errors), --format=<bytes> and --config=<bytes> (name, equals sign and non UTF-8 bytes in one argument) are unexpected argument; 'value of --format' means the separate argument, First argument compared whole: --help=x, -h=x, --version=x and -V=x as the first argument are unknown command, Option name is the text before the first equals sign: --help=x and -h=x after check-config print the help; --version and -V there are unknown option, Clarification evidence: review record docs/reviews/2026-11-14-scope-001-stack-and-workspace.md (rows 1 to 7); debug pool build at 07f7994 rerun for rows 2, 3, 4, 6 (81-part key config.syntax null location, 80-part key config.schema, x = "éé" junk at column 10), AC-11 passes on the workstation; /dev/full part waits for the Linux build, Linux evidence AC coverage: replaces only the two BLOCKED rows of the second run; AC-2 PASS from a clean 18e9228; /dev/full clause of AC-11 PASS, so AC-11 is PASS in full (+16 more)
 
 ### Community 47 - "SQL Routing and Replica Profiles: Protocol engine: Protocol engine"
 Cohesion: 0.11
@@ -511,7 +511,7 @@ Nodes (15): Protocol compatibility contract (3.0 and 3.2), COPY bounded chunk st
 
 ### Community 67 - "Linux Only /dev/full Write Tests"
 Cohesion: 0.28
-Nodes (13): a_failed_write_exits_3_without_stderr(), ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr(), Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Review test coverage: what is covered well and the gaps (array starting with a boolean, permission denied arm, no span arm, column through validate, AC-8/12/13 guards, --format=<bytes>), Sub session chk-f1-verify-2 (checker verify after closing: Linux build evidence for AC-2 and the /dev/full clause of AC-11; report done, commit 972e160: revision 18e9228, exit 0, host x86_64-unknown-linux-gnu, 136 tests (3 + 68 + 3 + 60 + 2), two Linux only tests ok, 30 fixture blocks, no canary leaked; merged to main), Sub session chk-f1-verify-3 (checker verify: Linux build evidence for aarch64, 0001 AC-2 and the /dev/full clause of AC-11; first turn standby, done, commit 38da818: revision 41e8eda, exit 0, host aarch64, 136 tests, two Linux only tests ok, 30 fixture blocks, no emulation; merged to main), F1-2 pass criteria as written while the target was x86_64: exit 0, host x86_64-unknown-linux-gnu, tests pass including the two Linux-only failed-write tests, one block per fixture and format (0 valid-*, 1 others), no canary leaked, last line linux build check passed, Both Linux only tests passed on aarch64 (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr; cfg target_os linux, /dev/full as stdout, check_config.rs lines 525 and 1781) (+5 more)
+Nodes (13): Never run anywhere yet: the two cfg(target_os = linux) /dev/full tests and the non UTF-8 path test fallback on APFS, Review test coverage: what is covered well and the gaps (array starting with a boolean, permission denied arm, no span arm, column through validate, AC-8/12/13 guards, --format=<bytes>), Sub session chk-f1-verify-2 (checker verify after closing: Linux build evidence for AC-2 and the /dev/full clause of AC-11; report done, commit 972e160: revision 18e9228, exit 0, host x86_64-unknown-linux-gnu, 136 tests (3 + 68 + 3 + 60 + 2), two Linux only tests ok, 30 fixture blocks, no canary leaked; merged to main), Sub session chk-f1-verify-3 (checker verify: Linux build evidence for aarch64, 0001 AC-2 and the /dev/full clause of AC-11; first turn standby, done, commit 38da818: revision 41e8eda, exit 0, host aarch64, 136 tests, two Linux only tests ok, 30 fixture blocks, no emulation; merged to main), F1-2 pass criteria as written while the target was x86_64: exit 0, host x86_64-unknown-linux-gnu, tests pass including the two Linux-only failed-write tests, one block per fixture and format (0 valid-*, 1 others), no canary leaked, last line linux build check passed, Both Linux only tests passed on aarch64 (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr; cfg target_os linux, /dev/full as stdout, check_config.rs lines 525 and 1781), Test counts on Linux aarch64: 136 passed, 0 failed, 0 ignored (3 + 68 + 3 + 60 + 2), the same 136 names as the x86_64 run, 134 on macOS, Both Linux only tests ran for the first time and printed ok (a_failed_write_exits_3_without_stderr, ac11_a_failed_write_of_help_version_or_a_rejection_exits_3_without_stderr); each gives /dev/full to pool as stdout (check_config.rs lines 525 and 1781) (+5 more)
 
 ### Community 68 - "Security Features, Identity Requirements and Spec 0003 Security Model"
 Cohesion: 0.22
@@ -623,7 +623,7 @@ Nodes (78): Spec 0004: AuthenticationOk is not sent after the SCRAM exchange; it
 
 ### Community 123 - "crates/pool-protocol/src/lib.rs"
 Cohesion: 0.01
-Nodes (610): the_conflict_reasons_are_the_six_of_the_spec(), Prepared, recv(), Arc, Instant, Option, Sender, String (+602 more)
+Nodes (666): the_conflict_reasons_are_the_six_of_the_spec(), Prepared, recv(), Arc, Instant, Option, Sender, String (+658 more)
 
 ### Community 125 - "scripts/integration/run.sh"
 Cohesion: 0.18
@@ -637,12 +637,10 @@ Nodes (9): fail(), POOL_IT_CLIENT_HOST, POOL_IT_CONTAINER, POOL_IT_CONTAINER_2, 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `tst-f3-test reused (tester, opus-5-5 high; F3 Test it, AC-1 to AC-13, range ca9a897..a92bee7; done 2026-11-15: 32a7b24 tests for steps 1 to 8, 26210ce ac16_ tests, tip f75a0ed; 59 new test functions (198 to 257), check.sh all 385 to 448 tests, 111 of 112 mutations caught; no production code change; merged as aaad537, addition 8a5f2dc merged as 4c61e3b)` connect `Scope 003 Coordination Brief, Log and Manual Steps` to `check-config Integration Tests`, `pool-config Validation Tests`, `workspace.rs: src/workspace.rs: src/workspace.rs`, `pool-config Validation Library`, `Spec 0003 Authority Model: Startup States and Bootstrap`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Glossary and Routing Profiles`, `Scope 002 Brief Rules: apps/pool agent guide`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Linux Build Evidence, AC-2 and VM Architecture`, `Standards, Tooling and Release Qualification`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Scope 001 Coordination Log, Closing and Blockers`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Leases, Cancellation and Login Routing`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Security Requirements and Features F-100 to F-108`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Topology Administration, Promotion and Operation Records`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack`, `Spec 0003 Records Table and Node Naming`, `pool-config Validation Library: pool/src/report.rs`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `High Availability PRD and Multi Proxy Authority`, `Spec 0003 Identifier and Generation Types`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Query Cache PRD and V2 Deferred Features`, `Spec 0004 Requirements, Decision and Consequences`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
 - **Why does `Spec 0002: Standards and tooling (Status: Accepted)` connect `Glossary and Routing Profiles` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Scope 002 Brief Rules: apps/pool agent guide`, `Spec 0002: Standards and tooling: AC-4 Dependencies, licenses and advisories`, `Workspace Layout, Bounded Read and FIFO Limit`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Standards, Tooling and Release Qualification`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)`, `Spec 0003 Decision, Rationale and Scope 004 Handoff`, `Scope 002 Brief Rules`, `Summary of the first pass: seven required checks`, `Spec 0003 Delegated Decisions and Workspace Guards`, `Slices, Milestones and Readiness Gates`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Adopted in scope 002 (tools, not product depende`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,: Manual steps: 002-standards-and-tooling`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `Scope 002 Remote Steps and Feature 2 Done`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Reviewer Roster and Review Roles`, `Changed section (scope 002)`, `Spec 0004 Requirements, Decision and Consequences`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
+  _High betweenness centrality (0.073) - this node is a cross-community bridge._
+- **Why does `Spec 0001. POOL initial architecture` connect `Workspace Layout, Bounded Read and FIFO Limit: Adopted dependencies (serde, toml, serde_json)` to `Slices, Milestones and Readiness Gates: Spec 0001. POOL initial architecture: Document checks D1-D6`, `workspace.rs: Decisions and runner ups (decisions 1 to 38, aut`, `Scope 003 Coordination Brief, Log and Manual Steps`, `Glossary and Routing Profiles`, `Scope 002 Brief Rules: apps/pool agent guide`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack`, `Workspace Layout, Bounded Read and FIFO Limit`, `Spec 0003 Configuration Keys, Findings and Fixtures`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende: Rust technology evaluation`, `Spec 0002: Standards and tooling`, `Scope 001 Coordination Brief, Log and Authorization: Aturan umum brief: 001-stack-and-workspace (gene`, `Scope 002 Brief Rules: Seven required checks: fmt, clippy, test, deny, `, `Spec 0003 Writer Admission and Conflict Evidence`, `Linux Build Evidence, AC-2 and VM Architecture`, `Standards, Tooling and Release Qualification`, `Security Requirements and Features F-100 to F-108: Trust boundaries: Security features F-100 to F-108`, `Scope 002 Brief Rules: apps/pool agent guide: apps/pool agent guide`, `Scaffold Step and dev-f1-build Gate: 0001. Verification record`, `Scope 001 Coordination Log, Closing and Blockers`, `Rust Technology Evaluation: Adopted in scope 002 (tools, not product depende`, `Leases, Cancellation and Login Routing`, `Load Balancing and Replica Selection: High availability PRD: pool README`, `Security Requirements and Features F-100 to F-108`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Promotion operation stages (Plan, Quiesce, Fence`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine`, `Topology Administration, Promotion and Operation Records`, `Security Requirements and Features F-100 to F-108: Health monitoring PRD`, `Slices, Milestones and Readiness Gates`, `SQL Routing and Replica Profiles: Protocol engine: Protocol engine: Proposed stack: Proposed stack`, `Spec 0003 Records Table and Node Naming`, `pool-config Validation Library: pool/src/report.rs`, `Workspace Layout, Bounded Read and FIFO Limit: Shared Conventions Table: Repository proposal`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done)`, `Changelog, Feature 1 Done and Spec Status: 1. Stack and workspace (done): Status lifecycle`, `Security Requirements and Features F-100 to F-108: Reviewer roster (12 review and risk owner roles,`, `High Availability PRD and Multi Proxy Authority`, `Spec 0003 Identifier and Generation Types`, `Slices, Milestones and Readiness Gates: Contributing to POOL`, `Query Cache PRD and V2 Deferred Features`, `Spec 0004 Requirements, Decision and Consequences`?**
+  _High betweenness centrality (0.070) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Spec 0001. POOL initial architecture` (e.g. with `Planning ledger: the assembled foundation was ratified by the user on 2026-11-14 ('Accept, looks solid'); scope feature 1 design checked, execution queued, the governing spec Proposed until built` and `Linux builder image rust:1.100.0-slim-bookworm by index digest`) actually correct?**
   _`Spec 0001. POOL initial architecture` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 9 inferred relationships involving `4. One real primary path (in-progress)` (e.g. with `Features 1, 2 and 3 are done; their evidence is in the verification records of spec 0001, spec 0002 and spec 0003; the next queued feature is 4, the first walking slice whose acceptance is in docs/testing/strategy.md` and `1. Stack and workspace (done)`) actually correct?**
@@ -650,4 +648,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `Platform gated tests (/dev/zero and mode 000 on unix, /dev/full on Linux only)`, `Observability features F-109 to F-114`, `Runtime config hidden aliases F-161 to F-165` to the rest of the system?**
   _150 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `check-config Integration Tests` be split into smaller, more focused modules?**
-  _Cohesion score 0.054481792717086835 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.053107789142407553 - nodes in this community are weakly interconnected._
+- **Should `repo_check/docs.rs` be split into smaller, more focused modules?**
+  _Cohesion score 0.04569083447332421 - nodes in this community are weakly interconnected._

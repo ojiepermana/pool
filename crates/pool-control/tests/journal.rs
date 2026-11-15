@@ -717,3 +717,93 @@ fn ac10_after_create_the_main_file_alone_is_the_journal() {
     assert_eq!(read.classify(&config(None)).name(), "unconfirmed");
     assert_eq!(ready(&copy).name(), "ready");
 }
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+#[test]
+fn ac10_a_header_with_a_wrong_free_page_count_is_unreadable() {
+    // covers: 0004 AC-10. Only `PRAGMA quick_check` sees this damage: the
+    // marks, the tables and the rows are all still in place.
+    let (folder, path) = created("free-page-count");
+    let mut bytes = std::fs::read(&path).expect("read");
+    bytes[36..40].copy_from_slice(&7u32.to_be_bytes());
+    let copy = folder.join("free-pages.sqlite3");
+    std::fs::write(&copy, &bytes).expect("write");
+    let check: String = sql(&copy)
+        .query_row("PRAGMA quick_check", [], |row| row.get(0))
+        .expect("quick_check runs");
+    assert_ne!(check, "ok", "the damage is one that quick_check reports");
+    assert_eq!(
+        integer(&copy, "SELECT count(*) FROM store"),
+        1,
+        "the rows can still be read"
+    );
+    assert_eq!(
+        Journal::read(&copy).classify(&config(Some(X))).name(),
+        "unreadable"
+    );
+}
+
+#[test]
+fn ac10_open_ready_does_not_wait_for_a_writer_that_holds_the_lock() {
+    // covers: 0004 AC-10. `busy_timeout` is 0 on the open that writes: the
+    // answer comes before any wait SQLite could be told to make.
+    let (_folder, path) = created("busy-no-wait");
+    let state = ready(&path);
+    let holder = sql(&path);
+    holder
+        .execute_batch("BEGIN IMMEDIATE;")
+        .expect("hold the lock");
+    let started = std::time::Instant::now();
+    assert_eq!(
+        Journal::open_ready(&path, authority(&state)).map(|(_, sequence)| sequence),
+        Err(JournalError::Busy)
+    );
+    assert!(
+        started.elapsed() < Duration::from_millis(200),
+        "{:?}",
+        started.elapsed()
+    );
+    holder.execute_batch("ROLLBACK;").expect("release");
+}
+
+#[test]
+fn ac10_the_reader_does_not_wait_for_a_connection_that_holds_the_file_exclusively() {
+    // covers: 0004 AC-10. The reader has `busy_timeout` 0 too.
+    let (_folder, path) = created("reader-no-wait");
+    let holder = sql(&path);
+    holder
+        .execute_batch(
+            "PRAGMA locking_mode = EXCLUSIVE; BEGIN EXCLUSIVE; UPDATE store SET hold = hold;",
+        )
+        .expect("hold the file");
+    let started = std::time::Instant::now();
+    let _ = Journal::read(&path);
+    assert!(
+        started.elapsed() < Duration::from_millis(200),
+        "{:?}",
+        started.elapsed()
+    );
+    holder.execute_batch("ROLLBACK;").expect("release");
+}
+
+#[test]
+fn ac10_a_journal_file_that_cannot_be_written_is_still_read() {
+    // covers: 0004 AC-10. Reading needs no write access to the main file.
+    let (_folder, path) = created("reader-opens-read-only");
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o400)).expect("chmod");
+    if nix_root() {
+        return;
+    }
+    let read = Journal::read(&path);
+    assert_eq!(read.authority_id(), Some(id(X)));
+    assert_eq!(read.classify(&config(Some(X))).name(), "ready");
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).expect("chmod");
+}
+
+/// Whether the test runs as root, which may write any file.
+fn nix_root() -> bool {
+    use std::os::unix::fs::MetadataExt;
+    std::fs::metadata(env!("CARGO_TARGET_TMPDIR")).is_ok_and(|m| m.uid() == 0)
+}
