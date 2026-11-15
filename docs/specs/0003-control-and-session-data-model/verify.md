@@ -171,3 +171,105 @@ Recorded by the checker session `chk-f3-verify` on 2026-11-15 at revision `198a1
 | `0003 AC-5` | library half met: the route for the exact pair, and `None` for 23 other pairs. The refusal on a real connection waits for scope 004, as the criterion says |
 | `0003 AC-6` | met on the workstation: syntax and exact comparison of each identifier, the three operations of each generation, `None` at 9223372036854775807, and no comparison or conversion between two kinds |
 | `0003 AC-7` to `0003 AC-14` | outside this milestone, not run (`0003 AC-13` was milestone 1) |
+
+## Milestone 3: Authority model and the four walks
+
+Build plan step 5, on 2026-11-15, on macOS (workstation, not Linux and not CI). Commit `f98d634` (step 5), on top of the merge of milestones 1 and 2 at `198a1cd`. Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`. No dependency was added: `Cargo.toml`, `Cargo.lock` and `crates/pool-control/Cargo.toml` are unchanged, and `pool-control` still depends on `pool-config` alone.
+
+### UI / manual
+
+None for this milestone. Nothing here needs Docker, PostgreSQL or GitHub.
+
+### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `f98d634`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `cargo test -p pool-control --locked walk_` | exit 0, the four walks pass | exit 0. `walk_clean_startup`, `walk_missing_journal`, `walk_conflicting_evidence`, `walk_restore_before_promotion` passed | pass |
+| `cargo test -p pool-control --locked open_only_on_full_agreement` | exit 0 | exit 0, 1 passed. The test counts 8192 cases | pass |
+| `cargo test -p pool-control --locked --doc` | exit 0 | exit 0. 4 `compile_fail,E0451` tests passed: struct literals of `Authority`, `EligiblePrimary`, `Closed` and `BootstrapPlan` | pass |
+| `cargo test -p pool-control --locked` | exit 0 | exit 0. `tests/walkthroughs.rs` 7 passed (the four walks plus `freshness_rule`, `inconsistent_journal_is_unreadable`, `bootstrap_refusals_need_every_node_and_a_cluster`), `tests/admission_model.rs` 1 passed, doc tests 4 passed | pass |
+| `grep -rnE 'Instant::now\|SystemTime\|std::fs\|std::env' crates/pool-control/src` | no output | no output, exit 1 | pass |
+| `scripts/check.sh all` | every check ok | `ok` for fmt, clippy, test, deny, guards and docs. 385 tests passed, 0 failed. `deny` shows only the known `license-exception-not-encountered` warning | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | exit 0 | exit 0 | pass |
+| Mutation check, not kept: drop the quarantine filter from checks 9 and 10 in `crates/pool-control/src/admission.rs` and run `open_only_on_full_agreement` | the test fails | it failed; the file was put back and the suite passed again | pass |
+
+Cargo prints `warning: unused workspace dependency pool-control` for the root `Cargo.toml`. It comes from milestone 1, which declares the workspace dependency before `apps/pool` uses it ([Workspace and guards](index.md#workspace-and-guards)). It is a warning and fails no check.
+
+**Readings of the spec.** These are the choices the text left to the build, each taken from the closest wording.
+
+- Fresh: for each node only the sample with the latest `sampled_at` counts. When that sample is later than `now`, stale or failed, the node has no evidence, and an older sample is not used instead. Two samples at the latest time give no evidence. A sample of a node that the configuration does not list for the cluster is ignored.
+- `plan_bootstrap` reports every refusal that applies, so a present journal or a witness does not stop the evidence checks. With healthy observations, walk 2 gives exactly the listed reasons.
+- The structural check of a `StoredAuthority` runs before the witness is looked at, so an inconsistent journal is `Unreadable` with or without a witness.
+- `Authority` has three read only accessors (`authority_id`, `authority_revision`, `start_sequence`) for the daemon of scope 004. It still has no public constructor.
+- The `compile_fail` tests name error `E0451` (private field), so they cannot pass for an unrelated compile error.
+- `ValidatedConfig` in `crates/pool-config/src/lib.rs` gained the one line restart rule in its documentation comment, because the [Records](index.md#records) table marks it as built in this slice. No code of `pool-config` changed.
+
+### Acceptance-criteria coverage
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| `0003 AC-7` | `walk_clean_startup`: every row of walk 1, `Uninitialized` closed with healthy observations, the plan of step 2, the five refusals 2a to 2e, `Unconfirmed` closed, `Ready` open. `bootstrap_refusals_need_every_node_and_a_cluster`: `bootstrap.no_cluster`, each reason once and in order, check 8 skipped when the writer has no evidence. The remaining refusals (`store_present`, `witness_present`) are covered by AC-8 | pass |
+| `0003 AC-8` | `walk_missing_journal`: `Missing`, `Unreadable` and `Mismatch` closed with their reasons; bootstrap refused with `bootstrap.witness_present`, or with `bootstrap.store_present` and `bootstrap.witness_present`, while every node is healthy | pass |
+| `0003 AC-9` | `walk_conflicting_evidence`: rows a to p with the listed result and reasons, and `latches_conflict()` true only for rows c, d and i. Row o is also checked with `pg2` out of sight. A cluster that neither side knows gives `authority.cluster_unknown` alone | pass |
+| `0003 AC-10` | `walk_restore_before_promotion`: step 1 `Held` and closed with `authority.restore_pending` for healthy, empty and conflicting observations and for an updated configuration; steps 2 to 4 give the listed reasons, each asking for the latch | pass |
+| `0003 AC-11` | Row e of walk 3 (age equal to the expiry), `freshness_rule` (age just below the expiry is fresh, a sample later than now is no evidence, the latest sample wins, a tie gives no evidence). The `grep` above prints nothing | pass |
+| `0003 AC-12` | `open_only_on_full_agreement` over the 8192 cases, against the test's own rule. The four `compile_fail,E0451` doc tests | pass |
+| `0003 AC-14`, code half | Each record type the [Records](index.md#records) table builds in 003, with the line of its restart rule: `ClusterConfig` `crates/pool-config/src/topology.rs:88`, `NodeConfig` `topology.rs:117`, `IdentityRoute` `topology.rs:166`, `SecretReference` `topology.rs:226`, `ValidatedConfig` `crates/pool-config/src/lib.rs:38`, `Observation` `crates/pool-control/src/observation.rs:74`, journal identity `StoredAuthority` `crates/pool-control/src/authority.rs:31`, approved topology `ApprovedTopology` `authority.rs:65`, `Quarantine` `authority.rs:90`. Also stated: `ControlConfig` `topology.rs:53`, `Hold` `authority.rs:52`, `Authority` `authority.rs:134`, `EligiblePrimary` `crates/pool-control/src/admission.rs:100`, `Closed` `admission.rs:143`, `BootstrapPlan` `crates/pool-control/src/bootstrap.rs:63`, `BootstrapRefused` `bootstrap.rs:81`, and the three generations in `crates/pool-config/src/generation.rs:54`, `:71`, `:80`. The row of the shared conventions is step 6 | code half pass |
+| `0003 AC-1` to `0003 AC-6`, `0003 AC-13` | Milestones 1 and 2 above | see there |
+
+## Milestone 4: Document corrections and evidence
+
+Build plan steps 6 and 7, on 2026-11-15, on macOS (workstation, not Linux and not CI). Docker was running (`docker info` exit 0). Tools: `rustc 1.100.0`, `cargo-deny 0.20.2`, `cargo-fuzz 0.13.2`, `nightly-2026-10-17`.
+
+**Revision under test: `0a41060`.** That is the commit of step 6, on top of milestones 1 to 3 (`2648ae1` on `main`, `23f114f` and `f98d634` on this branch, merged at `af218e6`). The commit of step 7 adds only this section and one row of `docs/index.md`, so it changes no code, manifest, script or baseline. If a later fix to milestone 2 or 3 changes the code, run the commands below again, and replace the revision on this line and the Observed column of the table.
+
+### UI / manual
+
+None. The Linux build ran inside `scripts/prove-checks.sh --with-linux-build` (case 20), because Docker was running. A build on macOS is not Linux evidence, and CI evidence waits for the pull request.
+
+### Commands
+
+Run from the repository root with `export CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0`, on `0a41060`.
+
+| Command | Expected | Observed | Result |
+|---|---|---|---|
+| `scripts/check.sh docs` after the edits of step 6 | exit 0 | exit 0, `pool-repo-check docs: ok` | pass |
+| `scripts/check.sh all` | every check ok | exit 0, `ok` for fmt, clippy, test, deny, guards and docs. 385 tests passed, 0 failed. `deny` shows only the known `license-exception-not-encountered` warning | pass |
+| `scripts/prove-checks.sh --with-linux-build` | every case rejects its change | exit 0, `prove-checks: commit 0a4106037dcc3785c51f15246451f2edf91f2816`, cases 1 to 28 `PASS`, no `FAIL`, `all checks reject their bad change`. Case 17 matched the D3 line on `docs/scope/004-one-real-primary-path.md`. Case 20 ran the Linux build in Docker | pass |
+| `scripts/check.sh fuzz` | exit 0, no crash | exit 0, 1126664 runs in 61 seconds, no crash file | pass |
+| `cargo metadata --no-deps --format-version 1` | three members; `pool-control` depends only on `pool-config` | exit 0, three workspace members: `pool` (`pool-config`, `serde`, `serde_json`), `pool-config` (`serde`, `toml`), `pool-control` (`pool-config`) | pass |
+| `Cargo.lock`, `Cargo.toml` and `crates/pool-control/Cargo.toml` compared with `main` | unchanged since milestone 1 | no difference; `Cargo.lock` holds 19 entries | pass |
+| `cargo test -p pool-control --locked walk_` | the four walks pass | exit 0, 4 passed | pass |
+| `cargo test -p pool-control --locked open_only_on_full_agreement` | exit 0 | exit 0, 1 passed | pass |
+| `cargo test -p pool-control --locked --doc` | exit 0 | exit 0, 4 passed | pass |
+| `grep -rnE 'Instant::now\|SystemTime\|std::fs\|std::env' crates/pool-control/src` | no output | no output, exit 1 | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-topology.toml` | exit 0 | exit 0 | pass |
+| `cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml` | exit 0 | exit 0 | pass |
+
+**Note on the Cargo warnings.** On `0a41060` Cargo prints one manifest warning, `warning: unused workspace dependency pool-control`, for the root `Cargo.toml`. It ends in scope 004, when `apps/pool` takes the dependency ([Workspace and guards](index.md#workspace-and-guards)). The second warning that the checker of milestone 1 read, `warning: unused dependency pool-config` for `crates/pool-control/Cargo.toml`, no longer appears: the code of step 5 uses `pool-config`. Neither warning fails a check.
+
+**The edits of step 6.** Items 1 to 4 of [Document corrections](index.md#document-corrections):
+
+1. `docs/engineering-standards.md`, shared conventions, row "Identifier and generation types": `Pending` is replaced by the rule (one type per identifier and generation, built only by a checking function, generations advance by one and fail closed at the top, shared types in `pool-config`, memory generations scoped by the start sequence) and a link to [Identifier and generation types](index.md#identifier-and-generation-types).
+2. `docs/engineering-standards.md`, first paragraph: the workspace is `apps/pool`, `crates/pool-config` and `crates/pool-control`.
+3. `docs/repository-structure.md`, first paragraph: `crates/pool-control` is among the paths that exist.
+4. `docs/glossary.md`, rows "Observation" and "Approved writer": backend becomes node.
+
+Item 5 is step 7: the row for this file is in `docs/index.md`. `crates/pool-control` has no context file yet, so `docs/index.md` gets no section for it. Item 6 belongs to the "Document it" box of scope 003.
+
+### Acceptance-criteria coverage
+
+Every criterion on the one revision `0a41060`. The test names are in the milestone that built each criterion; `scripts/check.sh all` ran all of them again here.
+
+| Criterion | Evidence on `0a41060` | Result |
+|---|---|---|
+| `0003 AC-1` to `0003 AC-4` | the tests listed under milestone 2, in `scripts/check.sh all`; `check-config` on `valid-topology.toml` exit 0 | pass |
+| `0003 AC-5` | the tests listed under milestone 2, in `scripts/check.sh all`. The refusal on a real connection waits for scope 004 | library half pass |
+| `0003 AC-6` | unit tests and `compile_fail` doc tests of `pool-config`, in `scripts/check.sh all` | pass |
+| `0003 AC-7` to `0003 AC-10` | `cargo test -p pool-control --locked walk_` and the rest of `tests/walkthroughs.rs` in `scripts/check.sh all` | pass |
+| `0003 AC-11` | row e of walk 3 and `freshness_rule`; the `grep` above prints nothing | pass |
+| `0003 AC-12` | `open_only_on_full_agreement` and the four `compile_fail,E0451` doc tests | pass |
+| `0003 AC-13` | `cargo metadata` and the manifest comparison above; `scripts/check.sh all` and `scripts/prove-checks.sh --with-linux-build` pass | pass on the workstation; CI evidence waits for the pull request |
+| `0003 AC-14` | code half: the types and lines listed under milestone 3, unchanged since `f98d634`. Document half: the row "Identifier and generation types" of the [shared conventions](../../engineering-standards.md#shared-conventions) names the rule and links to [Identifier and generation types](index.md#identifier-and-generation-types); `scripts/check.sh docs` passes | pass |

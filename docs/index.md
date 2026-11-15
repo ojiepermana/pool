@@ -174,6 +174,7 @@ When one change crosses these boundaries, change the owner first and follow its 
 |---|---|
 | [docs/specs/0003-control-and-session-data-model/index.md](specs/0003-control-and-session-data-model/index.md) | 0003. Control and session data model |
 | [docs/specs/0003-control-and-session-data-model/rationale.md](specs/0003-control-and-session-data-model/rationale.md) | Control and session data model rationale |
+| [docs/specs/0003-control-and-session-data-model/verify.md](specs/0003-control-and-session-data-model/verify.md) | 0003. Verification record |
 
 ## docs/testing
 

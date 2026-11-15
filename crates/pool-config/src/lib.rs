@@ -35,6 +35,9 @@ const KEY_AUTOMATIC_PROMOTION_ENABLED: &str = "automatic_promotion.enabled";
 
 /// A configuration that passed every validation step.
 ///
+/// Restart rule: read and validated again from the file at each start.
+/// Nothing is remembered from the last run.
+///
 /// It has no public constructor; [`validate`] returns one only when the file
 /// produced no finding. Code outside this crate cannot build one:
 ///
