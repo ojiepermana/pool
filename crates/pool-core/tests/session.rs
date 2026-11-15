@@ -65,7 +65,13 @@ fn config(limits: &str) -> ValidatedConfig {
 
 /// The test configuration with more lines at the end of the `[[principal]]` table.
 fn config_with(limits: &str, principal: &str) -> ValidatedConfig {
-    let text = format!(
+    pool_config::validate(config_text(limits, principal).as_bytes())
+        .expect("a valid test configuration")
+}
+
+/// The text of [`config_with`] (round eight: a test changes one line of it).
+fn config_text(limits: &str, principal: &str) -> String {
+    format!(
         r#"config_version = 1
 
 [control]
@@ -110,8 +116,7 @@ name = "{PRINCIPAL}"
 verifier_file = "/etc/pool/orders_app.scram"
 {principal}
 "#
-    );
-    pool_config::validate(text.as_bytes()).expect("a valid test configuration")
+    )
 }
 
 // ---- the scripted node ----
@@ -2796,4 +2801,42 @@ async fn the_server_and_its_parts_print_exactly_their_start_sequence_and_phase()
         );
         assert!(!format!("{:#?}", h.server).contains(hidden), "{hidden}");
     }
+}
+
+#[tokio::test]
+async fn ac17_an_empty_database_takes_the_user_name_and_reaches_its_identity_entry() {
+    // covers: 0004 AC-17, decision 116: a `database` sent empty counts as not
+    // sent and takes the value of `user`; the identity entry for a database
+    // named like the principal then maps the login.
+    let text = config_text("", "").replacen(
+        "database = \"orders\"",
+        &format!("database = \"{PRINCIPAL}\""),
+        1,
+    );
+    let config = pool_config::validate(text.as_bytes()).expect("a valid test configuration");
+    let h = Harness::with_config(config);
+    let (mut tls, _) = login_with(upgrade(h.raw()).await, PRINCIPAL, PRINCIPAL_PASSWORD, "")
+        .await
+        .ready();
+    assert_eq!(
+        query(&mut tls, "select 1").await.last().map(|m| m.tag),
+        Some(b'Z')
+    );
+    assert_eq!(
+        h.log(|l| l.startups.clone()),
+        [(BACKEND_LOGIN.to_string(), BACKEND_DATABASE.to_string())]
+    );
+}
+
+#[tokio::test]
+async fn ac16_an_empty_user_gets_28p01_after_the_full_exchange() {
+    // covers: 0004 AC-16, decision 115: an empty `user` is a name that is no
+    // principal: the same messages as a wrong password, then `28P01`.
+    let h = Harness::new("");
+    let (tags, code) = login_with(upgrade(h.raw()).await, "", PRINCIPAL_PASSWORD, "orders")
+        .await
+        .refused();
+    assert_eq!(code, "28P01");
+    assert_eq!(tags, b"RRE", "SASL, continue, then the error");
+    assert_eq!(h.opened(), 0);
 }
