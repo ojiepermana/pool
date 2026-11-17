@@ -1,0 +1,45 @@
+{
+  "schema_version": 2,
+  "runtime_kind": "codex",
+  "leader": {
+    "configured": null,
+    "observed": null,
+    "evidence": "System identifies GPT-6 based agent; exact family/release and effort not exposed",
+    "confirmation": "Resolved by explicit user confirmation on 2026-11-17; exact release and effort remain unavailable",
+    "author_confirmation": {
+      "family": "sol",
+      "exact_selection": null,
+      "source": "User async answer on 2026-11-17: Sol (GPT-6 / GPT-6.1 Sol)",
+      "scope": "Historical Leader author family for scope005"
+    }
+  },
+  "economy": {
+    "selection": "gpt-6-luna",
+    "family": "luna",
+    "effort": "low",
+    "evidence": "Live spawn schema"
+  },
+  "engineering": {
+    "selection": "gpt-6.1-sol",
+    "family": "sol",
+    "effort": "high",
+    "evidence": "Live spawn schema"
+  },
+  "contrast": {
+    "selection": "gpt-6.1-terra",
+    "family": "terra",
+    "effort": "high",
+    "configured_evidence": "Explicit accepted spawn request, fork_turns none; same reviewer continued for fixes",
+    "observed": null,
+    "independence": "Historical family gate resolved: user confirmed Leader Sol; core/tooling configured Sol; reviewers configured Terra with fresh context"
+  },
+  "resume_verify_helper": {
+    "selection": "gpt-6.1-terra",
+    "family": "terra",
+    "effort": "medium",
+    "source": "routine",
+    "configured_evidence": "Accepted explicit spawn request, fork_turns none",
+    "observed": null,
+    "substitution": null
+  }
+}

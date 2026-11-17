@@ -971,7 +971,9 @@ fn ac4_validated_config_debug_holds_only_states() {
          listener: None, limits: Limits { session_max_count: 1000, handshake_max_count: 64, \
          backend_wait_max_count: 100, node_backend_max_count: 100, startup_timeout_ms: 5000, \
          backend_acquire_timeout_ms: 5000, shutdown_timeout_ms: 30000, startup_packet_max_bytes: 8192, \
-         frontend_message_max_bytes: 16777216 }, probe: ProbeConfig { period_ms: 2000, timeout_ms: 1000, \
+         frontend_message_max_bytes: 16777216, backend_max_count: 100, database_backend_max_count: 100, \
+         identity_backend_max_count: 100, backend_idle_timeout_ms: 30000, backend_lifetime_ms: 3600000, \
+         backend_cleanup_timeout_ms: 5000, client_write_timeout_ms: 30000 }, probe: ProbeConfig { period_ms: 2000, timeout_ms: 1000, \
          observation_expiry_ms: 6000, node_loss_timeout_ms: 30000 }, principals: [], principal_index: PrincipalIndex { entries: 0 } }"
     );
     assert_eq!(config.automatic_promotion().as_str(), "disabled");
@@ -2830,7 +2832,7 @@ fn ac5_valid_serving_limits_has_every_lowest_value() {
 
 /// Each number key of `[limits]` and `[probe]`: its table, its name, its
 /// lowest and its highest allowed value, from the table under "Keys".
-const NUMBER_KEYS: [(&str, &str, u64, u64); 13] = [
+const NUMBER_KEYS: [(&str, &str, u64, u64); 20] = [
     ("limits", "session_max_count", 1, 100_000),
     ("limits", "handshake_max_count", 1, 10_000),
     ("limits", "backend_wait_max_count", 0, 100_000),
@@ -2840,6 +2842,13 @@ const NUMBER_KEYS: [(&str, &str, u64, u64); 13] = [
     ("limits", "shutdown_timeout_ms", 0, 600_000),
     ("limits", "startup_packet_max_bytes", 512, 65_536),
     ("limits", "frontend_message_max_bytes", 1024, 1_073_741_823),
+    ("limits", "backend_max_count", 1, 100_000),
+    ("limits", "database_backend_max_count", 1, 100_000),
+    ("limits", "identity_backend_max_count", 1, 100_000),
+    ("limits", "backend_idle_timeout_ms", 1, 3_600_000),
+    ("limits", "backend_lifetime_ms", 1, 86_400_000),
+    ("limits", "backend_cleanup_timeout_ms", 100, 60_000),
+    ("limits", "client_write_timeout_ms", 100, 3_600_000),
     ("probe", "period_ms", 100, 30_000),
     ("probe", "timeout_ms", 100, 30_000),
     ("probe", "observation_expiry_ms", 1000, 60_000),
@@ -2859,6 +2868,13 @@ fn number_key(table: &str, key: &str) -> &'static str {
         "limits.shutdown_timeout_ms",
         "limits.startup_packet_max_bytes",
         "limits.frontend_message_max_bytes",
+        "limits.backend_max_count",
+        "limits.database_backend_max_count",
+        "limits.identity_backend_max_count",
+        "limits.backend_idle_timeout_ms",
+        "limits.backend_lifetime_ms",
+        "limits.backend_cleanup_timeout_ms",
+        "limits.client_write_timeout_ms",
         "probe.period_ms",
         "probe.timeout_ms",
         "probe.observation_expiry_ms",
@@ -3741,5 +3757,52 @@ fn spec_0004_finding_codes_and_messages_are_stable() {
     assert_eq!(
         FindingCode::Incomplete.message(),
         "a key that this command needs is missing"
+    );
+}
+
+#[test]
+fn scope005_pool_limits_expose_defaults_and_independent_nested_caps() {
+    // covers: 0005 AC-3, AC-7. Child limits never raise a parent cap.
+    let config = accepted(b"config_version = 1\n");
+    let limits = config.limits();
+    assert_eq!(limits.backend_max_count(), 100);
+    assert_eq!(limits.database_backend_max_count(), 100);
+    assert_eq!(limits.identity_backend_max_count(), 100);
+    assert_eq!(
+        limits.backend_idle_timeout(),
+        std::time::Duration::from_secs(30)
+    );
+    assert_eq!(
+        limits.backend_lifetime(),
+        std::time::Duration::from_secs(3600)
+    );
+    assert_eq!(
+        limits.backend_cleanup_timeout(),
+        std::time::Duration::from_secs(5)
+    );
+    assert_eq!(
+        limits.client_write_timeout(),
+        std::time::Duration::from_secs(30)
+    );
+    let config = accepted(b"config_version = 1\n[limits]\nbackend_max_count = 1\ndatabase_backend_max_count = 999\nidentity_backend_max_count = 999\nbackend_idle_timeout_ms = 7\nbackend_lifetime_ms = 9\nbackend_cleanup_timeout_ms = 101\nclient_write_timeout_ms = 102\n");
+    let limits = config.limits();
+    assert_eq!(limits.backend_max_count(), 1);
+    assert_eq!(limits.database_backend_max_count(), 999);
+    assert_eq!(limits.identity_backend_max_count(), 999);
+    assert_eq!(
+        limits.backend_idle_timeout(),
+        std::time::Duration::from_millis(7)
+    );
+    assert_eq!(
+        limits.backend_lifetime(),
+        std::time::Duration::from_millis(9)
+    );
+    assert_eq!(
+        limits.backend_cleanup_timeout(),
+        std::time::Duration::from_millis(101)
+    );
+    assert_eq!(
+        limits.client_write_timeout(),
+        std::time::Duration::from_millis(102)
     );
 }

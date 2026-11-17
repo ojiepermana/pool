@@ -9,9 +9,9 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-use pool_config::{ConfigurationGeneration, ValidatedConfig};
+use pool_config::{ConfigurationGeneration, IdentityId, ValidatedConfig};
 use pool_control::{AuthorityState, Controller, Journal};
-use pool_core::backend::{Login, TcpConnector};
+use pool_core::backend::{Credential, Login, TcpConnector};
 use pool_core::route::RouteView;
 use pool_core::scram::MockKey;
 use pool_core::secret::{self, SecretError};
@@ -93,7 +93,11 @@ pub fn run_file(path: &Path) -> Outcome {
     else {
         return Outcome::Report(runtime_failed());
     };
-    runtime.block_on(serve(prepared))
+    let outcome = runtime.block_on(serve(prepared));
+    // A protected-file load already in a blocking syscall cannot be aborted.
+    // It has no publication authority after serve ends and must not hold exit forever.
+    runtime.shutdown_timeout(pool_core::session::END_TIMEOUT);
+    outcome
 }
 
 /// Steps 1 to 5: nothing listens and nothing runs yet.
@@ -128,12 +132,8 @@ fn prepare(path: &Path) -> Result<Prepared, Report> {
             .map_err(|error| secret_error(error, "principal.verifier_file"))?;
         verifiers.push((principal.id().clone(), verifier));
     }
-    let mut credentials = Vec::new();
-    for identity in config.identities() {
-        let credential = load::credential(identity.credential(), owner)
-            .map_err(|error| secret_error(error, "identity.credential_file"))?;
-        credentials.push((identity.id().clone(), credential));
-    }
+    let credentials = read_identity_credentials(&config, owner)
+        .map_err(|error| secret_error(error, "identity.credential_file"))?;
     let mut nodes = Vec::new();
     for node in config.nodes() {
         let loaded =
@@ -208,6 +208,7 @@ fn server_error(error: ServerError) -> Report {
 }
 
 /// The task that ended first without a shutdown asking for it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Ended {
     Signal,
     Task(&'static str),
@@ -246,9 +247,10 @@ async fn serve(prepared: Prepared) -> Outcome {
     };
     // The handlers for SIGTERM and SIGINT, before step 9: a daemon that
     // could not be stopped cleanly does not start.
-    let (Ok(mut terminate), Ok(mut interrupt)) = (
+    let (Ok(mut terminate), Ok(mut interrupt), Ok(mut hangup)) = (
         signal(SignalKind::terminate()),
         signal(SignalKind::interrupt()),
+        signal(SignalKind::hangup()),
     ) else {
         return Outcome::Report(runtime_failed());
     };
@@ -304,33 +306,52 @@ async fn serve(prepared: Prepared) -> Outcome {
     let mut journal = None;
     let mut control_done = false;
     let mut serving_done = false;
-    let ended = tokio::select! {
-        _ = terminate.recv() => Ended::Signal,
-        _ = interrupt.recv() => Ended::Signal,
-        returned = &mut control => {
-            control_done = true;
-            journal = returned.ok().flatten();
-            Ended::Task("control")
+    let owner = _state.owner();
+    let mut reloading = None;
+    let ended = loop {
+        tokio::select! {
+            observed = supervise(
+                &mut control,
+                &mut probes,
+                &mut serving,
+                log_writer(&mut log),
+                async { tokio::select! { _ = terminate.recv() => {}, _ = interrupt.recv() => {} } },
+            ) => {
+                match observed.ended {
+                    Ended::Task("control") => { control_done = true; journal = observed.journal; },
+                    Ended::Task("listener") => serving_done = true,
+                    _ => {},
+                }
+                break observed.ended;
+            }
+            _ = hangup.recv() => {
+                // At most one protected-file load exists, even under a signal flood.
+                if reloading.is_none() {
+                    let config = Arc::clone(&config);
+                    reloading = Some(tokio::task::spawn_blocking(move || read_identity_credentials(&config, owner)));
+                }
+            }
+            returned = reload_result(&mut reloading) => {
+                reloading = None;
+                match returned {
+                    Ok(Ok(credentials)) => match server.rotate_credentials(credentials) {
+                        Ok(()) => tracing::info!(event = "credential.reloaded", identity_count = config.identities().len() as u64),
+                        Err(_) => tracing::warn!(event = "credential.reload_failed", reason = "generation"),
+                    },
+                    _ => tracing::warn!(event = "credential.reload_failed", reason = "files"),
+                }
+            }
         }
-        Some(_) = probes.join_next() => Ended::Task("probe"),
-        _ = &mut serving => {
-            serving_done = true;
-            Ended::Task("listener")
-        }
-        () = log_writer(&mut log) => Ended::Task("log"),
     };
-    match ended {
-        Ended::Signal => {
-            tracing::info!(event = "daemon.stopping", sessions = server.sessions());
-        }
-        Ended::Task("log") => log::write_log_failed(),
-        Ended::Task(task) => tracing::error!(event = "daemon.failed", task),
+    if let Some(reloading) = reloading {
+        // A pending load has no publication authority once shutdown starts.
+        reloading.abort();
     }
-    // A signal drains as Shutdown says. After a failed task the sessions
-    // are ended as if the deadline had passed, from step 4 on.
-    match ended {
-        Ended::Signal => server.shutdown().await,
-        Ended::Task(_) => server.shutdown_now().await,
+    let plan = stop_plan(ended, server.sessions());
+    // A signal drains; a failed supervised task cuts sessions immediately.
+    match plan {
+        StopPlan::Drain => server.shutdown().await,
+        StopPlan::Immediate => server.shutdown_now().await,
     }
     if !serving_done {
         let _ = serving.await;
@@ -347,9 +368,89 @@ async fn serve(prepared: Prepared) -> Outcome {
     if let Some(log) = &log {
         log.flush().await;
     }
+    outcome(plan)
+}
+
+/// A complete protected-file snapshot; callers publish only after every read passed.
+type Credentials = Vec<(IdentityId, Arc<Credential>)>;
+type Reload = tokio::task::JoinHandle<Result<Credentials, SecretError>>;
+
+fn read_identity_credentials(
+    config: &ValidatedConfig,
+    owner: u32,
+) -> Result<Credentials, SecretError> {
+    config
+        .identities()
+        .iter()
+        .map(|identity| {
+            load::credential(identity.credential(), owner)
+                .map(|credential| (identity.id().clone(), credential))
+        })
+        .collect()
+}
+
+async fn reload_result(
+    reloading: &mut Option<Reload>,
+) -> Result<Result<Credentials, SecretError>, tokio::task::JoinError> {
+    match reloading {
+        Some(task) => task.await,
+        None => std::future::pending().await,
+    }
+}
+
+struct ObservedEnd {
+    ended: Ended,
+    journal: Option<Journal>,
+}
+
+/// One cancellable watch over every supervised task. A returned join handle is never awaited twice.
+async fn supervise<L, S>(
+    control: &mut tokio::task::JoinHandle<Option<Journal>>,
+    probes: &mut tokio::task::JoinSet<()>,
+    serving: &mut tokio::task::JoinHandle<()>,
+    log: L,
+    signal: S,
+) -> ObservedEnd
+where
+    L: std::future::Future<Output = ()>,
+    S: std::future::Future<Output = ()>,
+{
+    tokio::select! {
+        _ = signal => ObservedEnd { ended: Ended::Signal, journal: None },
+        returned = control => ObservedEnd { ended: Ended::Task("control"), journal: returned.ok().flatten() },
+        Some(_) = probes.join_next() => ObservedEnd { ended: Ended::Task("probe"), journal: None },
+        _ = serving => ObservedEnd { ended: Ended::Task("listener"), journal: None },
+        _ = log => ObservedEnd { ended: Ended::Task("log"), journal: None },
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum StopPlan {
+    Drain,
+    Immediate,
+}
+
+fn stop_plan(ended: Ended, sessions: usize) -> StopPlan {
     match ended {
-        Ended::Signal => Outcome::Stopped,
-        Ended::Task(_) => Outcome::Failed,
+        Ended::Signal => {
+            tracing::info!(event = "daemon.stopping", sessions);
+            StopPlan::Drain
+        }
+        Ended::Task(task) => {
+            if task == "log" {
+                log::write_log_failed();
+            } else {
+                tracing::error!(event = "daemon.failed", task);
+            }
+            StopPlan::Immediate
+        }
+    }
+}
+
+fn outcome(plan: StopPlan) -> Outcome {
+    match plan {
+        StopPlan::Drain => Outcome::Stopped,
+        StopPlan::Immediate => Outcome::Failed,
     }
 }
 
@@ -400,6 +501,54 @@ fn runtime_failed() -> Report {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    type Events = Arc<Mutex<Vec<Vec<(String, String)>>>>;
+
+    /// Keeps every event as its fields, in order.
+    struct Capture(Events);
+
+    struct Fields(Vec<(String, String)>);
+
+    impl tracing::field::Visit for Fields {
+        fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+            self.0.push((field.name().to_owned(), value.to_owned()));
+        }
+
+        fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+            self.0.push((field.name().to_owned(), format!("{value:?}")));
+        }
+    }
+
+    impl tracing::Subscriber for Capture {
+        fn enabled(&self, _: &tracing::Metadata<'_>) -> bool {
+            true
+        }
+
+        fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
+            tracing::span::Id::from_u64(1)
+        }
+
+        fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
+
+        fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
+
+        fn event(&self, event: &tracing::Event<'_>) {
+            let mut fields = Fields(Vec::new());
+            event.record(&mut fields);
+            self.0.lock().expect("lock").push(fields.0);
+        }
+
+        fn enter(&self, _: &tracing::span::Id) {}
+
+        fn exit(&self, _: &tracing::span::Id) {}
+    }
+
+    fn capture() -> (Events, tracing::subscriber::DefaultGuard) {
+        let events: Events = Arc::default();
+        let guard = tracing::subscriber::set_default(Capture(Arc::clone(&events)));
+        (events, guard)
+    }
 
     #[test]
     fn each_state_that_is_not_ready_gives_its_own_finding() {
@@ -446,5 +595,120 @@ mod tests {
             "an accepted socket"
         );
         drop(client);
+    }
+    #[tokio::test]
+    async fn scope005_every_supervised_task_ending_selects_immediate_failure() {
+        // covers: 0005 AC-9. Real join handles exercise the production watcher.
+        let (events, _capture) = capture();
+        for task in ["control", "probe", "listener", "log"] {
+            let mut control = if task == "control" {
+                tokio::spawn(async { None })
+            } else {
+                tokio::spawn(std::future::pending::<Option<Journal>>())
+            };
+            let mut probes = tokio::task::JoinSet::new();
+            if task == "probe" {
+                probes.spawn(async {});
+            } else {
+                probes.spawn(std::future::pending::<()>());
+            }
+            let mut listener = if task == "listener" {
+                tokio::spawn(async {})
+            } else {
+                tokio::spawn(std::future::pending::<()>())
+            };
+            let observed = tokio::time::timeout(
+                Duration::from_secs(1),
+                supervise(
+                    &mut control,
+                    &mut probes,
+                    &mut listener,
+                    async {
+                        if task != "log" {
+                            std::future::pending::<()>().await
+                        }
+                    },
+                    std::future::pending::<()>(),
+                ),
+            )
+            .await
+            .expect("task exit is noticed immediately");
+            assert_eq!(observed.ended, Ended::Task(task));
+            // The logging branch and shutdown choice are the same production function.
+            let plan = stop_plan(observed.ended, 7);
+            if task != "log" {
+                assert!(
+                    events.lock().expect("events").iter().any(|fields| {
+                        fields.contains(&("event".to_owned(), "daemon.failed".to_owned()))
+                            && fields.contains(&("task".to_owned(), task.to_owned()))
+                    }),
+                    "the actual failure event identifies {task}"
+                );
+            }
+            assert_eq!(plan, StopPlan::Immediate);
+            assert!(matches!(outcome(plan), Outcome::Failed));
+            control.abort();
+            listener.abort();
+            probes.shutdown().await;
+        }
+    }
+
+    #[tokio::test]
+    async fn scope005_a_signal_drains_while_an_empty_probe_set_never_looks_failed() {
+        // covers: 0005 AC-9. An empty join set is not a completed probe.
+        let mut control = tokio::spawn(std::future::pending::<Option<Journal>>());
+        let mut probes = tokio::task::JoinSet::new();
+        let mut listener = tokio::spawn(std::future::pending::<()>());
+        let observed = supervise(
+            &mut control,
+            &mut probes,
+            &mut listener,
+            std::future::pending::<()>(),
+            async {},
+        )
+        .await;
+        assert_eq!(observed.ended, Ended::Signal);
+        let plan = stop_plan(observed.ended, 0);
+        assert_eq!(plan, StopPlan::Drain);
+        assert!(matches!(outcome(plan), Outcome::Stopped));
+        control.abort();
+        listener.abort();
+    }
+
+    #[tokio::test]
+    async fn scope005_cancelling_a_watch_does_not_lose_the_next_task_result() {
+        // covers: 0005 AC-9. SIGHUP interrupts the watcher without taking task ownership.
+        let (release, waiting) = tokio::sync::oneshot::channel::<()>();
+        let mut control = tokio::spawn(async {
+            let _ = waiting.await;
+            None
+        });
+        let mut probes = tokio::task::JoinSet::new();
+        let mut listener = tokio::spawn(std::future::pending::<()>());
+        assert!(
+            tokio::time::timeout(
+                Duration::from_millis(10),
+                supervise(
+                    &mut control,
+                    &mut probes,
+                    &mut listener,
+                    std::future::pending::<()>(),
+                    std::future::pending::<()>(),
+                )
+            )
+            .await
+            .is_err()
+        );
+        release.send(()).expect("release");
+        let observed = supervise(
+            &mut control,
+            &mut probes,
+            &mut listener,
+            std::future::pending::<()>(),
+            std::future::pending::<()>(),
+        )
+        .await;
+        assert_eq!(observed.ended, Ended::Task("control"));
+        listener.abort();
     }
 }

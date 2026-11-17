@@ -113,10 +113,26 @@ impl From<WireError> for BackendError {
     }
 }
 
+/// One admission budget bounds owned derivations across every credential generation.
+const DERIVATION_MAX_JOBS: usize = 64;
+
+fn derivation_budget() -> Arc<tokio::sync::Semaphore> {
+    Arc::new(tokio::sync::Semaphore::new(DERIVATION_MAX_JOBS))
+}
+
+async fn blocking_derivation<F>(work: F) -> Result<ScramKeys, BackendError>
+where
+    F: FnOnce() -> ScramKeys + Send + 'static,
+{
+    tokio::task::spawn_blocking(work)
+        .await
+        .map_err(|_| BackendError::Authentication)
+}
+
 struct CachedKeys {
     salt: Vec<u8>,
     iterations: u32,
-    keys: ScramKeys,
+    keys: Result<ScramKeys, BackendError>,
 }
 
 /// The password of a backend login or a monitor login, with the SCRAM keys derived from it.
@@ -127,7 +143,7 @@ struct CachedKeys {
 pub struct Credential {
     password: Password,
     /// One entry per credential. The lock is held across the derivation, so at most one runs at a time.
-    cache: tokio::sync::Mutex<Option<CachedKeys>>,
+    cache: Arc<tokio::sync::Mutex<Option<CachedKeys>>>,
     derivations: std::sync::atomic::AtomicU32,
 }
 
@@ -142,7 +158,7 @@ impl Credential {
     pub fn new(password: Password) -> Arc<Self> {
         Arc::new(Self {
             password,
-            cache: tokio::sync::Mutex::new(None),
+            cache: Arc::new(tokio::sync::Mutex::new(None)),
             derivations: std::sync::atomic::AtomicU32::new(0),
         })
     }
@@ -150,39 +166,74 @@ impl Credential {
     /// The keys for this salt and count: from the cache, or derived with PBKDF2 inside `spawn_blocking`.
     ///
     /// At most one derivation per credential runs at a time: the others wait
-    /// for the lock and then find its result in the cache. When the login
-    /// that derives is cancelled (its deadline passed), the lock is released
-    /// and the next waiter derives.
+    /// for the lock and then find its result in the cache. An owned task retains
+    /// the lock until completion even when its requesting login is cancelled.
     async fn keys(
         self: &Arc<Self>,
         salt: &[u8],
         iterations: u32,
     ) -> Result<ScramKeys, BackendError> {
-        let mut cache = self.cache.lock().await;
+        static JOBS: std::sync::OnceLock<Arc<tokio::sync::Semaphore>> = std::sync::OnceLock::new();
+        self.keys_with_derivation(
+            salt,
+            iterations,
+            Arc::clone(JOBS.get_or_init(derivation_budget)),
+            |credential, salt, count| async move {
+                blocking_derivation(move || {
+                    credential
+                        .derivations
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    derive_keys(&credential.password, &salt, count)
+                })
+                .await
+            },
+        )
+        .await
+    }
+
+    // A private worker/budget seam: tests control completion, not the owner protocol.
+    // Every caller, including production, takes the same cache lock and moves it and
+    // the admitted slot into the same cancellation-independent completion task.
+    async fn keys_with_derivation<F, W>(
+        self: &Arc<Self>,
+        salt: &[u8],
+        iterations: u32,
+        jobs: Arc<tokio::sync::Semaphore>,
+        derive: F,
+    ) -> Result<ScramKeys, BackendError>
+    where
+        F: FnOnce(Arc<Self>, Vec<u8>, std::num::NonZeroU32) -> W + Send + 'static,
+        W: std::future::Future<Output = Result<ScramKeys, BackendError>> + Send + 'static,
+    {
+        let mut cache = Arc::clone(&self.cache).lock_owned().await;
         if let Some(cached) = cache
             .as_ref()
             .filter(|c| c.salt == salt && c.iterations == iterations)
         {
-            return Ok(cached.keys.clone());
+            return cached.keys.clone();
         }
-        // The parser of the server-first message accepts 1 to 600000 only.
-        let count = std::num::NonZeroU32::new(iterations).ok_or(BackendError::Protocol)?;
+        let count = std::num::NonZeroU32::new(iterations)
+            .filter(|n| n.get() <= 600_000)
+            .ok_or(BackendError::Protocol)?;
+        let permit = jobs
+            .try_acquire_owned()
+            .map_err(|_| BackendError::Authentication)?;
         let credential = Arc::clone(self);
         let owned_salt = salt.to_vec();
-        let keys = tokio::task::spawn_blocking(move || {
-            credential
-                .derivations
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            derive_keys(&credential.password, &owned_salt, count)
-        })
-        .await
-        .map_err(|_| BackendError::Closed)?;
-        *cache = Some(CachedKeys {
-            salt: salt.to_vec(),
-            iterations,
-            keys: keys.clone(),
+        let (send, receive) = tokio::sync::oneshot::channel();
+        // This owner is independent of the login future. Both the cache guard and global
+        // permit stay with it until even a cancelled blocking derivation has completed.
+        tokio::spawn(async move {
+            let keys = derive(credential, owned_salt.clone(), count).await;
+            *cache = Some(CachedKeys {
+                salt: owned_salt,
+                iterations,
+                keys: keys.clone(),
+            });
+            drop(permit);
+            let _ = send.send(keys);
         });
-        Ok(keys)
+        receive.await.map_err(|_| BackendError::Authentication)?
     }
 
     /// How many times keys were derived for this credential in this run.
@@ -390,7 +441,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> BackendConnection<S> {
 }
 
 /// Reads the text columns of a `DataRow`.
-fn data_row(body: &[u8]) -> Result<Vec<Option<String>>, BackendError> {
+pub(crate) fn data_row(body: &[u8]) -> Result<Vec<Option<String>>, BackendError> {
     let count = body.get(..2).ok_or(BackendError::Protocol)?;
     let count = u16::from_be_bytes([count[0], count[1]]);
     let mut rest = &body[2..];

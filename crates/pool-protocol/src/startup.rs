@@ -347,6 +347,18 @@ impl FirstPacketReader {
 
     /// Takes bytes from the start of `input`; returns how many and, once a packet is decided, the result.
     pub fn feed(&mut self, input: &[u8]) -> (usize, Option<Result<FirstPacket, PoolError>>) {
+        self.feed_with_reserve(input, Vec::with_capacity)
+    }
+
+    // Shared by production and the safe reservation regression test.
+    fn feed_with_reserve<F>(
+        &mut self,
+        input: &[u8],
+        mut reserve: F,
+    ) -> (usize, Option<Result<FirstPacket, PoolError>>)
+    where
+        F: FnMut(usize) -> Vec<u8>,
+    {
         let mut used = 0;
         if self.body.is_none() {
             let take = (FIRST_HEADER_LEN - self.filled).min(input.len());
@@ -370,7 +382,7 @@ impl FirstPacketReader {
                 HandshakeStep::DropCancel => self.body = Some((header.kind, Vec::new(), len)),
                 HandshakeStep::ReadStartup => {
                     // The length was checked against the limit above.
-                    self.body = Some((header.kind, Vec::with_capacity(len), len));
+                    self.body = Some((header.kind, reserve(len), len));
                 }
             }
         }
@@ -710,5 +722,33 @@ mod tests {
             reader.feed(&cancel),
             (8, Some(Err(PoolError::ProtocolViolation)))
         );
+    }
+    #[test]
+    fn scope005_startup_lengths_are_checked_before_the_reservation_site() {
+        // covers: 0005 AC-9, 0004 AC-28. No unsafe allocator is needed.
+        for len in [0, 7, 8193, u32::MAX] {
+            for split in 0..=FIRST_HEADER_LEN {
+                let bytes = header(len, 0x0003_0000);
+                let mut reader = FirstPacketReader::new(8192);
+                reader.feed(&encode_ssl_request());
+                let mut never =
+                    |_| -> Vec<u8> { panic!("a rejected startup requested body capacity") };
+                let first = reader.feed_with_reserve(&bytes[..split], &mut never);
+                let result = if first.1.is_some() {
+                    first.1
+                } else {
+                    reader.feed_with_reserve(&bytes[split..], &mut never).1
+                };
+                assert!(matches!(result, Some(Err(_))));
+            }
+        }
+        let mut capacities = Vec::new();
+        let mut reader = FirstPacketReader::new(8192);
+        reader.feed(&encode_ssl_request());
+        reader.feed_with_reserve(&header(8192, 0x0003_0000), |len| {
+            capacities.push(len);
+            Vec::with_capacity(len)
+        });
+        assert_eq!(capacities, [8184]);
     }
 }

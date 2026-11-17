@@ -10,6 +10,11 @@ pub trait Tree {
     /// Returns the content of a file, `Ok(None)` when no such file exists, or an error text when it exists but cannot be read.
     fn read(&self, path: &str) -> Result<Option<String>, String>;
 
+    /// Reads raw bytes for guards that also inspect binary files.
+    fn read_bytes(&self, path: &str) -> Result<Option<Vec<u8>>, String> {
+        self.read(path).map(|text| text.map(String::into_bytes))
+    }
+
     /// Reports whether a file or a directory exists at `path`. The empty path is the root.
     fn exists(&self, path: &str) -> bool;
 
@@ -100,6 +105,14 @@ impl Tree for FsTree {
         fs::read_to_string(&full)
             .map(Some)
             .map_err(|e| format!("{path}: {e}"))
+    }
+
+    fn read_bytes(&self, path: &str) -> Result<Option<Vec<u8>>, String> {
+        let full = self.full(path);
+        if !full.is_file() {
+            return Ok(None);
+        }
+        fs::read(full).map(Some).map_err(|e| format!("{path}: {e}"))
     }
 
     fn exists(&self, path: &str) -> bool {

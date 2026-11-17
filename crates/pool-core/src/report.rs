@@ -8,6 +8,7 @@
 //! text from PostgreSQL (`SEC-11`).
 
 use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, PoisonError};
 
 use pool_config::NodeId;
@@ -128,11 +129,47 @@ pub struct Counters {
     refused: Mutex<BTreeMap<Refusal, u64>>,
     backend: Mutex<BTreeMap<BackendFailure, u64>>,
     refused_total: Mutex<BTreeMap<Refusal, u64>>,
+    pool: [AtomicU64; 5],
+}
+
+/// Saturating lifetime counts of the bounded physical-backend owner.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PoolCounts {
+    /// Successful physical opens, including dedicated connections.
+    pub opened: u64,
+    /// Successful later handoffs of a clean physical backend.
+    pub reused: u64,
+    /// Cleanup candidates closed because their proof failed.
+    pub reset_closed: u64,
+    /// Idle sockets closed by their idle or physical age limit.
+    pub expired: u64,
+    /// Acquisitions refused by admission or its deadline.
+    pub admission_refused: u64,
 }
 
 impl Counters {
+    pub(crate) fn pool_event(&self, index: usize) {
+        let _ = self.pool[index].try_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
+            Some(n.saturating_add(1))
+        });
+    }
+    /// Lifetime physical-backend counts. No peer values are captured.
+    pub fn pool_counts(&self) -> PoolCounts {
+        let counts = self.pool.each_ref().map(|n| n.load(Ordering::Relaxed));
+        PoolCounts {
+            opened: counts[0],
+            reused: counts[1],
+            reset_closed: counts[2],
+            expired: counts[3],
+            admission_refused: counts[4],
+        }
+    }
+
     /// Counts one refusal.
     pub fn refuse(&self, reason: Refusal) {
+        if matches!(reason, Refusal::WaitLimit | Refusal::AcquireTimeout) {
+            self.pool_event(4);
+        }
         for map in [&self.refused, &self.refused_total] {
             *map.lock()
                 .unwrap_or_else(PoisonError::into_inner)

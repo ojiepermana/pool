@@ -728,6 +728,13 @@ async fn a_waiter_goes_on_when_the_login_that_derives_is_cancelled() {
         .expect("the waiter is not stuck")
         .expect("join");
     assert!(keys.is_ok());
+    assert_eq!(
+        credential.derivations(),
+        1,
+        "cancelled requester does not abandon the owned derivation"
+    );
+    credential.keys(b"salt", 600_000).await.expect("cached");
+    assert_eq!(credential.derivations(), 1);
 }
 
 // ---- added by the tests of scope 004 (`/test one real primary path`) ----
@@ -1106,6 +1113,9 @@ async fn a_lease_prints_its_generation_and_key_and_never_its_login_database_or_b
         node: pool_config::NodeId::parse("pg1").expect("id"),
         database: "CANARY-9f2c7b1e-database".to_owned(),
         login: "CANARY-9f2c7b1e-login".to_owned(),
+        identity: pool_config::IdentityId::parse("orders-app").expect("id"),
+        configuration_generation: pool_config::ConfigurationGeneration::FIRST,
+        startup_settings: Vec::new(),
         credential_generation: pool_config::CredentialGeneration::FIRST,
         topology_epoch: pool_config::TopologyEpoch::from_stored(4).expect("epoch"),
         tls_policy: TlsPolicy::VerifyFull,
@@ -1129,4 +1139,266 @@ async fn a_lease_prints_its_generation_and_key_and_never_its_login_database_or_b
     for hidden in ["CANARY", "4242", "secret-login", "appdb"] {
         assert!(!pretty.contains(hidden), "{hidden}: {pretty}");
     }
+}
+
+// Review scope 005: isolated budgets exercise the production owner protocol without
+// touching the process-wide semaphore or depending on PBKDF2 timing.
+async fn test_blocking_derivation(
+    credential: Arc<Credential>,
+    salt: Vec<u8>,
+    count: std::num::NonZeroU32,
+) -> Result<ScramKeys, BackendError> {
+    blocking_derivation(move || {
+        credential
+            .derivations
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        derive_keys(&credential.password, &salt, count)
+    })
+    .await
+}
+
+async fn assert_pending_once<F: std::future::Future>(future: std::pin::Pin<&mut F>) {
+    let mut future = future;
+    std::future::poll_fn(|cx| {
+        assert!(future.as_mut().poll(cx).is_pending());
+        std::task::Poll::Ready(())
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn derivation005_mismatched_challenges_wait_in_the_caller_without_detached_jobs() {
+    let run = async {
+        let budget = derivation_budget();
+        let credential = Credential::new(password("backend-secret"));
+        let (started, observed) = oneshot::channel();
+        let (finish, finished) = oneshot::channel();
+        let first = {
+            let credential = Arc::clone(&credential);
+            let budget = Arc::clone(&budget);
+            tokio::spawn(async move {
+                credential
+                    .keys_with_derivation(
+                        b"first",
+                        1,
+                        budget,
+                        move |credential, salt, count| async move {
+                            started.send(()).expect("observer");
+                            finished.await.expect("controlled worker release");
+                            test_blocking_derivation(credential, salt, count).await
+                        },
+                    )
+                    .await
+            })
+        };
+        observed
+            .await
+            .expect("first owner holds its guard and slot");
+        let mut second = Box::pin(credential.keys_with_derivation(
+            b"second",
+            2,
+            Arc::clone(&budget),
+            test_blocking_derivation,
+        ));
+        assert_pending_once(second.as_mut()).await;
+        let mut cancelled = Box::pin(credential.keys_with_derivation(
+            b"third",
+            3,
+            Arc::clone(&budget),
+            test_blocking_derivation,
+        ));
+        assert_pending_once(cancelled.as_mut()).await;
+        assert_eq!(
+            budget.available_permits(),
+            DERIVATION_MAX_JOBS - 1,
+            "different challenges have not admitted replacement owners"
+        );
+        drop(cancelled);
+        assert_eq!(budget.available_permits(), DERIVATION_MAX_JOBS - 1);
+        finish.send(()).expect("release first worker");
+        first.await.expect("requester").expect("first keys");
+        second
+            .await
+            .expect("different challenge proceeds after completion");
+        assert_eq!(
+            credential.derivations(),
+            2,
+            "cancelled third caller never spawned work"
+        );
+        credential
+            .keys_with_derivation(b"second", 2, Arc::clone(&budget), |_, _, _| async {
+                panic!("cached challenge must not spawn")
+            })
+            .await
+            .expect("published second keys");
+        assert_eq!(budget.available_permits(), DERIVATION_MAX_JOBS);
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded owner test");
+}
+
+#[tokio::test]
+async fn derivation005_global_bound_keeps_all_64_slots_until_cancelled_requesters_workers_finish() {
+    let run = async {
+        let budget = derivation_budget();
+        assert_eq!(
+            budget.available_permits(),
+            64,
+            "the production factory fixes the process bound"
+        );
+        let gate = Arc::new(tokio::sync::Barrier::new(65));
+        let (finish, _) = tokio::sync::watch::channel(false);
+        let mut credentials = Vec::new();
+        let mut requesters = Vec::new();
+        for _ in 0..64 {
+            let credential = Credential::new(password("backend-secret"));
+            credentials.push(Arc::clone(&credential));
+            let budget = Arc::clone(&budget);
+            let gate = Arc::clone(&gate);
+            let mut finished = finish.subscribe();
+            requesters.push(tokio::spawn(async move {
+                credential
+                    .keys_with_derivation(
+                        b"shared",
+                        1,
+                        budget,
+                        move |credential, salt, count| async move {
+                            gate.wait().await;
+                            finished
+                                .wait_for(|done| *done)
+                                .await
+                                .expect("controlled worker release");
+                            test_blocking_derivation(credential, salt, count).await
+                        },
+                    )
+                    .await
+            }));
+        }
+        gate.wait().await;
+        assert_eq!(budget.available_permits(), 0);
+        let extra = Credential::new(password("backend-secret"));
+        assert_eq!(
+            extra
+                .keys_with_derivation(b"extra", 1, Arc::clone(&budget), |_, _, _| async {
+                    panic!("exhaustion must refuse before spawning")
+                })
+                .await,
+            Err(BackendError::Authentication)
+        );
+        for requester in &requesters[..32] {
+            requester.abort();
+        }
+        for requester in requesters.drain(..32) {
+            assert!(
+                requester
+                    .await
+                    .expect_err("requester cancelled")
+                    .is_cancelled()
+            );
+        }
+        assert_eq!(
+            budget.available_permits(),
+            0,
+            "caller cancellation cannot release an owner's slot"
+        );
+        assert_eq!(
+            extra
+                .keys_with_derivation(b"extra", 1, Arc::clone(&budget), |_, _, _| async {
+                    panic!("cancelled callers cannot create extra admission")
+                })
+                .await,
+            Err(BackendError::Authentication)
+        );
+        finish.send_replace(true);
+        for requester in requesters {
+            requester
+                .await
+                .expect("requester joined")
+                .expect("derived keys");
+        }
+        for credential in credentials {
+            credential
+                .keys_with_derivation(b"shared", 1, Arc::clone(&budget), |_, _, _| async {
+                    panic!("cancelled owner must still publish its cache")
+                })
+                .await
+                .expect("completed owner cached its result");
+            assert_eq!(credential.derivations(), 1);
+        }
+        assert_eq!(budget.available_permits(), 64);
+        extra
+            .keys_with_derivation(b"extra", 1, Arc::clone(&budget), test_blocking_derivation)
+            .await
+            .expect("capacity recovered across credentials");
+        assert_eq!(extra.derivations(), 1);
+        assert_eq!(budget.available_permits(), 64);
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded saturation test");
+}
+
+#[tokio::test]
+async fn derivation005_blocking_panic_publishes_failure_and_releases_guard_and_slot() {
+    let run = async {
+        let budget = derivation_budget();
+        let reserved = Arc::clone(&budget)
+            .try_acquire_many_owned(63)
+            .expect("leave exactly one production slot");
+        let credential = Credential::new(password("backend-secret"));
+        let (started, observed) = oneshot::channel();
+        let (panic_now, may_panic) = oneshot::channel();
+        let first = {
+            let credential = Arc::clone(&credential);
+            let budget = Arc::clone(&budget);
+            tokio::spawn(async move {
+                credential
+                    .keys_with_derivation(b"panic", 1, budget, move |_, _, _| async move {
+                        started.send(()).expect("observer");
+                        may_panic.await.expect("controlled panic release");
+                        blocking_derivation(|| panic!("controlled blocking derivation panic")).await
+                    })
+                    .await
+            })
+        };
+        observed.await.expect("owner admitted");
+        let mut waiter = Box::pin(credential.keys_with_derivation(
+            b"panic",
+            1,
+            Arc::clone(&budget),
+            |_, _, _| async { panic!("same failed challenge must use the published failure") },
+        ));
+        assert_pending_once(waiter.as_mut()).await;
+        assert_eq!(budget.available_permits(), 0);
+        panic_now
+            .send(())
+            .expect("panic in the real blocking wrapper");
+        assert_eq!(
+            first.await.expect("requester does not panic"),
+            Err(BackendError::Authentication)
+        );
+        assert_eq!(
+            waiter.await,
+            Err(BackendError::Authentication),
+            "waiting challenge receives the cached constant failure"
+        );
+        assert_eq!(budget.available_permits(), 1);
+        credential
+            .keys_with_derivation(
+                b"recovery",
+                1,
+                Arc::clone(&budget),
+                test_blocking_derivation,
+            )
+            .await
+            .expect("cache guard and global slot recovered after panic");
+        assert_eq!(credential.derivations(), 1);
+        assert_eq!(budget.available_permits(), 1);
+        drop(reserved);
+        assert_eq!(budget.available_permits(), 64);
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded panic test");
 }

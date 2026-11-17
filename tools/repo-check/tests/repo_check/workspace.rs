@@ -43,7 +43,7 @@ fn good_tree(name: &str) -> Fixture {
     );
     f.write(
         "Cargo.lock",
-        "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
+        "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.0.0\"\ndependencies = [\n \"pool-config\",\n]\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
     );
     f.write(
         "crates/pool-config/fuzz/Cargo.lock",
@@ -75,6 +75,12 @@ fn good_tree(name: &str) -> Fixture {
         SPEC_0001,
         "# 0001\n\n### Linux build\n\nRun this.\n\n```sh\ndocker run --rm image cargo test\necho linux build check passed\n```\n\n```sh\nnot this block\n```\n",
     );
+    f.write(
+        ".cargo/config.toml",
+        include_str!("../../../../.cargo/config.toml"),
+    );
+    f.write("NOTICE", "");
+    f.write("tools/repo-check/baseline/native-library-versions.txt", "");
     f
 }
 
@@ -231,124 +237,71 @@ fn w4_reads_a_lints_line_with_a_trailing_comment() {
 }
 
 #[test]
-fn w5_names_a_dependency_pair_that_is_not_allowed() {
-    // covers: 0002 AC-6, W5
-    let f = good_tree("ws_w5_extra");
+fn w5_reads_real_package_names_from_the_lockfile() {
+    let f = good_tree("ws_w5_locked");
     f.replace(
-        "crates/pool-config/Cargo.toml",
-        "serde = \"1\"\n",
-        "serde = \"1\"\npool = { path = \"../../apps/pool\" }\n",
+        "Cargo.lock",
+        "name = \"pool-config\"",
+        "name = \"pool-config\"\ndependencies = [\n \"pool 0.0.0\",\n]",
     );
-    let manifest = f.read("crates/pool-config/Cargo.toml");
-    let line = line_of(&manifest, "pool = {");
     f.check("workspace", &[]).assert_problem(
         "workspace",
         "W5",
-        &[
-            &format!("crates/pool-config/Cargo.toml:{line}:"),
-            "pool-config -> pool",
-            "not allowed",
-        ],
+        &["Cargo.lock", "pool-config -> pool", "not allowed"],
     );
 }
 
 #[test]
-fn w5_names_a_listed_pair_that_no_manifest_declares() {
-    // covers: 0002 AC-6, W5
+fn w5_requires_the_listed_locked_edge() {
     let f = good_tree("ws_w5_missing");
-    f.replace(
-        "apps/pool/Cargo.toml",
-        "pool-config = { path = \"../../crates/pool-config\" }\n",
-        "",
-    );
+    f.replace("Cargo.lock", "dependencies = [\n \"pool-config\",\n]\n", "");
     f.check("workspace", &[]).assert_problem(
         "workspace",
         "W5",
-        &[
-            "internal-dependencies.txt",
-            "pool -> pool-config",
-            "missing",
-        ],
+        &["pool -> pool-config", "missing"],
     );
 }
 
 #[test]
-fn w5_reads_dependency_tables_in_every_spelling() {
-    // covers: 0002 AC-6, W5: `[dev-dependencies]`, `[target.<cfg>.dependencies]` and `[build-dependencies.<key>]` all count.
-    let f = good_tree("ws_w5_tables");
-    f.append(
-        "crates/pool-config/Cargo.toml",
-        "\n[dev-dependencies]\npool.path = \"../../apps/pool\"\n\n[target.'cfg(unix)'.dependencies]\npool = { path = \"../../apps/pool\" }\n\n[build-dependencies.pool]\npath = \"../../apps/pool\"\n",
-    );
-    let out = f.check("workspace", &[]);
-    out.assert_problem("workspace", "W5", &["pool-config -> pool"]);
-    assert_eq!(out.problems().len(), 3, "one problem per table:\n{out}");
-}
-
-#[test]
-fn w5_follows_a_member_dependency_under_another_key() {
-    // covers: 0002 AC-6, W5: a member renamed with `package = "pool"` is still the package pool (review M3).
-    let f = good_tree("ws_w5_rename");
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "serde = \"1\"\n",
-        "serde = \"1\"\ndaemon = { package = \"pool\", path = \"../../apps/pool\" }\n",
-    );
-    f.check("workspace", &[]).assert_problem(
-        "workspace",
-        "W5",
-        &[
-            "crates/pool-config/Cargo.toml",
-            "pool-config -> pool",
-            "not allowed",
-        ],
-    );
-
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "daemon = { package = \"pool\", path = \"../../apps/pool\" }\n",
-        "",
-    );
+fn w5_manifest_alias_does_not_change_the_locked_package() {
+    let f = good_tree("ws_w5_alias");
     f.replace(
         "apps/pool/Cargo.toml",
         "pool-config = {",
-        "config = { package = \"pool-config\",",
+        "renamed = { package = \"pool-config\",",
     );
     f.check("workspace", &[]).assert_ok("workspace");
 }
 
 #[test]
-fn w5_sees_a_dependency_under_a_header_with_a_comment() {
-    // covers: 0002 AC-6, W5: `[dependencies] # runtime` is still the dependency table (review M3).
-    let f = good_tree("ws_w5_header_comment");
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "[dependencies]\n",
-        "[dependencies] # runtime\npool = { path = \"../../apps/pool\" }\n",
-    );
+fn w9_reads_private_key_headers_after_binary_bytes() {
+    let f = good_tree("ws_w9_binary");
+    let bytes = [b"\xff".as_slice(), b"-----BEGIN ", b"PRIVATE KEY-----\n"].concat();
+    f.write_bytes("binary-fixture.dat", &bytes);
     f.check("workspace", &[]).assert_problem(
         "workspace",
-        "W5",
-        &["pool-config -> pool", "not allowed"],
+        "W9",
+        &["binary-fixture.dat", "private key block"],
     );
 }
 
 #[test]
-fn w5_sees_a_quoted_key_and_a_target_table_for_one_dependency() {
-    // covers: 0002 AC-6, W5: `"pool" = {...}` and `[target.'cfg(unix)'.dependencies.pool]` (review M3).
-    let f = good_tree("ws_w5_quoted");
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "serde = \"1\"\n",
-        "serde = \"1\"\n\"pool\" = { path = \"../../apps/pool\" }\n",
+fn w9_finds_a_private_header_after_a_certificate_and_binary_prefix() {
+    let f = good_tree("ws_w9_multiple_headers");
+    let bytes = [
+        b"\xff".as_slice(),
+        b"-----BEGIN ",
+        b"CERTIFICATE----- ",
+        b"-----BEGIN ",
+        b"PRIVATE KEY-----\n",
+    ]
+    .concat();
+    f.write_bytes("multiple-headers.dat", &bytes);
+    f.check("workspace", &[]).assert_problem(
+        "workspace",
+        "W9",
+        &["multiple-headers.dat", "private key block"],
     );
-    f.append(
-        "crates/pool-config/Cargo.toml",
-        "\n[target.'cfg(unix)'.dependencies.pool]\npath = \"../../apps/pool\"\n",
-    );
-    let out = f.check("workspace", &[]);
-    out.assert_problem("workspace", "W5", &["pool-config -> pool"]);
-    assert_eq!(out.problems().len(), 2, "one problem per spelling:\n{out}");
 }
 
 #[test]

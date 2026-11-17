@@ -1575,6 +1575,8 @@ Steps 13 and 14 come last, in one session.
     - **A task of the daemon that ends makes the daemon end at once, and a probe task that ends is noticed.** The watch on the tasks is written inside `serve` in `apps/pool/src/daemon.rs`, and no test can make a task end by itself. It needs the watch as a function of its own that takes the join handles of the control loop, the probes, the listener and the log writer and returns which one ended. A unit test then hands it a task that returns and holds `daemon.failed`, the stop at once and exit 3. The checker showed all three with a fault in a private copy.
     - **The second sentence of `0004 AC-28`** has no committed test and gets none while a counting allocator needs `unsafe` (decision 112). Scope 005 looks once more whether a test without `unsafe` exists.
 
+Note of 2026-11-16, scope 005: [spec 0005](../0005-clean-session-reuse/index.md) owns the reuse extension and the disposition of Follow-up 3, 13, 14 and 16. Its verification record distinguishes executed tooling mutations, safe reservation and lifecycle tests, PostgreSQL runtime checks and remaining review gates. Follow-up 13 is resolved by retaining kernel keepalive times and adding the client write deadline, with no direct socket dependency. The scope 004 dedicated-path statements remain its delivery baseline.
+
 ## Rationale
 
 Reasoning, alternatives, the decisions taken, the locked packages and the cross check: [rationale.md](rationale.md).

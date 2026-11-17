@@ -106,6 +106,13 @@ pub struct Limits {
     shutdown_timeout_ms: u32,
     startup_packet_max_bytes: u32,
     frontend_message_max_bytes: u32,
+    backend_max_count: u32,
+    database_backend_max_count: u32,
+    identity_backend_max_count: u32,
+    backend_idle_timeout_ms: u32,
+    backend_lifetime_ms: u32,
+    backend_cleanup_timeout_ms: u32,
+    client_write_timeout_ms: u32,
 }
 
 impl Limits {
@@ -120,6 +127,13 @@ impl Limits {
         shutdown_timeout_ms: 30_000,
         startup_packet_max_bytes: 8192,
         frontend_message_max_bytes: 16_777_216,
+        backend_max_count: 100,
+        database_backend_max_count: 100,
+        identity_backend_max_count: 100,
+        backend_idle_timeout_ms: 30_000,
+        backend_lifetime_ms: 3_600_000,
+        backend_cleanup_timeout_ms: 5_000,
+        client_write_timeout_ms: 30_000,
     };
 
     /// The most sessions open at once, from `limits.session_max_count`.
@@ -173,6 +187,48 @@ impl Limits {
     /// `limits.frontend_message_max_bytes`.
     pub fn frontend_message_max_bytes(&self) -> u32 {
         self.frontend_message_max_bytes
+    }
+
+    /// Maximum physical session backends across every node, including dedicated connections.
+    /// From `limits.backend_max_count`, fixed in spec 0005.
+    pub fn backend_max_count(&self) -> u32 {
+        self.backend_max_count
+    }
+
+    /// Maximum physical session backends per cluster and actual database.
+    /// From `limits.database_backend_max_count`, fixed in spec 0005.
+    pub fn database_backend_max_count(&self) -> u32 {
+        self.database_backend_max_count
+    }
+
+    /// Maximum physical session backends per cluster, actual database and login.
+    /// From `limits.identity_backend_max_count`, fixed in spec 0005.
+    pub fn identity_backend_max_count(&self) -> u32 {
+        self.identity_backend_max_count
+    }
+
+    /// Maximum time a reusable physical backend remains idle.
+    /// From `limits.backend_idle_timeout_ms`, fixed in spec 0005.
+    pub fn backend_idle_timeout(&self) -> Duration {
+        millis(self.backend_idle_timeout_ms)
+    }
+
+    /// Maximum physical backend age at checkout or release; an active owner is never moved.
+    /// From `limits.backend_lifetime_ms`, fixed in spec 0005.
+    pub fn backend_lifetime(&self) -> Duration {
+        millis(self.backend_lifetime_ms)
+    }
+
+    /// One deadline for the whole cleanup and validation exchange.
+    /// From `limits.backend_cleanup_timeout_ms`, fixed in spec 0005.
+    pub fn backend_cleanup_timeout(&self) -> Duration {
+        millis(self.backend_cleanup_timeout_ms)
+    }
+
+    /// Maximum time for a client write and flush, including the greeting.
+    /// From `limits.client_write_timeout_ms`, fixed in spec 0005.
+    pub fn client_write_timeout(&self) -> Duration {
+        millis(self.client_write_timeout_ms)
     }
 }
 
@@ -307,6 +363,13 @@ crate::topology::raw_table!(RawLimits {
     shutdown_timeout_ms: Spanned<u32>,
     startup_packet_max_bytes: Spanned<u32>,
     frontend_message_max_bytes: Spanned<u32>,
+    backend_max_count: Spanned<u32>,
+    database_backend_max_count: Spanned<u32>,
+    identity_backend_max_count: Spanned<u32>,
+    backend_idle_timeout_ms: Spanned<u32>,
+    backend_lifetime_ms: Spanned<u32>,
+    backend_cleanup_timeout_ms: Spanned<u32>,
+    client_write_timeout_ms: Spanned<u32>,
 });
 
 crate::topology::raw_table!(RawProbe {
@@ -581,6 +644,48 @@ fn check_limits(checker: &mut Checker<'_>, raw: Option<&RawLimits>) -> Limits {
             "limits.frontend_message_max_bytes",
             default.frontend_message_max_bytes,
             1024..=1_073_741_823,
+        ),
+        backend_max_count: take(
+            raw.backend_max_count.as_ref(),
+            "limits.backend_max_count",
+            default.backend_max_count,
+            1..=100_000,
+        ),
+        database_backend_max_count: take(
+            raw.database_backend_max_count.as_ref(),
+            "limits.database_backend_max_count",
+            default.database_backend_max_count,
+            1..=100_000,
+        ),
+        identity_backend_max_count: take(
+            raw.identity_backend_max_count.as_ref(),
+            "limits.identity_backend_max_count",
+            default.identity_backend_max_count,
+            1..=100_000,
+        ),
+        backend_idle_timeout_ms: take(
+            raw.backend_idle_timeout_ms.as_ref(),
+            "limits.backend_idle_timeout_ms",
+            default.backend_idle_timeout_ms,
+            1..=3_600_000,
+        ),
+        backend_lifetime_ms: take(
+            raw.backend_lifetime_ms.as_ref(),
+            "limits.backend_lifetime_ms",
+            default.backend_lifetime_ms,
+            1..=86_400_000,
+        ),
+        backend_cleanup_timeout_ms: take(
+            raw.backend_cleanup_timeout_ms.as_ref(),
+            "limits.backend_cleanup_timeout_ms",
+            default.backend_cleanup_timeout_ms,
+            100..=60_000,
+        ),
+        client_write_timeout_ms: take(
+            raw.client_write_timeout_ms.as_ref(),
+            "limits.client_write_timeout_ms",
+            default.client_write_timeout_ms,
+            100..=3_600_000,
         ),
     }
 }

@@ -936,6 +936,9 @@ mod tests {
 
     #[tokio::test]
     async fn ac30_a_good_sample_starts_the_time_again_and_removes_the_mark() {
+        // Every node-loss test keeps this callsite enabled, including state-only
+        // cases, so parallel runs cannot cache an absent subscriber for the log case.
+        let (_events, _guard) = capture();
         // covers: 0004 AC-30: a good sample starts the time again, and the
         // mark goes with the first good sample.
         let (mut control, _) = control_loop(&journal_file("loss-good-sample"));
@@ -953,6 +956,9 @@ mod tests {
 
     #[tokio::test]
     async fn ac30_only_the_writer_counts_and_the_view_carries_the_mark() {
+        // Every node-loss test keeps this callsite enabled, including state-only
+        // cases, so parallel runs cannot cache an absent subscriber for the log case.
+        let (_events, _guard) = capture();
         // covers: 0004 AC-30: silence of a node that is not the writer marks
         // nothing, and a lost writer is a closed route with `lost`.
         let (mut control, _) = control_loop(&journal_file("loss-view"));

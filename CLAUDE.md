@@ -8,20 +8,22 @@ AGENTS.md above is the canonical agent guide (workflow, invariants, documentatio
 
 ## Current state and commands
 
-The repository holds the planning package, the scope 001 workspace (`apps/pool`, the `pool` binary, and `crates/pool-config`), the scope 002 checks and the scope 003 build (`crates/pool-control`, and the cluster, node and identity keys in `pool-config`). The only product command is the offline `pool check-config`. There is no listener or proxy path yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
+The repository holds the planning package, the scope 001 workspace (`apps/pool`, the `pool` binary, and `crates/pool-config`), the scope 002 checks, the scope 003 build (`crates/pool-control`, and the cluster, node and identity keys in `pool-config`) and the scope 004 build, the first real path (`crates/pool-protocol`, `crates/pool-core`, the journal on disk in `pool-control`, the probe and the daemon in `apps/pool`). The product commands are `pool check-config`, `pool bootstrap`, `pool show-authority` and `pool run`. `pool run` serves one path only: a TLS client, authenticated with SCRAM, on the verified primary, with a new backend for each session. There is no backend reuse, extended protocol, replica session or administration interface yet. Rust 1.100.0 is pinned by `rust-toolchain.toml`.
 
 Each check is one command, and CI (`.github/workflows/ci.yml`) runs the same commands ([spec 0002](docs/specs/0002-standards-and-tooling/index.md#the-check-entry-point)):
 
 ```bash
 scripts/check.sh all                 # fmt, clippy, test, deny, guards, docs
-scripts/check.sh <name>              # one of the above, or linux-build, fuzz, sbom, tools
+scripts/check.sh <name>              # one of the above, or linux-build, integration, fuzz, fuzz-tools, sbom, tools
 scripts/prove-checks.sh              # every check must reject its deliberately wrong change
 cargo test -p <crate> <test_name>    # single test
 cargo test --manifest-path tools/repo-check/Cargo.toml --locked --target-dir target/repo-check   # the repo-check tests
 cargo run -q --locked -p pool -- check-config --config crates/pool-config/tests/fixtures/valid-minimal.toml
 ```
 
-`deny` needs `cargo-deny` 0.20.2 (`scripts/check.sh tools` installs it under `target/tools`). `linux-build` and `scripts/prove-checks.sh --with-linux-build` need a running Docker daemon, and a build on macOS is not Linux evidence. The evidence is in the verification records of [spec 0001](docs/specs/0001-initial-architecture/verify.md) and [spec 0002](docs/specs/0002-standards-and-tooling/verify.md).
+`deny` needs `cargo-deny` 0.20.2 (`scripts/check.sh tools` installs it under `target/tools`). `linux-build`, `integration` and `scripts/prove-checks.sh --with-linux-build` need a running Docker daemon, and a build on macOS is not Linux evidence. `integration` starts disposable PostgreSQL 18 containers from an image pinned by digest and removes them. `fuzz` needs `scripts/check.sh fuzz-tools` once. The evidence is in the verification records of [spec 0001](docs/specs/0001-initial-architecture/verify.md), [spec 0002](docs/specs/0002-standards-and-tooling/verify.md), [spec 0003](docs/specs/0003-control-and-session-data-model/verify.md) and [spec 0004](docs/specs/0004-one-real-primary-path/verify.md).
+
+The current pooling extension is [spec 0005](docs/specs/0005-clean-session-reuse/index.md): conservative cleanup eligibility, all-state physical budgets and coherent runtime retirement. Read it for reuse or backend credential rotation work. The dedicated scope 004 path described above serves other supported startup/SQL profiles.
 
 ## Planned architecture
 
@@ -40,7 +42,7 @@ The ten numbered safety contracts in spec 0001 are the detailed form of the AGEN
 ## Working with the docs
 
 - [docs/scope/index.md](docs/scope/index.md) is the work queue: 17 features, the last 6 deferred. A status change must update both the index row and the feature file's heading. Feature numbers are stable across renames.
-- Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. Features 1, 2 and 3 are done; their evidence is in the verification records of spec 0001, spec 0002 and [spec 0003](docs/specs/0003-control-and-session-data-model/verify.md). The next queued feature is 4, the first walking slice whose acceptance is in [docs/testing/strategy.md](docs/testing/strategy.md).
+- Feature files list their steps as slash commands (`/architect`, `/develop`, `/check verify`, `/test`, `/check review`, `/document`) that correspond to installed skills. Features 1, 2, 3 and 4 are done; their evidence is in the verification records of spec 0001, spec 0002, [spec 0003](docs/specs/0003-control-and-session-data-model/verify.md) and [spec 0004](docs/specs/0004-one-real-primary-path/verify.md). The next queued feature is 5, clean session reuse, which starts with Follow-up 14 and Follow-up 16 of spec 0004.
 - [docs/implementation-order.md](docs/implementation-order.md) gives the first handoff and the entry steps for later slices; the scope index owns the order. Create only what the current slice needs; do not scaffold the full proposed tree from `docs/repository-structure.md`.
 - Each fact has one owning file (see "Documentation ownership" in `docs/repository-structure.md`). Edit it there and link from other views. Terms are owned by [docs/glossary.md](docs/glossary.md). Adding or moving a document also means updating [docs/index.md](docs/index.md).
 - Feature status advances only with linked build and test evidence. Documentation alone never moves a scope feature to `done` or a feature inventory row to Implemented or Tested. The states are defined once in the scope index's status lifecycle.

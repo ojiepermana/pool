@@ -1730,11 +1730,16 @@ fn ac16_the_witness_check_comes_before_every_other_reason() {
 fn walk_journal(name: &str, state: &AuthorityState) -> (std::path::PathBuf, pool_control::Journal) {
     let folder = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR"))
         .join(format!("pool-control-walk-{name}"));
-    if folder.exists() {
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = folder.exists();
+    if exists {
+        #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
         std::fs::remove_dir_all(&folder).expect("remove old test folder");
     }
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::create_dir_all(&folder).expect("create test folder");
     let path = folder.join("journal.sqlite3");
+    #[expect(clippy::disallowed_types, reason = "W3 permits test file I/O")]
     std::fs::File::create_new(&path).expect("create the empty journal file");
     let plan = plan_bootstrap(
         &Setup::default().config(),

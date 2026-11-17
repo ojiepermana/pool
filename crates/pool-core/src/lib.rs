@@ -28,6 +28,9 @@ pub mod secret;
 pub mod session;
 pub mod tls;
 
+mod pool;
+mod recognizer;
+mod reuse;
 mod wire;
 
 /// The text that `Debug` prints for every secret.

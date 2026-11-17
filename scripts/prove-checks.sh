@@ -128,6 +128,15 @@ unpin_checkout() {
     { print }'
 }
 
+# Add a dependency to Cargo's existing canonical array for one package.
+add_locked_dependency() {
+  rewrite "$1" awk -v package="$2" -v dependency="$3" '
+    /^\[\[package\]\]/ { inside = 0 }
+    $0 == "name = \"" package "\"" { inside = 1 }
+    { print }
+    inside && /^dependencies = \[/ { print " \"" dependency "\","; inside = 0 }'
+}
+
 # --- the cases ---
 
 restore() {
@@ -276,7 +285,7 @@ delete_table "$C/apps/pool/Cargo.toml" '[lints]'
 expect 11 guards 'W4'
 restore
 
-insert_after "$C/crates/pool-config/Cargo.toml" '[dependencies]' 'pool = { path = "../../apps/pool" }'
+add_locked_dependency "$C/Cargo.lock" 'pool-config' 'pool'
 expect 12 guards 'W5' 'pool-config -> pool'
 restore
 
@@ -437,6 +446,91 @@ restore
 # 36: rusqlite named outside pool-control, in apps/pool (decision 93, finding g2: one writer in every crate).
 append "$C/apps/pool/src/main.rs" '// rusqlite'
 expect 36 guards 'W3' 'apps/pool/src/main.rs' 'rusqlite'
+restore
+
+# Scope 005 inherits the tooling debt of spec 0004 Follow-up 14. Each wrong
+# change below has a baseline (the unchanged-copy check above) and its own refusal.
+append "$C/crates/pool-config/src/lib.rs" 'pub fn prove_grouped_thread() { use std::{thread}; let _ = thread::spawn(|| ()); }'
+expect 37 clippy 'disallowed_methods' 'std::thread::spawn'
+restore
+
+append "$C/crates/pool-config/src/lib.rs" 'pub fn prove_grouped_socket(_: std::net::UdpSocket) {}'
+expect 38 clippy 'disallowed_types' 'std::net::UdpSocket'
+restore
+
+append "$C/crates/pool-control/src/lib.rs" 'pub fn prove_grouped_clock() { use std::{time}; let _ = time::Instant::now(); }'
+expect 39 clippy 'disallowed_methods' 'std::time::Instant::now'
+restore
+
+append "$C/crates/pool-control/src/lib.rs" 'pub fn prove_path_read(path: &std::path::Path) { let _ = path.metadata(); }'
+expect 40 clippy 'disallowed_methods' 'std::path::Path::metadata'
+restore
+
+for direction in core-control control-core; do
+  case "$direction" in
+    core-control) from=pool-core; to=pool-control; case_id=41 ;;
+    control-core) from=pool-control; to=pool-core; case_id=42 ;;
+  esac
+  add_locked_dependency "$C/Cargo.lock" "$from" "$to"
+  append "$C/tools/repo-check/baseline/internal-dependencies.txt" "$from -> $to"
+  expect "$case_id" guards 'W5' "$from -> $to" 'core/control exclusion'
+  restore
+done
+
+append "$C/tools/repo-check/baseline/forbidden-source-patterns.txt" 'allow crates/pool-control std::fs'
+expect 43 guards 'W3' 'deny crates/pool-control/src std::fs is hidden by allow'
+restore
+
+# Split the header so this proof script itself does not contain a private key block.
+printf '%s%s\n' '-----BEGIN ' 'RSA PRIVATE KEY-----' >"$C/prove-private-key.pem"
+expect 44 guards 'W9' 'prove-private-key.pem' 'private key block'
+restore
+
+replace_first "$C/crates/pool-core/tests/fixtures/node.key" 'MIGH' 'MIXX'
+expect 45 guards 'W9' 'node.key' 'private key block'
+restore
+
+case_id=46
+for key in AWS_LC_SYS_USE_SYSTEM \
+  AWS_LC_SYS_USE_SYSTEM_aarch64_unknown_linux_gnu \
+  AWS_LC_SYS_USE_SYSTEM_x86_64_unknown_linux_gnu \
+  AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin \
+  AWS_LC_SYS_USE_SYSTEM_x86_64_apple_darwin \
+  LIBSQLITE3_SYS_USE_PKG_CONFIG; do
+  replace_line_starting "$C/.cargo/config.toml" "$key = " "$key = { value = \"0\", force = false }"
+  expect "$case_id" guards 'W8' '.cargo/config.toml' 'six native-library settings'
+  restore
+  case_id=$((case_id + 1))
+done
+
+append "$C/.github/workflows/ci.yml" '# POOL_IT_FILTER=one is deliberately forbidden even in comments'
+expect 52 guards 'C5' 'POOL_IT_FILTER'
+restore
+
+replace_first "$C/NOTICE" 'aws-lc-sys 0.47.0' 'aws-lc-sys 0.46.0'
+expect 53 guards 'W10' 'aws-lc-sys' 'Cargo.lock'
+restore
+
+replace_first "$C/NOTICE" 'SQLite 3.54.1' 'SQLite 3.54.0'
+expect 54 guards 'W10' 'SQLite 3.54.1'
+restore
+
+replace_first "$C/NOTICE" 'AWS-LC 5.12.0' 'AWS-LC 0.47.0'
+expect 55 guards 'W10' 'AWS-LC 5.12.0'
+restore
+
+replace_first "$C/NOTICE" 'libsqlite3-sys 0.40.0' 'libsqlite3-sys 0.39.0'
+expect 56 guards 'W10' 'libsqlite3-sys' 'Cargo.lock'
+restore
+
+# The resolved thread restriction applies in integration-test compilation units too.
+append "$C/crates/pool-control/tests/controller.rs" 'pub fn prove_test_grouped_thread() { use std::{thread}; let _ = thread::spawn(|| ()); }'
+expect 57 clippy 'disallowed_methods' 'std::thread::spawn'
+restore
+
+# A non-private PEM header and binary prefix cannot hide a later private header.
+printf '\377%s%s%s%s\n' '-----BEGIN ' 'CERTIFICATE----- ' '-----BEGIN ' 'PRIVATE KEY-----' >"$C/prove-multiple-headers.dat"
+expect 58 guards 'W9' 'prove-multiple-headers.dat' 'private key block'
 restore
 
 if [ -n "$failed" ]; then

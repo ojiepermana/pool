@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Conservative clean session reuse on the primary path, with identity and generation isolation, bounded rollback/reset quarantine, startup validation and physical backend budgets across global, node, database and login scopes. Unknown SQL or startup profiles retain dedicated connections (spec 0005).
+- Idle age, backend lifetime, cleanup and client write limits, plus credential-only SIGHUP rotation with atomic publication and retirement of old idle, waiting and connecting generations (spec 0005).
+- Resolved standard library capability checks, locked workspace dependency checks, exact native build settings, private-key header protection and NOTICE version checks, with targeted fault-injection proof cases (spec 0005).
+
 - A Cargo workspace with two packages: the `pool` daemon binary in `apps/pool` and the `pool-config` library in `crates/pool-config`. Rust 1.100.0 is pinned by `rust-toolchain.toml`, and `unsafe` code is forbidden in both packages (see spec 0001).
 - `pool check-config --config <PATH> [--format human|json]`, an offline command that accepts or rejects a configuration file before you start POOL. It opens no socket, starts no thread and reads at most 1 MiB plus one byte of the file.
 - The first configuration contract: `config_version = 1` plus two reserved tables, `result_cache` and `automatic_promotion`. Leaving them out, or setting `enabled = false`, is valid. Asking for either one is refused with `config.unsupported_capability`, because neither capability exists in this build (SEC-10).

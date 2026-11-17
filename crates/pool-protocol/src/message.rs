@@ -133,6 +133,19 @@ impl MessageReader {
     /// message or the reason it was refused. After a refusal the stream
     /// cannot be read further.
     pub fn feed(&mut self, input: &[u8]) -> (usize, Option<Result<Message, FrameError>>) {
+        self.feed_with_reserve(input, Vec::with_capacity)
+    }
+
+    // A safe seam around the production reservation, so tests can observe whether
+    // an untrusted length reaches it without replacing the global allocator.
+    fn feed_with_reserve<F>(
+        &mut self,
+        input: &[u8],
+        mut reserve: F,
+    ) -> (usize, Option<Result<Message, FrameError>>)
+    where
+        F: FnMut(usize) -> Vec<u8>,
+    {
         let mut used = 0;
         if self.current.is_none() {
             let (taken, header) = self.header.feed(input);
@@ -145,7 +158,7 @@ impl MessageReader {
                         return (used, Some(Err(FrameError::TooLarge)));
                     }
                     let len = header.body_len() as usize;
-                    self.current = Some((header.tag, Vec::with_capacity(len), len));
+                    self.current = Some((header.tag, reserve(len), len));
                 }
             }
         }
@@ -394,5 +407,35 @@ mod tests {
         let (used, out) = reader.feed(&two[5..]);
         assert_eq!(used, two.len() - 5);
         assert_eq!(out.and_then(Result::ok).map(|m| m.tag), Some(b'Q'));
+    }
+    #[test]
+    fn scope005_rejected_lengths_never_reach_the_production_reservation() {
+        // covers: 0005 AC-9, 0004 AC-28. Observe the real reservation site, safely.
+        for len in [0, 3, 21, u32::MAX] {
+            for split in 0..=HEADER_LEN {
+                let bytes = header(b'p', len);
+                let mut reader = MessageReader::new(16);
+                let mut never =
+                    |_| -> Vec<u8> { panic!("a rejected header requested body capacity") };
+                let first = reader.feed_with_reserve(&bytes[..split], &mut never);
+                let result = if first.1.is_some() {
+                    first.1
+                } else {
+                    reader.feed_with_reserve(&bytes[split..], &mut never).1
+                };
+                assert!(matches!(result, Some(Err(_))));
+            }
+        }
+        let mut capacities = Vec::new();
+        let mut reader = MessageReader::new(16);
+        reader.feed_with_reserve(&header(b'p', 20), |len| {
+            capacities.push(len);
+            Vec::with_capacity(len)
+        });
+        assert_eq!(
+            capacities,
+            [16],
+            "the positive control reaches the same seam"
+        );
     }
 }

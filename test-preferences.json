@@ -1,0 +1,9 @@
+{
+  "tool": "cargo test",
+  "gate": null,
+  "additionalTools": [],
+  "e2eTool": "none",
+  "testDir": "#[cfg(test)] in source and tests/",
+  "filePattern": "*.rs",
+  "packageManager": "cargo"
+}

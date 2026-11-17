@@ -4,7 +4,7 @@
 //! container, no PostgreSQL. The hermetic halves of `0004 AC-14` to `AC-17`,
 //! `AC-19`, `AC-20`, `AC-22`, `AC-23` and `AC-25`.
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -199,6 +199,80 @@ struct NodeState {
     identity: Mutex<Identity>,
     /// The status of the `ReadyForQuery` after that answer (round eight, S4).
     identity_status: Mutex<TransactionStatus>,
+    reuse: ReuseScript,
+}
+
+#[derive(Default)]
+struct ReuseScript {
+    enabled: AtomicBool,
+    baselines: AtomicUsize,
+    discards: AtomicUsize,
+    rollbacks: AtomicUsize,
+    fault: Mutex<ReuseFault>,
+    pause_baseline: AtomicUsize,
+    paused: tokio::sync::Notify,
+    resume: tokio::sync::Notify,
+}
+#[derive(Clone, Copy, Default)]
+enum ReuseFault {
+    #[default]
+    None,
+    CleanupError,
+    ExtraCompletion,
+    NotificationBeforeDiscard,
+    NotificationAfterDiscard,
+    NotificationAtCheckout,
+    BaselineMismatch,
+    UnknownParameter,
+    NonIdle,
+    SilentCleanup,
+    UnreadableBaseline,
+    Hooks,
+    DuplicateStartup,
+    MissingStartup,
+    UnsafeSearchPath,
+    MalformedPacket,
+    OversizedPacket,
+    ByteFlood,
+    MessageFlood,
+    ParameterMismatch,
+    PartialAsyncHeader,
+    AfterQueryNotification,
+}
+
+fn profile_row() -> Vec<Option<String>> {
+    [
+        "",
+        "UTF8",
+        "ISO, MDY",
+        "postgres",
+        "UTC",
+        "on",
+        "off",
+        "\"$user\", public",
+        BACKEND_LOGIN,
+        BACKEND_LOGIN,
+        "t",
+    ]
+    .into_iter()
+    .map(|v| Some(v.to_owned()))
+    .collect()
+}
+fn profile_description() -> Vec<u8> {
+    let mut body = 11u16.to_be_bytes().to_vec();
+    for _ in 0..11 {
+        body.extend_from_slice(b"setting\0");
+        body.extend_from_slice(&0u32.to_be_bytes());
+        body.extend_from_slice(&0u16.to_be_bytes());
+        body.extend_from_slice(&25u32.to_be_bytes());
+        body.extend_from_slice(&(-1i16).to_be_bytes());
+        body.extend_from_slice(&(-1i32).to_be_bytes());
+        body.extend_from_slice(&0u16.to_be_bytes());
+    }
+    encode_message(b'T', &body)
+}
+fn old_notification() -> Vec<u8> {
+    encode_message(b'A', b"\0\0\0\x01old_channel\0OLD-PAYLOAD-CANARY\0")
 }
 
 /// The answer of the scripted node to the question of step 8.
@@ -394,6 +468,39 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
             .write_all(&auth::encode_parameter_status(name, value))
             .await;
     }
+    if state.reuse.enabled.load(Ordering::SeqCst) {
+        let fault = *state.reuse.fault.lock().expect("lock");
+        for (name, value) in [
+            ("server_encoding", "UTF8"),
+            ("application_name", ""),
+            ("is_superuser", "off"),
+            ("session_authorization", BACKEND_LOGIN),
+            ("DateStyle", "ISO, MDY"),
+            ("IntervalStyle", "postgres"),
+            ("TimeZone", "UTC"),
+            ("search_path", "\"$user\", public"),
+            ("integer_datetimes", "on"),
+            ("standard_conforming_strings", "on"),
+            ("default_transaction_read_only", "off"),
+        ] {
+            if matches!(fault, ReuseFault::MissingStartup) && name == "TimeZone" {
+                continue;
+            }
+            let value = if matches!(fault, ReuseFault::UnsafeSearchPath) && name == "search_path" {
+                "attacker, pg_catalog"
+            } else {
+                value
+            };
+            let _ = tls
+                .write_all(&auth::encode_parameter_status(name, value))
+                .await;
+        }
+        if matches!(fault, ReuseFault::DuplicateStartup) {
+            let _ = tls
+                .write_all(&auth::encode_parameter_status("client_encoding", "UTF8"))
+                .await;
+        }
+    }
     let _ = tls
         .write_all(&auth::encode_backend_key_data(
             4242,
@@ -443,6 +550,138 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
             let _ = tls.write_all(&auth::encode_ready_for_query(status)).await;
             let _ = tls.flush().await;
             continue;
+        }
+        if state.reuse.enabled.load(Ordering::SeqCst) {
+            let fault = *state.reuse.fault.lock().expect("lock");
+            if sql.starts_with("SELECT pg_catalog.current_setting('application_name')") {
+                let n = state.reuse.baselines.fetch_add(1, Ordering::SeqCst) + 1;
+                if state.reuse.pause_baseline.load(Ordering::SeqCst) == n {
+                    state.reuse.paused.notify_one();
+                    state.reuse.resume.notified().await;
+                }
+                if matches!(fault, ReuseFault::UnreadableBaseline) {
+                    let _ = tls
+                        .write_all(&encode_message(b'E', b"SERROR\0C42501\0Mhidden\0\0"))
+                        .await;
+                } else {
+                    if matches!(fault, ReuseFault::NotificationAtCheckout) && n >= 3 {
+                        let _ = tls.write_all(&old_notification()).await;
+                    }
+                    let mut row = profile_row();
+                    if matches!(fault, ReuseFault::BaselineMismatch) && n >= 2 {
+                        row[0] = Some("STALE-CANARY".to_owned());
+                    }
+                    if matches!(fault, ReuseFault::UnsafeSearchPath) {
+                        row[7] = Some("attacker, pg_catalog".to_owned());
+                    }
+                    if matches!(fault, ReuseFault::Hooks) {
+                        row[10] = Some("f".to_owned());
+                    }
+                    let _ = tls.write_all(&profile_description()).await;
+                    let _ = tls.write_all(&data_row(&row)).await;
+                    let _ = tls.write_all(&encode_message(b'C', b"SELECT 1\0")).await;
+                }
+                let _ = tls
+                    .write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
+                    .await;
+                let _ = tls.flush().await;
+                continue;
+            }
+            if sql == "ROLLBACK" || sql == "DISCARD ALL" {
+                if sql == "ROLLBACK" {
+                    state.reuse.rollbacks.fetch_add(1, Ordering::SeqCst);
+                } else {
+                    state.reuse.discards.fetch_add(1, Ordering::SeqCst);
+                }
+                if matches!(fault, ReuseFault::SilentCleanup) {
+                    continue;
+                }
+                if matches!(fault, ReuseFault::MalformedPacket) {
+                    let _ = tls.write_all(&[b'C', 0, 0, 0, 3]).await;
+                    let _ = tls.flush().await;
+                    continue;
+                }
+                if matches!(
+                    fault,
+                    ReuseFault::OversizedPacket | ReuseFault::ByteFlood | ReuseFault::MessageFlood
+                ) {
+                    let (count, length) = match fault {
+                        ReuseFault::OversizedPacket => (1, 16385),
+                        ReuseFault::ByteFlood => (5, 16000),
+                        _ => (256, 32),
+                    };
+                    let mut body = b"SNOTICE\0C00000\0M".to_vec();
+                    body.resize(length - 2, b'n');
+                    body.extend_from_slice(b"\0\0");
+                    let packet = encode_message(b'N', &body);
+                    for _ in 0..count {
+                        if tls.write_all(&packet).await.is_err() {
+                            break;
+                        }
+                    }
+                }
+                if matches!(fault, ReuseFault::ParameterMismatch) {
+                    let _ = tls
+                        .write_all(&auth::encode_parameter_status(
+                            "application_name",
+                            "OLD-PAYLOAD-CANARY",
+                        ))
+                        .await;
+                }
+                if matches!(fault, ReuseFault::NotificationBeforeDiscard) {
+                    let _ = tls.write_all(&old_notification()).await;
+                }
+                if matches!(fault, ReuseFault::CleanupError) {
+                    let _ = tls
+                        .write_all(&encode_message(b'E', b"SERROR\0CXX000\0Mbad cleanup\0\0"))
+                        .await;
+                } else {
+                    let _ = tls
+                        .write_all(&encode_message(b'C', format!("{sql}\0").as_bytes()))
+                        .await;
+                }
+                if matches!(fault, ReuseFault::ExtraCompletion) {
+                    let _ = tls.write_all(&encode_message(b'C', b"EXTRA\0")).await;
+                }
+                if matches!(fault, ReuseFault::UnknownParameter) {
+                    let _ = tls
+                        .write_all(&auth::encode_parameter_status("extension.canary", "secret"))
+                        .await;
+                }
+                let status = if matches!(fault, ReuseFault::NonIdle) {
+                    TransactionStatus::InTransaction
+                } else {
+                    TransactionStatus::Idle
+                };
+                let _ = tls.write_all(&auth::encode_ready_for_query(status)).await;
+                if matches!(fault, ReuseFault::NotificationAfterDiscard) {
+                    let _ = tls.write_all(&old_notification()).await;
+                }
+                let _ = tls.flush().await;
+                continue;
+            }
+            // Known and unknown application statements still run through the same relay.
+            if sql != "select 1" && sql != "begin" && sql != "a flood" {
+                state.log.lock().expect("lock").queries.push(sql.clone());
+                if sql == "SELECT 1 OPERATOR(pg_catalog./) 0" {
+                    let _ = tls
+                        .write_all(&encode_message(
+                            b'E',
+                            b"SERROR\0C22012\0Mdivision by zero\0\0",
+                        ))
+                        .await;
+                    let _ = tls
+                        .write_all(&auth::encode_ready_for_query(TransactionStatus::Failed))
+                        .await;
+                } else {
+                    let _ = tls.write_all(&encode_message(b'C', b"OK\0")).await;
+                    let _ = tls
+                        .write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
+                        .await;
+                }
+                let _ = tls.flush().await;
+                continue;
+            }
         }
         state.log.lock().expect("lock").queries.push(sql.clone());
         match answer(&sql) {
@@ -500,6 +739,15 @@ async fn run_node(mut stream: DuplexStream, state: Arc<NodeState>) {
                 let _ = tls.write_all(&bytes).await;
             }
             Answer::Hang => {}
+        }
+        if state.reuse.enabled.load(Ordering::SeqCst) && sql == "select 1" {
+            let fault = *state.reuse.fault.lock().expect("lock");
+            if matches!(fault, ReuseFault::PartialAsyncHeader) {
+                let _ = tls.write_all(&[b'A', 0, 0]).await;
+            }
+            if matches!(fault, ReuseFault::AfterQueryNotification) {
+                let _ = tls.write_all(&old_notification()).await;
+            }
         }
         let _ = tls.flush().await;
     }
@@ -578,6 +826,7 @@ impl Harness {
             tls: Mutex::new(None),
             identity: Mutex::new(Identity::writer()),
             identity_status: Mutex::new(TransactionStatus::Idle),
+            reuse: ReuseScript::default(),
         });
         let chain = CertificateChain::parse(&fixture("node.pem")).expect("chain");
         let key = PrivateKey::parse(&fixture("node.key")).expect("key");
@@ -594,10 +843,16 @@ impl Harness {
         let parts = ServerParts {
             tls: server_config(&chain, &key).expect("server config"),
             verifiers: vec![(config.principals()[0].id().clone(), verifier)],
-            credentials: vec![(
-                config.identities()[0].id().clone(),
-                Credential::new(password(BACKEND_PASSWORD)),
-            )],
+            credentials: config
+                .identities()
+                .iter()
+                .map(|identity| {
+                    (
+                        identity.id().clone(),
+                        Credential::new(password(BACKEND_PASSWORD)),
+                    )
+                })
+                .collect(),
             nodes: vec![(
                 node_id.clone(),
                 Node::new(
@@ -2839,4 +3094,743 @@ async fn ac16_an_empty_user_gets_28p01_after_the_full_exchange() {
     assert_eq!(code, "28P01");
     assert_eq!(tags, b"RRE", "SASL, continue, then the error");
     assert_eq!(h.opened(), 0);
+}
+
+// Scope 005: all cases use the production TLS/SCRAM acquisition, relay and quarantine.
+fn reusable_harness(limits: &str) -> Harness {
+    let h = Harness::new(limits);
+    h.node.reuse.enabled.store(true, Ordering::SeqCst);
+    h
+}
+async fn reuse_login(h: &Harness) -> Login2 {
+    reuse_login_database(h, "orders").await
+}
+async fn reuse_login_database(h: &Harness, database: &str) -> Login2 {
+    let mut tls = upgrade(h.raw()).await;
+    tls.write_all(&encode_startup(&[
+        ("user", PRINCIPAL.as_bytes()),
+        ("database", database.as_bytes()),
+    ]))
+    .await
+    .expect("startup");
+    scram_and_ready(tls, PRINCIPAL_PASSWORD).await
+}
+async fn release_client(h: &Harness, mut client: TlsStream<DuplexStream>) {
+    client
+        .write_all(&encode_terminate())
+        .await
+        .expect("terminate");
+    client.flush().await.expect("flush");
+    assert!(
+        eventually(|| h.server.connections() == 0).await,
+        "release completed"
+    );
+}
+fn replacement(_h: &Harness) -> Vec<(pool_config::IdentityId, Arc<Credential>)> {
+    vec![(
+        pool_config::IdentityId::parse("orders-app").expect("id"),
+        Credential::new(password(BACKEND_PASSWORD)),
+    )]
+}
+
+#[tokio::test]
+async fn reuse005_reconnect_transfers_the_same_physical_budget_and_checks_identity_once() {
+    let h = reusable_harness("backend_max_count = 1");
+    let (mut first, _) = reuse_login(&h).await.ready();
+    for sql in [
+        "select 1",
+        "SET application_name TO 'old owner'",
+        "CREATE TEMP TABLE cleanup_probe (value pg_catalog.int4)",
+        "INSERT INTO pg_temp.cleanup_probe VALUES (1)",
+        "LISTEN old_owner",
+        "PREPARE p AS SELECT 1",
+        "DECLARE c CURSOR WITH HOLD FOR SELECT 1",
+    ] {
+        assert!(last_error(&query(&mut first, sql).await).is_none());
+    }
+    release_client(&h, first).await;
+    assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 1);
+    assert_eq!(h.node.reuse.baselines.load(Ordering::SeqCst), 2);
+    let (mut second, greeting) = reuse_login(&h).await.ready();
+    assert!(!greeting.iter().any(|m| m.tag == b'A'));
+    query(&mut second, "select 1").await;
+    assert_eq!(h.opened(), 1);
+    assert_eq!(h.log(|l| l.identity_questions), 1);
+    assert_eq!(h.node.reuse.baselines.load(Ordering::SeqCst), 3);
+    assert_eq!(h.server.counters().pool_counts().reused, 1);
+    release_client(&h, second).await;
+    h.server.shutdown_now().await;
+    assert!(eventually(|| h.log(|l| l.closed) == 1).await);
+}
+
+#[tokio::test]
+async fn reuse005_open_and_failed_transactions_are_rolled_back_before_discard() {
+    for failed in [false, true] {
+        let h = reusable_harness("backend_max_count = 1");
+        let (mut first, _) = reuse_login(&h).await.ready();
+        query(&mut first, "begin").await;
+        if failed {
+            query(&mut first, "SELECT 1 OPERATOR(pg_catalog./) 0").await;
+        }
+        release_client(&h, first).await;
+        assert_eq!(h.node.reuse.rollbacks.load(Ordering::SeqCst), 1);
+        assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 1);
+        let (second, _) = reuse_login(&h).await.ready();
+        assert_eq!(h.opened(), 1);
+        release_client(&h, second).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_unknown_sql_stays_dedicated_after_later_good_sql() {
+    for sql in [
+        "DO 'unknown'",
+        "SELECT value FROM pg_temp.unproven",
+        "select 1; select 1",
+        "SET application_name TO 'x\\y'",
+    ] {
+        let h = reusable_harness("backend_max_count = 1");
+        let (mut first, _) = reuse_login(&h).await.ready();
+        query(&mut first, sql).await;
+        query(&mut first, "select 1").await;
+        release_client(&h, first).await;
+        assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 0, "{sql}");
+        let (second, _) = reuse_login(&h).await.ready();
+        assert_eq!(h.opened(), 2, "{sql}");
+        release_client(&h, second).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_failed_cleanup_and_late_notifications_never_publish_idle() {
+    for fault in [
+        ReuseFault::CleanupError,
+        ReuseFault::ExtraCompletion,
+        ReuseFault::NotificationAfterDiscard,
+        ReuseFault::BaselineMismatch,
+        ReuseFault::UnknownParameter,
+        ReuseFault::NonIdle,
+        ReuseFault::SilentCleanup,
+        ReuseFault::MalformedPacket,
+        ReuseFault::OversizedPacket,
+        ReuseFault::ByteFlood,
+        ReuseFault::MessageFlood,
+        ReuseFault::ParameterMismatch,
+    ] {
+        let h = reusable_harness("backend_max_count = 1\nbackend_cleanup_timeout_ms = 100");
+        let (first, _) = reuse_login(&h).await.ready();
+        *h.node.reuse.fault.lock().expect("lock") = fault;
+        release_client(&h, first).await;
+        assert_eq!(h.server.counters().pool_counts().reset_closed, 1);
+        *h.node.reuse.fault.lock().expect("lock") = ReuseFault::None;
+        let (second, _) = reuse_login(&h).await.ready();
+        assert_eq!(h.opened(), 2);
+        release_client(&h, second).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_notification_before_discard_is_quarantined_but_checkout_notification_closes() {
+    let h = reusable_harness("backend_max_count = 1");
+    let (first, _) = reuse_login(&h).await.ready();
+    *h.node.reuse.fault.lock().expect("lock") = ReuseFault::NotificationBeforeDiscard;
+    release_client(&h, first).await;
+    *h.node.reuse.fault.lock().expect("lock") = ReuseFault::None;
+    let (second, greeting) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 1);
+    assert!(
+        !greeting
+            .iter()
+            .any(|m| m.tag == b'A' || m.body.windows(11).any(|w| w == b"OLD-PAYLOAD"))
+    );
+    release_client(&h, second).await;
+    *h.node.reuse.fault.lock().expect("lock") = ReuseFault::NotificationAtCheckout;
+    assert_eq!(reuse_login(&h).await.refused().1, "57P03");
+    *h.node.reuse.fault.lock().expect("lock") = ReuseFault::None;
+    let (third, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, third).await;
+}
+
+#[tokio::test]
+async fn reuse005_unreadable_hooks_and_incomplete_startup_keep_the_dedicated_path() {
+    for fault in [
+        ReuseFault::UnreadableBaseline,
+        ReuseFault::Hooks,
+        ReuseFault::DuplicateStartup,
+        ReuseFault::MissingStartup,
+        ReuseFault::UnsafeSearchPath,
+    ] {
+        let h = reusable_harness("backend_max_count = 1");
+        *h.node.reuse.fault.lock().expect("lock") = fault;
+        let (first, _) = reuse_login(&h).await.ready();
+        release_client(&h, first).await;
+        let (second, _) = reuse_login(&h).await.ready();
+        assert_eq!(h.opened(), 2);
+        assert_eq!(h.log(|l| l.identity_questions), 2);
+        assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 0);
+        release_client(&h, second).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_idle_maintenance_and_physical_lifetime_close_only_between_owners() {
+    let h = reusable_harness("backend_max_count = 1\nbackend_idle_timeout_ms = 5");
+    let (first, _) = reuse_login(&h).await.ready();
+    release_client(&h, first).await;
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    assert_eq!(h.server.maintain_idle(), 1);
+    assert_eq!(h.server.counters().pool_counts().expired, 1);
+    let (second, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, second).await;
+
+    let h = reusable_harness("backend_max_count = 1\nbackend_lifetime_ms = 50");
+    let (mut first, _) = reuse_login(&h).await.ready();
+    tokio::time::sleep(Duration::from_millis(60)).await;
+    assert!(
+        last_error(&query(&mut first, "select 1").await).is_none(),
+        "owner remains pinned past lifetime"
+    );
+    release_client(&h, first).await;
+    assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 0);
+    let (second, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, second).await;
+}
+
+#[tokio::test]
+async fn reuse005_rotation_during_handshake_or_cleanup_refuses_retired_handoff() {
+    for pause in [1, 2, 3] {
+        let h = Arc::new(reusable_harness("backend_max_count = 1"));
+        if pause == 1 {
+            h.node.reuse.pause_baseline.store(1, Ordering::SeqCst);
+        }
+        if pause != 1 {
+            let (first, _) = reuse_login(&h).await.ready();
+            h.node.reuse.pause_baseline.store(pause, Ordering::SeqCst);
+            if pause == 2 {
+                let releasing = Arc::clone(&h);
+                let task = tokio::spawn(async move {
+                    release_client(&releasing, first).await;
+                });
+                h.node.reuse.paused.notified().await;
+                h.server
+                    .rotate_credentials(replacement(&h))
+                    .expect("rotate during cleanup");
+                h.node.reuse.resume.notify_one();
+                task.await.expect("release");
+                let (new, _) = reuse_login(&h).await.ready();
+                assert_eq!(h.opened(), 2);
+                release_client(&h, new).await;
+                continue;
+            }
+            release_client(&h, first).await;
+        }
+        let connecting = Arc::clone(&h);
+        let task = tokio::spawn(async move { reuse_login(&connecting).await });
+        h.node.reuse.paused.notified().await;
+        h.server
+            .rotate_credentials(replacement(&h))
+            .expect("rotate before handoff");
+        h.node.reuse.resume.notify_one();
+        assert_eq!(task.await.expect("login").refused().1, "57P03");
+        let (new, _) = reuse_login(&h).await.ready();
+        assert_eq!(h.opened(), 2);
+        release_client(&h, new).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_rotation_retires_waiters_and_preserves_the_existing_pinned_owner() {
+    let h = Arc::new(reusable_harness(
+        "backend_max_count = 1\nbackend_acquire_timeout_ms = 1000",
+    ));
+    let (mut first, _) = reuse_login(&h).await.ready();
+    let connecting = Arc::clone(&h);
+    let task = tokio::spawn(async move { reuse_login(&connecting).await });
+    assert!(eventually(|| h.server.connections() == 2).await);
+    settle().await;
+    h.server
+        .rotate_credentials(replacement(&h))
+        .expect("rotation");
+    assert_eq!(task.await.expect("waiter").refused().1, "57P03");
+    assert!(last_error(&query(&mut first, "select 1").await).is_none());
+    release_client(&h, first).await;
+    assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 0);
+    let (new, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, new).await;
+}
+
+#[tokio::test]
+async fn reuse005_rotation_is_atomic_for_invalid_sets_and_removes_idle() {
+    let h = reusable_harness("backend_max_count = 1");
+    let (first, _) = reuse_login(&h).await.ready();
+    release_client(&h, first).await;
+    assert!(h.server.rotate_credentials(Vec::new()).is_err());
+    let mut duplicates = replacement(&h);
+    duplicates.extend(replacement(&h));
+    assert!(h.server.rotate_credentials(duplicates).is_err());
+    let (second, _) = reuse_login(&h).await.ready();
+    assert_eq!(
+        h.opened(),
+        1,
+        "failed publication retains old runtime and idle backend"
+    );
+    release_client(&h, second).await;
+    h.server
+        .rotate_credentials(replacement(&h))
+        .expect("valid publication");
+    assert!(eventually(|| h.log(|l| l.closed) == 1).await);
+    let (third, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, third).await;
+}
+
+#[tokio::test]
+async fn reuse005_route_publication_during_checkout_wins_before_handoff() {
+    let h = Arc::new(reusable_harness("backend_max_count = 1"));
+    let (first, _) = reuse_login(&h).await.ready();
+    release_client(&h, first).await;
+    h.node.reuse.pause_baseline.store(3, Ordering::SeqCst);
+    let connecting = Arc::clone(&h);
+    let task = tokio::spawn(async move { reuse_login(&connecting).await });
+    h.node.reuse.paused.notified().await;
+    h.node
+        .routes
+        .send_replace(h.route(2, Duration::from_secs(3600)));
+    h.node.reuse.resume.notify_one();
+    assert_eq!(task.await.expect("login").refused().1, "57P03");
+    h.open();
+    let (new, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, new).await;
+}
+
+#[tokio::test]
+async fn reuse005_slow_reader_write_deadline_returns_the_physical_budget() {
+    let h = reusable_harness("backend_max_count = 1\nclient_write_timeout_ms = 100");
+    let (mut first, _) = reuse_login(&h).await.ready();
+    first
+        .write_all(&encode_query("a flood"))
+        .await
+        .expect("write");
+    first.flush().await.expect("flush");
+    assert!(
+        eventually(|| h.server.connections() == 0).await,
+        "slow reader bounded without route cut"
+    );
+    let (second, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 2);
+    release_client(&h, second).await;
+}
+
+fn alias_config(limits: &str, different_login: bool) -> ValidatedConfig {
+    let login = if different_login {
+        "other_login"
+    } else {
+        BACKEND_LOGIN
+    };
+    let text = format!(
+        "{}\n[[identity]]\nid = \"other-entry\"\nprincipal = \"{PRINCIPAL}\"\ndatabase = \"other\"\ncluster = \"main\"\nbackend_database = \"{BACKEND_DATABASE}\"\nbackend_login = \"{login}\"\ncredential_file = \"/etc/pool/other\"\n",
+        config_text(limits, "")
+    );
+    pool_config::validate(text.as_bytes()).expect("aliases")
+}
+
+#[tokio::test]
+async fn reuse005_identity_entries_do_not_alias_and_idle_other_keys_are_evicted_under_each_cap() {
+    for (caps, different_login) in [
+        ("backend_max_count = 1", false),
+        ("node_backend_max_count = 1", false),
+        ("database_backend_max_count = 1", true),
+        ("identity_backend_max_count = 1", false),
+    ] {
+        let h = Harness::with_config(alias_config(
+            &format!("{caps}\nbackend_acquire_timeout_ms = 100"),
+            different_login,
+        ));
+        h.node.reuse.enabled.store(true, Ordering::SeqCst);
+        let (first, _) = reuse_login(&h).await.ready();
+        assert_eq!(reuse_login_database(&h, "other").await.refused().1, "53300");
+        assert_eq!(
+            h.opened(),
+            1,
+            "{caps}: connecting or leased counts against every cap"
+        );
+        // The holder is one connection; the refused waiter's end may still be closing TLS.
+        assert!(eventually(|| h.server.connections() == 1).await);
+        release_client(&h, first).await;
+        let (second, _) = reuse_login_database(&h, "other").await.ready();
+        assert_eq!(
+            h.opened(),
+            2,
+            "{caps}: different IdentityId never borrows the earlier idle backend"
+        );
+        assert!(
+            eventually(|| h.log(|l| l.closed) >= 1).await,
+            "useful idle victim was closed"
+        );
+        release_client(&h, second).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_partial_frontend_header_or_body_and_unsynchronized_eof_close() {
+    for bytes in [vec![b'Q', 0, 0], vec![b'Q', 0, 0, 0, 20, b's', b'e']] {
+        let h = reusable_harness("backend_max_count = 1");
+        let (mut first, _) = reuse_login(&h).await.ready();
+        first.write_all(&bytes).await.expect("partial query");
+        first.shutdown().await.expect("close notify");
+        drop(first);
+        assert!(eventually(|| h.server.connections() == 0).await);
+        assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 0);
+        let (second, _) = reuse_login(&h).await.ready();
+        assert_eq!(h.opened(), 2);
+        release_client(&h, second).await;
+    }
+    let h = reusable_harness("backend_max_count = 1");
+    let (mut first, _) = reuse_login(&h).await.ready();
+    first.shutdown().await.expect("clean close notify");
+    drop(first);
+    assert!(eventually(|| h.server.connections() == 0).await);
+    assert_eq!(
+        h.node.reuse.discards.load(Ordering::SeqCst),
+        1,
+        "synchronized EOF is eligible"
+    );
+    let (second, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 1);
+    release_client(&h, second).await;
+}
+
+#[tokio::test]
+async fn reuse005_fifo_head_cancellation_returns_its_ticket_and_every_reservation() {
+    let h = reusable_harness(
+        "backend_max_count = 1\nbackend_wait_max_count = 2\nbackend_acquire_timeout_ms = 1000",
+    );
+    let (holder, _) = reuse_login(&h).await.ready();
+    let (client, server) = tokio::io::duplex(1 << 20);
+    let cancelled_server = h.server.accept_stream(server).expect("accepted");
+    let mut tls = upgrade(client).await;
+    tls.write_all(&encode_startup(&[
+        ("user", PRINCIPAL.as_bytes()),
+        ("database", b"orders"),
+    ]))
+    .await
+    .expect("startup");
+    let cancelled_client = tokio::spawn(scram_and_ready(tls, PRINCIPAL_PASSWORD));
+    settle().await;
+    let mut tls = upgrade(h.raw()).await;
+    tls.write_all(&encode_startup(&[
+        ("user", PRINCIPAL.as_bytes()),
+        ("database", b"orders"),
+    ]))
+    .await
+    .expect("startup");
+    let next_client = tokio::spawn(scram_and_ready(tls, PRINCIPAL_PASSWORD));
+    settle().await;
+    assert_eq!(h.opened(), 1);
+    cancelled_server.abort();
+    let _ = cancelled_server.await;
+    let _ = cancelled_client.await;
+    let mut holder = holder;
+    holder
+        .write_all(&encode_terminate())
+        .await
+        .expect("release holder");
+    holder.flush().await.expect("flush");
+    let (next, _) = tokio::time::timeout(Duration::from_secs(1), next_client)
+        .await
+        .expect("cancelled head did not block next")
+        .expect("join")
+        .ready();
+    assert_eq!(
+        h.opened(),
+        1,
+        "same reservation transfers without reacquiring capacity"
+    );
+    release_client(&h, next).await;
+}
+
+#[tokio::test]
+async fn reuse005_queued_handoffs_are_fifo_and_share_one_total_acquisition_deadline() {
+    let h = reusable_harness(
+        "backend_max_count = 1\nbackend_wait_max_count = 2\nbackend_acquire_timeout_ms = 1000",
+    );
+    let (mut holder, _) = reuse_login(&h).await.ready();
+    let mut tls = upgrade(h.raw()).await;
+    tls.write_all(&encode_startup(&[
+        ("user", PRINCIPAL.as_bytes()),
+        ("database", b"orders"),
+    ]))
+    .await
+    .expect("startup");
+    let first = tokio::spawn(scram_and_ready(tls, PRINCIPAL_PASSWORD));
+    settle().await;
+    let mut tls = upgrade(h.raw()).await;
+    tls.write_all(&encode_startup(&[
+        ("user", PRINCIPAL.as_bytes()),
+        ("database", b"orders"),
+    ]))
+    .await
+    .expect("startup");
+    let second = tokio::spawn(scram_and_ready(tls, PRINCIPAL_PASSWORD));
+    settle().await;
+    holder
+        .write_all(&encode_terminate())
+        .await
+        .expect("terminate");
+    holder.flush().await.expect("flush");
+    let (mut first_client, _) = tokio::time::timeout(Duration::from_millis(500), first)
+        .await
+        .expect("FIFO head handoff")
+        .expect("join")
+        .ready();
+    assert!(
+        !second.is_finished(),
+        "later ticket cannot overtake the pinned first waiter"
+    );
+    first_client
+        .write_all(&encode_terminate())
+        .await
+        .expect("terminate");
+    first_client.flush().await.expect("flush");
+    let (second_client, _) = second.await.expect("join").ready();
+    release_client(&h, second_client).await;
+    assert_eq!(h.opened(), 1);
+}
+
+#[tokio::test]
+async fn reuse005_evicts_only_idle_entries_that_contribute_to_an_exhausted_cap() {
+    let text = format!(
+        "{}\n[[identity]]\nid = \"unrelated\"\nprincipal = \"{PRINCIPAL}\"\ndatabase = \"unrelated\"\ncluster = \"main\"\nbackend_database = \"other_db\"\nbackend_login = \"{BACKEND_LOGIN}\"\ncredential_file = \"/etc/pool/other\"\n[[identity]]\nid = \"alias\"\nprincipal = \"{PRINCIPAL}\"\ndatabase = \"alias\"\ncluster = \"main\"\nbackend_database = \"{BACKEND_DATABASE}\"\nbackend_login = \"{BACKEND_LOGIN}\"\ncredential_file = \"/etc/pool/alias\"\n",
+        config_text("identity_backend_max_count = 1", "")
+    );
+    let h = Harness::with_config(pool_config::validate(text.as_bytes()).expect("config"));
+    h.node.reuse.enabled.store(true, Ordering::SeqCst);
+    let (unrelated, _) = reuse_login_database(&h, "unrelated").await.ready();
+    release_client(&h, unrelated).await;
+    let (main, _) = reuse_login(&h).await.ready();
+    release_client(&h, main).await;
+    assert_eq!(h.opened(), 2);
+    let (alias, _) = reuse_login_database(&h, "alias").await.ready();
+    assert_eq!(
+        h.opened(),
+        3,
+        "identity-partition victim made room for the distinct key"
+    );
+    release_client(&h, alias).await;
+    let (unrelated, _) = reuse_login_database(&h, "unrelated").await.ready();
+    assert_eq!(h.opened(), 3, "older unrelated idle backend was preserved");
+    release_client(&h, unrelated).await;
+}
+
+#[tokio::test]
+async fn reuse005_partial_backend_header_closes_and_queued_notifications_never_cross_owners() {
+    for fault in [
+        ReuseFault::PartialAsyncHeader,
+        ReuseFault::AfterQueryNotification,
+    ] {
+        let h = reusable_harness("backend_max_count = 1");
+        let (mut first, _) = reuse_login(&h).await.ready();
+        *h.node.reuse.fault.lock().expect("lock") = fault;
+        query(&mut first, "select 1").await;
+        settle().await;
+        release_client(&h, first).await;
+        *h.node.reuse.fault.lock().expect("lock") = ReuseFault::None;
+        let (second, greeting) = reuse_login(&h).await.ready();
+        assert_eq!(
+            h.opened(),
+            if matches!(fault, ReuseFault::PartialAsyncHeader) {
+                2
+            } else {
+                1
+            }
+        );
+        assert!(!greeting.iter().any(|m| m.tag == b'A'));
+        release_client(&h, second).await;
+    }
+}
+
+#[tokio::test]
+async fn reuse005_zero_waiter_cap_allows_immediate_capacity_and_idle_reuse_but_never_waits() {
+    let h = reusable_harness(
+        "backend_max_count = 1\nbackend_wait_max_count = 0\nbackend_acquire_timeout_ms = 1000",
+    );
+    let (first, _) = reuse_login(&h).await.ready();
+    let started = Instant::now();
+    assert_eq!(reuse_login(&h).await.refused().1, "53300");
+    assert!(
+        started.elapsed() < Duration::from_millis(500),
+        "saturation refuses without the acquisition wait"
+    );
+    assert_eq!(h.server.counters().refused(Refusal::WaitLimit), 1);
+    assert_eq!(h.server.counters().refused(Refusal::AcquireTimeout), 0);
+    assert_eq!(h.opened(), 1);
+    assert!(eventually(|| h.server.connections() == 1).await);
+    release_client(&h, first).await;
+    let (second, _) = reuse_login(&h).await.ready();
+    assert_eq!(
+        h.opened(),
+        1,
+        "idle handoff needs no waiter slot or new physical reservation"
+    );
+    release_client(&h, second).await;
+    let (third, _) = reuse_login(&h).await.ready();
+    assert_eq!(h.opened(), 1);
+    assert_eq!(h.server.counters().pool_counts().reused, 2);
+    release_client(&h, third).await;
+}
+
+#[tokio::test]
+async fn reuse005_connecting_owners_do_not_consume_waiter_slots_when_another_slot_is_free() {
+    for wait_cap in [0, 1] {
+        let h = Arc::new(reusable_harness(&format!(
+            "backend_max_count = 2\nbackend_wait_max_count = {wait_cap}\nbackend_acquire_timeout_ms = 1000"
+        )));
+        h.node.reuse.pause_baseline.store(1, Ordering::SeqCst);
+        let connecting = Arc::clone(&h);
+        let first = tokio::spawn(async move { reuse_login(&connecting).await });
+        tokio::time::timeout(Duration::from_secs(1), h.node.reuse.paused.notified())
+            .await
+            .expect("first physical connect paused before handoff");
+        let (mut second, _) = tokio::time::timeout(Duration::from_millis(500), reuse_login(&h))
+            .await
+            .expect("free slot is independent of the first handshake")
+            .ready();
+        assert_eq!(h.opened(), 2);
+        assert!(!first.is_finished(), "first handshake is still paused");
+        h.node.reuse.resume.notify_one();
+        let (mut first, _) = first.await.expect("join").ready();
+        first
+            .write_all(&encode_terminate())
+            .await
+            .expect("terminate first");
+        first.flush().await.expect("flush first");
+        second
+            .write_all(&encode_terminate())
+            .await
+            .expect("terminate second");
+        second.flush().await.expect("flush second");
+        assert!(eventually(|| h.server.connections() == 0).await);
+    }
+}
+
+#[tokio::test]
+async fn reuse005_rotation_after_actual_handoff_before_greeting_preserves_only_the_pinned_owner() {
+    let run = async {
+        let h = reusable_harness("backend_max_count = 1");
+        let (first, _) = reuse_login(&h).await.ready();
+        release_client(&h, first).await;
+        assert_eq!(h.node.reuse.discards.load(Ordering::SeqCst), 1);
+
+        // This is the existing transport seam, not a synthetic generation counter.
+        // Stop reading immediately after SCRAM final on a 64-byte pipe. The full
+        // greeting cannot finish, while the real pool's handoff mark remains visible.
+        let (client, server) = tokio::io::duplex(64);
+        h.server.accept_stream(server).expect("accepted frontend");
+        let mut tls = upgrade(client).await;
+        tls.write_all(&encode_startup(&PRINCIPAL_PARAMS))
+            .await
+            .expect("startup");
+        tls.flush().await.expect("flush");
+        let mut exchange = None;
+        let mut expected = None;
+        loop {
+            let message = read_msg(&mut tls, 1 << 20).await.expect("SCRAM message");
+            match auth::parse_authentication(&message.body) {
+                Ok(Authentication::Sasl(_)) => {
+                    let (client, first) = ClientExchange::start().expect("random");
+                    tls.write_all(&auth::encode_sasl_initial_response(
+                        auth::SCRAM_SHA_256,
+                        first.as_bytes(),
+                    ))
+                    .await
+                    .expect("first");
+                    tls.flush().await.expect("flush");
+                    exchange = Some(client);
+                }
+                Ok(Authentication::SaslContinue(data)) => {
+                    let client = exchange.take().expect("first exchange");
+                    let challenge = client.server_first(&data).expect("challenge");
+                    let keys = derive_keys(
+                        &password(PRINCIPAL_PASSWORD),
+                        &challenge.salt,
+                        std::num::NonZeroU32::new(challenge.iterations).expect("count"),
+                    );
+                    let (final_message, signature) = client.client_final(&challenge, &keys);
+                    tls.write_all(&auth::encode_sasl_response(final_message.as_bytes()))
+                        .await
+                        .expect("final proof");
+                    tls.flush().await.expect("flush");
+                    expected = Some(signature);
+                }
+                Ok(Authentication::SaslFinal(data)) => {
+                    expected
+                        .take()
+                        .expect("signature")
+                        .check(&data)
+                        .expect("server proof");
+                    break;
+                }
+                other => panic!("unexpected SCRAM stage: {other:?}"),
+            }
+        }
+        assert!(
+            eventually(|| h.server.counters().pool_counts().reused == 1).await,
+            "actual handoff mark completed"
+        );
+        assert_eq!(
+            h.server.sessions(),
+            0,
+            "the greeting is still blocked before relay admission"
+        );
+        assert_eq!(h.server.connections(), 1);
+        h.server
+            .rotate_credentials(replacement(&h))
+            .expect("retire immediately after handoff");
+
+        let greeting = read_until_ready(&mut tls).await;
+        assert_eq!(
+            greeting
+                .first()
+                .map(|m| auth::parse_authentication(&m.body)),
+            Some(Ok(Authentication::Ok))
+        );
+        assert_eq!(greeting.last().map(|m| m.tag), Some(b'Z'));
+        assert!(
+            last_error(&greeting).is_none(),
+            "an owner marked before retirement keeps its greeting"
+        );
+        let answer = query(&mut tls, "select 1").await;
+        assert!(
+            last_error(&answer).is_none(),
+            "the retired generation stays pinned for its existing owner"
+        );
+        assert_eq!(
+            answer.last().map(|m| m.tag),
+            Some(b'Z'),
+            "the pinned owner completed real relayed work"
+        );
+        release_client(&h, tls).await;
+        assert_eq!(
+            h.node.reuse.discards.load(Ordering::SeqCst),
+            1,
+            "retired owner never enters cleanup/publication"
+        );
+        assert!(eventually(|| h.log(|log| log.closed) == 1).await);
+        let (next, _) = reuse_login(&h).await.ready();
+        assert_eq!(
+            h.opened(),
+            2,
+            "the retired physical backend cannot become idle for a later owner"
+        );
+        assert_eq!(h.server.counters().pool_counts().reused, 1);
+        release_client(&h, next).await;
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded post-handoff interleaving");
 }

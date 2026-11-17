@@ -2157,6 +2157,8 @@ fn allowed_fields(event: &str) -> Option<&'static [&'static str]> {
         "session.ended" => &["session", "reason", "status", "duration_ms"],
         "session.refused" => &["reason", "count"],
         "backend.failed" => &["node_id", "class", "sqlstate", "count"],
+        "credential.reloaded" => &["identity_count"],
+        "credential.reload_failed" => &["reason"],
         _ => return None,
     })
 }
@@ -2647,4 +2649,366 @@ fn it_ac30_a_paused_writer_is_marked_lost_and_its_sessions_end() {
         .0 == 0
     });
     assert_eq!(daemon.stop_within(20), 0);
+}
+
+// Scope 005, the real physical reconnect path. These grants apply only to
+// the disposable fixture. Product code never grants database permissions.
+struct ReuseProfileGrant;
+impl ReuseProfileGrant {
+    fn new() -> Self {
+        psql(
+            &var("POOL_IT_CONTAINER"),
+            "GRANT pg_read_all_settings TO pz7_rw; GRANT TEMPORARY ON DATABASE pz7_appdb TO pz7_rw;",
+        );
+        Self
+    }
+}
+impl Drop for ReuseProfileGrant {
+    fn drop(&mut self) {
+        psql(
+            &var("POOL_IT_CONTAINER"),
+            "REVOKE pg_read_all_settings FROM pz7_rw; REVOKE TEMPORARY ON DATABASE pz7_appdb FROM pz7_rw;",
+        );
+    }
+}
+
+type RealSession = pool_core::backend::BackendConnection<tokio::net::TcpStream>;
+
+fn reuse_query(
+    runtime: &tokio::runtime::Runtime,
+    session: &mut RealSession,
+    sql: &str,
+) -> Option<Vec<Option<String>>> {
+    runtime.block_on(async {
+        tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            session.query_one_row(sql),
+        )
+        .await
+        .expect("a complete response within 10s")
+        .expect("query through POOL")
+    })
+}
+
+fn reuse_pid(runtime: &tokio::runtime::Runtime, session: &mut RealSession) -> u32 {
+    reuse_query(runtime, session, "SELECT pg_catalog.pg_backend_pid()").expect("PID row")[0]
+        .as_ref()
+        .expect("PID")
+        .parse()
+        .expect("numeric PID")
+}
+
+fn release_reusable(runtime: &tokio::runtime::Runtime, mut session: RealSession) {
+    runtime.block_on(async {
+        support::send(session.stream_mut(), b"X\0\0\0\x04")
+            .await
+            .expect("Terminate");
+        let mut byte = [0u8; 1];
+        use tokio::io::AsyncReadExt;
+        let n = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            session.stream_mut().read(&mut byte),
+        )
+        .await
+        .expect("frontend closed after bounded cleanup");
+        assert!(
+            matches!(n, Ok(0) | Err(_)),
+            "no cleanup traffic reaches the old frontend"
+        );
+    });
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_scope005_reuses_the_same_pid_and_discards_known_state_at_cap_one() {
+    // covers: 0005 AC-1, AC-3, AC-5. PID equality, not just successful reconnect.
+    let _profile = ReuseProfileGrant::new();
+    let (case, port, daemon) = serving_case(
+        "reuse-known-state",
+        primary_node(),
+        None,
+        "\n[limits]\nbackend_max_count = 1\nnode_backend_max_count = 1\n",
+        true,
+    );
+    let runtime = support::runtime();
+    for terminal in ["idle", "transaction", "failed"] {
+        let mut first = session_login(&runtime, port);
+        let pid = reuse_pid(&runtime, &mut first);
+        let startup_names: Vec<_> = first
+            .parameters()
+            .iter()
+            .map(|p| String::from_utf8_lossy(&p.name).into_owned())
+            .collect();
+        let defaults = reuse_query(&runtime, &mut first, "SHOW application_name");
+        for sql in [
+            "SET application_name TO 'POOL_CLEANUP_CANARY'",
+            "SET TIME ZONE 'Pacific/Honolulu'",
+            "SET search_path TO pg_catalog",
+            "CREATE TEMP TABLE cleanup_probe (value pg_catalog.int4)",
+            "INSERT INTO pg_temp.cleanup_probe VALUES (41)",
+            "SELECT pg_catalog.pg_advisory_lock(58432)",
+            "LISTEN cleanup_probe",
+            "PREPARE cleanup_plan AS SELECT 1",
+            "BEGIN",
+            "DECLARE cleanup_cursor CURSOR WITH HOLD FOR SELECT 1",
+            "COMMIT",
+        ] {
+            reuse_query(&runtime, &mut first, sql);
+        }
+        if terminal != "idle" {
+            reuse_query(&runtime, &mut first, "BEGIN");
+        }
+        if terminal == "failed" {
+            let result = runtime.block_on(first.query_one_row("SELECT 1 OPERATOR(pg_catalog./) 0"));
+            assert!(
+                matches!(result, Err(pool_core::backend::BackendError::Server { sqlstate: Some(code) }) if &code == b"22012")
+            );
+        }
+        release_reusable(&runtime, first);
+        let mut second = session_login(&runtime, port);
+        assert_eq!(
+            reuse_pid(&runtime, &mut second),
+            pid,
+            "same physical backend after {terminal}; startup names {startup_names:?}"
+        );
+        assert_eq!(
+            reuse_query(&runtime, &mut second, "SHOW application_name"),
+            defaults
+        );
+        // This observation SQL intentionally retires the backend after the proof.
+        let clean = reuse_query(
+            &runtime,
+            &mut second,
+            "SELECT pg_catalog.to_regclass('pg_temp.cleanup_probe') IS NULL, NOT EXISTS (SELECT 1 FROM pg_catalog.pg_prepared_statements), NOT EXISTS (SELECT 1 FROM pg_catalog.pg_cursors), NOT EXISTS (SELECT 1 FROM pg_catalog.pg_locks WHERE pid = pg_catalog.pg_backend_pid() AND locktype = 'advisory'), NOT EXISTS (SELECT 1 FROM pg_catalog.pg_listening_channels())",
+        );
+        assert_eq!(clean, Some(vec![Some("t".into()); 5]));
+        // A notification sent after cleanup must never become this owner's input.
+        let (code, _, error) = client(
+            &direct_conninfo(),
+            &password("rw.password"),
+            "NOTIFY cleanup_probe, 'POOL_OLD_NOTIFICATION';",
+        );
+        assert_eq!(code, 0, "{error}");
+        assert_eq!(
+            reuse_query(&runtime, &mut second, "SELECT 1"),
+            Some(vec![Some("1".into())])
+        );
+        release_reusable(&runtime, second);
+    }
+    assert_eq!(daemon.stop(), 0);
+    assert_log_is_clean(&case, &fs::read_to_string(case.log_file()).expect("log"));
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_scope005_unknown_sql_and_startup_profiles_keep_dedicated_backends() {
+    // covers: 0005 AC-2, AC-5. A known PID followed by unknown code cannot return idle.
+    let _profile = ReuseProfileGrant::new();
+    let (_case, port, daemon) = serving_case("reuse-unknown", primary_node(), None, "", true);
+    let runtime = support::runtime();
+    let mut first = session_login(&runtime, port);
+    let pid = reuse_pid(&runtime, &mut first);
+    reuse_query(
+        &runtime,
+        &mut first,
+        "SELECT pg_catalog.current_setting('application_name')",
+    );
+    release_reusable(&runtime, first);
+    let mut second = session_login(&runtime, port);
+    assert_ne!(
+        reuse_pid(&runtime, &mut second),
+        pid,
+        "unknown SQL retires the physical connection"
+    );
+    release_reusable(&runtime, second);
+    // libpq forwards an application_name, which is outside the reusable startup profile.
+    let conninfo = format!(
+        "{} application_name=pool_dedicated_probe",
+        pool_conninfo(port)
+    );
+    let (a, first, e) = client(
+        &conninfo,
+        &password("principal.password"),
+        "SELECT pg_catalog.pg_backend_pid();",
+    );
+    assert_eq!(a, 0, "{e}");
+    let (b, second, e) = client(
+        &conninfo,
+        &password("principal.password"),
+        "SELECT pg_catalog.pg_backend_pid();",
+    );
+    assert_eq!(b, 0, "{e}");
+    assert_ne!(first.trim(), second.trim());
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_scope005_sighup_retires_old_idle_and_leased_generations_atomically() {
+    // covers: 0005 AC-6. Same credential content, new runtime generation.
+    let _profile = ReuseProfileGrant::new();
+    let (case, port, daemon) = serving_case(
+        "reuse-rotation",
+        primary_node(),
+        None,
+        "\n[limits]\nbackend_max_count = 3\n",
+        true,
+    );
+    let runtime = support::runtime();
+    let mut owned = session_login(&runtime, port);
+    let owned_pid = reuse_pid(&runtime, &mut owned);
+    let mut idle = session_login(&runtime, port);
+    let idle_pid = reuse_pid(&runtime, &mut idle);
+    release_reusable(&runtime, idle);
+    let status = Command::new("kill")
+        .args(["-HUP", &daemon.child.id().to_string()])
+        .status()
+        .expect("SIGHUP");
+    assert!(status.success());
+    daemon.wait_for(&["\"event\":\"credential.reloaded\""], 10);
+    // The earlier owner retains its exact physical connection.
+    assert_eq!(reuse_pid(&runtime, &mut owned), owned_pid);
+    release_reusable(&runtime, owned);
+    let mut current = session_login(&runtime, port);
+    let current_pid = reuse_pid(&runtime, &mut current);
+    assert_ne!(current_pid, idle_pid);
+    assert_ne!(current_pid, owned_pid);
+    release_reusable(&runtime, current);
+    let mut again = session_login(&runtime, port);
+    assert_eq!(
+        reuse_pid(&runtime, &mut again),
+        current_pid,
+        "new generation can reuse its own backend"
+    );
+    release_reusable(&runtime, again);
+    assert_eq!(daemon.stop(), 0);
+    assert_log_is_clean(&case, &fs::read_to_string(case.log_file()).expect("log"));
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_scope005_missing_profile_permissions_remains_dedicated() {
+    // covers: 0005 AC-5, AC-10. No privilege is granted by POOL itself.
+    psql(
+        &var("POOL_IT_CONTAINER"),
+        "REVOKE pg_read_all_settings FROM pz7_rw;",
+    );
+    let (_case, port, daemon) = serving_case("reuse-no-settings", primary_node(), None, "", true);
+    let runtime = support::runtime();
+    let mut first = session_login(&runtime, port);
+    let pid = reuse_pid(&runtime, &mut first);
+    release_reusable(&runtime, first);
+    let mut second = session_login(&runtime, port);
+    assert_ne!(reuse_pid(&runtime, &mut second), pid);
+    release_reusable(&runtime, second);
+    assert_eq!(daemon.stop(), 0);
+}
+
+fn reuse_alias(
+    id: &str,
+    frontend_database: &str,
+    backend_database: &str,
+    credential: &Path,
+) -> String {
+    format!(
+        "\n[[identity]]\nid = \"{id}\"\nprincipal = \"pz7_principal\"\ndatabase = \"{frontend_database}\"\ncluster = \"main\"\nbackend_database = \"{backend_database}\"\nbackend_login = \"pz7_rw\"\ncredential_file = \"{}\"\n",
+        credential.display()
+    )
+}
+
+fn reuse_alias_login(
+    runtime: &tokio::runtime::Runtime,
+    port: u16,
+    database: &str,
+) -> Result<RealSession, pool_core::backend::BackendError> {
+    runtime.block_on(support::login(
+        &var("POOL_IT_LISTEN_HOST"),
+        port,
+        &ca_pem(),
+        "host.docker.internal",
+        "pz7_principal",
+        database,
+        &password("principal.password"),
+    ))
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_scope005_global_budget_counts_many_identity_keys_and_evicts_idle_for_progress() {
+    // covers: 0005 AC-2, AC-3, AC-4. Two actual databases and three mapping keys.
+    let _profile = ReuseProfileGrant::new();
+    let mut extra = "\n[limits]\nbackend_max_count = 2\nnode_backend_max_count = 100\nbackend_acquire_timeout_ms = 200\n".to_owned();
+    extra.push_str(&reuse_alias(
+        "budget-two",
+        "pz7_two",
+        "postgres",
+        &fixture_dir().join("rw.password"),
+    ));
+    extra.push_str(&reuse_alias(
+        "budget-three",
+        "pz7_three",
+        "pz7_appdb",
+        &fixture_dir().join("rw.password"),
+    ));
+    let (_case, port, daemon) =
+        serving_case("reuse-global-cap", primary_node(), None, &extra, true);
+    let runtime = support::runtime();
+    let mut first = session_login(&runtime, port);
+    let first_pid = reuse_pid(&runtime, &mut first);
+    let mut second = reuse_alias_login(&runtime, port, "pz7_two").expect("second key");
+    let second_pid = reuse_pid(&runtime, &mut second);
+    assert_ne!(first_pid, second_pid);
+    let before = std::time::Instant::now();
+    let refused = reuse_alias_login(&runtime, port, "pz7_three");
+    assert!(
+        matches!(refused, Err(pool_core::backend::BackendError::Server { sqlstate: Some(code) }) if &code == b"53300")
+    );
+    assert!(before.elapsed() < std::time::Duration::from_secs(3));
+    assert_eq!(psql(&var("POOL_IT_CONTAINER"), "SELECT count(*) FROM pg_catalog.pg_stat_activity WHERE usename = 'pz7_rw' AND backend_type = 'client backend';").trim(), "2");
+    release_reusable(&runtime, first);
+    let mut third = reuse_alias_login(&runtime, port, "pz7_three")
+        .expect("idle entry can be evicted for another key");
+    assert_ne!(reuse_pid(&runtime, &mut third), first_pid);
+    assert_eq!(
+        reuse_pid(&runtime, &mut second),
+        second_pid,
+        "a saturated pool never moves an active owner"
+    );
+    eventually(5, "two physical application backends", || {
+        psql(&var("POOL_IT_CONTAINER"), "SELECT count(*) FROM pg_catalog.pg_stat_activity WHERE usename = 'pz7_rw' AND backend_type = 'client backend';").trim() == "2"
+    });
+    release_reusable(&runtime, third);
+    release_reusable(&runtime, second);
+    assert_eq!(daemon.stop(), 0);
+}
+
+#[test]
+#[ignore = "needs scripts/check.sh integration"]
+fn it_scope005_different_credential_references_cannot_borrow_an_authenticated_idle_backend() {
+    // covers: 0005 AC-2, AC-6. Actual backend login/database match; only credential identity differs.
+    let _profile = ReuseProfileGrant::new();
+    let extra = reuse_alias(
+        "wrong-credential",
+        "pz7_wrong",
+        "pz7_appdb",
+        &fixture_dir().join("monitor.password"),
+    );
+    let (_case, port, daemon) =
+        serving_case("reuse-credential-key", primary_node(), None, &extra, true);
+    let runtime = support::runtime();
+    let mut first = session_login(&runtime, port);
+    let pid = reuse_pid(&runtime, &mut first);
+    release_reusable(&runtime, first);
+    let refused = reuse_alias_login(&runtime, port, "pz7_wrong");
+    assert!(
+        matches!(refused, Err(pool_core::backend::BackendError::Server { sqlstate: Some(code) }) if &code == b"08006")
+    );
+    let mut again = session_login(&runtime, port);
+    assert_eq!(
+        reuse_pid(&runtime, &mut again),
+        pid,
+        "the correct credential keeps its own idle entry"
+    );
+    release_reusable(&runtime, again);
+    assert_eq!(daemon.stop(), 0);
 }

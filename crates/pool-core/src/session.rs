@@ -13,8 +13,8 @@
 
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
 use pool_config::{
@@ -36,6 +36,8 @@ use tokio_rustls::TlsAcceptor;
 use tokio_rustls::server::TlsStream;
 
 use crate::backend::{BackendError, Connector, Credential, Login, Node, Purpose};
+use crate::pool::{Candidate, Idle, Pool};
+use crate::recognizer::Recognizer;
 use crate::records::{
     Lease, LeaseGeneration, PoolKey, SessionId, StartupProfile, VerifiedPrincipal,
 };
@@ -92,6 +94,23 @@ impl fmt::Display for ServerError {
 }
 
 impl std::error::Error for ServerError {}
+
+/// Why an atomic serving-material replacement was refused. Carries no credential content.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RotationError {
+    /// The supplied set is missing, duplicates or adds an identity.
+    IdentitySet,
+    /// A monotonic generation reached its last value.
+    Exhausted,
+    /// Shutdown has retired the runtime.
+    Retired,
+}
+impl fmt::Display for RotationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("credential replacement refused")
+    }
+}
+impl std::error::Error for RotationError {}
 
 /// What the daemon passes to build a [`Server`]: everything read and checked before it listens.
 pub struct ServerParts<C> {
@@ -158,19 +177,16 @@ pub struct Server<C: Connector> {
     verifiers: HashMap<PrincipalId, Verifier>,
     mock_key: MockKey,
     mock_iterations: u32,
-    credentials: HashMap<IdentityId, Arc<Credential>>,
+    pool: Arc<Pool<C::Stream>>,
     nodes: HashMap<NodeId, Node>,
     connector: C,
     routes: watch::Receiver<RouteView>,
     origin: Instant,
     start_sequence: u64,
     counter: AtomicU64,
-    next_lease: Mutex<Option<LeaseGeneration>>,
     handshakes: Arc<Semaphore>,
     sessions: Arc<Semaphore>,
     principals: HashMap<PrincipalId, Arc<Semaphore>>,
-    node_permits: HashMap<NodeId, Arc<Semaphore>>,
-    waiters: Arc<Semaphore>,
     counters: Arc<Counters>,
     phase: watch::Sender<Phase>,
     /// Set when [`END_TIMEOUT`] has passed after the deadline: every connection task is dropped.
@@ -183,6 +199,8 @@ pub struct Server<C: Connector> {
     frontend_message_max: u32,
     /// The question of the probe, asked again on the connection of each session (step 8).
     identity_query: Option<&'static str>,
+    cleanup_timeout: Duration,
+    write_timeout: Duration,
 }
 
 impl<C: Connector> fmt::Debug for Server<C> {
@@ -293,16 +311,7 @@ impl<C: Connector> Server<C> {
                 )
             })
             .collect();
-        let node_permits = config
-            .nodes()
-            .iter()
-            .map(|n| {
-                (
-                    n.id().clone(),
-                    Arc::new(Semaphore::new(limits.node_backend_max_count() as usize)),
-                )
-            })
-            .collect();
+        let pool = Pool::new(credentials, limits);
         let (phase, _) = watch::channel(Phase::Running);
         let (abort, _) = watch::channel(false);
         Ok(Arc::new(Self {
@@ -310,19 +319,16 @@ impl<C: Connector> Server<C> {
             verifiers,
             mock_key: parts.mock_key,
             mock_iterations,
-            credentials,
+            pool,
             nodes,
             connector: parts.connector,
             routes: parts.routes,
             origin: parts.origin,
             start_sequence: parts.start_sequence,
             counter: AtomicU64::new(0),
-            next_lease: Mutex::new(Some(LeaseGeneration::FIRST)),
             handshakes: Arc::new(Semaphore::new(limits.handshake_max_count() as usize)),
             sessions: Arc::new(Semaphore::new(limits.session_max_count() as usize)),
             principals,
-            node_permits,
-            waiters: Arc::new(Semaphore::new(limits.backend_wait_max_count() as usize)),
             counters: Arc::new(Counters::default()),
             phase,
             abort,
@@ -333,8 +339,136 @@ impl<C: Connector> Server<C> {
             startup_packet_max: limits.startup_packet_max_bytes(),
             frontend_message_max: limits.frontend_message_max_bytes(),
             identity_query,
+            cleanup_timeout: limits.backend_cleanup_timeout(),
+            write_timeout: limits.client_write_timeout(),
             config,
         }))
+    }
+
+    /// Atomically replaces every configured identity credential and retires old idle sockets.
+    /// Missing, duplicate or unknown identities and exhausted generations refuse the whole update.
+    pub fn rotate_credentials(
+        &self,
+        credentials: Vec<(IdentityId, Arc<Credential>)>,
+    ) -> Result<(), RotationError> {
+        let mut replacement = HashMap::new();
+        for (id, credential) in credentials {
+            if replacement.insert(id, credential).is_some() {
+                return Err(RotationError::IdentitySet);
+            }
+        }
+        let idle = {
+            let mut state = self.pool.lock();
+            if !state.running {
+                return Err(RotationError::Retired);
+            }
+            if replacement.len() != state.credentials.len()
+                || replacement
+                    .keys()
+                    .any(|id| !state.credentials.contains_key(id))
+            {
+                return Err(RotationError::IdentitySet);
+            }
+            let configuration = state
+                .configuration
+                .checked_next()
+                .ok_or(RotationError::Exhausted)?;
+            let mut next = HashMap::new();
+            for (id, credential) in replacement {
+                let generation = state
+                    .credentials
+                    .get(&id)
+                    .ok_or(RotationError::IdentitySet)?
+                    .0
+                    .checked_next()
+                    .ok_or(RotationError::Exhausted)?;
+                next.insert(id, (generation, credential));
+            }
+            state.configuration = configuration;
+            state.credentials = next;
+            std::mem::take(&mut state.idle)
+        };
+        drop(idle);
+        self.pool.changed.notify_waiters();
+        Ok(())
+    }
+
+    /// Closes expired, retired or stale-route idle sockets. Hermetic callers drive the same tick.
+    pub fn maintain_idle(&self) -> usize {
+        let mut removed = Vec::new();
+        {
+            let mut state = self.pool.lock();
+            let routes = self.routes.borrow();
+            let mut index = 0;
+            while index < state.idle.len() {
+                let idle = &state.idle[index];
+                if self.pool.expired(idle)
+                    || !Pool::current(&state, idle.lease.key())
+                    || !Pool::<C::Stream>::route_current(
+                        idle.lease.key(),
+                        &idle.route,
+                        &routes,
+                        self.now(),
+                    )
+                {
+                    if self.pool.expired(idle) {
+                        self.counters.pool_event(3);
+                    }
+                    removed.push(state.idle.remove(index));
+                } else {
+                    index += 1;
+                }
+            }
+        }
+        let count = removed.len();
+        drop(removed);
+        if count != 0 {
+            self.pool.changed.notify_waiters();
+        }
+        count
+    }
+
+    async fn release(&self, mut lease: Lease<C::Stream>) {
+        self.maintain_idle();
+        let Some(baseline) = lease.baseline.clone() else {
+            return;
+        };
+        let Some(route) = lease.route.clone() else {
+            return;
+        };
+        {
+            let state = self.pool.lock();
+            let routes = self.routes.borrow();
+            if !Pool::current(&state, lease.key())
+                || self.pool.too_old(&lease)
+                || !Pool::<C::Stream>::route_current(lease.key(), &route, &routes, self.now())
+            {
+                return;
+            }
+        }
+        if !matches!(
+            tokio::time::timeout(self.cleanup_timeout, lease.backend.cleanup_reuse(&baseline))
+                .await,
+            Ok(Ok(()))
+        ) {
+            self.counters.pool_event(2);
+            return;
+        }
+        // Publication uses exactly the handoff lock order and never adopts a later baseline.
+        let mut state = self.pool.lock();
+        let routes = self.routes.borrow();
+        if self.phase() == Phase::Running
+            && Pool::current(&state, lease.key())
+            && !self.pool.too_old(&lease)
+            && Pool::<C::Stream>::route_current(lease.key(), &route, &routes, self.now())
+        {
+            state.idle.push(Idle {
+                lease,
+                route,
+                since: Instant::now(),
+            });
+            self.pool.changed.notify_waiters();
+        }
     }
 
     /// The counters behind `session.refused` and `backend.failed`. The daemon flushes them once a second.
@@ -360,6 +494,7 @@ impl<C: Connector> Server<C> {
     /// Accepts TCP connections until shutdown starts. An accept that fails is counted and followed by a wait of 100 ms.
     pub async fn serve(self: &Arc<Self>, listener: TcpListener) {
         let mut phase = self.phase.subscribe();
+        let mut maintenance = tokio::time::interval(Duration::from_secs(1));
         loop {
             if *phase.borrow_and_update() != Phase::Running {
                 return;
@@ -375,7 +510,8 @@ impl<C: Connector> Server<C> {
                         tokio::time::sleep(ACCEPT_RETRY).await;
                     }
                 },
-                _ = phase.changed() => {}
+                _ = phase.changed() => {},
+                _ = maintenance.tick() => { self.maintain_idle(); }
             }
         }
     }
@@ -395,19 +531,14 @@ impl<C: Connector> Server<C> {
             self.counters.refuse(Refusal::HandshakeLimit);
             return None;
         };
-        self.tracker.live.fetch_add(1, Ordering::SeqCst);
-        let guard = LiveGuard(Arc::clone(&self.tracker));
         let server = Arc::clone(self);
-        let mut abort = self.abort.subscribe();
-        Some(tokio::spawn(async move {
-            let _guard = guard;
-            // Dropping the connection future drops the lease and closes the backend.
-            tokio::select! {
-                biased;
-                () = server.connection(stream, permit) => {}
-                _ = abort.wait_for(|abort| *abort) => {}
-            }
-        }))
+        Some(spawn_tracked(
+            Arc::clone(&self.tracker),
+            self.abort.subscribe(),
+            async move {
+                server.connection(stream, permit).await;
+            },
+        ))
     }
 
     /// Shutdown steps 1 to 4: stop accepting, close connections before step 10, end idle
@@ -415,6 +546,7 @@ impl<C: Connector> Server<C> {
     /// `limits.shutdown_timeout_ms` has passed. Returns when every connection task ended, and
     /// drops the tasks that are left when [`END_TIMEOUT`] has passed after the deadline.
     pub async fn shutdown(&self) {
+        self.pool.retire();
         self.phase.send_replace(Phase::Draining);
         let deadline = Instant::now() + self.shutdown_timeout;
         if tokio::time::timeout_at(deadline, self.wait_idle())
@@ -431,6 +563,7 @@ impl<C: Connector> Server<C> {
     /// returns when every connection task ended, and drops the tasks that are left when
     /// [`END_TIMEOUT`] has passed.
     pub async fn shutdown_now(&self) {
+        self.pool.retire();
         self.phase.send_replace(Phase::Draining);
         self.end_now().await;
     }
@@ -438,23 +571,11 @@ impl<C: Connector> Server<C> {
     /// Step 4: every session is ended; the tasks left after [`END_TIMEOUT`] are dropped.
     async fn end_now(&self) {
         self.phase.send_replace(Phase::Ending);
-        if tokio::time::timeout(END_TIMEOUT, self.wait_idle())
-            .await
-            .is_err()
-        {
-            self.abort.send_replace(true);
-            self.wait_idle().await;
-        }
+        finish_tasks(&self.tracker, &self.abort).await;
     }
 
     async fn wait_idle(&self) {
-        loop {
-            let notified = self.tracker.changed.notified();
-            if self.connections() == 0 {
-                return;
-            }
-            notified.await;
-        }
+        wait_connections(&self.tracker).await;
     }
 
     fn now(&self) -> Duration {
@@ -505,7 +626,11 @@ impl<C: Connector> Server<C> {
             Err(refused) => {
                 self.counters.refuse(refused.reason);
                 if let Some(error) = refused.send {
-                    send_error(&mut frontend.stream, error).await;
+                    let _ = tokio::time::timeout(
+                        self.write_timeout,
+                        send_error(&mut frontend.stream, error),
+                    )
+                    .await;
                 }
                 None
             }
@@ -670,97 +795,148 @@ impl<C: Connector> Server<C> {
             .borrow()
             .fresh_route(&cluster, self.now())
             .ok_or_else(closed)?;
-        // Step 6.
-        let key = pool_key(route, &admitted);
-        // Step 7: a backend permit of the node, waiting as one of the waiters until the deadline.
+        // Snapshot the immutable runtime material before entering the bounded FIFO.
+        let (mut key, credential) = {
+            let state = self.pool.lock();
+            let (generation, credential) = state.credentials.get(route.id()).ok_or_else(closed)?;
+            let mut key = pool_key(route, &admitted);
+            key.configuration_generation = state.configuration;
+            key.credential_generation = *generation;
+            (key, Arc::clone(credential))
+        };
+        key.startup_settings = frontend
+            .request
+            .forwarded
+            .iter()
+            .map(|p| (p.name.to_owned(), p.value.clone()))
+            .collect();
+        key.startup_settings.sort();
+        self.maintain_idle();
+        let ticket = self
+            .pool
+            .ticket()
+            .ok_or_else(|| too_many(Refusal::WaitLimit))?;
         let deadline = step5 + self.acquire_timeout;
-        let node_permits = self.node_permits.get(&admitted.node).ok_or_else(closed)?;
-        let backend_permit = match Arc::clone(node_permits).try_acquire_owned() {
-            Ok(permit) => permit,
-            Err(_) => {
-                let _waiter = Arc::clone(&self.waiters)
-                    .try_acquire_owned()
-                    .map_err(|_| too_many(Refusal::WaitLimit))?;
-                match tokio::time::timeout_at(deadline, Arc::clone(node_permits).acquire_owned())
-                    .await
-                {
-                    Ok(Ok(permit)) => permit,
-                    _ => return Err(too_many(Refusal::AcquireTimeout)),
+        let acquire = async {
+            loop {
+                let notified = self.pool.changed.notified();
+                tokio::pin!(notified);
+                notified.as_mut().enable();
+                match ticket.take(&key) {
+                    Candidate::Wait => {
+                        if self.config.limits().backend_wait_max_count() == 0 {
+                            return Err(too_many(Refusal::WaitLimit));
+                        }
+                        tokio::time::timeout_at(deadline, notified)
+                            .await
+                            .map_err(|_| too_many(Refusal::AcquireTimeout))?;
+                    }
+                    Candidate::Retired => return Err(closed()),
+                    Candidate::Idle(mut idle) => {
+                        if idle.route.authority_revision != admitted.authority_revision {
+                            return Err(closed());
+                        }
+                        let baseline = idle.lease.baseline.as_ref().ok_or_else(closed)?.clone();
+                        tokio::time::timeout_at(
+                            deadline,
+                            idle.lease.backend.validate_reuse(&baseline),
+                        )
+                        .await
+                        .map_err(|_| closed())?
+                        .map_err(|_| closed())?;
+                        return Ok((idle.lease, true));
+                    }
+                    Candidate::New(permit) => {
+                        let node = self.nodes.get(&admitted.node).ok_or_else(closed)?;
+                        let mut login = Login::new(
+                            route.backend_login(),
+                            route.backend_database(),
+                            Arc::clone(&credential),
+                        );
+                        for forwarded in &frontend.request.forwarded {
+                            login = login.forward(forwarded.name, &forwarded.value);
+                        }
+                        let created_at = Instant::now();
+                        let opened = tokio::time::timeout_at(deadline, async {
+                            let mut backend = self
+                                .connector
+                                .open(node, &login, Purpose::Session, deadline)
+                                .await?;
+                            let query = self.identity_query.ok_or(BackendError::Identity)?;
+                            backend
+                                .verify_identity(
+                                    query,
+                                    admitted.system_identifier,
+                                    admitted.timeline,
+                                )
+                                .await?;
+                            let baseline = if key.startup_settings.is_empty() {
+                                backend.qualify_reuse(&key.login).await?
+                            } else {
+                                None
+                            };
+                            Ok::<_, BackendError>((backend, baseline))
+                        })
+                        .await
+                        .unwrap_or(Err(BackendError::Timeout));
+                        let (backend, baseline) = match opened {
+                            Ok(value) => value,
+                            Err(BackendError::Random) => {
+                                return Err(Refused::silent(Refusal::RandomFailed));
+                            }
+                            Err(error) => {
+                                self.counters.backend_failed(
+                                    &admitted.node,
+                                    backend_class(error),
+                                    sqlstate_of(error),
+                                );
+                                return Err(Refused::with(
+                                    PoolError::BackendNotEstablished,
+                                    Refusal::BackendUnavailable,
+                                ));
+                            }
+                        };
+                        self.counters.pool_event(0);
+                        let mut lease = Lease::new(
+                            backend,
+                            permit,
+                            LeaseGeneration::FIRST,
+                            key.clone(),
+                            route.id().clone(),
+                        );
+                        lease.created_at = created_at;
+                        lease.baseline = baseline;
+                        return Ok((lease, false));
+                    }
                 }
             }
         };
-        // Step 8.
-        let node = self.nodes.get(&admitted.node).ok_or_else(closed)?;
-        let credential = self.credentials.get(route.id()).ok_or_else(closed)?;
-        let mut login = Login::new(
-            route.backend_login(),
-            route.backend_database(),
-            Arc::clone(credential),
-        );
-        for forwarded in &frontend.request.forwarded {
-            login = login.forward(forwarded.name, &forwarded.value);
-        }
-        let opened = match self
-            .connector
-            .open(node, &login, Purpose::Session, deadline)
-            .await
+        let (mut lease, reused) = acquire.await?;
+        // The handoff linearization point orders runtime retirement and route publication.
         {
-            // Step 8 of the backend connection: the node must name the writer of the route.
-            Ok(mut backend) => match self.identity_query {
-                Some(query) => match tokio::time::timeout_at(
-                    deadline,
-                    backend.verify_identity(query, admitted.system_identifier, admitted.timeline),
-                )
-                .await
-                {
-                    Ok(Ok(())) => Ok(backend),
-                    Ok(Err(error)) => Err(error),
-                    Err(_) => Err(BackendError::Timeout),
-                },
-                None => Err(BackendError::Identity),
-            },
-            Err(error) => Err(error),
-        };
-        let backend = match opened {
-            Ok(backend) => backend,
-            // No random bytes for the nonce: the login ends without a message.
-            Err(BackendError::Random) => return Err(Refused::silent(Refusal::RandomFailed)),
-            Err(error) => {
-                self.counters.backend_failed(
-                    &admitted.node,
-                    backend_class(error),
-                    sqlstate_of(error),
-                );
-                return Err(Refused::with(
-                    PoolError::BackendNotEstablished,
-                    Refusal::BackendUnavailable,
-                ));
+            let mut state = self.pool.lock();
+            let routes = self.routes.borrow();
+            if Instant::now() >= deadline {
+                return Err(too_many(Refusal::AcquireTimeout));
             }
-        };
-        // Step 9: the route again, the same node and generations, still fresh, the same pool key.
-        let again = self.routes.borrow().fresh_route(&cluster, self.now());
-        let still = again.filter(|r| {
-            r.node == admitted.node
-                && r.topology_epoch == admitted.topology_epoch
-                && r.authority_revision == admitted.authority_revision
-                && pool_key(route, r) == key
-                && current_configuration_generation() == ConfigurationGeneration::FIRST
-        });
-        if still.is_none() {
-            drop(backend);
-            return Err(closed());
-        }
-        // Step 10: the lease with a new generation.
-        let generation = {
-            let mut next = self
+            if self.phase() != Phase::Running
+                || !Pool::current(&state, &key)
+                || self.pool.too_old(&lease)
+                || !Pool::<C::Stream>::route_current(&key, &admitted, &routes, self.now())
+            {
+                return Err(closed());
+            }
+            let generation = state
                 .next_lease
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner);
-            let generation = next.ok_or_else(|| too_many(Refusal::SessionLimit))?;
-            *next = generation.checked_next();
-            generation
-        };
-        let lease = Lease::new(backend, backend_permit, generation, key, route.id().clone());
+                .ok_or_else(|| too_many(Refusal::SessionLimit))?;
+            state.next_lease = generation.checked_next();
+            lease.assign_generation(generation);
+            if reused {
+                self.counters.pool_event(1);
+            }
+        }
+        lease.route = Some(admitted);
+        drop(ticket);
         Ok((
             lease,
             cluster,
@@ -800,10 +976,30 @@ impl<C: Connector> Server<C> {
         greeting.extend_from_slice(&auth::encode_ready_for_query(lease.backend.status));
         let mut routes = self.routes.clone();
         let mut phase = self.phase.subscribe();
+        let fresh = lease.route.as_ref().is_some_and(|expected| {
+            Pool::<C::Stream>::route_current(
+                lease.key(),
+                expected,
+                &self.routes.borrow(),
+                self.now(),
+            )
+        });
+        if !fresh {
+            let _ = tokio::time::timeout(
+                self.write_timeout,
+                send_error(&mut stream, PoolError::NotAccepting),
+            )
+            .await;
+            return;
+        }
         // A client that does not read its greeting cannot hold the session past a cut: the
         // greeting may be partly written, so the cut sends nothing.
         match guarded(
-            write_tls(&mut stream, &greeting),
+            async {
+                tokio::time::timeout(self.write_timeout, write_tls(&mut stream, &greeting))
+                    .await
+                    .map_err(|_| Refused::silent(Refusal::Protocol))?
+            },
             &mut routes,
             &mut phase,
             &cluster,
@@ -836,8 +1032,22 @@ impl<C: Connector> Server<C> {
             buffer: vec![0u8; RELAY_BUFFER_BYTES],
             in_flight: false,
             status,
+            reusable: lease.baseline.is_some(),
+            clean_boundary: false,
+            recognizer: Recognizer::default(),
+            write_timeout: self.write_timeout,
+            parameter_names: lease
+                .backend
+                .parameters
+                .iter()
+                .map(|p| p.name.clone())
+                .collect(),
+            response_rows: false,
+            response_completed: false,
         };
         let reason = relay.run().await;
+        let reusable = relay.reusable && relay.clean_boundary && !relay.in_flight;
+        lease.backend.status = relay.status;
         let label = if relay.in_flight {
             "in_flight"
         } else {
@@ -850,7 +1060,11 @@ impl<C: Connector> Server<C> {
         drop(relay);
         // Step 12: close the backend first, then the client, then give every permit back.
         // A client that does not read cannot hold the end of its session: its close is bounded.
-        drop(lease);
+        if reusable && self.phase() == Phase::Running {
+            self.release(lease).await;
+        } else {
+            drop(lease);
+        }
         let _ = tokio::time::timeout(CLOSE_TIMEOUT, stream.shutdown()).await;
         drop(permits);
         tracing::info!(
@@ -860,6 +1074,41 @@ impl<C: Connector> Server<C> {
             status = label,
             duration_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
         );
+    }
+}
+
+fn spawn_tracked<F>(
+    tracker: Arc<Tracker>,
+    mut abort: watch::Receiver<bool>,
+    work: F,
+) -> tokio::task::JoinHandle<()>
+where
+    F: std::future::Future<Output = ()> + Send + 'static,
+{
+    tracker.live.fetch_add(1, Ordering::SeqCst);
+    let guard = LiveGuard(tracker);
+    tokio::spawn(async move {
+        let _guard = guard;
+        // The shutdown limit owns cancellation even if a connection future ignores Phase.
+        tokio::select! { biased; () = work => {}, _ = abort.wait_for(|abort| *abort) => {} }
+    })
+}
+async fn wait_connections(tracker: &Tracker) {
+    loop {
+        let notified = tracker.changed.notified();
+        if tracker.live.load(Ordering::SeqCst) == 0 {
+            return;
+        }
+        notified.await;
+    }
+}
+async fn finish_tasks(tracker: &Tracker, abort: &watch::Sender<bool>) {
+    if tokio::time::timeout(END_TIMEOUT, wait_connections(tracker))
+        .await
+        .is_err()
+    {
+        abort.send_replace(true);
+        wait_connections(tracker).await;
     }
 }
 
@@ -876,17 +1125,15 @@ struct SessionPermits {
     _principal: OwnedSemaphorePermit,
 }
 
-/// This slice has one configuration generation for the whole run.
-fn current_configuration_generation() -> ConfigurationGeneration {
-    ConfigurationGeneration::FIRST
-}
-
 fn pool_key(route: &IdentityRoute, admitted: &Route) -> PoolKey {
     PoolKey {
         cluster: route.cluster().clone(),
         node: admitted.node.clone(),
         database: route.backend_database().to_string(),
         login: route.backend_login().to_string(),
+        identity: route.id().clone(),
+        configuration_generation: ConfigurationGeneration::FIRST,
+        startup_settings: Vec::new(),
         credential_generation: CredentialGeneration::FIRST,
         topology_epoch: admitted.topology_epoch,
         tls_policy: TlsPolicy::VerifyFull,
@@ -990,6 +1237,13 @@ struct Relay<'a, F, B> {
     buffer: Vec<u8>,
     in_flight: bool,
     status: TransactionStatus,
+    reusable: bool,
+    clean_boundary: bool,
+    recognizer: Recognizer,
+    write_timeout: Duration,
+    parameter_names: Vec<Vec<u8>>,
+    response_rows: bool,
+    response_completed: bool,
 }
 
 /// How the relay ends, at a message boundary or not.
@@ -1064,15 +1318,20 @@ where
             };
             match wake {
                 Wake::Changed => {}
-                Wake::Client(Ok(0) | Err(_)) => {
-                    // The client went away with no query in flight: Terminate first, then close.
-                    let _ = self.write_backend(&encode_terminate()).await;
+                Wake::Client(Ok(0)) => {
+                    self.clean_boundary = client_header.wanted() == HEADER_LEN
+                        && backend_header.wanted() == HEADER_LEN;
+                    if !self.reusable || !self.clean_boundary {
+                        let _ = self.write_backend(&encode_terminate()).await;
+                    }
                     return EndReason::ClientClosed;
                 }
+                Wake::Client(Err(_)) => return EndReason::ClientClosed,
                 Wake::Client(Ok(n)) => match client_header.feed(&client_bytes[..n]) {
                     (_, None) => {}
                     (_, Some(Ok(header))) => {
                         if let Err(Stop::End(reason)) = self.frontend_message(raw(header)).await {
+                            self.clean_boundary &= backend_header.wanted() == HEADER_LEN;
                             return reason;
                         }
                     }
@@ -1115,8 +1374,9 @@ where
     async fn frontend_message(&mut self, header: [u8; HEADER_LEN]) -> Result<(), Stop> {
         match pool_protocol::message::classify_frontend(header, self.frontend_max) {
             FrontendAction::Query { body_len } => {
-                // A query is in flight from the first byte written toward the backend.
                 self.in_flight = true;
+                self.response_rows = false;
+                self.response_completed = false;
                 match self.write_backend(&header).await {
                     Ok(()) => {}
                     Err(None) => {
@@ -1128,16 +1388,51 @@ where
                         return Err(Stop::End(reason));
                     }
                 }
-                match self.copy_to_backend(body_len).await {
-                    Copied::Done => {}
-                    Copied::SourceGone => return Err(Stop::End(EndReason::ClientClosed)),
-                    Copied::DestinationGone => {
-                        self.send(self.loss_error()).await;
-                        return Err(Stop::End(EndReason::BackendLost));
+                // Eligibility inspection is bounded and never changes or retries SQL.
+                let captured = if body_len <= 4096 {
+                    let mut sql = vec![0; body_len as usize];
+                    match guarded(
+                        self.client.read_exact(&mut sql),
+                        &mut self.routes,
+                        &mut self.phase,
+                        self.cluster,
+                    )
+                    .await
+                    {
+                        Ok(Ok(_)) => {}
+                        Ok(Err(_)) => return Err(Stop::End(EndReason::ClientClosed)),
+                        Err(reason) => return Err(Stop::End(reason)),
                     }
-                    Copied::Cut(reason) => {
-                        self.send(self.cut_error(reason)).await;
-                        return Err(Stop::End(reason));
+                    self.reusable &= self.recognizer.recognizes(&sql);
+                    Some(sql)
+                } else {
+                    self.reusable = false;
+                    None
+                };
+                if let Some(sql) = captured {
+                    match self.write_backend(&sql).await {
+                        Ok(()) => {}
+                        Err(None) => {
+                            self.send(self.loss_error()).await;
+                            return Err(Stop::End(EndReason::BackendLost));
+                        }
+                        Err(Some(reason)) => {
+                            self.send(self.cut_error(reason)).await;
+                            return Err(Stop::End(reason));
+                        }
+                    }
+                } else {
+                    match self.copy_to_backend(body_len).await {
+                        Copied::Done => {}
+                        Copied::SourceGone => return Err(Stop::End(EndReason::ClientClosed)),
+                        Copied::DestinationGone => {
+                            self.send(self.loss_error()).await;
+                            return Err(Stop::End(EndReason::BackendLost));
+                        }
+                        Copied::Cut(reason) => {
+                            self.send(self.cut_error(reason)).await;
+                            return Err(Stop::End(reason));
+                        }
                     }
                 }
                 match self.write_backend(&[]).await {
@@ -1153,7 +1448,10 @@ where
                 }
             }
             FrontendAction::Terminate => {
-                let _ = self.write_backend(&header).await;
+                self.clean_boundary = true;
+                if !self.reusable {
+                    let _ = self.write_backend(&header).await;
+                }
                 Err(Stop::End(EndReason::ClientTerminate))
             }
             FrontendAction::Refuse(error) => {
@@ -1169,8 +1467,51 @@ where
     }
 
     async fn backend_message(&mut self, header: [u8; HEADER_LEN]) -> Result<(), Stop> {
+        if !b"CDTENSZA".contains(&header[0]) {
+            self.reusable = false;
+        }
+        match header[0] {
+            b'T' if self.in_flight && !self.response_rows && !self.response_completed => {
+                self.response_rows = true
+            }
+            b'D' if self.in_flight && self.response_rows && !self.response_completed => {}
+            b'C' | b'E' if self.in_flight && !self.response_completed => {
+                self.response_completed = true
+            }
+            b'Z' if self.in_flight && self.response_completed => {}
+            b'N' | b'S' | b'A' => {}
+            _ => self.reusable = false,
+        }
         match pool_protocol::message::classify_backend(header) {
             BackendAction::Forward { body_len } => {
+                if self.reusable && b"NSA".contains(&header[0]) && body_len <= 16384 {
+                    let mut body = vec![0; body_len as usize];
+                    match guarded(
+                        self.backend.read_exact(&mut body),
+                        &mut self.routes,
+                        &mut self.phase,
+                        self.cluster,
+                    )
+                    .await
+                    {
+                        Ok(Ok(_)) => {}
+                        Ok(Err(_)) => return Err(Stop::End(EndReason::BackendLost)),
+                        Err(reason) => return Err(Stop::End(reason)),
+                    }
+                    self.reusable &= match header[0] {
+                        b'S' => auth::parse_parameter_status(&body)
+                            .is_ok_and(|p| self.parameter_names.contains(&p.name)),
+                        b'N' => crate::reuse::notice(&body).is_ok(),
+                        b'A' => crate::reuse::notification(&body).is_ok(),
+                        _ => false,
+                    };
+                    self.write_client(&header, false).await?;
+                    self.write_client(&body, true).await?;
+                    return Ok(());
+                }
+                if b"NSA".contains(&header[0]) && body_len > 16384 {
+                    self.reusable = false;
+                }
                 // A cut while the header waits leaves a partial message: close without a message.
                 self.write_client(&header, false).await?;
                 // From here until the body is written the session is not at a message boundary.
@@ -1223,7 +1564,7 @@ where
     async fn send(&mut self, error: PoolError) {
         let client = &mut *self.client;
         let _ = guarded(
-            send_error(client, error),
+            tokio::time::timeout(self.write_timeout, send_error(client, error)),
             &mut self.routes,
             &mut self.phase,
             self.cluster,
@@ -1241,9 +1582,16 @@ where
             }
             Ok::<(), std::io::Error>(())
         };
-        match guarded(work, &mut self.routes, &mut self.phase, self.cluster).await {
-            Ok(Ok(())) => Ok(()),
-            Ok(Err(_)) => Err(Stop::End(EndReason::ClientClosed)),
+        match guarded(
+            tokio::time::timeout(self.write_timeout, work),
+            &mut self.routes,
+            &mut self.phase,
+            self.cluster,
+        )
+        .await
+        {
+            Ok(Ok(Ok(()))) => Ok(()),
+            Ok(Ok(Err(_)) | Err(_)) => Err(Stop::End(EndReason::ClientClosed)),
             Err(reason) => Err(Stop::End(reason)),
         }
     }
@@ -1265,7 +1613,7 @@ where
     async fn copy_to_backend(&mut self, len: u32) -> Copied {
         copy_exact(
             self.client,
-            self.backend,
+            (self.backend, None),
             len,
             &mut self.buffer,
             &mut self.routes,
@@ -1278,7 +1626,7 @@ where
     async fn copy_to_client(&mut self, len: u32) -> Copied {
         copy_exact(
             self.backend,
-            self.client,
+            (self.client, Some(self.write_timeout)),
             len,
             &mut self.buffer,
             &mut self.routes,
@@ -1369,7 +1717,7 @@ async fn guarded<F: std::future::Future>(
 /// the end of shutdown arrives in the middle.
 async fn copy_exact<R, W>(
     source: &mut R,
-    destination: &mut W,
+    destination: (&mut W, Option<Duration>),
     len: u32,
     buffer: &mut [u8],
     routes: &mut watch::Receiver<RouteView>,
@@ -1380,6 +1728,7 @@ where
     R: AsyncRead + Unpin,
     W: AsyncWrite + Unpin,
 {
+    let (destination, write_timeout) = destination;
     let mut left = len as usize;
     let mut routes_alive = true;
     let mut phase_alive = true;
@@ -1403,7 +1752,15 @@ where
             Ok(0) | Err(_) => return Copied::SourceGone,
             Ok(n) => n,
         };
-        match guarded(destination.write_all(&buffer[..n]), routes, phase, cluster).await {
+        let write = async {
+            match write_timeout {
+                Some(timeout) => tokio::time::timeout(timeout, destination.write_all(&buffer[..n]))
+                    .await
+                    .unwrap_or_else(|_| Err(std::io::Error::from(std::io::ErrorKind::TimedOut))),
+                None => destination.write_all(&buffer[..n]).await,
+            }
+        };
+        match guarded(write, routes, phase, cluster).await {
             Ok(Ok(())) => {}
             Ok(Err(_)) => return Copied::DestinationGone,
             Err(reason) => return Copied::Cut(reason),
@@ -1422,6 +1779,32 @@ fn raw(header: pool_protocol::message::Header) -> [u8; HEADER_LEN] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn final_shutdown_limit_drops_a_connection_that_ignores_phase() {
+        struct Dropped(Arc<AtomicUsize>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                self.0.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        let tracker = Arc::new(Tracker::default());
+        let (abort, receiver) = watch::channel(false);
+        let dropped = Arc::new(AtomicUsize::new(0));
+        let guard = Dropped(Arc::clone(&dropped));
+        let task = spawn_tracked(Arc::clone(&tracker), receiver, async move {
+            let _guard = guard;
+            std::future::pending::<()>().await;
+        });
+        tokio::task::yield_now().await;
+        assert_eq!(tracker.live.load(Ordering::SeqCst), 1);
+        tokio::time::timeout(END_TIMEOUT + CLOSE_TIMEOUT, finish_tasks(&tracker, &abort))
+            .await
+            .expect("forced drop completes");
+        task.await.expect("wrapper joined");
+        assert_eq!(dropped.load(Ordering::SeqCst), 1);
+        assert_eq!(tracker.live.load(Ordering::SeqCst), 0);
+    }
 
     #[test]
     fn the_pool_key_has_eight_parts_and_hides_the_database_and_the_login() {

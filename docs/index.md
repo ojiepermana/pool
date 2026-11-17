@@ -1,6 +1,6 @@
 # Documentation index
 
-**Package date:** 2026-11-14. This index covers every generated Markdown document plus the project license. All application capabilities remain planned. A ratified foundation still does not mean it has been built.
+**Package date:** 2026-11-14. This index covers the planning package, implementation contracts and delivery evidence. The [scope index](scope/index.md) owns current implementation status; a ratified design alone is not build evidence.
 
 For the next development task, start with the [scope index](scope/index.md) and the [handoff for later slices](implementation-order.md#handoff-for-later-slices). Use the [readiness review](plan/planning-validation.md#development-readiness-review) to see what changed and which decisions still gate later work.
 
@@ -207,3 +207,10 @@ When one change crosses these boundaries, change the owner first and follow its 
 [LICENSE](../LICENSE) contains the official Apache License 2.0 text selected by you. Its appendix contains the standard example notice fields; those are part of the canonical license, not unfinished project documentation.
 
 The [planning validation record](plan/planning-validation.md) describes the coverage and limits of the documentation checks.
+
+## Scope 005 delivery records
+
+* [Clean session reuse spec](specs/0005-clean-session-reuse/index.md) and [rationale](specs/0005-clean-session-reuse/rationale.md), plus the [verification record](specs/0005-clean-session-reuse/verify.md) and reproducible [source manifest](specs/0005-clean-session-reuse/source-manifest.json).
+* [Coordination state](scope/coordination/005-clean-session-reuse.state.json), [capabilities](scope/coordination/005-clean-session-reuse.team.md) and [model evidence](scope/coordination/005-clean-session-reuse.models.json).
+
+* [Clean session reuse review](reviews/2026-11-16-scope005-clean-session-reuse.md) and [tooling review](reviews/2026-11-16-scope005-tooling.md).

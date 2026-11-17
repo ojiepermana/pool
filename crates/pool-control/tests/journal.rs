@@ -21,9 +21,13 @@ const Y: &str = "fedcba9876543210fedcba9876543210";
 /// A fresh, empty folder of this test's own.
 fn folder(name: &str) -> PathBuf {
     let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("pool-control-{name}"));
-    if path.exists() {
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = path.exists();
+    if exists {
+        #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
         std::fs::remove_dir_all(&path).expect("remove old test folder");
     }
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::create_dir_all(&path).expect("create test folder");
     path
 }
@@ -31,6 +35,7 @@ fn folder(name: &str) -> PathBuf {
 /// The empty file the binary creates before `Journal::create`.
 fn empty_journal(folder: &Path) -> PathBuf {
     let path = folder.join("journal.sqlite3");
+    #[expect(clippy::disallowed_types, reason = "W3 permits test file I/O")]
     std::fs::File::create_new(&path).expect("create the empty journal file");
     path
 }
@@ -257,7 +262,9 @@ fn ac10_no_file_and_an_empty_file_are_absent() {
         Journal::read(&path).classify(&config(Some(X))).name(),
         "missing"
     );
-    assert!(!path.exists(), "reading created no file");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = path.exists();
+    assert!(!exists, "reading created no file");
 
     let path = empty_journal(&folder);
     assert_eq!(Journal::read(&path).authority_id(), None);
@@ -265,7 +272,9 @@ fn ac10_no_file_and_an_empty_file_are_absent() {
         Journal::read(&path).classify(&config(None)).name(),
         "uninitialized"
     );
-    assert_eq!(std::fs::metadata(&path).expect("file").len(), 0);
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
+    let length = std::fs::metadata(&path).expect("file").len();
+    assert_eq!(length, 0);
     assert!(
         Journal::read(&path)
             .bootstrap_plan(&config(None), &healthy_board(), at(100))
@@ -319,6 +328,7 @@ fn ac10_a_damaged_file_and_a_file_of_another_kind_are_unreadable() {
     // covers: 0004 AC-10, 0003 AC-8. `quick_check` and the open itself.
     let folder = folder("not-a-journal");
     let path = folder.join("journal.sqlite3");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::write(
         &path,
         b"this is not a database, it only has a name like one",
@@ -331,11 +341,13 @@ fn ac10_a_damaged_file_and_a_file_of_another_kind_are_unreadable() {
 
     let (_folder, path) = created("damaged-pages");
     // Every connection is closed, so the WAL is checkpointed into the file.
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let mut bytes = std::fs::read(&path).expect("read the journal");
     assert!(bytes.len() > 4096 * 2, "{} bytes", bytes.len());
     for byte in &mut bytes[4096 + 8..4096 * 2] {
         *byte = 0xa5;
     }
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::write(&path, &bytes).expect("damage the pages");
     assert_eq!(
         Journal::read(&path).classify(&config(Some(X))).name(),
@@ -343,6 +355,7 @@ fn ac10_a_damaged_file_and_a_file_of_another_kind_are_unreadable() {
     );
 
     let folder = folder.join("a-folder");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::create_dir_all(&folder).expect("folder");
     assert_eq!(
         Journal::read(&folder).classify(&config(Some(X))).name(),
@@ -354,12 +367,15 @@ fn ac10_a_damaged_file_and_a_file_of_another_kind_are_unreadable() {
 fn ac10_reading_never_changes_the_journal() {
     // covers: 0004 AC-10. SQLite may create its side files when it reads.
     let (_folder, path) = created("read-only");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let before = std::fs::read(&path).expect("read");
     for witness in [None, Some(X), Some(Y)] {
         let _ = Journal::read(&path).classify(&config(witness));
     }
     let _ = Journal::read(&path).bootstrap_plan(&config(None), &healthy_board(), at(100));
-    assert_eq!(std::fs::read(&path).expect("read"), before);
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
+    let after = std::fs::read(&path).expect("read");
+    assert_eq!(after, before);
     assert_eq!(integer(&path, "SELECT start_sequence FROM store"), 0);
 }
 
@@ -375,18 +391,24 @@ fn ac10_create_needs_an_empty_file() {
         Journal::create(&missing, &plan, id(X), 0),
         Err(JournalError::Open)
     );
-    assert!(!missing.exists(), "create never makes the file itself");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = missing.exists();
+    assert!(!exists, "create never makes the file itself");
 
     let (_folder, path) = created("create-twice");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let before = std::fs::read(&path).expect("read");
     assert_eq!(
         Journal::create(&path, &plan, id(Y), 0),
         Err(JournalError::Open)
     );
-    assert_eq!(std::fs::read(&path).expect("read"), before);
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
+    let after = std::fs::read(&path).expect("read");
+    assert_eq!(after, before);
     assert_eq!(Journal::read(&path).authority_id(), Some(id(X)));
 
     let other = folder.join("text");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::write(&other, b"not empty").expect("write");
     assert_eq!(
         Journal::create(&other, &plan, id(X), 0),
@@ -439,7 +461,9 @@ fn ac10_open_ready_refuses_a_journal_that_changed_since_it_was_read() {
         Journal::open_ready(&missing, authority(&ready(&path))).map(|(_, sequence)| sequence),
         Err(JournalError::Open)
     );
-    assert!(!missing.exists());
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = missing.exists();
+    assert!(!exists);
 }
 
 #[test]
@@ -474,6 +498,7 @@ fn ac10_a_writer_that_holds_the_lock_makes_the_journal_busy() {
     holder
         .execute_batch("BEGIN IMMEDIATE;")
         .expect("hold the lock");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test clocks")]
     let started = std::time::Instant::now();
     assert_eq!(
         Journal::open_ready(&path, authority(&state)).map(|(_, sequence)| sequence),
@@ -638,10 +663,9 @@ fn ac10_a_file_left_after_only_the_wal_mode_is_absent_and_can_be_created() {
         .query_row("PRAGMA journal_mode = WAL", [], |row| row.get(0))
         .expect("WAL mode");
     assert_eq!(mode, "wal");
-    assert!(
-        std::fs::metadata(&path).expect("file").len() > 0,
-        "one page now"
-    );
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
+    let length = std::fs::metadata(&path).expect("file").len();
+    assert!(length > 0, "one page now");
     let read = Journal::read(&path);
     assert_eq!(read.authority_id(), None);
     assert_eq!(read.classify(&config(None)).name(), "uninitialized");
@@ -655,6 +679,7 @@ fn ac10_a_journal_cut_to_one_or_two_pages_is_unreadable() {
     // covers: 0004 AC-10.
     for pages in [1_u64, 2] {
         let (_folder, path) = created(&format!("cut-{pages}"));
+        #[expect(clippy::disallowed_types, reason = "W3 permits test file I/O")]
         let file = std::fs::OpenOptions::new()
             .write(true)
             .open(&path)
@@ -672,11 +697,13 @@ fn ac10_a_journal_cut_to_one_or_two_pages_is_unreadable() {
 /// The main file of a created journal with `range` set to zero.
 fn zeroed(name: &str, range: std::ops::Range<usize>) -> PathBuf {
     let (folder, path) = created(name);
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let mut bytes = std::fs::read(&path).expect("read");
     for byte in &mut bytes[range] {
         *byte = 0;
     }
     let copy = folder.join("zeroed.sqlite3");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::write(&copy, &bytes).expect("write");
     copy
 }
@@ -686,10 +713,12 @@ fn ac10_a_journal_without_its_marks_or_its_header_is_unreadable() {
     // covers: 0004 AC-10. The marks gone with the tables in place, and the
     // whole header gone.
     let mut both = zeroed("no-marks", 60..64);
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let mut bytes = std::fs::read(&both).expect("read");
     for byte in &mut bytes[68..72] {
         *byte = 0;
     }
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::write(&both, &bytes).expect("write");
     assert_eq!(
         Journal::read(&both).classify(&config(Some(X))).name(),
@@ -708,10 +737,14 @@ fn ac10_after_create_the_main_file_alone_is_the_journal() {
     // into the main file, so a copy without the side files is complete.
     let (folder, path) = created("main-file-alone");
     let copy_folder = folder.join("copy");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::create_dir_all(&copy_folder).expect("folder");
     let copy = copy_folder.join("journal.sqlite3");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::copy(&path, &copy).expect("copy the main file only");
-    assert!(!copy_folder.join("journal.sqlite3-wal").exists());
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let wal_exists = copy_folder.join("journal.sqlite3-wal").exists();
+    assert!(!wal_exists);
     let read = Journal::read(&copy);
     assert_eq!(read.authority_id(), Some(id(X)));
     assert_eq!(read.classify(&config(None)).name(), "unconfirmed");
@@ -725,9 +758,11 @@ fn ac10_a_header_with_a_wrong_free_page_count_is_unreadable() {
     // covers: 0004 AC-10. Only `PRAGMA quick_check` sees this damage: the
     // marks, the tables and the rows are all still in place.
     let (folder, path) = created("free-page-count");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let mut bytes = std::fs::read(&path).expect("read");
     bytes[36..40].copy_from_slice(&7u32.to_be_bytes());
     let copy = folder.join("free-pages.sqlite3");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::write(&copy, &bytes).expect("write");
     let check: String = sql(&copy)
         .query_row("PRAGMA quick_check", [], |row| row.get(0))
@@ -754,6 +789,7 @@ fn ac10_open_ready_does_not_wait_for_a_writer_that_holds_the_lock() {
     holder
         .execute_batch("BEGIN IMMEDIATE;")
         .expect("hold the lock");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test clocks")]
     let started = std::time::Instant::now();
     assert_eq!(
         Journal::open_ready(&path, authority(&state)).map(|(_, sequence)| sequence),
@@ -777,6 +813,7 @@ fn ac10_the_reader_does_not_wait_for_a_connection_that_holds_the_file_exclusivel
             "PRAGMA locking_mode = EXCLUSIVE; BEGIN EXCLUSIVE; UPDATE store SET hold = hold;",
         )
         .expect("hold the file");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test clocks")]
     let started = std::time::Instant::now();
     let _ = Journal::read(&path);
     assert!(
@@ -792,6 +829,7 @@ fn ac10_a_journal_file_that_cannot_be_written_is_still_read() {
     // covers: 0004 AC-10. Reading needs no write access to the main file.
     let (_folder, path) = created("reader-opens-read-only");
     use std::os::unix::fs::PermissionsExt;
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o400)).expect("chmod");
     if nix_root() {
         return;
@@ -799,13 +837,16 @@ fn ac10_a_journal_file_that_cannot_be_written_is_still_read() {
     let read = Journal::read(&path);
     assert_eq!(read.authority_id(), Some(id(X)));
     assert_eq!(read.classify(&config(Some(X))).name(), "ready");
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).expect("chmod");
 }
 
 /// Whether the test runs as root, which may write any file.
 fn nix_root() -> bool {
     use std::os::unix::fs::MetadataExt;
-    std::fs::metadata(env!("CARGO_TARGET_TMPDIR")).is_ok_and(|m| m.uid() == 0)
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let root = std::fs::metadata(env!("CARGO_TARGET_TMPDIR")).is_ok_and(|m| m.uid() == 0);
+    root
 }
 
 // ---- added by the tests of scope 004, round four (review findings t6, t7) ----

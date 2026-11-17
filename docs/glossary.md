@@ -23,6 +23,8 @@ This file owns the project's terms. Each entry names the document that owns the 
 | Handshake permit | The bounded right of one connection to be in startup and authentication. Its limit is separate from the session permits. | [Spec 0004](specs/0004-one-real-primary-path/index.md#limits) |
 | Backend permit | The bounded right of one session to hold a backend on one node. A session waits for it in a bounded line. | [Spec 0004](specs/0004-one-real-primary-path/index.md#limits) |
 
+The physical backend budget includes connecting, leased, cleaning and idle backends, including dedicated sessions. Its global, node, database and identity caps are fixed in [spec 0005](specs/0005-clean-session-reuse/index.md#admission-and-configuration). Cleanup quarantine means a backend owned by cleanup that cannot yet be leased. The conservative reusable profile and its unknown state close boundary are fixed in that spec.
+
 ## Profiles
 
 The word profile always takes a qualifier.

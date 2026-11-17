@@ -327,6 +327,11 @@ pool-repo-check docs      [--root <DIR>] [--base <REVISION>]
 
 #### Workspace guards
 
+Note of 2026-11-16, scope 005 ([spec 0005](../0005-clean-session-reuse/index.md#tooling-and-regression-debt)): W3 additionally uses each workspace crate's `clippy.toml` to reject resolved standard library capability paths, so grouped imports and aliases cannot evade the text scan. Production `pool-control` forbids filesystem, environment and wall clock APIs except two exact `Path::try_exists` expectations in `journal.rs`, justified by the existing journal exception. The legitimate filesystem and clock calls in its three integration test crates have exact statement expectations; no crate, module or function exemption suppresses the global thread/socket bans. The W3 text guard still applies to those tests. An allow baseline line that completely covers an explicit deny is now a W3 problem.
+
+W5 now derives workspace edges from the package dependency arrays in `Cargo.lock`, rather than manifest spelling. It rejects `pool-core` to `pool-control` and the reverse even if somebody adds that pair to the baseline. W8 requires the exact six forced settings of `.cargo/config.toml`, including no additional setting. W9 scans raw file bytes for private key block headers and permits only the exact committed bytes at `crates/pool-core/tests/fixtures/node.key`. W10 compares the Rust wrapper versions in `NOTICE` with the locked packages, and compares bundled AWS-LC and SQLite versions with `baseline/native-library-versions.txt`. That small reviewed mapping is necessary because Cargo.lock names wrapper crates, not bundled upstream versions. An upstream version update therefore needs a source review and mapping update, not a fabricated lockfile inference.
+
+
 | Rule | What must hold | Baseline file |
 |---|---|---|
 | W1 | For each of the three lockfiles, the names of its `[[package]]` entries are exactly the lines of its baseline file | `lock-packages.txt` for `Cargo.lock`, `fuzz-lock-packages.txt` for `crates/pool-config/fuzz/Cargo.lock`, `tool-lock-packages.txt` for `tools/repo-check/Cargo.lock` |
@@ -425,6 +430,9 @@ Details:
 - A baseline file changes only in the pull request that carries the spec or Build plan step that calls for the change, and the pull request names that spec. The first slice that opens a socket removes lines from `forbidden-source-patterns.txt`; the slice that creates `crates/pool-protocol` removes that line from `forbidden-paths.txt` and adds its pairs to `internal-dependencies.txt`.
 
 #### CI definition guards
+
+Note of 2026-11-16, scope 005: C5 also rejects `POOL_IT_FILTER` anywhere in the CI definition. A filtered integration run cannot stand for the complete check.
+
 
 These rules read `.github/workflows/ci.yml` and `.github/rulesets/main.json` line by line. Both files are written in the fixed shape given in this spec, so no YAML or JSON parser is needed.
 
@@ -823,6 +831,9 @@ If the rule itself must change, or must be switched off in an emergency, the rep
 ```
 
 ### Proving the checks
+
+Note of 2026-11-16, scope 005: proof case 12 mutates a locked dependency edge, matching the revised W5 source. Cases 37 through 56 exercise the new resolved standard library lints, core/control exclusion both ways even with edited baseline, a shadowed deny, copied or modified private key blocks, each of the six native build settings, a CI integration filter, and Rust wrapper versus bundled upstream versions in NOTICE. The committed proof script still requires a clean tree. An equivalent run of these mutations in an uncommitted private copy is recorded as that, never as execution of the whole proof script.
+
 
 `scripts/prove-checks.sh` shows that each check fails when it should. It refuses to run with uncommitted changes (exit 3). It makes one private copy of the committed tree: `git clone` of the repository into a temporary directory, then `git checkout --detach <commit>`, where `<commit>` is the `HEAD` it was started from. It applies one case, runs the check inside the copy, restores the copy (`git reset --hard <commit>` and `git clean -fdq`), and goes on to the next case. It sets `POOL_CHECK_BASE=<commit>` for every run in the copy, so the base revision never depends on what the clone calls `origin/main`. It shares one build directory, `<root>/target/prove`, through `CARGO_TARGET_DIR`, and puts `<root>/target/tools/bin` on `PATH` so that the copy finds the same tools. It never changes the working tree it was started from. Where a case needs a commit in the copy, it commits with a throwaway identity given on the command line (`git -c user.name=prove -c user.email=prove@example.invalid commit`); the restore step removes that commit again.
 

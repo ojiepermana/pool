@@ -90,7 +90,7 @@ fn pinned_actions(path: &str, text: &str, report: &mut Report) {
 
 fn forbidden_text(path: &str, text: &str, report: &mut Report) {
     for (index, line) in text.lines().enumerate() {
-        for word in ["pull_request_target", "secrets"] {
+        for word in ["pull_request_target", "secrets", "POOL_IT_FILTER"] {
             if line.contains(word) {
                 report.add_at(
                     "C5",
@@ -636,6 +636,13 @@ mod tests {
             "  CARGO_TERM_COLOR: never\n  T: ${{ secrets['T'] }}\n",
         );
         assert_problem(&tree, "C5", &[CI, "secrets"]);
+    }
+
+    #[test]
+    fn c5_rejects_integration_filters_in_any_ci_line() {
+        let mut tree = good();
+        tree.set(CI, &format!("{}\n# POOL_IT_FILTER=one\n", tree.get(CI)));
+        assert_problem(&tree, "C5", &[CI, "POOL_IT_FILTER"]);
     }
 
     #[test]

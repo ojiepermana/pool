@@ -25,9 +25,13 @@ const X: &str = "0123456789abcdef0123456789abcdef";
 
 fn folder(name: &str) -> PathBuf {
     let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("pool-control-ctl-{name}"));
-    if path.exists() {
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = path.exists();
+    if exists {
+        #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
         std::fs::remove_dir_all(&path).expect("remove old test folder");
     }
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     std::fs::create_dir_all(&path).expect("create test folder");
     path
 }
@@ -117,6 +121,7 @@ fn board_of(observations: Vec<Observation>) -> ObservationBoard {
 fn ready_journal(name: &str) -> (PathBuf, AuthorityState, Journal) {
     let folder = folder(name);
     let path = folder.join("journal.sqlite3");
+    #[expect(clippy::disallowed_types, reason = "W3 permits test file I/O")]
     std::fs::File::create_new(&path).expect("create the empty journal file");
     let plan = Journal::read(&path)
         .bootstrap_plan(&config(None), &board_of(healthy(98)), at(100))
@@ -596,6 +601,7 @@ fn ac12_a_probe_row_of_exactly_4096_bytes_of_text_is_read_and_one_byte_more_is_n
 #[test]
 fn ac12_the_probe_query_is_the_text_of_the_spec() {
     // covers: 0004 AC-12. The one query under "The probe" in spec 0004, byte for byte.
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
     let spec = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../docs/specs/0004-one-real-primary-path/index.md"

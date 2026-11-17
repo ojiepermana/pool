@@ -256,6 +256,10 @@ impl Journal {
     /// row for its approved writer, or a stored value outside the range of
     /// its type give `Unreadable`. Anything else gives what was read.
     pub fn read(path: &Path) -> JournalRead {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "The journal may inspect its own persistent path"
+        )]
         let probe = match path.try_exists() {
             Ok(false) => StoreProbe::Absent,
             Ok(true) => read_file(path),
@@ -358,6 +362,10 @@ impl Journal {
         path: &Path,
         authority: &Authority,
     ) -> Result<(Journal, StartSequence), JournalError> {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "The journal may inspect its own persistent path"
+        )]
         if !path.try_exists().map_err(|_| JournalError::Open)? {
             return Err(JournalError::Open);
         }

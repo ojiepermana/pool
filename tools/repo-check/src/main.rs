@@ -4,6 +4,7 @@
 
 mod ci;
 mod docs;
+mod hardening;
 mod ids;
 mod report;
 mod text;

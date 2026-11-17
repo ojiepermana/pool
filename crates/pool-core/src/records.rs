@@ -3,10 +3,11 @@
 use std::fmt;
 
 use pool_config::{
-    ClusterId, CredentialGeneration, IdentityId, NodeId, PrincipalId, TopologyEpoch,
+    ClusterId, ConfigurationGeneration, CredentialGeneration, IdentityId, NodeId, PrincipalId,
+    TopologyEpoch,
 };
 use pool_protocol::auth::BackendKeyData;
-use tokio::sync::OwnedSemaphorePermit;
+use tokio::time::Instant;
 
 use crate::REDACTED;
 use crate::backend::BackendConnection;
@@ -110,6 +111,12 @@ pub struct PoolKey {
     pub database: String,
     /// The backend login of the identity entry.
     pub login: String,
+    /// The identity map entry.
+    pub identity: IdentityId,
+    /// The immutable runtime material generation.
+    pub configuration_generation: ConfigurationGeneration,
+    /// Canonical forwarded startup pairs; debug never prints peer content.
+    pub startup_settings: Vec<(String, Vec<u8>)>,
     /// The generation of the credential.
     pub credential_generation: CredentialGeneration,
     /// The topology epoch of the route.
@@ -139,7 +146,10 @@ impl fmt::Debug for PoolKey {
 /// private `BackendKeyData`. It is never moved to another session (`0001 SC-1`).
 pub struct Lease<S> {
     pub(crate) backend: BackendConnection<S>,
-    pub(crate) _permit: OwnedSemaphorePermit,
+    pub(crate) _permit: Box<dyn Send>,
+    pub(crate) created_at: Instant,
+    pub(crate) baseline: Option<Vec<String>>,
+    pub(crate) route: Option<crate::route::Route>,
     generation: LeaseGeneration,
     key: PoolKey,
     identity: IdentityId,
@@ -148,18 +158,25 @@ pub struct Lease<S> {
 impl<S> Lease<S> {
     pub(crate) fn new(
         backend: BackendConnection<S>,
-        permit: OwnedSemaphorePermit,
+        permit: impl Send + 'static,
         generation: LeaseGeneration,
         key: PoolKey,
         identity: IdentityId,
     ) -> Self {
         Self {
             backend,
-            _permit: permit,
+            _permit: Box::new(permit),
+            created_at: Instant::now(),
+            baseline: None,
+            route: None,
             generation,
             key,
             identity,
         }
+    }
+
+    pub(crate) fn assign_generation(&mut self, generation: LeaseGeneration) {
+        self.generation = generation;
     }
 
     /// The lease generation.
