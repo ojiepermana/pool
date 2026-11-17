@@ -1,4 +1,4 @@
-//! The three durable generation types.
+//! The generation types: three durable ones and two that live in memory.
 //!
 //! A generation offers three things: read the number, compare, and advance by
 //! one. It has no other arithmetic. Advancing at the largest value returns
@@ -79,6 +79,24 @@ generation! {
     ///
     /// Restart rule: it survives a restart, in the journal.
     StartSequence, first = 0
+}
+
+generation! {
+    /// The generation of the validated configuration a process runs with. It
+    /// starts at 1. In this build there is no reload, so it stays 1 for the
+    /// whole run. The pool key carries it.
+    ///
+    /// Restart rule: memory only. Each start begins again at 1.
+    ConfigurationGeneration, first = 1
+}
+
+generation! {
+    /// The generation of the credentials a process has read. It starts at 1.
+    /// In this build there is no rotation, so it stays 1 for the whole run.
+    /// The handoff check compares it.
+    ///
+    /// Restart rule: memory only. Each start begins again at 1.
+    CredentialGeneration, first = 1
 }
 
 #[cfg(test)]
@@ -184,6 +202,21 @@ mod edge_tests {
     #[test]
     fn ac6_authority_revision_stops_exactly_at_the_largest_stored_value() {
         assert_edges!(AuthorityRevision);
+    }
+
+    #[test]
+    fn configuration_generation_stops_exactly_at_the_largest_stored_value() {
+        // covers: 0004 AC-8 (the two memory generations of spec 0004).
+        assert_edges!(ConfigurationGeneration);
+        assert_eq!(ConfigurationGeneration::FIRST.get(), 1);
+        assert_eq!(ConfigurationGeneration::from_stored(0), None);
+    }
+
+    #[test]
+    fn credential_generation_stops_exactly_at_the_largest_stored_value() {
+        assert_edges!(CredentialGeneration);
+        assert_eq!(CredentialGeneration::FIRST.get(), 1);
+        assert_eq!(CredentialGeneration::from_stored(0), None);
     }
 
     #[test]

@@ -1,4 +1,4 @@
 config_version = 1
 
-[listener]
+[no_table]
 port = 6432

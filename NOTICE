@@ -1,0 +1,137 @@
+POOL
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+This product bundles native code from the libraries below, compiled from
+source into the pool binary. The list follows spec 0004
+(docs/specs/0004-one-real-primary-path/index.md, "Native code"). The full
+set of license texts of every dependency is owned by the release inventory
+of scope 011.
+
+================================================================================
+SQLite 3.54.1
+================================================================================
+
+Source: the amalgamation bundled in the crate libsqlite3-sys 0.40.0
+(https://crates.io/crates/libsqlite3-sys), taken through rusqlite 0.42.0
+with the feature "bundled". Upstream: https://sqlite.org
+
+Terms: public domain. The dedication from the header of sqlite3.h:
+
+The author disclaims copyright to this source code.  In place of
+a legal notice, here is a blessing:
+
+   May you do good and not evil.
+   May you find forgiveness for yourself and forgive others.
+   May you share freely, never taking more than you give.
+
+================================================================================
+AWS-LC 5.12.0, as bundled in aws-lc-sys 0.47.0
+================================================================================
+
+Source: the crate aws-lc-sys 0.47.0 (https://crates.io/crates/aws-lc-sys),
+taken through aws-lc-rs 1.19.0, which rustls 0.23.46 and pool-core use.
+Upstream: https://github.com/aws/aws-lc
+
+Terms, as listed in the LICENSE file of the locked aws-lc-sys 0.47.0:
+
+- AWS-LC: Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  Apache-2.0 OR ISC.
+- BoringSSL: Copyright (c) 2014-2024 Google Inc., ISC; with contributions by
+  Brian Smith (Copyright 2016), Robert Nagy (Copyright 2022) and Arm Ltd
+  (Copyright 2020) under ISC; and Copyright (c) 2025-2026 Google Inc.,
+  Apache-2.0.
+- OpenSSL: Copyright (c) 1998-2011 The OpenSSL Project. All rights reserved.
+  Apache-2.0. The original SSLeay copyright, Copyright (c) 1995-1998 Eric
+  Young (eay@cryptsoft.com). All rights reserved., Apache-2.0. Contributions
+  by Sun Microsystems, Inc. (Copyright 2002), Nokia (Copyright 2005) and
+  Intel Corporation (Copyright 2012-2021), Apache-2.0.
+- mlkem-native: Copyright (c) The mlkem-native project authors.
+  Apache-2.0 OR ISC OR MIT.
+- mldsa-native: Copyright (c) The mldsa-native project authors.
+  Apache-2.0 OR ISC OR MIT.
+- Fiat Cryptography: Copyright (c) 2015-2020 the fiat-crypto authors. MIT.
+- s2n-bignum: Copyright Amazon.com, Inc. or its affiliates. All Rights
+  Reserved. Apache-2.0 OR ISC OR MIT-0 (its ML-KEM and SHA3 code
+  Apache-2.0 OR ISC OR MIT).
+- Jitter Entropy RNG: Copyright (C) 2017 - 2025, Stephan Mueller
+  <smueller@chronox.de>. BSD-3-Clause, as elected by Amazon.
+- Keccak and AES reference implementations: public domain (CC0).
+
+The libraries that the same file lists as used only for testing and build
+tooling (Google Test, the Go standard library, Wycheproof test vectors) are
+not compiled into the binary.
+
+The ISC, BSD 3-Clause, MIT and MIT-0 texts below are copied from that
+LICENSE file. The Apache License 2.0 is in LICENSE at the root of this
+repository.
+
+ISC License
+-----------
+Permission to use, copy, modify, and/or distribute this software for
+any purpose with or without fee is hereby granted, provided that the
+above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+MIT License
+-----------
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+BSD 3-Clause License
+--------------------
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+MIT No Attribution (MIT-0)
+--------------------------
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

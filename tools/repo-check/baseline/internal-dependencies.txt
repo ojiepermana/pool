@@ -1,3 +1,7 @@
 # Baseline of spec 0002 (docs/specs/0002-standards-and-tooling/index.md), rule W5: allowed dependencies between workspace packages
 pool -> pool-config
+pool -> pool-control
+pool -> pool-core
 pool-control -> pool-config
+pool-core -> pool-config
+pool-core -> pool-protocol

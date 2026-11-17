@@ -1717,3 +1717,153 @@ fn ac16_the_witness_check_comes_before_every_other_reason() {
         true,
     );
 }
+
+// Walk 3 from row d to row o through the real functions (`0003 AC-17`):
+// `writer_admission`, `AuthorityState::latch_conflict`, the journal write
+// and `AuthorityState::latch_recorded`. The state of row a is the one of
+// the walk; no journal value is built by hand for row o. The receipt comes
+// from a real journal file that `Journal::create` wrote from the plan of
+// walk 1, with the same identity, revision and start sequence.
+
+/// A journal file of the walk: `main`, writer `pg1`, ID `X`, opened for
+/// writing at a `Ready` start of `state`.
+fn walk_journal(name: &str, state: &AuthorityState) -> (std::path::PathBuf, pool_control::Journal) {
+    let folder = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR"))
+        .join(format!("pool-control-walk-{name}"));
+    #[expect(clippy::disallowed_methods, reason = "W3 permits fixture path checks")]
+    let exists = folder.exists();
+    if exists {
+        #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
+        std::fs::remove_dir_all(&folder).expect("remove old test folder");
+    }
+    #[expect(clippy::disallowed_methods, reason = "W3 permits test file I/O")]
+    std::fs::create_dir_all(&folder).expect("create test folder");
+    let path = folder.join("journal.sqlite3");
+    #[expect(clippy::disallowed_types, reason = "W3 permits test file I/O")]
+    std::fs::File::create_new(&path).expect("create the empty journal file");
+    let plan = plan_bootstrap(
+        &Setup::default().config(),
+        &StoreProbe::Absent,
+        &healthy(),
+        now(),
+        EXPIRY,
+    )
+    .expect("the plan of walk 1");
+    pool_control::Journal::create(&path, &plan, AuthorityId::parse(X).expect("id"), 0)
+        .expect("create");
+    let AuthorityState::Ready(authority) = state else {
+        panic!("expected ready, got {}", state.name());
+    };
+    let (journal, _) = pool_control::Journal::open_ready(&path, authority).expect("open");
+    (path, journal)
+}
+
+fn revision_of(state: &AuthorityState) -> u64 {
+    match state {
+        AuthorityState::Ready(authority) => authority.authority_revision().get(),
+        other => panic!("expected ready, got {}", other.name()),
+    }
+}
+
+#[test]
+fn ac17_walk_from_row_d_to_row_o_through_the_real_functions() {
+    // covers: 0003 AC-17. Once with the receipt of the journal, once with
+    // the write failing between `latch_conflict` and `latch_recorded`.
+    for write_succeeds in [true, false] {
+        let config = witness(X).config();
+        let mut state = classify_startup(&config, StoreProbe::Present(journal(X)));
+        let (path, mut journal_file) = walk_journal(&format!("d-to-o-{write_succeeds}"), &state);
+
+        // Row a.
+        assert_open(&admission(&config, &state, &healthy()), "pg1", 1, 1);
+
+        // Row d: `pg2` not in recovery. The answer asks for the latch.
+        let row_d = healthy_with(vec![primary("pg2", 1)]);
+        let answer = admission(&config, &state, &row_d);
+        assert_closed(&answer, &["evidence.second_primary"], true);
+        let WriterAdmission::Closed(closed) = &answer else {
+            panic!("row d is closed");
+        };
+        assert!(state.latch_conflict(&main_cluster(), closed));
+        // The latch closes in memory at once, before any write.
+        assert_closed(
+            &admission(&config, &state, &row_d),
+            &["authority.conflict_latched", "evidence.second_primary"],
+            true,
+        );
+
+        if write_succeeds {
+            let receipt = journal_file
+                .set_conflict_latch(&main_cluster(), 0)
+                .expect("write the latch");
+            assert_eq!(receipt.authority_revision().get(), 2);
+            state.latch_recorded(&receipt);
+            assert_eq!(revision_of(&state), 2);
+        } else {
+            let holder = rusqlite::Connection::open(&path).expect("open");
+            holder
+                .execute_batch("BEGIN IMMEDIATE;")
+                .expect("hold the lock");
+            assert_eq!(
+                journal_file.set_conflict_latch(&main_cluster(), 0),
+                Err(pool_control::JournalError::Busy)
+            );
+            holder.execute_batch("ROLLBACK;").expect("release");
+            assert_eq!(revision_of(&state), 1);
+        }
+
+        // Row o: `pg2` drops out of sight. The answer is row o, not row a.
+        for observations in [healthy_without("pg2"), healthy()] {
+            assert_closed(
+                &admission(&config, &state, &observations),
+                &["authority.conflict_latched"],
+                false,
+            );
+        }
+    }
+}
+
+#[test]
+fn ac17_latch_conflict_changes_nothing_unless_a_ready_state_is_asked_to() {
+    // covers: 0003 AC-17.
+    let config = witness(X).config();
+    let mut state = classify_startup(&config, StoreProbe::Present(journal(X)));
+    let row_d = healthy_with(vec![primary("pg2", 1)]);
+    let WriterAdmission::Closed(latching) = admission(&config, &state, &row_d) else {
+        panic!("row d is closed");
+    };
+    let WriterAdmission::Closed(silent) = admission(&config, &state, &healthy_without("pg1"))
+    else {
+        panic!("row f is closed");
+    };
+    assert!(!silent.latches_conflict());
+
+    // An answer that does not ask for the latch.
+    assert!(!state.latch_conflict(&main_cluster(), &silent));
+    assert_open(&admission(&config, &state, &healthy()), "pg1", 1, 1);
+    // A cluster the state does not hold.
+    let other = ClusterId::parse("other").expect("cluster id");
+    assert!(!state.latch_conflict(&other, &latching));
+    assert_open(&admission(&config, &state, &healthy()), "pg1", 1, 1);
+    // A state that is not `Ready`.
+    for mut other_state in [
+        AuthorityState::Uninitialized,
+        AuthorityState::Unconfirmed,
+        AuthorityState::Missing,
+        AuthorityState::Unreadable,
+        AuthorityState::Mismatch,
+        AuthorityState::Held,
+    ] {
+        let before = other_state.clone();
+        assert!(!other_state.latch_conflict(&main_cluster(), &latching));
+        assert_eq!(other_state, before);
+    }
+    // Once set, the latch stays set, also for an answer that does not ask.
+    assert!(state.latch_conflict(&main_cluster(), &latching));
+    assert!(state.latch_conflict(&main_cluster(), &silent));
+    assert_closed(
+        &admission(&config, &state, &healthy()),
+        &["authority.conflict_latched"],
+        false,
+    );
+}

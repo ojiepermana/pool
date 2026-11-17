@@ -49,6 +49,8 @@ These criteria cover the first build only, [scope 001](../../scope/001-stack-and
 
 Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/index.md#workspace-and-guards): **AC-1**, **AC-12** and **AC-13** describe the first build, and their evidence stands. Their texts do not change. From Build plan step 1 of spec 0003 on, the workspace has a third member, `crates/pool-control`, and `0003 AC-13` is the current statement of the workspace shape: three members, three workspace packages in `Cargo.lock`, and the same sixteen third party packages. The first secret reference key also arrives earlier than the last sentence above says; see the note under [Configuration rules](#configuration-rules).
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#workspace): scope 004 adds two members, `pool-protocol` and `pool-core`, the first sockets and the first runtime, and the first third party packages beyond the sixteen. From Build plan step 3 of spec 0004 on, `0004 AC-1` is the current statement of the workspace shape: five members, and `crates/pool-protocol` and `crates/pool-core` exist. `apps/pool-cli` still does not. The `grep` of **AC-12** no longer prints nothing once the session code exists. Rule W3 gets a place for each text from Build plan step 2 of spec 0004 on ([Source guard](../0004-one-real-primary-path/index.md#source-guard)), and `0004 AC-2` is the current statement of which crate may name what. **AC-1**, **AC-12** and **AC-13** describe the first build, and their evidence stands.
+
 ## Decision
 
 **Chosen option**: A modular daemon with an independent CLI. The separate controller executable is deferred until multiple proxy instances need a single authority. You ratified this foundation on 2026-11-14 after the independent critique and approved fixes. Your ratification settles the content. The `**Status**` line above is a separate thing: it follows scope feature 001, as the [status lifecycle](../../scope/index.md#status-lifecycle) defines. (basis: your four VM scenario, small operational surface, vertical delivery)
@@ -212,6 +214,8 @@ The block above is the contract of the first build. Since spec 0002 the root `Ca
 
 `apps/pool/Cargo.toml` names the package `pool` (its binary is `pool`), inherits the same five fields, depends on `pool-config`, `serde` and `serde_json` with `workspace = true`, and has `[lints] workspace = true`. Neither package has `dev-dependencies` or a build script.
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#workspace): from Build plan step 3 of spec 0004 on the workspace has five members. The two new manifests follow the rules of this section. The members, their dependencies on each other and the third party packages each one takes are in the table under Workspace of spec 0004.
+
 ### Adopted dependencies
 
 Only what this path uses. Nothing else from the stack table is adopted yet: no Tokio, rustls, `pg_query`, Axum, SQLite, `tracing`, `clap`, `thiserror` or `anyhow`.
@@ -225,6 +229,8 @@ Only what this path uses. Nothing else from the stack table is adopted yet: no T
 `Cargo.lock` holds exactly these sixteen packages besides `pool` and `pool-config`: `itoa`, `memchr`, `proc-macro2`, `quote`, `serde`, `serde_core`, `serde_derive`, `serde_json`, `serde_spanned`, `syn`, `toml`, `toml_datetime`, `toml_parser`, `unicode-ident`, `winnow`, `zmij`. All are pure Rust with no native code. The `unbounded` feature of `toml` stays off. With it off, the parser stops at a fixed nesting depth (80 levels in `toml` 1.2.1), and that limit is what keeps a 1 MiB file of brackets from using up the stack. If Cargo resolves a different set of names, stop and report it to the lead; do not accept it. The locked versions are recorded in the verification record. Review notes are in the [technology evaluation](../../research/technology-evaluation.md#adopted-in-scope-001).
 
 Arguments are parsed with the standard library. The command line is two flags, so a parser crate would add more packages than code it saves.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#adopted-dependencies): scope 004 adopts six more direct dependencies, `tokio`, `rustls`, `tokio-rustls`, `aws-lc-rs`, `rusqlite` and `tracing`, with the versions and features listed there, from its Build plan step 3 on. Two of them bring the first native code, AWS-LC and SQLite, with the boundary review under [Native code](../0004-one-real-primary-path/index.md#native-code). The lockfile then holds 70 third party entries. `pg_query`, Axum, `clap`, `thiserror` and `anyhow` are still not adopted, and arguments are still parsed with the standard library. The table above stays the record of the first build.
 
 ### Configuration rules
 
@@ -241,6 +247,8 @@ This is the shared convention for configuration keys. Later slices add keys unde
 9. **Whole file**: a file is accepted or rejected as a whole. Nothing is used from a rejected file (`SEC-12`).
 
 Note of 2026-11-15 on rule 6, from [spec 0003](../0003-control-and-session-data-model/index.md#keys): the first secret reference key is `identity[].credential_file`. It enters the schema with Build plan step 3 of spec 0003, which checks its form only and never opens the file (`0003 AC-4`). Reading the file, and the permission check that `SEC-4` asks for, still arrive in scope 004. Rule 6 itself does not change.
+
+Note of 2026-11-15 on rule 6, from [spec 0004](../0004-one-real-primary-path/index.md#keys): from Build plan step 5 of spec 0004 on there are four secret references: `identity[].credential_file`, `cluster[].monitor_credential_file`, `principal[].verifier_file` and `listener.tls_private_key_file`. `validate` opens none of them. `pool run` and `pool bootstrap` read them, with the permission check that `SEC-4` asks for (`0004 AC-9`, [State directory and protected files](../0004-one-real-primary-path/index.md#state-directory-and-protected-files)). Spec 0004 also adds the tables `[listener]`, `[limits]`, `[probe]` and `[[principal]]`, all optional, so `config_version` stays `1`, and it narrows which characters a name or a path may hold (`0004 AC-6`). Rule 6 itself does not change.
 
 ### Smallest supported configuration
 
@@ -316,6 +324,8 @@ Exit status:
   3  the command could not complete
 ```
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#commands): the binary gains three commands, `pool bootstrap` and `pool show-authority` from Build plan step 8 of spec 0004 on and `pool run` from its step 10 on. They follow the argument rules of this section, with the command name as the first argument. `--format` is not an option of `run`. The help text gains one line for each command, and the heading `Options for check-config:` becomes `Options:`. From then on the text above is the help text of the first build, and the tests of spec 0004 hold the current one. `check-config` itself, its options and its usage errors do not change.
+
 ### Exit status and output
 
 This is the shared convention for process exit status and command output. Later commands in `pool` and `pool-cli` follow it.
@@ -361,6 +371,8 @@ A finding line has one of three shapes, by what the finding carries:
 ```
 
 Note of 2026-11-15, from [spec 0003](../0003-control-and-session-data-model/index.md#findings): from Build plan step 3 of spec 0003 on there is a fourth shape, for a finding inside a repeated table. It carries a key and a position: `<code> at <key>, line <line>, column <column>: <message>`. In the JSON format such a finding has `key`, `line` and `column` all set. No field is removed or renamed, so `output_version` stays `1`. The three shapes above keep their meaning.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#number-of-findings): two additions. From Build plan step 5 of spec 0004 on, a report with more than 20000 findings ends with the line `findings omitted: <n>` in the human format and carries `"findings_omitted":<n>` directly before `findings` in the JSON format (`0004 AC-7`). The field is absent when nothing was left out, so every report with 20000 findings or fewer is the same bytes as before. From its step 8 on, the new commands use the result `refused`, with the first line `<command> refused`, when they exit 1 for a reason other than an invalid configuration ([Findings of the new commands](../0004-one-real-primary-path/index.md#findings-of-the-new-commands)). No field is removed or renamed, so `output_version` stays `1`. Once `pool run` serves, its stderr carries log events, as the first general rule above already says.
 
 **Human format, could not complete** (stderr, exit 3). One line, `error: <code>: <message>`, for each of the three `io.*` codes. Nothing on stdout, and no `configuration invalid` or `findings:` line:
 
@@ -420,6 +432,8 @@ The `config.*` codes belong to `pool-config`. The `io.*` codes belong to the bin
 
 Note of 2026-11-15: [spec 0003](../0003-control-and-session-data-model/index.md#findings) defines six more `config.*` codes, in use from its Build plan step 3 on: `config.invalid_value`, `config.duplicate_id`, `config.unknown_reference`, `config.duplicate_endpoint`, `config.duplicate_identity` and `config.unsupported_value`. It also uses `config.missing_key` inside repeated tables, and adds the variant `KeyAt` to `Location` and accessors to `ValidatedConfig` ([public boundary added to pool-config](../0003-control-and-session-data-model/index.md#public-boundary-added-to-pool-config)). No code of the table above is removed, renamed or given another meaning. This note is the record that the [Consequences](#consequences) ask for when a public contract of this spec gains something.
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#findings): `validate` keeps at most 20000 findings and counts the rest (`0004 AC-7`). Spec 0004 defines two more `config.*` codes, `config.duplicate_principal` and `config.incomplete`, and the codes of its commands in the families `authority.*`, `bootstrap.*`, `state.*`, `secret.*`, `journal.*` and `listener.*` ([Findings of the new commands](../0004-one-real-primary-path/index.md#findings-of-the-new-commands)). An exit 3 result still has exactly one finding. No code of the table above is removed, renamed or given another meaning.
+
 Which code a bad value gets:
 
 | Input | Code |
@@ -462,6 +476,8 @@ This is the shared convention for log events. This build writes no log event; th
 - These never appear in an event at any level by default: credentials and the content of secret files, cancellation keys (real or virtual), raw SQL, SQL parameters, database error text, and configuration file content (`SEC-11`).
 - Redaction is done by type. A secret lives in a wrapper type whose `Debug` and `Display` print `[REDACTED]` and which cannot be serialized. A log level or an output filter is not a redaction boundary.
 - Text that comes from outside the process (a file, a client, a database) never goes into `message`. It goes into a named field only if a spec allows that field.
+
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#log-events): scope 004 writes the first log events and adopts `tracing` for them, from its Build plan steps 9 and 10 on. The writer is first party code in `apps/pool` and not `tracing-subscriber`. It writes `ts`, `level` and `event` first, hands lines to one writing task through a bounded queue, and drops and counts lines when the queue is full. The events, and the only fields they may carry, are listed there (`0004 AC-24`). A list is written as one string with its items joined by commas. The rules above needed no change.
 
 ### Public boundary of pool-config
 
@@ -600,6 +616,8 @@ config_version = 1
 backend_password = "CANARY-9f2c7b1e-not-a-real-secret
 ```
 
+Note of 2026-11-15, from [spec 0004](../0004-one-real-primary-path/index.md#fixtures): from Build plan step 5 of spec 0004 on, line 3 of `invalid-unknown-key.toml` reads `[no_table]`. The block above shows the file of the first build, where the line is `[listener]`. Spec 0004 makes `[listener]` a known table with `port` as a known key, so the old text would no longer be an example of an unknown table. The new name has the same eight bytes, so nothing else moves: the finding is still `config.schema` at line 3, as the table below says, at the same column, and the output of `pool check-config` for the file is the same bytes in both formats (`0004 AC-5`). The two cases of **AC-7** that the tests give to `validate` from memory with the text `[listener]` change in the same way and keep their findings. No other fixture of this spec changes.
+
 | Fixture | Exit | Findings, in order |
 |---|---|---|
 | `valid-minimal.toml`, `valid-capabilities-disabled.toml`, `valid-capabilities-empty.toml` | 0 | none |
@@ -734,7 +752,7 @@ From the first build:
 ## Follow-up
 
 1. The assembled foundation and [decision ledger](../../plan/decision-ledger.md) are ratified. You asked for the build of scope 001 on 2026-11-14. Every later scope stays queued until you explicitly request it.
-2. Deliberate the frontend authentication implementation, bounded routing profiles, durable operation model, and fencing adapter in individual feature specs before those slices are built. Answered in part on 2026-11-15 by [spec 0003](../0003-control-and-session-data-model/index.md): the durable model (the journal, the approved topology, the start rules and the rules every operation record follows) by `0003 AC-7` to `0003 AC-10` and its sections [The journal](../0003-control-and-session-data-model/index.md#the-journal) and [Operation records](../0003-control-and-session-data-model/index.md#operation-records), and the identity map by `0003 AC-5`. Still to deliberate: the frontend authentication implementation (scope 004), bounded routing profiles (scope 007), the full operation record and its API (scope 009) and the fencing adapter (scope 010).
+2. Deliberate the frontend authentication implementation, bounded routing profiles, durable operation model, and fencing adapter in individual feature specs before those slices are built. Answered in part on 2026-11-15 by [spec 0003](../0003-control-and-session-data-model/index.md): the durable model (the journal, the approved topology, the start rules and the rules every operation record follows) by `0003 AC-7` to `0003 AC-10` and its sections [The journal](../0003-control-and-session-data-model/index.md#the-journal) and [Operation records](../0003-control-and-session-data-model/index.md#operation-records), and the identity map by `0003 AC-5`. Still to deliberate: the frontend authentication implementation (scope 004), bounded routing profiles (scope 007), the full operation record and its API (scope 009) and the fencing adapter (scope 010). Answered further on 2026-11-15 by [spec 0004](../0004-one-real-primary-path/index.md#frontend-authentication): the frontend authentication of scope 004 is `SCRAM-SHA-256` against a verifier file per principal (`0004 AC-16`). Channel binding and client certificates wait for scope 006. The other three items of the sentence before this one are still to deliberate.
 3. Optional Rust, Tokio, PostgreSQL, and operations skill or MCP discovery was deferred by you. Nothing has been searched or installed for that purpose.
 4. Apache 2.0 is your chosen project license and the official text is installed. Review each file and transitive component before source reuse.
 5. The independent critique completed. Its decision gaps and your resolution are recorded in the decision ledger before final acceptance.
@@ -742,7 +760,7 @@ From the first build:
 7. Docker Desktop was started on 2026-11-14 (`docker info` exits 0, server 29.9.2, `aarch64`), so **AC-2** is no longer blocked on it. Each run of the Linux build still needs the daemon. If `docker info` fails again, starting Docker Desktop is yours to do.
 8. When the workspace exists, the "Current state and commands" part of `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` should name the real commands. That belongs to the "Document it" step of scope 001.
 9. [Scope 002](../../scope/002-standards-and-tooling.md) adds CI, dependency and license checks, and the pull request path. It should run the [Linux build](#linux-build) command, or its equal, on a Linux `arm64` runner, so that the build for the declared target runs without emulation. Which runner that is belongs to the scope 002 spec. Answered on 2026-11-14 by `0002 AC-5`: `scripts/linux-build.sh` holds a copy of the command, and the CI job `linux-build` runs it on a hosted `arm64` runner ([Linux build script](../0002-standards-and-tooling/index.md#linux-build-script)). The CI evidence for it is still owed. It comes with step 11 of the spec 0002 Build plan and is recorded in the verification record of spec 0002.
-10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction). Answered in part on 2026-11-15 by `0003 AC-4`: the first secret reference key, `identity[].credential_file`, arrives with spec 0003, which never opens the file. Reading it and the permission check stay with scope 004, as this item says. Spec 0003 writes no log event, so `tracing` is still to be adopted; it does fix which names a log field may carry ([what may appear in default telemetry](../0003-control-and-session-data-model/index.md#what-may-appear-in-default-telemetry)).
+10. The first slice that reads a secret reference (scope 004) adds the file permission check that `SEC-4` asks for, and the first slice that writes a log event adopts `tracing` under the [log rules](#log-events-and-redaction). Answered in part on 2026-11-15 by `0003 AC-4`: the first secret reference key, `identity[].credential_file`, arrives with spec 0003, which never opens the file. Reading it and the permission check stay with scope 004, as this item says. Spec 0003 writes no log event, so `tracing` is still to be adopted; it does fix which names a log field may carry ([what may appear in default telemetry](../0003-control-and-session-data-model/index.md#what-may-appear-in-default-telemetry)). Answered on 2026-11-15 by [spec 0004](../0004-one-real-primary-path/index.md): the permission check is `0004 AC-9`, and `tracing` is adopted with the events of `0004 AC-24`.
 11. [Scope 002](../../scope/002-standards-and-tooling.md) should add automatic CI checks for the parts of **AC-12** and **AC-13** that are checked by hand today: the package set of `Cargo.lock` and the `grep` command (**AC-12**), and the four paths that must not exist plus the lint inheritance of both packages (**AC-13**). Until then nothing fails by itself when one of them regresses. This comes from the scope 001 review. Answered on 2026-11-14 by `0002 AC-6`: rules W1 to W4 of `pool-repo-check workspace` ([Workspace guards](../0002-standards-and-tooling/index.md#workspace-guards)) check the package set of `Cargo.lock` (W1), the four paths (W2), the source patterns of the `grep` command (W3) and the lint inheritance (W4). The text of **AC-12** and **AC-13** does not change.
 
 ## Rationale

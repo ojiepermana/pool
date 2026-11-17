@@ -1,6 +1,7 @@
 //! Observations: what one probe sample saw on one node, and the freshness
 //! rule that decides whether a sample counts as evidence.
 
+use std::collections::HashMap;
 use std::time::Duration;
 
 use pool_config::{NodeId, SystemIdentifier};
@@ -107,6 +108,75 @@ impl Observation {
     /// What the sample saw.
     pub fn outcome(&self) -> ObservationOutcome {
         self.outcome
+    }
+}
+
+/// The samples that admission reads: at most one per node (`0003 AC-18`).
+///
+/// Recording a sample of a node keeps the one with the later sample time,
+/// and the one already held when the times are equal. So the list it
+/// returns never holds two samples of one node, and the rule "Fresh" of spec
+/// 0003 never meets a tie. A failed sample is recorded like any other: it
+/// replaces the last good sample of its node, so a node that stops answering
+/// loses its evidence at once.
+///
+/// Restart rule: memory only. A start begins with an empty board, and
+/// admission stays closed until fresh samples exist again.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ObservationBoard {
+    observations: Vec<Observation>,
+    index: HashMap<NodeId, usize>,
+}
+
+impl ObservationBoard {
+    /// An empty board.
+    pub fn new() -> ObservationBoard {
+        ObservationBoard::default()
+    }
+
+    /// Records one sample. It replaces the sample of the same node only when
+    /// it was taken later.
+    pub fn record(&mut self, observation: Observation) {
+        match self.index.get(&observation.node) {
+            Some(&position) => {
+                if let Some(held) = self.observations.get_mut(position)
+                    && observation.sampled_at > held.sampled_at
+                {
+                    *held = observation;
+                }
+            }
+            None => {
+                self.index
+                    .insert(observation.node.clone(), self.observations.len());
+                self.observations.push(observation);
+            }
+        }
+    }
+
+    /// The samples, one per node, in the order their nodes were first
+    /// recorded.
+    pub fn observations(&self) -> &[Observation] {
+        &self.observations
+    }
+
+    /// The sample of `node`, if the board holds one.
+    pub(crate) fn get(&self, node: &NodeId) -> Option<&Observation> {
+        self.index
+            .get(node)
+            .and_then(|&position| self.observations.get(position))
+    }
+
+    /// The latest sample time on the board, or `None` when it is empty.
+    pub(crate) fn latest(&self) -> Option<MonotonicTime> {
+        self.observations.iter().map(|o| o.sampled_at).max()
+    }
+
+    /// The later of `now` and the latest sample time: the now that
+    /// [`crate::build_snapshot`] and [`crate::JournalRead::bootstrap_plan`]
+    /// use. A later now only makes samples older, so it can close and never
+    /// open.
+    pub(crate) fn clamp(&self, now: MonotonicTime) -> MonotonicTime {
+        self.latest().map_or(now, |latest| latest.max(now))
     }
 }
 

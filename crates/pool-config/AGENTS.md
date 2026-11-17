@@ -15,6 +15,8 @@ The library that decides whether a configuration file is valid. It depends on no
 | `tests/fixtures/*.toml` | The shared fixtures, also read by the `pool` tests |
 | `fuzz/` | The fuzz package `pool-config-fuzz` with the target `validate`. It is outside the workspace and has its own lockfile ([spec 0002](../../docs/specs/0002-standards-and-tooling/index.md#fuzz-harness)) |
 
+For physical backend caps, idle/lifetime/cleanup limits and the client write deadline, read the [scope 005 key table](../../docs/specs/0005-clean-session-reuse/index.md#admission-and-configuration). These optional keys extend `serving.rs` and its existing range/type validation order; every key takes effect on restart.
+
 ## Commands
 
 Run only this package's tests:

@@ -1,0 +1,1404 @@
+//! The backend connection against a scripted node over an in memory stream.
+//!
+//! The node is written with the encoders of `pool-protocol` and the SCRAM
+//! server of this crate, and speaks TLS with the test certificates under
+//! `tests/fixtures/`. No container, no PostgreSQL.
+
+use std::time::Duration;
+
+use pool_protocol::auth::{self, TransactionStatus};
+use pool_protocol::message::encode_message;
+use pool_protocol::scram as text;
+use pool_protocol::startup::{FirstPacket, FirstPacketReader};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, DuplexStream};
+use tokio::sync::oneshot;
+use tokio_rustls::TlsAcceptor;
+
+use super::*;
+use crate::scram::{ServerCredential, ServerExchange, verifier_text};
+use crate::secret::{CertificateChain, PrivateKey, TrustRoots, Verifier};
+use crate::tls::server_config;
+
+const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
+
+fn fixture(name: &str) -> Vec<u8> {
+    std::fs::read(format!("{FIXTURES}/{name}")).expect("fixture")
+}
+
+fn node_tls(ca: &str, name: &str) -> NodeTls {
+    NodeTls::new(&TrustRoots::parse(&fixture(ca)).expect("ca"), name).expect("name")
+}
+
+fn password(text: &str) -> Password {
+    Password::parse(text.as_bytes()).expect("password")
+}
+
+fn deadline() -> Instant {
+    Instant::now() + Duration::from_secs(10)
+}
+
+#[derive(Clone)]
+enum Auth {
+    Scram(Tamper),
+    Method(i32),
+    OkAtOnce,
+    Mechanisms(Vec<&'static str>),
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Tamper {
+    None,
+    ForeignNonce,
+    Count(u32),
+    ErrorFinal,
+    WrongSignature,
+    /// After `AuthenticationSASLFinal`, another `Authentication` message in place of `AuthenticationOk`.
+    NotOkAfterFinal(i32),
+}
+
+#[derive(Clone)]
+struct Script {
+    answer: u8,
+    mechanisms: Vec<&'static str>,
+    auth: Auth,
+    password: &'static str,
+    params: Vec<(&'static str, &'static str)>,
+    status: TransactionStatus,
+    error_after_auth: bool,
+    rows: Vec<Vec<Option<&'static str>>>,
+    /// Raw messages written after `BackendKeyData` and before `ReadyForQuery`.
+    extra: Vec<Vec<u8>>,
+    /// The one row query is answered with an `ErrorResponse` before its row.
+    query_error: bool,
+}
+
+impl Script {
+    fn primary() -> Self {
+        Self {
+            answer: b'S',
+            mechanisms: vec![auth::SCRAM_SHA_256],
+            auth: Auth::Scram(Tamper::None),
+            password: "backend-secret",
+            params: vec![
+                ("server_version", "18.7"),
+                ("in_hot_standby", "off"),
+                ("client_encoding", "UTF8"),
+            ],
+            status: TransactionStatus::Idle,
+            error_after_auth: false,
+            rows: vec![vec![Some("7613"), Some("primary"), None]],
+            extra: Vec::new(),
+            query_error: false,
+        }
+    }
+}
+
+/// What the node saw: the startup parameters and the client-first message.
+#[derive(Debug, Default)]
+struct Seen {
+    startup: Vec<(String, String)>,
+    mechanism: String,
+    client_first: String,
+}
+
+async fn node(stream: DuplexStream, script: Script, seen: oneshot::Sender<Seen>) {
+    let _ = run_node(stream, script, seen).await;
+}
+
+async fn run_node(
+    mut stream: DuplexStream,
+    script: Script,
+    seen: oneshot::Sender<Seen>,
+) -> Option<()> {
+    let mut first = [0u8; 8];
+    stream.read_exact(&mut first).await.ok()?;
+    assert_eq!(
+        first,
+        pool_protocol::startup::encode_ssl_request(),
+        "SSLRequest first"
+    );
+    stream.write_all(&[script.answer]).await.ok()?;
+    if script.answer != b'S' {
+        return None;
+    }
+    let chain = CertificateChain::parse(&fixture("node.pem")).expect("chain");
+    let key = PrivateKey::parse(&fixture("node.key")).expect("key");
+    let acceptor = TlsAcceptor::from(server_config(&chain, &key).expect("server config"));
+    let mut tls = acceptor.accept(stream).await.ok()?;
+    let mut reader = FirstPacketReader::new(65536);
+    // One reader per connection: it has seen the SSLRequest read above.
+    let _ = reader.feed(&first);
+    let mut buf = [0u8; 1];
+    let startup = loop {
+        tls.read_exact(&mut buf).await.ok()?;
+        if let (_, Some(result)) = reader.feed(&buf) {
+            break result.expect("a valid startup packet");
+        }
+    };
+    let FirstPacket::Startup(request) = startup else {
+        panic!("a startup packet");
+    };
+    let mut record = Seen {
+        startup: vec![
+            (
+                "user".into(),
+                String::from_utf8(request.user.clone()).expect("utf-8"),
+            ),
+            (
+                "database".into(),
+                String::from_utf8(request.database.clone()).expect("utf-8"),
+            ),
+        ],
+        ..Seen::default()
+    };
+    for f in &request.forwarded {
+        record.startup.push((
+            f.name.into(),
+            String::from_utf8(f.value.clone()).expect("utf-8"),
+        ));
+    }
+    match script.auth.clone() {
+        Auth::Method(code) => {
+            tls.write_all(&auth::encode_authentication_other(code, &[1, 2, 3, 4]))
+                .await
+                .ok()?;
+            let _ = seen.send(record);
+            return None;
+        }
+        Auth::OkAtOnce => {
+            tls.write_all(&auth::encode_authentication_ok())
+                .await
+                .ok()?;
+            let _ = seen.send(record);
+            return None;
+        }
+        Auth::Mechanisms(list) => {
+            tls.write_all(&auth::encode_authentication_sasl(&list))
+                .await
+                .ok()?;
+            let _ = seen.send(record);
+            return None;
+        }
+        Auth::Scram(tamper) => {
+            tls.write_all(&auth::encode_authentication_sasl(&script.mechanisms))
+                .await
+                .ok()?;
+            let message = read_message(&mut tls, 1024).await.ok()?;
+            assert_eq!(message.tag, b'p');
+            let initial =
+                auth::parse_sasl_initial_response(&message.body).expect("initial response");
+            let data = initial.data.expect("data");
+            record.mechanism = initial.mechanism.clone();
+            record.client_first = String::from_utf8(data.clone()).expect("utf-8");
+            let _ = seen.send(record);
+            let verifier = Verifier::parse(
+                verifier_text(
+                    &password(script.password),
+                    b"node salt",
+                    std::num::NonZeroU32::new(4096).expect("count"),
+                )
+                .as_bytes(),
+            )
+            .expect("verifier");
+            let (exchange, mut server_first) =
+                ServerExchange::start(ServerCredential::Known(&verifier), &data)
+                    .expect("client first");
+            match tamper {
+                Tamper::ForeignNonce => server_first = format!("r=other{}", &server_first[2..]),
+                Tamper::Count(count) => {
+                    server_first = server_first.replace(",i=4096", &format!(",i={count}"));
+                }
+                _ => {}
+            }
+            tls.write_all(&auth::encode_authentication_sasl_continue(
+                server_first.as_bytes(),
+            ))
+            .await
+            .ok()?;
+            let message = read_message(&mut tls, 1024).await.ok()?;
+            let server_final = match exchange.finish(&message.body) {
+                Ok(server_final) => server_final,
+                Err(_) => {
+                    // PostgreSQL answers a wrong password with an ErrorResponse.
+                    tls.write_all(&backend_error("28P01")).await.ok()?;
+                    return None;
+                }
+            };
+            let server_final = match tamper {
+                Tamper::ErrorFinal => "e=invalid-proof".to_string(),
+                Tamper::WrongSignature => text::encode_server_final(&[0; 32]),
+                _ => server_final,
+            };
+            tls.write_all(&auth::encode_authentication_sasl_final(
+                server_final.as_bytes(),
+            ))
+            .await
+            .ok()?;
+            match tamper {
+                Tamper::NotOkAfterFinal(code) => {
+                    tls.write_all(&auth::encode_authentication_other(code, &[]))
+                        .await
+                        .ok()?;
+                }
+                _ => {
+                    tls.write_all(&auth::encode_authentication_ok())
+                        .await
+                        .ok()?;
+                }
+            }
+        }
+    }
+    if script.error_after_auth {
+        tls.write_all(&backend_error("3D000")).await.ok()?;
+        return None;
+    }
+    for (name, value) in &script.params {
+        tls.write_all(&auth::encode_parameter_status(name, value))
+            .await
+            .ok()?;
+    }
+    tls.write_all(&auth::encode_backend_key_data(4242, &[1, 2, 3, 4]))
+        .await
+        .ok()?;
+    for message in &script.extra {
+        tls.write_all(message).await.ok()?;
+    }
+    tls.write_all(&encode_message(b'N', b"SNOTICE\0Mhello\0\0"))
+        .await
+        .ok()?;
+    tls.write_all(&auth::encode_ready_for_query(script.status))
+        .await
+        .ok()?;
+    loop {
+        let message = read_message(&mut tls, 65536).await.ok()?;
+        match message.tag {
+            b'Q' => {
+                tls.write_all(&encode_message(b'T', &[0, 0])).await.ok()?;
+                if script.query_error {
+                    tls.write_all(&backend_error("42P01")).await.ok()?;
+                }
+                for row in &script.rows {
+                    tls.write_all(&data_row_message(row)).await.ok()?;
+                }
+                tls.write_all(&encode_message(b'C', b"SELECT 1\0"))
+                    .await
+                    .ok()?;
+                tls.write_all(&auth::encode_ready_for_query(TransactionStatus::Idle))
+                    .await
+                    .ok()?;
+            }
+            _ => return Some(()),
+        }
+    }
+}
+
+fn backend_error(code: &str) -> Vec<u8> {
+    let body = format!(
+        "SFATAL\0VFATAL\0C{code}\0Mpassword authentication failed for user \"secret-login\"\0\0"
+    );
+    encode_message(b'E', body.as_bytes())
+}
+
+fn data_row_message(row: &[Option<&str>]) -> Vec<u8> {
+    let mut body = u16::try_from(row.len())
+        .expect("small")
+        .to_be_bytes()
+        .to_vec();
+    for column in row {
+        match column {
+            None => body.extend_from_slice(&(-1i32).to_be_bytes()),
+            Some(value) => {
+                body.extend_from_slice(&i32::try_from(value.len()).expect("small").to_be_bytes());
+                body.extend_from_slice(value.as_bytes());
+            }
+        }
+    }
+    encode_message(b'D', &body)
+}
+
+struct Run {
+    result: Result<BackendConnection<DuplexStream>, BackendError>,
+    seen: Seen,
+}
+
+async fn run(script: Script, tls: NodeTls, login: &Login, purpose: Purpose) -> Run {
+    let (client, server) = tokio::io::duplex(65536);
+    let (tx, rx) = oneshot::channel();
+    let task = tokio::spawn(node(server, script, tx));
+    let result = establish(client, &tls, login, purpose, deadline()).await;
+    let seen = rx.await.unwrap_or_default();
+    if result.is_err() {
+        let _ = task.await;
+    }
+    Run { result, seen }
+}
+
+fn login(password: &str) -> Login {
+    Login::new(
+        "secret-login",
+        "appdb",
+        Credential::new(self::password(password)),
+    )
+}
+
+fn good_tls() -> NodeTls {
+    node_tls("ca.pem", "node.test")
+}
+
+#[tokio::test]
+async fn a_session_opens_with_scram_and_keeps_parameters_and_key() {
+    let login = login("backend-secret").forward("application_name", b"psql");
+    let run = run(Script::primary(), good_tls(), &login, Purpose::Session).await;
+    let mut conn = run.result.expect("open");
+    assert_eq!(
+        run.seen.startup,
+        [
+            ("user".to_string(), "secret-login".to_string()),
+            ("database".to_string(), "appdb".to_string()),
+            ("application_name".to_string(), "psql".to_string())
+        ]
+    );
+    assert_eq!(run.seen.mechanism, auth::SCRAM_SHA_256);
+    // The header n, an empty name and an 18 byte nonce in base64.
+    let nonce = run
+        .seen
+        .client_first
+        .strip_prefix("n,,n=,r=")
+        .expect("client first shape");
+    assert_eq!(
+        pool_protocol::base64::decode(nonce.as_bytes()).map(|n| n.len()),
+        Ok(18)
+    );
+    assert_eq!(conn.parameters().len(), 3);
+    assert_eq!(conn.backend_key().map(|k| k.process_id), Some(4242));
+    assert_eq!(conn.status(), TransactionStatus::Idle);
+    let row = conn.query_one_row("select 1").await.expect("query");
+    assert_eq!(
+        row,
+        Some(vec![
+            Some("7613".to_string()),
+            Some("primary".to_string()),
+            None
+        ])
+    );
+    let debug = format!("{conn:?} {login:?}");
+    for secret in ["backend-secret", "secret-login", "appdb", "4242", "psql"] {
+        assert!(!debug.contains(secret), "{secret} in {debug}");
+    }
+}
+
+#[tokio::test]
+async fn scram_sha_256_is_chosen_beside_plus() {
+    let mut script = Script::primary();
+    script.mechanisms = vec![auth::SCRAM_SHA_256_PLUS, auth::SCRAM_SHA_256];
+    let run = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    assert!(run.result.is_ok());
+    assert_eq!(run.seen.mechanism, auth::SCRAM_SHA_256);
+    assert!(run.seen.client_first.starts_with("n,,"));
+}
+
+#[tokio::test]
+async fn the_keys_are_derived_once_per_credential_salt_and_count() {
+    let login = login("backend-secret");
+    for _ in 0..3 {
+        assert!(
+            run(Script::primary(), good_tls(), &login, Purpose::Probe)
+                .await
+                .result
+                .is_ok()
+        );
+    }
+    assert_eq!(login.credential.derivations(), 1);
+}
+
+#[tokio::test]
+async fn no_startup_packet_without_s_and_a_checked_certificate() {
+    let mut script = Script::primary();
+    script.answer = b'N';
+    let run_n = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    assert_eq!(run_n.result.err(), Some(BackendError::TlsRefused));
+    assert!(run_n.seen.startup.is_empty());
+    for tls in [
+        node_tls("other-ca.pem", "node.test"),
+        node_tls("ca.pem", "other.test"),
+    ] {
+        let run = run(
+            Script::primary(),
+            tls,
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        assert_eq!(run.result.err(), Some(BackendError::Tls));
+        assert!(
+            run.seen.startup.is_empty(),
+            "no startup packet after a failed check"
+        );
+    }
+}
+
+#[tokio::test]
+async fn methods_other_than_scram_end_the_attempt() {
+    for auth in [
+        Auth::Method(3),
+        Auth::Method(5),
+        Auth::Method(7),
+        Auth::OkAtOnce,
+        Auth::Mechanisms(vec![auth::SCRAM_SHA_256_PLUS]),
+    ] {
+        let mut script = Script::primary();
+        script.auth = auth;
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        assert_eq!(run.result.err(), Some(BackendError::AuthenticationMethod));
+    }
+}
+
+#[tokio::test]
+async fn a_wrong_password_and_a_bad_server_end_the_attempt() {
+    let run_wrong = run(
+        Script::primary(),
+        good_tls(),
+        &login("not-the-password"),
+        Purpose::Probe,
+    )
+    .await;
+    assert_eq!(
+        run_wrong.result.err(),
+        Some(BackendError::Server {
+            sqlstate: Some(*b"28P01")
+        })
+    );
+    for (tamper, expected) in [
+        (Tamper::ForeignNonce, BackendError::Protocol),
+        (Tamper::Count(600_001), BackendError::Protocol),
+        (Tamper::Count(0), BackendError::Protocol),
+        (Tamper::ErrorFinal, BackendError::Authentication),
+        (Tamper::WrongSignature, BackendError::Authentication),
+    ] {
+        let mut script = Script::primary();
+        script.auth = Auth::Scram(tamper);
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        assert_eq!(run.result.err(), Some(expected));
+    }
+}
+
+#[tokio::test]
+async fn a_session_needs_in_hot_standby_off_and_an_idle_status() {
+    for params in [
+        vec![("in_hot_standby", "on")],
+        vec![("server_version", "18.7")],
+    ] {
+        let mut script = Script::primary();
+        script.params = params;
+        let session = run(
+            script.clone(),
+            good_tls(),
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        assert_eq!(session.result.err(), Some(BackendError::NotPrimary));
+        let probe = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        assert!(probe.result.is_ok(), "the probe reads the role itself");
+    }
+    let mut script = Script::primary();
+    script.status = TransactionStatus::InTransaction;
+    let run_t = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    assert_eq!(run_t.result.err(), Some(BackendError::NotIdle));
+    let mut script = Script::primary();
+    script.error_after_auth = true;
+    let run_e = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    assert_eq!(
+        run_e.result.err(),
+        Some(BackendError::Server {
+            sqlstate: Some(*b"3D000")
+        })
+    );
+}
+
+#[tokio::test]
+async fn too_many_parameters_end_the_attempt() {
+    let names: Vec<&'static str> = (0..=PARAMETER_STATUS_MAX_COUNT)
+        .map(|i| &*Box::leak(format!("p{i}").into_boxed_str()))
+        .collect();
+    let mut script = Script::primary();
+    script.params = names.iter().map(|n| (*n, "x")).collect();
+    let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+    assert_eq!(run.result.err(), Some(BackendError::Protocol));
+}
+
+#[tokio::test]
+async fn the_one_row_query_returns_nothing_for_zero_or_two_rows() {
+    for rows in [vec![], vec![vec![Some("a")], vec![Some("b")]]] {
+        let mut script = Script::primary();
+        script.rows = rows;
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        let mut conn = run.result.expect("open");
+        assert_eq!(conn.query_one_row("select 1").await, Ok(None));
+    }
+}
+
+#[tokio::test]
+async fn a_silent_node_runs_into_the_deadline() {
+    let (client, _server) = tokio::io::duplex(1024);
+    let soon = Instant::now() + Duration::from_millis(100);
+    let result = establish(client, &good_tls(), &login("x"), Purpose::Probe, soon).await;
+    assert_eq!(result.err(), Some(BackendError::Timeout));
+}
+
+#[tokio::test]
+async fn connect_over_tcp() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
+    let port = listener.local_addr().expect("addr").port();
+    let accept = tokio::spawn(async move {
+        let (stream, _) = listener.accept().await.expect("accept");
+        let (tx, _rx) = oneshot::channel();
+        // Bridge the TCP stream to the scripted node through a duplex pair.
+        let (a, b) = tokio::io::duplex(65536);
+        let bridge = tokio::spawn(async move {
+            let (mut r, mut w) = tokio::io::split(stream);
+            let (mut ar, mut aw) = tokio::io::split(a);
+            let _ = tokio::join!(
+                tokio::io::copy(&mut r, &mut aw),
+                tokio::io::copy(&mut ar, &mut w)
+            );
+        });
+        node(b, Script::primary(), tx).await;
+        bridge.abort();
+    });
+    let node = Node::new("127.0.0.1", port, good_tls());
+    let mut conn = connect(
+        &node,
+        &login("backend-secret"),
+        Purpose::Session,
+        deadline(),
+    )
+    .await
+    .expect("open over TCP");
+    assert!(
+        conn.query_one_row("select 1")
+            .await
+            .expect("query")
+            .is_some()
+    );
+    drop(conn);
+    accept.abort();
+    // A closed port: no connection.
+    let closed = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
+    let port = closed.local_addr().expect("addr").port();
+    drop(closed);
+    let result = connect(
+        &Node::new("127.0.0.1", port, good_tls()),
+        &login("x"),
+        Purpose::Probe,
+        deadline(),
+    )
+    .await;
+    assert_eq!(result.err(), Some(BackendError::Connect));
+    assert!(!format!("{node:?}").contains("127.0.0.1"));
+}
+
+#[tokio::test]
+async fn a_probe_answer_over_4096_bytes_is_not_read_on() {
+    for (len, ok) in [(3500usize, true), (5000, false)] {
+        let mut script = Script::primary();
+        let value: &'static str = Box::leak("x".repeat(len).into_boxed_str());
+        script.rows = vec![vec![Some(value)]];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        let mut conn = run.result.expect("open");
+        let answer = conn.query_one_row("select 1").await;
+        if ok {
+            assert!(matches!(answer, Ok(Some(_))), "{len}");
+        } else {
+            assert_eq!(answer, Err(BackendError::Protocol), "{len}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_startup_message_of_the_node_over_16384_bytes_ends_the_attempt() {
+    for (len, ok) in [(16000usize, true), (16500, false)] {
+        let mut script = Script::primary();
+        let value: &'static str = Box::leak("v".repeat(len).into_boxed_str());
+        script.params = vec![("in_hot_standby", "off"), ("big", value)];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        assert_eq!(run.result.is_ok(), ok, "{len}");
+        if !ok {
+            assert_eq!(run.result.err(), Some(BackendError::Protocol));
+        }
+    }
+}
+
+#[tokio::test]
+async fn the_last_report_of_in_hot_standby_decides() {
+    for (params, ok) in [
+        (
+            vec![("in_hot_standby", "off"), ("in_hot_standby", "on")],
+            false,
+        ),
+        (
+            vec![("in_hot_standby", "on"), ("in_hot_standby", "off")],
+            true,
+        ),
+    ] {
+        let mut script = Script::primary();
+        script.params = params;
+        let run = run(
+            script,
+            good_tls(),
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        if ok {
+            assert!(run.result.is_ok());
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::NotPrimary));
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn eight_logins_at_a_cold_start_derive_the_keys_once() {
+    let credential = Credential::new(password("backend-secret"));
+    let mut tasks = Vec::new();
+    for _ in 0..8 {
+        let credential = Arc::clone(&credential);
+        tasks.push(tokio::spawn(
+            async move { credential.keys(b"salt", 4096).await },
+        ));
+    }
+    let mut all = Vec::new();
+    for task in tasks {
+        all.push(task.await.expect("join").expect("keys"));
+    }
+    assert!(all.windows(2).all(|w| w[0] == w[1]));
+    assert_eq!(credential.derivations(), 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_waiter_goes_on_when_the_login_that_derives_is_cancelled() {
+    let credential = Credential::new(password("backend-secret"));
+    // A high count, so the first derivation is still running when its deadline passes.
+    let first = {
+        let credential = Arc::clone(&credential);
+        tokio::spawn(async move {
+            tokio::time::timeout(Duration::from_millis(5), credential.keys(b"salt", 600_000)).await
+        })
+    };
+    tokio::time::sleep(Duration::from_millis(1)).await;
+    let second = {
+        let credential = Arc::clone(&credential);
+        tokio::spawn(async move { credential.keys(b"salt", 600_000).await })
+    };
+    assert!(
+        first.await.expect("join").is_err(),
+        "the first login ran into its deadline"
+    );
+    let keys = tokio::time::timeout(Duration::from_secs(60), second)
+        .await
+        .expect("the waiter is not stuck")
+        .expect("join");
+    assert!(keys.is_ok());
+    assert_eq!(
+        credential.derivations(),
+        1,
+        "cancelled requester does not abandon the owned derivation"
+    );
+    credential.keys(b"salt", 600_000).await.expect("cached");
+    assert_eq!(credential.derivations(), 1);
+}
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+/// A notice whose body is exactly `len` bytes.
+fn notice(len: usize) -> Vec<u8> {
+    let mut body = b"SNOTICE\0M".to_vec();
+    body.resize(len - 2, b'n');
+    body.extend_from_slice(b"\0\0");
+    assert_eq!(body.len(), len);
+    encode_message(b'N', &body)
+}
+
+#[tokio::test]
+async fn a_startup_message_of_the_node_of_exactly_16384_bytes_passes_and_one_byte_more_does_not() {
+    for (len, ok) in [(16384usize, true), (16385, false)] {
+        let mut script = Script::primary();
+        script.extra = vec![notice(len)];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        if ok {
+            assert!(run.result.is_ok(), "{len}");
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::Protocol), "{len}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn the_parameters_of_the_node_stop_at_16384_bytes_of_names_and_values_together() {
+    // in_hot_standby and off are 17 bytes; two more parameters bring the sum to 16384, then to 16385.
+    for (second, ok) in [(8365usize, true), (8366, false)] {
+        let mut script = Script::primary();
+        let a: &'static str = Box::leak("a".repeat(8000).into_boxed_str());
+        let b: &'static str = Box::leak("b".repeat(second).into_boxed_str());
+        script.params = vec![("in_hot_standby", "off"), ("a", a), ("b", b)];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        if ok {
+            assert_eq!(run.result.expect("open").parameters().len(), 3);
+        } else {
+            assert_eq!(run.result.err(), Some(BackendError::Protocol), "{second}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_probe_answer_of_exactly_4096_bytes_of_bodies_is_read_and_one_byte_more_is_not() {
+    // The bodies of RowDescription (2), DataRow (6 + the column), CommandComplete (9) and
+    // ReadyForQuery (1) are counted together, across the messages.
+    for (len, ok) in [(4078usize, true), (4079, false)] {
+        let mut script = Script::primary();
+        let value: &'static str = Box::leak("x".repeat(len).into_boxed_str());
+        script.rows = vec![vec![Some(value)]];
+        let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+        let mut conn = run.result.expect("open");
+        let answer = conn.query_one_row("select 1").await;
+        if ok {
+            assert_eq!(answer, Ok(Some(vec![Some(value.to_string())])), "{len}");
+        } else {
+            assert_eq!(answer, Err(BackendError::Protocol), "{len}");
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_second_backend_key_data_ends_the_attempt() {
+    let mut script = Script::primary();
+    script.extra = vec![auth::encode_backend_key_data(9999, &[9, 9, 9, 9])];
+    let run = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    assert_eq!(run.result.err(), Some(BackendError::Protocol));
+}
+
+#[tokio::test]
+async fn an_authentication_message_after_the_final_one_that_is_not_ok_ends_the_attempt() {
+    // Cleartext (3), MD5 (5), SASL (10) and SASLContinue (11) where AuthenticationOk belongs.
+    for code in [3, 5, 10, 11] {
+        let mut script = Script::primary();
+        script.auth = Auth::Scram(Tamper::NotOkAfterFinal(code));
+        let run = run(
+            script,
+            good_tls(),
+            &login("backend-secret"),
+            Purpose::Session,
+        )
+        .await;
+        assert!(
+            matches!(
+                run.result.err(),
+                Some(BackendError::Protocol | BackendError::AuthenticationMethod)
+            ),
+            "code {code}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn an_error_inside_the_one_row_query_is_a_server_error_with_its_sqlstate() {
+    let mut script = Script::primary();
+    script.query_error = true;
+    let run = run(script, good_tls(), &login("backend-secret"), Purpose::Probe).await;
+    let mut conn = run.result.expect("open");
+    assert_eq!(
+        conn.query_one_row("select 1").await,
+        Err(BackendError::Server {
+            sqlstate: Some(*b"42P01")
+        })
+    );
+}
+
+#[tokio::test]
+async fn kept_keys_are_used_only_for_their_own_salt_and_count() {
+    let credential = Credential::new(password("backend-secret"));
+    let a = credential.keys(b"salt a", 4096).await.expect("keys");
+    let b = credential.keys(b"salt b", 4096).await.expect("keys");
+    let c = credential.keys(b"salt b", 4097).await.expect("keys");
+    assert!(
+        a != b && b != c && a != c,
+        "each salt and count has its own keys"
+    );
+    assert_eq!(credential.derivations(), 3);
+    assert!(credential.keys(b"salt b", 4097).await.expect("keys") == c);
+    assert_eq!(
+        credential.derivations(),
+        3,
+        "the same salt and count again derives nothing"
+    );
+}
+
+#[test]
+fn display_of_a_backend_error_is_its_constant_kind_and_no_debug_form() {
+    let all = [
+        BackendError::Connect,
+        BackendError::Timeout,
+        BackendError::TlsRefused,
+        BackendError::Tls,
+        BackendError::AuthenticationMethod,
+        BackendError::Authentication,
+        BackendError::Server {
+            sqlstate: Some(*b"28P01"),
+        },
+        BackendError::Protocol,
+        BackendError::NotPrimary,
+        BackendError::NotIdle,
+        BackendError::Closed,
+        BackendError::Random,
+    ];
+    for error in all {
+        assert_eq!(
+            error.to_string(),
+            format!("backend attempt failed: {}", error.kind())
+        );
+    }
+    assert_eq!(
+        BackendError::Server {
+            sqlstate: Some(*b"28P01")
+        }
+        .to_string(),
+        "backend attempt failed: server_error"
+    );
+}
+
+#[test]
+fn a_credential_prints_neither_its_password_nor_its_keys() {
+    // Added by the tests of scope 004, round four (review finding t2).
+    let credential = Credential::new(password("CANARY-9f2c7b1e"));
+    let text = format!("{credential:?} {credential:#?}");
+    assert!(!text.contains("CANARY"), "{text}");
+    let bytes = "CANARY-9f2c7b1e"
+        .bytes()
+        .map(|b| b.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    assert!(!text.contains(&bytes), "{text}");
+    assert_eq!(format!("{credential:?}"), "[REDACTED]");
+}
+
+#[test]
+fn ac30_a_socket_to_a_node_has_keepalive_on_before_it_connects() {
+    // covers: 0004 AC-30, the socket half toward a node.
+    for address in ["127.0.0.1:5432", "[::1]:5432"] {
+        let socket = node_socket(address.parse().expect("address")).expect("socket");
+        assert!(socket.keepalive().expect("keepalive"), "{address}");
+    }
+}
+
+#[tokio::test]
+async fn a_node_that_no_address_answers_is_connect() {
+    // A port that nothing listens on: every address is tried and the attempt is `connect`.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+    let port = listener.local_addr().expect("address").port();
+    drop(listener);
+    assert_eq!(
+        connect_tcp("127.0.0.1", port).await.map(|_| ()),
+        Err(BackendError::Connect)
+    );
+}
+
+/// The rows a scripted node gives for the question of step 8.
+type Rows = Vec<Vec<Option<&'static str>>>;
+
+/// The answer of the node to the question of step 8, and whether the session may go on.
+async fn identity_answer(rows: Rows, query_error: bool) -> Result<(), BackendError> {
+    let mut script = Script::primary();
+    script.rows = rows;
+    script.query_error = query_error;
+    let run = run(
+        script,
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    let mut conn = run.result.expect("open");
+    let system = SystemIdentifier::parse("7613").expect("system identifier");
+    conn.verify_identity("the question", system, 3).await
+}
+
+#[tokio::test]
+async fn ac29_the_node_must_name_the_system_identifier_and_timeline_of_the_route_and_not_be_in_recovery()
+ {
+    // covers: 0004 AC-29, step 8 of the backend connection.
+    assert_eq!(
+        identity_answer(vec![vec![Some("7613"), Some("false"), Some("3")]], false).await,
+        Ok(())
+    );
+    let refused: Vec<(&str, Rows, bool)> = vec![
+        (
+            "another system identifier",
+            vec![vec![Some("7614"), Some("false"), Some("3")]],
+            false,
+        ),
+        (
+            "another timeline",
+            vec![vec![Some("7613"), Some("false"), Some("4")]],
+            false,
+        ),
+        (
+            "in recovery",
+            vec![vec![Some("7613"), Some("true"), Some("3")]],
+            false,
+        ),
+        (
+            "an error",
+            vec![vec![Some("7613"), Some("false"), Some("3")]],
+            true,
+        ),
+        (
+            "two rows",
+            vec![vec![Some("7613"), Some("false"), Some("3")]; 2],
+            false,
+        ),
+        ("no row", vec![], false),
+        (
+            "a null",
+            vec![vec![Some("7613"), Some("false"), None]],
+            false,
+        ),
+        (
+            "four columns",
+            vec![vec![Some("7613"), Some("false"), Some("3"), Some("x")]],
+            false,
+        ),
+        (
+            "a timeline with a sign",
+            vec![vec![Some("7613"), Some("false"), Some("+3")]],
+            false,
+        ),
+        (
+            "a system identifier with a leading zero",
+            vec![vec![Some("07613"), Some("false"), Some("3")]],
+            false,
+        ),
+        (
+            "recovery spelled otherwise",
+            vec![vec![Some("7613"), Some("f"), Some("3")]],
+            false,
+        ),
+    ];
+    for (case, rows, error) in refused {
+        assert_eq!(
+            identity_answer(rows, error).await,
+            Err(BackendError::Identity),
+            "{case}"
+        );
+    }
+}
+
+#[test]
+fn data_row_refuses_every_body_that_lies_about_its_columns() {
+    // Added by the tests of scope 004, round six (decision 102): `data_row`
+    // is out of the fuzz target `auth`, so its bodies that lie are fed here.
+    // Each one is `BackendError::Protocol`, and none panics.
+    let good = data_row_message(&[Some("7613"), None, Some("primary")])[5..].to_vec();
+    assert_eq!(
+        data_row(&good),
+        Ok(vec![
+            Some("7613".to_string()),
+            None,
+            Some("primary".to_string())
+        ])
+    );
+    // Every prefix of a good body.
+    for end in 0..good.len() {
+        assert_eq!(
+            data_row(&good[..end]),
+            Err(BackendError::Protocol),
+            "prefix of {end} bytes"
+        );
+    }
+    let column = |len: i32, bytes: &[u8]| [&len.to_be_bytes()[..], bytes].concat();
+    let body =
+        |count: u16, columns: &[Vec<u8>]| [&count.to_be_bytes()[..], &columns.concat()].concat();
+    let lies: [(&str, Vec<u8>); 8] = [
+        (
+            "more columns than there are",
+            body(3, &[column(1, b"a"), column(-1, b"")]),
+        ),
+        ("the largest count", body(u16::MAX, &[column(1, b"a")])),
+        (
+            "a column longer than the body",
+            body(1, &[column(5, b"abc")]),
+        ),
+        (
+            "a column of i32::MAX bytes",
+            body(1, &[column(i32::MAX, b"abc")]),
+        ),
+        (
+            "a negative length other than -1",
+            body(1, &[column(-2, b"")]),
+        ),
+        ("i32::MIN as the length", body(1, &[column(i32::MIN, b"")])),
+        (
+            "bytes after the last column",
+            body(1, &[column(1, b"a"), b"\x00".to_vec()]),
+        ),
+        (
+            "text that is not UTF-8",
+            body(1, &[column(2, &[0xc3, 0x28])]),
+        ),
+    ];
+    for (what, bytes) in lies {
+        assert_eq!(
+            data_row(&bytes),
+            Err(BackendError::Protocol),
+            "{what}: {bytes:02x?}"
+        );
+    }
+    // And a count of 0 with nothing after it is an empty row, not an error.
+    assert_eq!(data_row(&[0, 0]), Ok(Vec::new()));
+}
+
+#[tokio::test]
+async fn a_lease_prints_its_generation_and_key_and_never_its_login_database_or_backend_key() {
+    // Added by the tests of scope 004, round eight (t2 of the review, the rest
+    // of it): the exact `Debug` text of a `Lease`.
+    use crate::records::{Lease, LeaseGeneration, PoolKey, StartupProfile};
+    use crate::tls::TlsPolicy;
+    let run = run(
+        Script::primary(),
+        good_tls(),
+        &login("backend-secret"),
+        Purpose::Session,
+    )
+    .await;
+    let backend = run.result.expect("open");
+    let permit = Arc::new(tokio::sync::Semaphore::new(1))
+        .try_acquire_owned()
+        .expect("permit");
+    let key = PoolKey {
+        cluster: pool_config::ClusterId::parse("main").expect("id"),
+        node: pool_config::NodeId::parse("pg1").expect("id"),
+        database: "CANARY-9f2c7b1e-database".to_owned(),
+        login: "CANARY-9f2c7b1e-login".to_owned(),
+        identity: pool_config::IdentityId::parse("orders-app").expect("id"),
+        configuration_generation: pool_config::ConfigurationGeneration::FIRST,
+        startup_settings: Vec::new(),
+        credential_generation: pool_config::CredentialGeneration::FIRST,
+        topology_epoch: pool_config::TopologyEpoch::from_stored(4).expect("epoch"),
+        tls_policy: TlsPolicy::VerifyFull,
+        startup_profile: StartupProfile::DedicatedV1,
+    };
+    let lease = Lease::new(
+        backend,
+        permit,
+        LeaseGeneration::FIRST,
+        key,
+        pool_config::IdentityId::parse("orders-app").expect("id"),
+    );
+    assert_eq!(
+        format!("{lease:?}"),
+        "Lease { generation: LeaseGeneration(1), key: PoolKey { cluster: ClusterId(\"main\"), \
+         node: NodeId(\"pg1\"), database: \"[REDACTED]\", login: \"[REDACTED]\", \
+         credential_generation: CredentialGeneration(1), topology_epoch: TopologyEpoch(4), \
+         tls_policy: VerifyFull, startup_profile: DedicatedV1 }, .. }"
+    );
+    let pretty = format!("{lease:#?}");
+    for hidden in ["CANARY", "4242", "secret-login", "appdb"] {
+        assert!(!pretty.contains(hidden), "{hidden}: {pretty}");
+    }
+}
+
+// Review scope 005: isolated budgets exercise the production owner protocol without
+// touching the process-wide semaphore or depending on PBKDF2 timing.
+async fn test_blocking_derivation(
+    credential: Arc<Credential>,
+    salt: Vec<u8>,
+    count: std::num::NonZeroU32,
+) -> Result<ScramKeys, BackendError> {
+    blocking_derivation(move || {
+        credential
+            .derivations
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        derive_keys(&credential.password, &salt, count)
+    })
+    .await
+}
+
+async fn assert_pending_once<F: std::future::Future>(future: std::pin::Pin<&mut F>) {
+    let mut future = future;
+    std::future::poll_fn(|cx| {
+        assert!(future.as_mut().poll(cx).is_pending());
+        std::task::Poll::Ready(())
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn derivation005_mismatched_challenges_wait_in_the_caller_without_detached_jobs() {
+    let run = async {
+        let budget = derivation_budget();
+        let credential = Credential::new(password("backend-secret"));
+        let (started, observed) = oneshot::channel();
+        let (finish, finished) = oneshot::channel();
+        let first = {
+            let credential = Arc::clone(&credential);
+            let budget = Arc::clone(&budget);
+            tokio::spawn(async move {
+                credential
+                    .keys_with_derivation(
+                        b"first",
+                        1,
+                        budget,
+                        move |credential, salt, count| async move {
+                            started.send(()).expect("observer");
+                            finished.await.expect("controlled worker release");
+                            test_blocking_derivation(credential, salt, count).await
+                        },
+                    )
+                    .await
+            })
+        };
+        observed
+            .await
+            .expect("first owner holds its guard and slot");
+        let mut second = Box::pin(credential.keys_with_derivation(
+            b"second",
+            2,
+            Arc::clone(&budget),
+            test_blocking_derivation,
+        ));
+        assert_pending_once(second.as_mut()).await;
+        let mut cancelled = Box::pin(credential.keys_with_derivation(
+            b"third",
+            3,
+            Arc::clone(&budget),
+            test_blocking_derivation,
+        ));
+        assert_pending_once(cancelled.as_mut()).await;
+        assert_eq!(
+            budget.available_permits(),
+            DERIVATION_MAX_JOBS - 1,
+            "different challenges have not admitted replacement owners"
+        );
+        drop(cancelled);
+        assert_eq!(budget.available_permits(), DERIVATION_MAX_JOBS - 1);
+        finish.send(()).expect("release first worker");
+        first.await.expect("requester").expect("first keys");
+        second
+            .await
+            .expect("different challenge proceeds after completion");
+        assert_eq!(
+            credential.derivations(),
+            2,
+            "cancelled third caller never spawned work"
+        );
+        credential
+            .keys_with_derivation(b"second", 2, Arc::clone(&budget), |_, _, _| async {
+                panic!("cached challenge must not spawn")
+            })
+            .await
+            .expect("published second keys");
+        assert_eq!(budget.available_permits(), DERIVATION_MAX_JOBS);
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded owner test");
+}
+
+#[tokio::test]
+async fn derivation005_global_bound_keeps_all_64_slots_until_cancelled_requesters_workers_finish() {
+    let run = async {
+        let budget = derivation_budget();
+        assert_eq!(
+            budget.available_permits(),
+            64,
+            "the production factory fixes the process bound"
+        );
+        let gate = Arc::new(tokio::sync::Barrier::new(65));
+        let (finish, _) = tokio::sync::watch::channel(false);
+        let mut credentials = Vec::new();
+        let mut requesters = Vec::new();
+        for _ in 0..64 {
+            let credential = Credential::new(password("backend-secret"));
+            credentials.push(Arc::clone(&credential));
+            let budget = Arc::clone(&budget);
+            let gate = Arc::clone(&gate);
+            let mut finished = finish.subscribe();
+            requesters.push(tokio::spawn(async move {
+                credential
+                    .keys_with_derivation(
+                        b"shared",
+                        1,
+                        budget,
+                        move |credential, salt, count| async move {
+                            gate.wait().await;
+                            finished
+                                .wait_for(|done| *done)
+                                .await
+                                .expect("controlled worker release");
+                            test_blocking_derivation(credential, salt, count).await
+                        },
+                    )
+                    .await
+            }));
+        }
+        gate.wait().await;
+        assert_eq!(budget.available_permits(), 0);
+        let extra = Credential::new(password("backend-secret"));
+        assert_eq!(
+            extra
+                .keys_with_derivation(b"extra", 1, Arc::clone(&budget), |_, _, _| async {
+                    panic!("exhaustion must refuse before spawning")
+                })
+                .await,
+            Err(BackendError::Authentication)
+        );
+        for requester in &requesters[..32] {
+            requester.abort();
+        }
+        for requester in requesters.drain(..32) {
+            assert!(
+                requester
+                    .await
+                    .expect_err("requester cancelled")
+                    .is_cancelled()
+            );
+        }
+        assert_eq!(
+            budget.available_permits(),
+            0,
+            "caller cancellation cannot release an owner's slot"
+        );
+        assert_eq!(
+            extra
+                .keys_with_derivation(b"extra", 1, Arc::clone(&budget), |_, _, _| async {
+                    panic!("cancelled callers cannot create extra admission")
+                })
+                .await,
+            Err(BackendError::Authentication)
+        );
+        finish.send_replace(true);
+        for requester in requesters {
+            requester
+                .await
+                .expect("requester joined")
+                .expect("derived keys");
+        }
+        for credential in credentials {
+            credential
+                .keys_with_derivation(b"shared", 1, Arc::clone(&budget), |_, _, _| async {
+                    panic!("cancelled owner must still publish its cache")
+                })
+                .await
+                .expect("completed owner cached its result");
+            assert_eq!(credential.derivations(), 1);
+        }
+        assert_eq!(budget.available_permits(), 64);
+        extra
+            .keys_with_derivation(b"extra", 1, Arc::clone(&budget), test_blocking_derivation)
+            .await
+            .expect("capacity recovered across credentials");
+        assert_eq!(extra.derivations(), 1);
+        assert_eq!(budget.available_permits(), 64);
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded saturation test");
+}
+
+#[tokio::test]
+async fn derivation005_blocking_panic_publishes_failure_and_releases_guard_and_slot() {
+    let run = async {
+        let budget = derivation_budget();
+        let reserved = Arc::clone(&budget)
+            .try_acquire_many_owned(63)
+            .expect("leave exactly one production slot");
+        let credential = Credential::new(password("backend-secret"));
+        let (started, observed) = oneshot::channel();
+        let (panic_now, may_panic) = oneshot::channel();
+        let first = {
+            let credential = Arc::clone(&credential);
+            let budget = Arc::clone(&budget);
+            tokio::spawn(async move {
+                credential
+                    .keys_with_derivation(b"panic", 1, budget, move |_, _, _| async move {
+                        started.send(()).expect("observer");
+                        may_panic.await.expect("controlled panic release");
+                        blocking_derivation(|| panic!("controlled blocking derivation panic")).await
+                    })
+                    .await
+            })
+        };
+        observed.await.expect("owner admitted");
+        let mut waiter = Box::pin(credential.keys_with_derivation(
+            b"panic",
+            1,
+            Arc::clone(&budget),
+            |_, _, _| async { panic!("same failed challenge must use the published failure") },
+        ));
+        assert_pending_once(waiter.as_mut()).await;
+        assert_eq!(budget.available_permits(), 0);
+        panic_now
+            .send(())
+            .expect("panic in the real blocking wrapper");
+        assert_eq!(
+            first.await.expect("requester does not panic"),
+            Err(BackendError::Authentication)
+        );
+        assert_eq!(
+            waiter.await,
+            Err(BackendError::Authentication),
+            "waiting challenge receives the cached constant failure"
+        );
+        assert_eq!(budget.available_permits(), 1);
+        credential
+            .keys_with_derivation(
+                b"recovery",
+                1,
+                Arc::clone(&budget),
+                test_blocking_derivation,
+            )
+            .await
+            .expect("cache guard and global slot recovered after panic");
+        assert_eq!(credential.derivations(), 1);
+        assert_eq!(budget.available_permits(), 1);
+        drop(reserved);
+        assert_eq!(budget.available_permits(), 64);
+    };
+    tokio::time::timeout(Duration::from_secs(5), run)
+        .await
+        .expect("bounded panic test");
+}

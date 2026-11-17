@@ -16,6 +16,14 @@ This file owns the project's terms. Each entry names the document that owns the 
 | Pool key | The full backend identity that partitions reusable backends. | [Connection pooling](architecture/connection-pooling.md#pool-identity-and-lifecycle) |
 | Identity ID | The name an operator gives one entry of the identity map. Logs and metrics use it in place of the principal or the backend login. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#what-may-appear-in-default-telemetry) |
 | Virtual cancellation credential | The per lease cancel token given to the frontend. The real backend key stays private. | [Spec 0001](specs/0001-initial-architecture/index.md#safety-contracts), contract 9 |
+| Principal | One frontend identity that may log in, as an entry of the configuration with a name and a verifier. Before authentication succeeds, the name a client sends is only a claim. | [Spec 0004](specs/0004-one-real-primary-path/index.md#keys) |
+| Principal ID | The name an operator gives one principal entry. Logs use it in place of the principal name. | [Spec 0004](specs/0004-one-real-primary-path/index.md#log-events) |
+| Verifier | What POOL holds to check a frontend password with SCRAM, in the form PostgreSQL stores. It is not a password and cannot be used to log in to PostgreSQL. | [Spec 0004](specs/0004-one-real-primary-path/index.md#state-directory-and-protected-files) |
+| Monitor login | The PostgreSQL role the probe logs in as. It has the right to log in and nothing else. | [Spec 0004](specs/0004-one-real-primary-path/index.md#the-probe) |
+| Handshake permit | The bounded right of one connection to be in startup and authentication. Its limit is separate from the session permits. | [Spec 0004](specs/0004-one-real-primary-path/index.md#limits) |
+| Backend permit | The bounded right of one session to hold a backend on one node. A session waits for it in a bounded line. | [Spec 0004](specs/0004-one-real-primary-path/index.md#limits) |
+
+The physical backend budget includes connecting, leased, cleaning and idle backends, including dedicated sessions. Its global, node, database and identity caps are fixed in [spec 0005](specs/0005-clean-session-reuse/index.md#admission-and-configuration). Cleanup quarantine means a backend owned by cleanup that cannot yet be leased. The conservative reusable profile and its unknown state close boundary are fixed in that spec.
 
 ## Profiles
 
@@ -47,6 +55,9 @@ The word profile always takes a qualifier.
 | Bootstrap | The explicit operator command that creates a journal once, from the expected writer and matching fresh observations of every node. The daemon never does this by itself. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#bootstrap) |
 | Restore hold | The mark a journal carries when it came out of a backup. Admission stays closed until an operator reconciles it. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#walk-4-restore-of-a-backup-taken-before-a-promotion) |
 | Conflict latch | The durable mark a cluster gets when a second primary or a later timeline was observed. Writes stay closed until an operation clears it, also when the evidence is gone. | [Spec 0003](specs/0003-control-and-session-data-model/index.md#writer-admission) |
+| Route view | What the data plane reads to find the eligible primary of a cluster: the topology snapshot, mapped by the daemon into a type that the data plane owns. | [Spec 0004](specs/0004-one-real-primary-path/index.md#route-view) |
+| Probe | The task that asks one node for its role, system identifier and timeline and produces observations. | [Spec 0004](specs/0004-one-real-primary-path/index.md#the-probe) |
+| State directory | The directory named by `control.state_directory`. It holds the journal and the lock file, and its owner is the service account. | [Spec 0004](specs/0004-one-real-primary-path/index.md#state-directory-and-protected-files) |
 | Admission | The decision to accept work. Initial admission selects a backend at login. Operation admission accepts or refuses later work on the pinned lease. | [Data plane](architecture/data-plane.md) |
 
 ## Generations

@@ -8,11 +8,15 @@ use pool_config::{
     TopologyEpoch, ValidatedConfig,
 };
 
+use crate::admission::Closed;
+use crate::journal::LatchReceipt;
 use crate::observation::TimelineId;
 
 /// What the journal reader found in the state directory.
 ///
-/// In the product only the journal reader of scope 004 builds one. Tests
+/// In the product only the journal reader, [`crate::Journal::read`], builds
+/// one, and it keeps it inside a [`crate::JournalRead`]. A source guard keeps
+/// this name out of every other crate (`0003 AC-19`). Tests of this crate
 /// build one by hand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StoreProbe {
@@ -27,6 +31,10 @@ pub enum StoreProbe {
 
 /// The journal identity (the `store` row) with everything the journal holds
 /// about authority.
+///
+/// The fields are public so that the journal reader can fill it and the
+/// tests of this crate can build one by hand. No other crate names this
+/// type: a source guard refuses it outside `pool-control` (`0003 AC-19`).
 ///
 /// Restart rule: it survives a restart, in the journal. At every start it is
 /// read first, without writing, and classified by [`classify_startup`]; only
@@ -120,6 +128,90 @@ pub enum AuthorityState {
     Ready(Authority),
 }
 
+impl AuthorityState {
+    /// The stable name of the state: `uninitialized`, `unconfirmed`,
+    /// `missing`, `unreadable`, `mismatch`, `restore_pending` or `ready`.
+    /// The commands build their output and their findings from it.
+    pub fn name(&self) -> &'static str {
+        match self {
+            AuthorityState::Uninitialized => "uninitialized",
+            AuthorityState::Unconfirmed => "unconfirmed",
+            AuthorityState::Missing => "missing",
+            AuthorityState::Unreadable => "unreadable",
+            AuthorityState::Mismatch => "mismatch",
+            AuthorityState::Held => "restore_pending",
+            AuthorityState::Ready(_) => "ready",
+        }
+    }
+
+    /// Sets the conflict latch of `cluster` in memory when `closed` asks for
+    /// it, without any write to the journal (`0003 AC-17`).
+    ///
+    /// On a `Ready` state that holds `cluster`, an answer whose
+    /// [`Closed::latches_conflict`] is true sets the latch. From then on
+    /// [`crate::writer_admission`] closes `cluster` with
+    /// `authority.conflict_latched`, also when the second primary is no
+    /// longer seen. Every other cluster keeps its answer. An answer that does
+    /// not ask for the latch, a state that is not `Ready`, or a cluster the
+    /// state does not hold change nothing.
+    ///
+    /// Returns true when the latch of `cluster` is set in the state after the
+    /// call, whether this call set it or it was set before. The write to the
+    /// journal follows: the daemon calls [`crate::Journal::set_conflict_latch`]
+    /// and hands the receipt to [`AuthorityState::latch_recorded`].
+    pub fn latch_conflict(&mut self, cluster: &ClusterId, closed: &Closed) -> bool {
+        let AuthorityState::Ready(authority) = self else {
+            return false;
+        };
+        let Some(topology) = authority
+            .stored
+            .clusters
+            .iter_mut()
+            .find(|topology| &topology.cluster == cluster)
+        else {
+            return false;
+        };
+        if closed.latches_conflict() {
+            topology.conflict_latched = true;
+        }
+        topology.conflict_latched
+    }
+
+    /// Takes the authority revision of `receipt`, the proof that the journal
+    /// holds the latch of its cluster (`0003 AC-17`).
+    ///
+    /// It changes the state only when it is `Ready`, the latch of the
+    /// receipt's cluster is set in it, and the revision of the receipt is
+    /// higher than the one the state holds. From then on an open answer for
+    /// another cluster carries that revision.
+    pub fn latch_recorded(&mut self, receipt: &LatchReceipt) {
+        let AuthorityState::Ready(authority) = self else {
+            return;
+        };
+        let latched =
+            authority.stored.clusters.iter().any(|topology| {
+                &topology.cluster == receipt.cluster() && topology.conflict_latched
+            });
+        // Receipts can be handed over in another order than they were
+        // written; the state keeps the highest revision it has seen.
+        if latched && receipt.authority_revision() > authority.stored.authority_revision {
+            authority.stored.authority_revision = receipt.authority_revision();
+        }
+    }
+
+    /// Whether the conflict latch of `cluster` is set in a `Ready` state.
+    pub(crate) fn is_latched(&self, cluster: &ClusterId) -> bool {
+        match self {
+            AuthorityState::Ready(authority) => authority
+                .stored
+                .clusters
+                .iter()
+                .any(|topology| &topology.cluster == cluster && topology.conflict_latched),
+            _ => false,
+        }
+    }
+}
+
 /// Durable authority that the configuration confirmed.
 ///
 /// Only [`classify_startup`] makes one. Code outside this crate cannot build
@@ -146,7 +238,9 @@ pub enum AuthorityState {
 /// ```
 ///
 /// Restart rule: it lives in memory for one run and is made again by
-/// classifying the journal at the next start.
+/// classifying the journal at the next start. During the run it can only
+/// become stricter: [`AuthorityState::latch_conflict`] sets a conflict latch,
+/// and [`AuthorityState::latch_recorded`] takes the revision of that write.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Authority {
     stored: StoredAuthority,
@@ -158,7 +252,8 @@ impl Authority {
         self.stored.authority_id
     }
 
-    /// The revision of durable authority as it was read.
+    /// The revision of durable authority: as it was read, or the revision of
+    /// the last latch receipt the state took.
     pub fn authority_revision(&self) -> AuthorityRevision {
         self.stored.authority_revision
     }

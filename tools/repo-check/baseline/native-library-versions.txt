@@ -1,0 +1,4 @@
+# Scope 005, spec 0004 Follow-up 14. Cargo wrapper version -> bundled upstream version.
+# Keep in sync with the source of the locked crate when adopting a new native version.
+libsqlite3-sys 0.40.0 SQLite 3.54.1
+aws-lc-sys 0.47.0 AWS-LC 5.12.0

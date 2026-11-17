@@ -2,10 +2,12 @@
 
 use std::time::Duration;
 
-use pool_config::{AuthorityRevision, ClusterId, NodeId, TopologyEpoch, ValidatedConfig};
+use pool_config::{
+    AuthorityRevision, ClusterId, NodeId, SystemIdentifier, TopologyEpoch, ValidatedConfig,
+};
 
 use crate::authority::{AuthorityState, StoredAuthority};
-use crate::observation::{Evidence, MonotonicTime, Observation};
+use crate::observation::{Evidence, MonotonicTime, Observation, TimelineId};
 
 /// One reason why admission is closed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,12 +111,16 @@ pub enum WriterAdmission {
 ///     pool_config::NodeId,
 ///     pool_config::TopologyEpoch,
 ///     pool_config::AuthorityRevision,
+///     pool_config::SystemIdentifier,
+///     pool_control::TimelineId,
 /// ) {
 ///     (
 ///         primary.cluster().clone(),
 ///         primary.node().clone(),
 ///         primary.topology_epoch(),
 ///         primary.authority_revision(),
+///         primary.system_identifier(),
+///         primary.writer_timeline(),
 ///     )
 /// }
 /// ```
@@ -126,6 +132,8 @@ pub struct EligiblePrimary {
     node: NodeId,
     topology_epoch: TopologyEpoch,
     authority_revision: AuthorityRevision,
+    system_identifier: SystemIdentifier,
+    writer_timeline: TimelineId,
 }
 
 impl EligiblePrimary {
@@ -147,6 +155,19 @@ impl EligiblePrimary {
     /// The authority revision of the journal.
     pub fn authority_revision(&self) -> AuthorityRevision {
         self.authority_revision
+    }
+
+    /// The system identifier of the approved topology, which the sample of the writer named.
+    ///
+    /// A session compares it with what the node says on its own connection
+    /// (spec 0004, `0004 AC-29`).
+    pub fn system_identifier(&self) -> SystemIdentifier {
+        self.system_identifier
+    }
+
+    /// The writer timeline of the approved topology, which the sample of the writer named.
+    pub fn writer_timeline(&self) -> TimelineId {
+        self.writer_timeline
     }
 }
 
@@ -190,8 +211,9 @@ impl Closed {
         &self.reasons
     }
 
-    /// True when the reasons report a second primary or a later timeline. The
-    /// daemon then sets the conflict latch of the cluster in the journal.
+    /// True when the reasons report a second primary or a later timeline.
+    /// [`crate::AuthorityState::latch_conflict`] then sets the conflict latch
+    /// of the cluster in memory, and the daemon writes it to the journal.
     pub fn latches_conflict(&self) -> bool {
         self.reasons
             .iter()
@@ -211,6 +233,15 @@ impl Closed {
 /// applies is reported. Admission is open only when the configuration, the
 /// journal and a fresh observation agree on the writer and no conflict is
 /// seen.
+///
+/// The caller has two duties, because two kinds of sample turn what a node
+/// said into no evidence and so can hide a second primary: it passes at most
+/// one sample per node (two samples at the latest time are a tie), and it
+/// never passes a `now` earlier than the latest sample. In the product the
+/// one caller is [`crate::build_snapshot`], which meets both: it passes the
+/// samples of an [`crate::ObservationBoard`] and clamps `now` to the latest
+/// of them (`0003 AC-18`). A source guard keeps every other crate from
+/// calling this function.
 pub fn writer_admission(
     config: &ValidatedConfig,
     state: &AuthorityState,
@@ -339,6 +370,8 @@ fn admit_ready(
             node: writer.clone(),
             topology_epoch: approved.topology_epoch,
             authority_revision: stored.authority_revision,
+            system_identifier: approved.system_identifier,
+            writer_timeline: approved.writer_timeline,
         })
     } else {
         closed(reasons)

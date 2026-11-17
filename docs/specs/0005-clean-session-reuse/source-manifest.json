@@ -1,0 +1,213 @@
+{
+  "format": "scope005-source-manifest-v1",
+  "base": "2dbc03780b16abafcfa7c5308a56107005c1049b",
+  "algorithm": "SHA-256 of UTF-8 records in lexicographic path order: path + NUL + lowercase file SHA-256 hex + LF. File hashes cover raw bytes.",
+  "scope": "Selected Rust, TOML, shell and text inputs from target/scope005/review-paths.json plus apps/pool/src/control.rs; prose and test-preferences.json excluded.",
+  "sha256": "13248d15a681e227e9faef83a205f6bbb6b772712491ce5038bdfaa96b463cca",
+  "files": [
+    {
+      "path": "apps/pool/clippy.toml",
+      "sha256": "5d71e15387621a698046029eb4b42eb6113063291b3d7bdb09fd0f1b3bb69e58"
+    },
+    {
+      "path": "apps/pool/src/control.rs",
+      "sha256": "b1a4856590087a46f94da114f37a2d6bf8dddbbc872b8cc627be90bb637451d9"
+    },
+    {
+      "path": "apps/pool/src/daemon.rs",
+      "sha256": "b5007a03e723a1e134c9a8e7160264abf8d11fdef86cc89a290388b5a4f91545"
+    },
+    {
+      "path": "apps/pool/tests/integration.rs",
+      "sha256": "b48ea18aa1ef2e2c23e2b21a0e301a67ae8f85673b974812b8d91bdec6de7164"
+    },
+    {
+      "path": "crates/pool-config/clippy.toml",
+      "sha256": "cf0ffb6ad4faa0aee6122acfacf8b078c981aecd550faa458ec870b00457ede9"
+    },
+    {
+      "path": "crates/pool-config/src/serving.rs",
+      "sha256": "95cfb446fb7b7ef632440a276b4bbc25fb8df52bb78fec5a511ee612529fa0e5"
+    },
+    {
+      "path": "crates/pool-config/tests/validate.rs",
+      "sha256": "a4fe7040ee03a742ba63dc0b82db21af3e3a8ef281a5be380930c015a275d1cf"
+    },
+    {
+      "path": "crates/pool-control/clippy.toml",
+      "sha256": "6aca4c2229d80a5f08f316cdc9e5f1ce2d850353d7ba4a873d94336c40d99725"
+    },
+    {
+      "path": "crates/pool-control/src/journal.rs",
+      "sha256": "45da2013f992fbf88ce42bc42c2836907bf922ff3b5d1ac66b5a53f97bfcd14e"
+    },
+    {
+      "path": "crates/pool-control/tests/controller.rs",
+      "sha256": "c8750f40955952b5e060bf739e9112b7be7abdac8422490814c1163a7f94f62b"
+    },
+    {
+      "path": "crates/pool-control/tests/journal.rs",
+      "sha256": "37f7a16488f3e084851577ea4a036e0234478cb59aa0000d623ff8897a60992d"
+    },
+    {
+      "path": "crates/pool-control/tests/walkthroughs.rs",
+      "sha256": "1c86f36c712229b60112483aa8dd2976849195dca153eed1c79171da0a62f88c"
+    },
+    {
+      "path": "crates/pool-core/clippy.toml",
+      "sha256": "5d71e15387621a698046029eb4b42eb6113063291b3d7bdb09fd0f1b3bb69e58"
+    },
+    {
+      "path": "crates/pool-core/src/backend.rs",
+      "sha256": "5ad329d24fb1538299ac6d836732a1084aa877fbbfca2b1e8f154ee89560f378"
+    },
+    {
+      "path": "crates/pool-core/src/backend/tests.rs",
+      "sha256": "53ba6e21d6056a292ae53eed04255a8da3b09c2dfe5cd37d489e74671405f968"
+    },
+    {
+      "path": "crates/pool-core/src/lib.rs",
+      "sha256": "4c2cd2af830c98d4986dc6b7cb8dccef2ebc41eccc95360eb84eb46649c3cb5e"
+    },
+    {
+      "path": "crates/pool-core/src/load.rs",
+      "sha256": "7488da8b8e59ba44a85590814baa7041bc92a2315b669bac0ecb183971a3d2c0"
+    },
+    {
+      "path": "crates/pool-core/src/pool.rs",
+      "sha256": "d46e194366cff8a797a013d2e2bb50380c983c78c0b91999484aae4ead7efbb2"
+    },
+    {
+      "path": "crates/pool-core/src/random.rs",
+      "sha256": "6732da1b7a0bc48b6645199711693d3aa6b333774d9f7e6ad648d8e52eed9ec7"
+    },
+    {
+      "path": "crates/pool-core/src/recognizer.rs",
+      "sha256": "3f05492c2a954163c154a742a53fc66ed2f7003c5b10dd7991b7363f3ffe3229"
+    },
+    {
+      "path": "crates/pool-core/src/records.rs",
+      "sha256": "9ecd6794c89ee27bbb6ff8affa67ed7244ff2d86560ace8702e90a83dd53601c"
+    },
+    {
+      "path": "crates/pool-core/src/report.rs",
+      "sha256": "4a4df236b4d82c20edbc7e1bbc8d111e673cceb41e365784d9b14813416461f5"
+    },
+    {
+      "path": "crates/pool-core/src/reuse.rs",
+      "sha256": "25aa0522832d9b4600b80f9ea01bd582572c11158c935643743af89d1ce7b46d"
+    },
+    {
+      "path": "crates/pool-core/src/route.rs",
+      "sha256": "e7c6e21ce0d0f1a73c0d3a44625ccee3ffa0ddd75347e9353b23e303e1539bc1"
+    },
+    {
+      "path": "crates/pool-core/src/scram.rs",
+      "sha256": "f1a3776262943e59459e1d4072760e665877586950d300aff2a5dc4bb2fc4bb7"
+    },
+    {
+      "path": "crates/pool-core/src/secret.rs",
+      "sha256": "6d11abd2f6b0ddb35231d3153373fcfaf310fc8f8a3fa45b40f83bc9bca11345"
+    },
+    {
+      "path": "crates/pool-core/src/session.rs",
+      "sha256": "4e6d14097590723569d3fbf908d323cf1f66084bb677cd3bed480f757f447bb0"
+    },
+    {
+      "path": "crates/pool-core/src/tls.rs",
+      "sha256": "f00d87ba850f75015446612edc9168ddd9d556d789981c059827f555bf458a4e"
+    },
+    {
+      "path": "crates/pool-core/src/wire.rs",
+      "sha256": "fb905fdd5f50ca9bcc60f6d67390d70074962c67ea15219824712f08c3952d32"
+    },
+    {
+      "path": "crates/pool-core/tests/session.rs",
+      "sha256": "6c4ce36d5b22ad18d8a486839af6013c46225bbe8c995c9c9d666b14bd46156b"
+    },
+    {
+      "path": "crates/pool-protocol/clippy.toml",
+      "sha256": "cf0ffb6ad4faa0aee6122acfacf8b078c981aecd550faa458ec870b00457ede9"
+    },
+    {
+      "path": "crates/pool-protocol/src/message.rs",
+      "sha256": "ae1ca59aeee322517a05927ee537e6cb35818175acfee6e673c96895b59aeaed"
+    },
+    {
+      "path": "crates/pool-protocol/src/startup.rs",
+      "sha256": "32026fda2c4125112142c0aba37d3e652747d008112eacc1c80858a51dca4403"
+    },
+    {
+      "path": "scripts/prove-checks.sh",
+      "sha256": "96f3b38e723f58849bddb7b606a7bf771a142ec0b033bb6d1df56db8e6baab9c"
+    },
+    {
+      "path": "tools/repo-check/baseline/native-library-versions.txt",
+      "sha256": "1c260ffdcba7deeae564a91b859f7c3f345e72dcc1d1c69cc162b360bc33cce0"
+    },
+    {
+      "path": "tools/repo-check/src/ci.rs",
+      "sha256": "98c10e36302b43c412d20184e9db7fe978530f66793dd2ccb6f1a2af71ced3b1"
+    },
+    {
+      "path": "tools/repo-check/src/docs.rs",
+      "sha256": "a14fe32b4d018677ce7741847d7db1a40f5fa0857e43b67fd353d2c5490c3367"
+    },
+    {
+      "path": "tools/repo-check/src/hardening.rs",
+      "sha256": "d2271cb4a5f231e8b56a1129d889c0c902e3b2d319bc75846f3d4f5059f606be"
+    },
+    {
+      "path": "tools/repo-check/src/ids.rs",
+      "sha256": "60562e7b66bd1ad832e5ad4042f12f1db4a8beb97ec945df21836dc6d1a6fca9"
+    },
+    {
+      "path": "tools/repo-check/src/main.rs",
+      "sha256": "3a4b2db3d8ccc8007c4a5cae3428d3b9d354a9cae3d892bacfcc17e4088cdcce"
+    },
+    {
+      "path": "tools/repo-check/src/report.rs",
+      "sha256": "e18b141d053e90eba20f6ec582098cea9d4b9732574abb13da595bb89100a275"
+    },
+    {
+      "path": "tools/repo-check/src/text.rs",
+      "sha256": "efe40abebe4889b13d6cd5fa0125130a69cdddf09aa9e86a82dd1b80383e77ec"
+    },
+    {
+      "path": "tools/repo-check/src/tree.rs",
+      "sha256": "7f89c464ab8a31d83c256239517bc13aebe825ecd82e81865a390fee4d15d57f"
+    },
+    {
+      "path": "tools/repo-check/src/workspace.rs",
+      "sha256": "21305d2d7a31b9eeb9d8ba434a268bd1a21503de7f0b0c7afc1f506d11aaff9f"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/check_script.rs",
+      "sha256": "56013667de0cebe9e2cccaea01e464956ff5a7da04abf83fcc7d42f252c74bbc"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/ci.rs",
+      "sha256": "51112fa27e763f340442dc4652abb91d09643551dfde84c675406ce6a8daaf8d"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/cli.rs",
+      "sha256": "af2d6929c9086a3f410526a09f4cb45334bde65efb43afb7f28658a4759f5da4"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/common.rs",
+      "sha256": "b4fb9fb1d5f7bef782d1cdd7015daee638cbc030cd3421817eb5b266b7d8d511"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/docs.rs",
+      "sha256": "43b9d142ef4a2f8aac268a2e3acc513fe70d7606144066ae684a9d8e3137abea"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/main.rs",
+      "sha256": "301ca05229563fe69717efde11894160561cc3a1335e8edf0737d59f984f4f5f"
+    },
+    {
+      "path": "tools/repo-check/tests/repo_check/workspace.rs",
+      "sha256": "15a1715034bdb6e8775dde8e0347b597fc9a1f7c4520f678b29afa60149d3deb"
+    }
+  ]
+}

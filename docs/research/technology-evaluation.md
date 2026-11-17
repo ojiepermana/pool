@@ -147,6 +147,27 @@ Versions observed in the build, on 2026-11-14, on the final tree of Build plan s
 | Product Rust toolchain | `rustc 1.100.0 (0ef1bc386 2026-11-09)` | `rustc --version` |
 | `actions/checkout`, `actions/cache`, hosted runner | Not observed on a workstation; they run only in CI | Build plan step 11 |
 
+## Adopted in scope 004
+
+Scope 004 adopts the first runtime, TLS and SQLite dependencies, and with them the first native code in the product. The decisions are in [spec 0004](../specs/0004-one-real-primary-path/index.md#adopted-dependencies), with the alternatives in its [rationale](../specs/0004-one-real-primary-path/rationale.md). Build plan step 3 declared them on 2026-11-15, and Cargo 1.100.0 locked exactly the versions below in the real workspace. Until the steps that used them were built, Cargo printed `unused dependency` warnings. That exception ended with Build plan step 10 (corrected on 2026-11-16: the sentence still spoke of the future).
+
+| Dependency | Locked version and features | Used by | Native code |
+|---|---|---|---|
+| tokio | 1.54.1, no default features, features `rt-multi-thread`, `net`, `io-util`, `io-std`, `time`, `sync`, `signal`, `macros` | `pool-core`, `pool` | None |
+| rustls | 0.23.46, no default features, features `std`, `tls12`, `aws_lc_rs` | `pool-core` | Through `aws-lc-rs` |
+| tokio-rustls | 0.26.6, no default features | `pool-core` | None |
+| aws-lc-rs | 1.19.0, no default features, features `aws-lc-sys`, `prebuilt-nasm` | `pool-core`, and `rustls` | Yes: AWS-LC 5.12.0, as bundled in `aws-lc-sys` 0.47.0 |
+| rusqlite | 0.42.0, no default features, feature `bundled` | `pool-control` | Yes: SQLite 3.54.1 through `libsqlite3-sys` 0.40.0 |
+| tracing | 0.1.44, no default features, feature `std` | `pool-core`, `pool` | None |
+
+`Cargo.lock` holds 70 third party entries and the five workspace members. The names and versions are the list under [locked packages](../specs/0004-one-real-primary-path/rationale.md#locked-packages) of the spec rationale, with no difference.
+
+The two native libraries and their boundary review are under [native code](../specs/0004-one-real-primary-path/index.md#native-code) of spec 0004. Both are compiled from source by the C compiler of the builder image and are named with their terms in `NOTICE` at the repository root.
+
+Licenses decided in manual step M1: on 2026-11-15 the Release maintainer allowed `ISC` and `BSD-3-Clause` for these packages only: `aws-lc-rs` 1.19.0 (`ISC`), `aws-lc-sys` 0.47.0 (`ISC`, `BSD-3-Clause`), `rustls-webpki` 0.103.17 (`ISC`), `untrusted` 0.9.0 (`ISC`) and `subtle` 2.6.1 (`BSD-3-Clause`). They are five exceptions by crate in `deny.toml`. The general list stays `Apache-2.0`, `MIT`, `Unicode-3.0`.
+
+The PostgreSQL image for the integration check is pinned by Build plan step 8. Tag `postgres:18.7-bookworm`, index digest `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`, written once in `scripts/check.sh` as `POSTGRES_IMAGE`. Observed on 2026-11-15 on the workstation (Docker Desktop, `arm64` variant of the image): `postgres --version` and `psql --version` print 18.7 (Debian 18.7-1.pgdg12+2), and `openssl version` prints OpenSSL 3.0.22, which the check uses to make the test certificates.
+
 ## Adoption gate
 
 Before installing a dependency, verify its stable version, selected features, MSRV, advisories, native dependencies, license files, and maintainer activity again. Commit Cargo.lock for binaries, generate an SBOM, and test Linux targets. First party production Rust should forbid unsafe code; a documented dependency exception covers native parser, TLS provider, and SQLite boundaries after review. The dependencies adopted so far are listed under [Adopted in scope 001](#adopted-in-scope-001) and [Adopted in scope 002](#adopted-in-scope-002).

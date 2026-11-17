@@ -1,0 +1,19 @@
+# Resolved standard library paths for W3 (spec 0004 Follow-up 14, scope 005).
+disallowed-types = [
+    { path = "std::net::UdpSocket", reason = "W3: forbidden standard library capability" },
+    { path = "std::os::unix::net::UnixListener", reason = "W3: forbidden standard library capability" },
+    { path = "std::os::unix::net::UnixStream", reason = "W3: forbidden standard library capability" },
+    { path = "std::os::unix::net::UnixDatagram", reason = "W3: forbidden standard library capability" },
+    { path = "std::net::TcpListener", reason = "W3: forbidden standard library capability" },
+    { path = "std::net::TcpStream", reason = "W3: forbidden standard library capability" },
+]
+disallowed-methods = [
+    { path = "std::thread::spawn", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::scope", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::Builder::spawn", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::Builder::spawn_scoped", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::sleep", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::park", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::park_timeout", reason = "W3: forbidden standard library capability" },
+    { path = "std::thread::yield_now", reason = "W3: forbidden standard library capability" },
+]

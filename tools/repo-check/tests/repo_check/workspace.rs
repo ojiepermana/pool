@@ -22,6 +22,14 @@ fn good_tree(name: &str) -> Fixture {
         "# spec 0002\npool-repo-check\n",
     );
     f.write(
+        &format!("{baseline}/protocol-fuzz-lock-packages.txt"),
+        "# spec 0004\npool-protocol\npool-protocol-fuzz\n",
+    );
+    f.write(
+        "crates/pool-protocol/fuzz/Cargo.lock",
+        "version = 4\n\n[[package]]\nname = \"pool-protocol\"\n\n[[package]]\nname = \"pool-protocol-fuzz\"\n",
+    );
+    f.write(
         &format!("{baseline}/forbidden-paths.txt"),
         "# spec 0002\ncrates/pool-core\napps/pool-cli\n",
     );
@@ -35,7 +43,7 @@ fn good_tree(name: &str) -> Fixture {
     );
     f.write(
         "Cargo.lock",
-        "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
+        "version = 4\n\n[[package]]\nname = \"pool\"\nversion = \"0.0.0\"\ndependencies = [\n \"pool-config\",\n]\n\n[[package]]\nname = \"pool-config\"\nversion = \"0.0.0\"\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n",
     );
     f.write(
         "crates/pool-config/fuzz/Cargo.lock",
@@ -67,6 +75,12 @@ fn good_tree(name: &str) -> Fixture {
         SPEC_0001,
         "# 0001\n\n### Linux build\n\nRun this.\n\n```sh\ndocker run --rm image cargo test\necho linux build check passed\n```\n\n```sh\nnot this block\n```\n",
     );
+    f.write(
+        ".cargo/config.toml",
+        include_str!("../../../../.cargo/config.toml"),
+    );
+    f.write("NOTICE", "");
+    f.write("tools/repo-check/baseline/native-library-versions.txt", "");
     f
 }
 
@@ -223,124 +237,71 @@ fn w4_reads_a_lints_line_with_a_trailing_comment() {
 }
 
 #[test]
-fn w5_names_a_dependency_pair_that_is_not_allowed() {
-    // covers: 0002 AC-6, W5
-    let f = good_tree("ws_w5_extra");
+fn w5_reads_real_package_names_from_the_lockfile() {
+    let f = good_tree("ws_w5_locked");
     f.replace(
-        "crates/pool-config/Cargo.toml",
-        "serde = \"1\"\n",
-        "serde = \"1\"\npool = { path = \"../../apps/pool\" }\n",
+        "Cargo.lock",
+        "name = \"pool-config\"",
+        "name = \"pool-config\"\ndependencies = [\n \"pool 0.0.0\",\n]",
     );
-    let manifest = f.read("crates/pool-config/Cargo.toml");
-    let line = line_of(&manifest, "pool = {");
     f.check("workspace", &[]).assert_problem(
         "workspace",
         "W5",
-        &[
-            &format!("crates/pool-config/Cargo.toml:{line}:"),
-            "pool-config -> pool",
-            "not allowed",
-        ],
+        &["Cargo.lock", "pool-config -> pool", "not allowed"],
     );
 }
 
 #[test]
-fn w5_names_a_listed_pair_that_no_manifest_declares() {
-    // covers: 0002 AC-6, W5
+fn w5_requires_the_listed_locked_edge() {
     let f = good_tree("ws_w5_missing");
-    f.replace(
-        "apps/pool/Cargo.toml",
-        "pool-config = { path = \"../../crates/pool-config\" }\n",
-        "",
-    );
+    f.replace("Cargo.lock", "dependencies = [\n \"pool-config\",\n]\n", "");
     f.check("workspace", &[]).assert_problem(
         "workspace",
         "W5",
-        &[
-            "internal-dependencies.txt",
-            "pool -> pool-config",
-            "missing",
-        ],
+        &["pool -> pool-config", "missing"],
     );
 }
 
 #[test]
-fn w5_reads_dependency_tables_in_every_spelling() {
-    // covers: 0002 AC-6, W5: `[dev-dependencies]`, `[target.<cfg>.dependencies]` and `[build-dependencies.<key>]` all count.
-    let f = good_tree("ws_w5_tables");
-    f.append(
-        "crates/pool-config/Cargo.toml",
-        "\n[dev-dependencies]\npool.path = \"../../apps/pool\"\n\n[target.'cfg(unix)'.dependencies]\npool = { path = \"../../apps/pool\" }\n\n[build-dependencies.pool]\npath = \"../../apps/pool\"\n",
-    );
-    let out = f.check("workspace", &[]);
-    out.assert_problem("workspace", "W5", &["pool-config -> pool"]);
-    assert_eq!(out.problems().len(), 3, "one problem per table:\n{out}");
-}
-
-#[test]
-fn w5_follows_a_member_dependency_under_another_key() {
-    // covers: 0002 AC-6, W5: a member renamed with `package = "pool"` is still the package pool (review M3).
-    let f = good_tree("ws_w5_rename");
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "serde = \"1\"\n",
-        "serde = \"1\"\ndaemon = { package = \"pool\", path = \"../../apps/pool\" }\n",
-    );
-    f.check("workspace", &[]).assert_problem(
-        "workspace",
-        "W5",
-        &[
-            "crates/pool-config/Cargo.toml",
-            "pool-config -> pool",
-            "not allowed",
-        ],
-    );
-
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "daemon = { package = \"pool\", path = \"../../apps/pool\" }\n",
-        "",
-    );
+fn w5_manifest_alias_does_not_change_the_locked_package() {
+    let f = good_tree("ws_w5_alias");
     f.replace(
         "apps/pool/Cargo.toml",
         "pool-config = {",
-        "config = { package = \"pool-config\",",
+        "renamed = { package = \"pool-config\",",
     );
     f.check("workspace", &[]).assert_ok("workspace");
 }
 
 #[test]
-fn w5_sees_a_dependency_under_a_header_with_a_comment() {
-    // covers: 0002 AC-6, W5: `[dependencies] # runtime` is still the dependency table (review M3).
-    let f = good_tree("ws_w5_header_comment");
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "[dependencies]\n",
-        "[dependencies] # runtime\npool = { path = \"../../apps/pool\" }\n",
-    );
+fn w9_reads_private_key_headers_after_binary_bytes() {
+    let f = good_tree("ws_w9_binary");
+    let bytes = [b"\xff".as_slice(), b"-----BEGIN ", b"PRIVATE KEY-----\n"].concat();
+    f.write_bytes("binary-fixture.dat", &bytes);
     f.check("workspace", &[]).assert_problem(
         "workspace",
-        "W5",
-        &["pool-config -> pool", "not allowed"],
+        "W9",
+        &["binary-fixture.dat", "private key block"],
     );
 }
 
 #[test]
-fn w5_sees_a_quoted_key_and_a_target_table_for_one_dependency() {
-    // covers: 0002 AC-6, W5: `"pool" = {...}` and `[target.'cfg(unix)'.dependencies.pool]` (review M3).
-    let f = good_tree("ws_w5_quoted");
-    f.replace(
-        "crates/pool-config/Cargo.toml",
-        "serde = \"1\"\n",
-        "serde = \"1\"\n\"pool\" = { path = \"../../apps/pool\" }\n",
+fn w9_finds_a_private_header_after_a_certificate_and_binary_prefix() {
+    let f = good_tree("ws_w9_multiple_headers");
+    let bytes = [
+        b"\xff".as_slice(),
+        b"-----BEGIN ",
+        b"CERTIFICATE----- ",
+        b"-----BEGIN ",
+        b"PRIVATE KEY-----\n",
+    ]
+    .concat();
+    f.write_bytes("multiple-headers.dat", &bytes);
+    f.check("workspace", &[]).assert_problem(
+        "workspace",
+        "W9",
+        &["multiple-headers.dat", "private key block"],
     );
-    f.append(
-        "crates/pool-config/Cargo.toml",
-        "\n[target.'cfg(unix)'.dependencies.pool]\npath = \"../../apps/pool\"\n",
-    );
-    let out = f.check("workspace", &[]);
-    out.assert_problem("workspace", "W5", &["pool-config -> pool"]);
-    assert_eq!(out.problems().len(), 2, "one problem per spelling:\n{out}");
 }
 
 #[test]
@@ -454,4 +415,112 @@ fn workspace_reports_every_problem_before_the_count() {
     let out = f.check("workspace", &[]);
     out.assert_problem("workspace", "W2", &["apps/pool-cli"]);
     assert_eq!(out.last_line(), "pool-repo-check workspace: 3 problems");
+}
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+/// The repository this program lives in.
+fn repository(path: &str) -> String {
+    std::fs::read_to_string(format!("{}/../../{path}", env!("CARGO_MANIFEST_DIR")))
+        .unwrap_or_else(|e| panic!("{path}: {e}"))
+}
+
+/// The lines of a baseline file that count: not empty, not a comment.
+fn baseline_lines(text: &str) -> Vec<&str> {
+    text.lines()
+        .map(str::trim_end)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .collect()
+}
+
+#[test]
+fn ac2_the_committed_w3_baseline_is_the_block_of_spec_0004() {
+    // covers: 0004 AC-2. The block after "The file of this slice:" under "Source guard".
+    let spec = repository("docs/specs/0004-one-real-primary-path/index.md");
+    let section = spec
+        .split_once("\n### Source guard\n")
+        .expect("the section")
+        .1;
+    let block = section
+        .split_once("The file of this slice:\n\n```text\n")
+        .expect("the block")
+        .1
+        .split_once("\n```")
+        .expect("the end of the block")
+        .0;
+    let committed = repository("tools/repo-check/baseline/forbidden-source-patterns.txt");
+    assert_eq!(baseline_lines(&committed), baseline_lines(block));
+}
+
+#[test]
+fn ac2_the_committed_w3_baseline_allows_and_refuses_each_text_where_the_spec_says() {
+    // covers: 0004 AC-2, through the real binary on a tree with the committed baseline.
+    let f = good_tree("ws_ac2_matrix");
+    f.write(
+        "tools/repo-check/baseline/forbidden-source-patterns.txt",
+        &repository("tools/repo-check/baseline/forbidden-source-patterns.txt"),
+    );
+    // (file, text, refused)
+    let cases: &[(&str, &str, bool)] = &[
+        // Sockets and the runtime: allowed in pool-core and apps/pool only.
+        ("crates/pool-core/src/a.rs", "tokio", false),
+        ("crates/pool-core/tests/a.rs", "TcpStream", false),
+        ("crates/pool-core/src/b.rs", "std::net", false),
+        ("apps/pool/src/a.rs", "TcpListener", false),
+        ("apps/pool/tests/a.rs", "tokio", false),
+        ("crates/pool-config/src/a.rs", "tokio", true),
+        ("crates/pool-config/tests/a.rs", "TcpStream", true),
+        ("crates/pool-control/src/a.rs", "TcpListener", true),
+        ("crates/pool-control/tests/a.rs", "tokio", true),
+        ("crates/pool-protocol/src/a.rs", "std::net", true),
+        ("crates/pool-protocol/fuzz/fuzz_targets/a.rs", "tokio", true),
+        // Paths are whole components.
+        ("crates/pool-core-x/src/lib.rs", "tokio", true),
+        ("apps/pool-cli/src/main.rs", "TcpStream", true),
+        // Rejected everywhere.
+        ("crates/pool-core/src/c.rs", "std::thread", true),
+        ("apps/pool/src/b.rs", "UdpSocket", true),
+        ("apps/pool/tests/b.rs", "UnixListener", true),
+        ("crates/pool-core/src/d.rs", "UnixStream", true),
+        // No clock, file or environment under pool-control/src; its tests may.
+        ("crates/pool-control/src/b.rs", "Instant::now", true),
+        ("crates/pool-control/src/c.rs", "SystemTime", true),
+        ("crates/pool-control/src/d.rs", "std::fs", true),
+        ("crates/pool-control/src/e.rs", "std::env", true),
+        ("crates/pool-control/tests/b.rs", "std::fs", false),
+        ("crates/pool-core/src/e.rs", "std::fs", false),
+        // rusqlite: journal.rs only, within pool-control/src.
+        ("crates/pool-control/src/journal.rs", "rusqlite", false),
+        ("crates/pool-control/src/f.rs", "rusqlite", true),
+        ("crates/pool-control/tests/c.rs", "rusqlite", false),
+        // The five names of pool-control, refused outside it.
+        ("crates/pool-control/src/g.rs", "StoredAuthority", false),
+        ("crates/pool-control/tests/d.rs", "writer_admission", false),
+        ("apps/pool/src/c.rs", "StoredAuthority", true),
+        ("apps/pool/tests/c.rs", "StoreProbe", true),
+        ("crates/pool-core/src/f.rs", "classify_startup", true),
+        ("crates/pool-config/src/b.rs", "plan_bootstrap", true),
+        ("crates/pool-protocol/src/b.rs", "writer_admission", true),
+    ];
+    for (file, text, _) in cases {
+        f.write(file, &format!("// {text}\n"));
+    }
+    let out = f.check("workspace", &[]);
+    for (file, text, refused) in cases {
+        assert_eq!(
+            out.has("W3", &[&format!("{file}:"), text]),
+            *refused,
+            "{file} with {text}:\n{out}"
+        );
+    }
+    let w3 = out
+        .problems()
+        .iter()
+        .filter(|l| l.starts_with("W3: "))
+        .count();
+    assert_eq!(
+        w3,
+        cases.iter().filter(|c| c.2).count(),
+        "one W3 problem per refused case:\n{out}"
+    );
 }

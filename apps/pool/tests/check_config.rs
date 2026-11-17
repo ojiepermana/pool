@@ -1,5 +1,6 @@
 //! The built `pool` binary: exit status, exact stdout and stderr in both
-//! formats (spec 0001 AC-3 to AC-7, AC-9 to AC-11; spec 0003 AC-1 to AC-4).
+//! formats (spec 0001 AC-3 to AC-7, AC-9 to AC-11; spec 0003 AC-1 to AC-4;
+//! spec 0004 AC-5 to AC-8).
 
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -21,16 +22,22 @@ const HELP: &str = "\
 POOL daemon
 
 Usage:
-  pool check-config --config <PATH> [--format <human|json>]
+  pool check-config   --config <PATH> [--format <human|json>]
+  pool bootstrap      --config <PATH> [--format <human|json>]
+  pool show-authority --config <PATH> [--format <human|json>]
+  pool run            --config <PATH>
   pool --help
   pool --version
 
 Commands:
-  check-config  Validate a configuration file offline and exit
+  check-config    Validate a configuration file offline and exit
+  bootstrap       Probe every node once and create the journal
+  show-authority  Print the authority state and the journal ID
+  run             Serve clients until SIGTERM or SIGINT
 
-Options for check-config:
-  --config <PATH>          Configuration file to validate (TOML)
-  --format <human|json>    Output format (default: human)
+Options:
+  --config <PATH>          Configuration file (TOML)
+  --format <human|json>    Output format (default: human); not for run
 
 Exit status:
   0  success
@@ -389,7 +396,7 @@ fn help_and_version() {
 fn usage_errors_exit_2_with_two_lines_on_stderr() {
     let cases: &[(&[&str], &str)] = &[
         (&[], "a command is required"),
-        (&["run"], "unknown command"),
+        (&["serve"], "unknown command"),
         (&["check-config", "--bogus"], "unknown option"),
         (&["check-config", "--bogus", "--help"], "unknown option"),
         (&["check-config", "--bogus=1"], "unknown option"),
@@ -605,7 +612,7 @@ fn ac11_no_argument_at_all_needs_a_command() {
 fn ac11_a_first_argument_that_is_not_a_command_is_unknown() {
     assert_usage(
         &[
-            &["run"],
+            &["serve"],
             &[""],
             &["check"],
             &["Check-Config"],
@@ -2524,6 +2531,491 @@ fn ac4_a_canary_outside_a_value_never_reaches_the_output() {
             for output in [&run.stdout, &run.stderr] {
                 assert!(!output.contains(CANARY), "{text}\n{output}");
                 assert!(!output.contains("9f2c7b1e"), "{text}\n{output}");
+            }
+        }
+    }
+}
+
+// Spec 0004: the new keys through the built binary, the closed name rule and
+// the limit on findings (0004 AC-5 to AC-8).
+
+/// The exact human and JSON output of a file with one finding inside an
+/// entry, at a key, line and column.
+fn assert_key_at_rejection(path: &str, code: &str, key: &str, at: (u32, u32), message: &str) {
+    let (line, column) = at;
+    assert_run(
+        &check(path, "human"),
+        1,
+        &format!(
+            "configuration invalid\nfindings: 1\n{code} at {key}, line {line}, column {column}: {message}\n"
+        ),
+        "",
+    );
+    assert_run(
+        &check(path, "json"),
+        1,
+        &invalid_json(&format!(
+            "{{\"code\":\"{code}\",\"key\":\"{key}\",\"line\":{line},\"column\":{column},\"message\":\"{message}\"}}"
+        )),
+        "",
+    );
+}
+
+#[test]
+fn spec_0004_ac5_valid_serving_fixtures_give_exactly_the_valid_report() {
+    // covers: 0004 AC-5, AC-8. `check-config` does not report what a
+    // command still needs: the probe only fixture is simply valid.
+    for name in [
+        "valid-serving.toml",
+        "valid-serving-limits.toml",
+        "valid-serving-probe-only.toml",
+        "valid-serving-secret-values.toml",
+    ] {
+        let path = fixture(name);
+        assert_run(&check(&path, "human"), 0, VALID_HUMAN, "");
+        assert_run(&check(&path, "json"), 0, VALID_JSON, "");
+        assert_run(
+            &pool(["check-config", "--config", path.as_str()]),
+            0,
+            VALID_HUMAN,
+            "",
+        );
+    }
+}
+
+#[test]
+fn spec_0004_ac5_each_invalid_serving_fixture_gives_its_finding() {
+    // covers: 0004 AC-5, AC-6. The table under "Fixtures" in spec 0004.
+    for (name, code, key, message) in [
+        (
+            "invalid-serving-port.toml",
+            "config.invalid_value",
+            "listener.port",
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-serving-listener-key.toml",
+            "config.missing_key",
+            "listener.tls_private_key_file",
+            MISSING_KEY,
+        ),
+        (
+            "invalid-serving-limit.toml",
+            "config.invalid_value",
+            "limits.session_max_count",
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-serving-expiry.toml",
+            "config.invalid_value",
+            "probe.observation_expiry_ms",
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-serving-node-loss.toml",
+            "config.invalid_value",
+            "probe.node_loss_timeout_ms",
+            INVALID_VALUE,
+        ),
+    ] {
+        assert_key_rejection(&fixture(name), code, key, message);
+    }
+    for (name, code, key, at, message) in [
+        (
+            "invalid-serving-duplicate-principal.toml",
+            "config.duplicate_principal",
+            "principal.name",
+            (66, 8),
+            "two principal entries have the same name",
+        ),
+        (
+            "invalid-name-c1.toml",
+            "config.invalid_value",
+            "identity.backend_login",
+            (22, 17),
+            INVALID_VALUE,
+        ),
+        (
+            "invalid-name-direction.toml",
+            "config.invalid_value",
+            "identity.database",
+            (20, 12),
+            INVALID_VALUE,
+        ),
+    ] {
+        assert_key_at_rejection(&fixture(name), code, key, at, message);
+    }
+    let path = fixture("invalid-serving-unknown-key.toml");
+    let message = "unknown key, or a value of the wrong type or range";
+    assert_run(
+        &check(&path, "human"),
+        1,
+        &format!(
+            "configuration invalid\nfindings: 1\nconfig.schema at line 14, column 1: {message}\n"
+        ),
+        "",
+    );
+    assert_run(
+        &check(&path, "json"),
+        1,
+        &invalid_json(&format!(
+            "{{\"code\":\"config.schema\",\"key\":null,\"line\":14,\"column\":1,\"message\":\"{message}\"}}"
+        )),
+        "",
+    );
+}
+
+#[test]
+fn spec_0004_ac6_the_canary_never_reaches_the_output() {
+    // covers: 0004 AC-6, SEC-11. Valid files with the canary in every new
+    // string value, and names refused for a listed character.
+    for name in [
+        "valid-serving-secret-values.toml",
+        "invalid-name-c1.toml",
+        "invalid-name-direction.toml",
+    ] {
+        for format in ["human", "json"] {
+            let run = check(&fixture(name), format);
+            assert!(run.code == 0 || run.code == 1, "{name}");
+            for text in [&run.stdout, &run.stderr] {
+                assert!(!text.contains(CANARY), "{name} {format}: {text}");
+            }
+        }
+    }
+}
+
+/// Made input 5 of spec 0004: `identity = [`, then empty entries on line 2,
+/// as many as fit in 1048576 bytes. Every entry lacks its six required keys.
+fn made_input_5() -> (String, usize) {
+    let mut text = String::from("config_version = 1\nidentity = [");
+    let mut count = 0;
+    loop {
+        let entry = if count == 0 { "{}" } else { ",{}" };
+        if text.len() + entry.len() + 2 > 1_048_576 {
+            text.push_str("]\n");
+            return (text, count);
+        }
+        text.push_str(entry);
+        count += 1;
+    }
+}
+
+#[test]
+fn spec_0004_ac7_the_binary_writes_twenty_thousand_findings_and_the_omitted_count() {
+    // covers: 0004 AC-7. Exactly 20000 finding lines, less than 4 MiB in each
+    // format, and the omitted count is six times the entries minus 20000.
+    let (text, count) = made_input_5();
+    let omitted = count * 6 - 20_000;
+    let made = made_file("spec-0004-made-input-5.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    let limit = 4 * 1024 * 1024;
+
+    let human = check(path, "human");
+    assert_eq!(human.code, 1);
+    assert_eq!(human.stderr, "");
+    assert!(human.stdout.len() < limit, "{} bytes", human.stdout.len());
+    let lines: Vec<&str> = human.stdout.lines().collect();
+    assert_eq!(lines.len(), 2 + 20_000 + 1);
+    assert_eq!(lines[..2], ["configuration invalid", "findings: 20000"]);
+    assert_eq!(
+        lines[2],
+        format!("config.missing_key at identity.id, line 2, column 13: {MISSING_KEY}")
+    );
+    assert!(
+        lines[2..20_002]
+            .iter()
+            .all(|line| line.starts_with("config.missing_key at identity."))
+    );
+    assert_eq!(lines[20_002], format!("findings omitted: {omitted}"));
+    assert!(
+        human
+            .stdout
+            .ends_with(&format!("findings omitted: {omitted}\n"))
+    );
+
+    let json = check(path, "json");
+    assert_eq!(json.code, 1);
+    assert_eq!(json.stderr, "");
+    assert!(json.stdout.len() < limit, "{} bytes", json.stdout.len());
+    assert_eq!(json.stdout.lines().count(), 1);
+    assert!(json.stdout.starts_with(&format!(
+        "{{\"output_version\":1,\"command\":\"check-config\",\"result\":\"invalid\",\"config_version\":null,\"capabilities\":null,\"findings_omitted\":{omitted},\"findings\":[{{\"code\":\"config.missing_key\",\"key\":\"identity.id\",\"line\":2,\"column\":13,"
+    )));
+    assert_eq!(json.stdout.matches("{\"code\":").count(), 20_000);
+    assert_eq!(json.stdout.matches("findings_omitted").count(), 1);
+    assert!(json.stdout.ends_with("}]}\n"));
+}
+
+#[test]
+fn spec_0004_ac7_a_report_of_twenty_thousand_has_no_omitted_line_or_field() {
+    // covers: 0004 AC-7. 5000 empty nodes give exactly 20000 findings.
+    let entries = vec!["{}"; 5000].join(",");
+    let text = format!("config_version = 1\nnode = [{entries}]\n");
+    let made = made_file("spec-0004-twenty-thousand.toml", text.as_bytes());
+    let path = made.to_str().expect("utf-8 path");
+    let human = check(path, "human");
+    assert_eq!(human.code, 1);
+    assert_eq!(human.stdout.lines().count(), 2 + 20_000);
+    assert!(!human.stdout.contains("omitted"));
+    let json = check(path, "json");
+    assert_eq!(json.code, 1);
+    assert!(!json.stdout.contains("findings_omitted"));
+    assert!(
+        json.stdout
+            .contains(",\"capabilities\":null,\"findings\":[")
+    );
+}
+
+// ---- added by the tests of scope 004 (`/test one real primary path`) ----
+
+#[test]
+fn ac5_every_fixture_gives_the_result_its_name_prefix_promises() {
+    // covers: 0004 AC-5. `valid-*` exits 0 with the valid report, `invalid-*`
+    // and `secret-*` exit 1; no fixture has another prefix or extension.
+    let mut names: Vec<String> = std::fs::read_dir(FIXTURES)
+        .expect("the fixture directory")
+        .map(|entry| {
+            entry
+                .expect("entry")
+                .file_name()
+                .into_string()
+                .expect("utf-8")
+        })
+        .collect();
+    names.sort();
+    assert!(names.len() >= 40, "{names:?}");
+    for name in &names {
+        assert!(name.ends_with(".toml"), "{name}");
+        let path = fixture(name);
+        for format in ["human", "json"] {
+            let run = check(&path, format);
+            if name.starts_with("valid-") {
+                let valid = if format == "human" {
+                    VALID_HUMAN
+                } else {
+                    VALID_JSON
+                };
+                assert_run(&run, 0, valid, "");
+            } else if name.starts_with("invalid-") || name.starts_with("secret-") {
+                assert_eq!(run.code, 1, "{name} {format}: {}", run.stdout);
+                assert_eq!(run.stderr, "", "{name} {format}");
+                assert!(!run.stdout.contains(CANARY), "{name} {format}");
+            } else {
+                panic!("{name}: a fixture name starts with valid-, invalid- or secret-");
+            }
+        }
+    }
+}
+
+/// `valid-serving.toml` with `extra` added at the end and `from` replaced by `to`.
+fn serving_with(name: &str, from: &str, to: &str, extra: &str) -> PathBuf {
+    let text = std::fs::read_to_string(fixture("valid-serving.toml")).expect("fixture");
+    assert!(text.contains(from), "{from}");
+    let text = format!("{}\n{extra}", text.replacen(from, to, 1));
+    made_file(name, text.as_bytes())
+}
+
+#[test]
+fn ac5_each_new_number_key_takes_its_range_edges_and_refuses_one_past_them() {
+    // covers: 0004 AC-5, the table under "Keys", through the built binary.
+    let probe_room = "period_ms = 100\ntimeout_ms = 100\n";
+    // (table, key, lowest, highest, the other keys the table needs)
+    let keys: &[(&str, &str, u64, u64, &str)] = &[
+        ("limits", "session_max_count", 1, 100_000, ""),
+        ("limits", "handshake_max_count", 1, 10_000, ""),
+        ("limits", "backend_wait_max_count", 0, 100_000, ""),
+        ("limits", "node_backend_max_count", 1, 100_000, ""),
+        ("limits", "startup_timeout_ms", 100, 60_000, ""),
+        ("limits", "backend_acquire_timeout_ms", 100, 60_000, ""),
+        ("limits", "shutdown_timeout_ms", 0, 600_000, ""),
+        ("limits", "startup_packet_max_bytes", 512, 65_536, ""),
+        (
+            "limits",
+            "frontend_message_max_bytes",
+            1024,
+            1_073_741_823,
+            "",
+        ),
+        (
+            "probe",
+            "period_ms",
+            100,
+            30_000,
+            "timeout_ms = 100\nobservation_expiry_ms = 60000\nnode_loss_timeout_ms = 90000\n",
+        ),
+        (
+            "probe",
+            "timeout_ms",
+            100,
+            30_000,
+            "period_ms = 100\nobservation_expiry_ms = 60000\nnode_loss_timeout_ms = 90000\n",
+        ),
+        ("probe", "observation_expiry_ms", 1000, 60_000, probe_room),
+    ];
+    for (table, key, low, high, others) in keys {
+        let mut values = vec![(*low, true), (*high, true), (high + 1, false)];
+        if *low > 0 {
+            values.push((low - 1, false));
+        }
+        for (value, ok) in values {
+            let path = serving_with(
+                &format!("range-{table}-{key}-{value}.toml"),
+                "",
+                "",
+                &format!("[{table}]\n{others}{key} = {value}\n"),
+            );
+            let path = path.to_str().expect("utf-8");
+            if ok {
+                assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
+            } else {
+                assert_key_rejection(
+                    path,
+                    "config.invalid_value",
+                    &format!("{table}.{key}"),
+                    INVALID_VALUE,
+                );
+            }
+        }
+    }
+    // The cross rule: the expiry is not less than the period plus the timeout.
+    for (expiry, ok) in [(4000u64, true), (3999, false)] {
+        let path = serving_with(
+            &format!("range-expiry-cross-{expiry}.toml"),
+            "",
+            "",
+            &format!(
+                "[probe]\nperiod_ms = 3000\ntimeout_ms = 1000\nobservation_expiry_ms = {expiry}\n"
+            ),
+        );
+        let path = path.to_str().expect("utf-8");
+        if ok {
+            assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
+        } else {
+            assert_key_rejection(
+                path,
+                "config.invalid_value",
+                "probe.observation_expiry_ms",
+                INVALID_VALUE,
+            );
+        }
+    }
+    // listener.port and principal[].session_max_count. A port of 65536 does not fit the integer
+    // type of the key, so it is `config.schema`, as the rule under "Keys" says; 0 fits and is out of range.
+    let path = serving_with(
+        "range-listener-port-65536.toml",
+        "port = 6432",
+        "port = 65536",
+        "",
+    );
+    let run = check(path.to_str().expect("utf-8"), "human");
+    assert_eq!(run.code, 1);
+    assert!(
+        run.stdout.contains("\nconfig.schema at line "),
+        "{}",
+        run.stdout
+    );
+    for (value, ok) in [(1u64, true), (65_535, true), (0, false)] {
+        let path = serving_with(
+            &format!("range-listener-port-{value}.toml"),
+            "port = 6432",
+            &format!("port = {value}"),
+            "",
+        );
+        let path = path.to_str().expect("utf-8");
+        if ok {
+            assert_run(&check(path, "human"), 0, VALID_HUMAN, "");
+        } else {
+            assert_key_rejection(path, "config.invalid_value", "listener.port", INVALID_VALUE);
+        }
+    }
+    for (value, ok) in [(1u64, true), (100_000, true), (0, false), (100_001, false)] {
+        let from = "verifier_file = \"/etc/pool/secrets/report_app.scram\"";
+        let path = serving_with(
+            &format!("range-principal-limit-{value}.toml"),
+            from,
+            &format!("{from}\nsession_max_count = {value}"),
+            "",
+        );
+        let run = check(path.to_str().expect("utf-8"), "human");
+        if ok {
+            assert_run(&run, 0, VALID_HUMAN, "");
+        } else {
+            assert_eq!(run.code, 1, "{value}");
+            assert!(
+                run.stdout.starts_with(
+                    "configuration invalid\nfindings: 1\nconfig.invalid_value at principal.session_max_count, line "
+                ),
+                "{value}: {}",
+                run.stdout
+            );
+        }
+    }
+}
+
+#[test]
+fn ac6_raw_c1_direction_and_separator_characters_in_names_and_paths_are_refused_without_the_canary()
+{
+    // covers: 0004 AC-6. Raw characters in the file, not TOML escapes. The
+    // control characters below U+0080 are refused by TOML itself, so the raw
+    // cases start at U+0080.
+    let characters = [
+        '\u{80}', '\u{85}', '\u{9f}', '\u{61c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202e}',
+        '\u{2066}', '\u{2069}', '\u{2028}', '\u{2029}',
+    ];
+    // (the text replaced, the key named by the finding, whether it is in a repeated table)
+    let places = [
+        ("name = \"orders_app\"", "principal.name", true),
+        (
+            "verifier_file = \"/etc/pool/secrets/orders_app.scram\"",
+            "principal.verifier_file",
+            true,
+        ),
+        (
+            "monitor_login = \"pool_monitor\"",
+            "cluster.monitor_login",
+            true,
+        ),
+        (
+            "tls_certificate_file = \"/etc/pool/tls/server.crt\"",
+            "listener.tls_certificate_file",
+            false,
+        ),
+    ];
+    for c in characters {
+        for (from, key, repeated) in places {
+            let (head, value) = from.split_once(" = ").expect("a key and a value");
+            let value = value.trim_matches('"');
+            let to = format!("{head} = \"{value}{c}{CANARY}\"");
+            let path = serving_with(
+                &format!("raw-{:04x}-{}.toml", u32::from(c), key.replace('.', "-")),
+                from,
+                &to,
+                "",
+            );
+            for format in ["human", "json"] {
+                let run = check(path.to_str().expect("utf-8"), format);
+                assert_eq!(run.code, 1, "U+{:04X} at {key} {format}", u32::from(c));
+                assert!(
+                    !run.stdout.contains(CANARY),
+                    "U+{:04X} at {key}",
+                    u32::from(c)
+                );
+                assert!(!run.stdout.contains(c), "U+{:04X} at {key}", u32::from(c));
+                assert_eq!(run.stderr, "");
+                if format == "human" {
+                    let line = if repeated {
+                        format!("config.invalid_value at {key}, line ")
+                    } else {
+                        format!("config.invalid_value at {key}: ")
+                    };
+                    assert!(
+                        run.stdout
+                            .starts_with(&format!("configuration invalid\nfindings: 1\n{line}")),
+                        "U+{:04X} at {key}: {}",
+                        u32::from(c),
+                        run.stdout
+                    );
+                }
             }
         }
     }

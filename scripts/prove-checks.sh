@@ -108,6 +108,16 @@ replace_line_starting() {
   rewrite "$1" awk -v a="$2" -v b="$3" '!done && index($0, a) == 1 { $0 = b; done = 1 } { print }'
 }
 
+# Appends a row after the last row of the feature table of the scope index, the table under its first
+# "| # | Feature |" header.
+append_feature_row() {
+  rewrite "$1" awk -v l="$2" '
+    state == 1 && index($0, "|") != 1 { print l; state = 2 }
+    { print }
+    state == 0 && index($0, "| # | Feature |") == 1 { state = 1 }
+    END { if (state == 1) print l }'
+}
+
 # Replaces the first commit hash after actions/checkout@ with v7.
 unpin_checkout() {
   rewrite "$1" awk '
@@ -116,6 +126,15 @@ unpin_checkout() {
       done = 1
     }
     { print }'
+}
+
+# Add a dependency to Cargo's existing canonical array for one package.
+add_locked_dependency() {
+  rewrite "$1" awk -v package="$2" -v dependency="$3" '
+    /^\[\[package\]\]/ { inside = 0 }
+    $0 == "name = \"" package "\"" { inside = 1 }
+    { print }
+    inside && /^dependencies = \[/ { print " \"" dependency "\","; inside = 0 }'
 }
 
 # --- the cases ---
@@ -252,9 +271,10 @@ delete_lines_starting "$C/tools/repo-check/baseline/lock-packages.txt" 'zmij'
 expect 8 guards 'W1' 'zmij'
 restore
 
-mkdir -p "$C/crates/pool-core"
-: >"$C/crates/pool-core/.keep"
-expect 9 guards 'W2' 'crates/pool-core'
+# Since spec 0004 step 3, apps/pool-cli is the one forbidden path.
+mkdir -p "$C/apps/pool-cli"
+: >"$C/apps/pool-cli/.keep"
+expect 9 guards 'W2' 'apps/pool-cli'
 restore
 
 append "$C/apps/pool/src/main.rs" '// std::thread'
@@ -265,7 +285,7 @@ delete_table "$C/apps/pool/Cargo.toml" '[lints]'
 expect 11 guards 'W4'
 restore
 
-insert_after "$C/crates/pool-config/Cargo.toml" '[dependencies]' 'pool = { path = "../../apps/pool" }'
+add_locked_dependency "$C/Cargo.lock" 'pool-config' 'pool'
 expect 12 guards 'W5' 'pool-config -> pool'
 restore
 
@@ -285,8 +305,11 @@ append "$C/README.md" '[broken](docs/glossary.md#no-such-heading)'
 expect 16 docs 'D2' 'no-such-heading'
 restore
 
-rewrite "$C/docs/scope/004-one-real-primary-path.md" awk 'NR == 1 { sub(/planned/, "done") } { print }'
-expect 17 docs 'D3'
+# Case 17: a feature of the proof's own, so that the case does not depend on the status of a real feature
+# (spec 0004, "Proof script and lockfile check"). Its row says planned and its file says done.
+append_feature_row "$C/docs/scope/index.md" '| 99 | [Proof case](099-proof-case.md) | Proof | planned |'
+printf '%s\n' '# 99. Proof case · done' >"$C/docs/scope/099-proof-case.md"
+expect 17 docs 'D3' '099-proof-case.md'
 restore
 
 append "$C/README.md" '`SEC-99`'
@@ -370,6 +393,144 @@ restore
 
 append "$C/docs/security/security-requirements.md" '| SEC-14 | Fixture row used to prove the duplicate rule |'
 expect 28 docs 'D4' 'SEC-14'
+restore
+
+# Case 29: a local package that is no member, followed by a table with a source line, which ends the entry
+# (spec 0004, "Proof script and lockfile check"). The baseline copy names it, so only W4 objects.
+cat >>"$C/Cargo.lock" <<'LOCK_ENTRY'
+
+[[package]]
+name = "pool-prove-ghost"
+version = "0.0.0"
+
+[[patch.unused]]
+name = "pool-prove-unused"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+LOCK_ENTRY
+append "$C/tools/repo-check/baseline/lock-packages.txt" 'pool-prove-ghost'
+expect 29 guards 'W4' 'pool-prove-ghost'
+restore
+
+# Cases 30 to 35: one per group of the source guard of spec 0004 (0004 AC-2, "Source guard").
+# 30: a socket or the runtime outside pool-core and apps/pool.
+append "$C/crates/pool-control/src/lib.rs" '// TcpStream'
+expect 30 guards 'W3' 'crates/pool-control/src/lib.rs' 'TcpStream'
+restore
+
+# 31: a thread or a socket kind that no path allows, also where sockets are allowed.
+append "$C/apps/pool/src/main.rs" '// UnixStream'
+expect 31 guards 'W3' 'apps/pool/src/main.rs' 'UnixStream'
+restore
+
+# 32: a clock, a file call or an environment read in pool-control (0003 AC-11, Follow-up 4 point t6).
+append "$C/crates/pool-control/src/lib.rs" '// Instant::now'
+expect 32 guards 'W3' 'crates/pool-control/src/lib.rs' 'Instant::now'
+restore
+
+# 33: rusqlite in pool-control outside journal.rs.
+append "$C/crates/pool-control/src/lib.rs" '// rusqlite'
+expect 33 guards 'W3' 'crates/pool-control/src/lib.rs' 'rusqlite'
+restore
+
+# 34: a journal value named outside pool-control (point m2, 0003 AC-19).
+append "$C/apps/pool/src/main.rs" '// StoreProbe'
+expect 34 guards 'W3' 'apps/pool/src/main.rs' 'StoreProbe'
+restore
+
+# 35: writer admission called outside pool-control (point m3, the guard half of 0003 AC-18).
+append "$C/crates/pool-config/src/lib.rs" '// writer_admission'
+expect 35 guards 'W3' 'crates/pool-config/src/lib.rs' 'writer_admission'
+restore
+
+# 36: rusqlite named outside pool-control, in apps/pool (decision 93, finding g2: one writer in every crate).
+append "$C/apps/pool/src/main.rs" '// rusqlite'
+expect 36 guards 'W3' 'apps/pool/src/main.rs' 'rusqlite'
+restore
+
+# Scope 005 inherits the tooling debt of spec 0004 Follow-up 14. Each wrong
+# change below has a baseline (the unchanged-copy check above) and its own refusal.
+append "$C/crates/pool-config/src/lib.rs" 'pub fn prove_grouped_thread() { use std::{thread}; let _ = thread::spawn(|| ()); }'
+expect 37 clippy 'disallowed_methods' 'std::thread::spawn'
+restore
+
+append "$C/crates/pool-config/src/lib.rs" 'pub fn prove_grouped_socket(_: std::net::UdpSocket) {}'
+expect 38 clippy 'disallowed_types' 'std::net::UdpSocket'
+restore
+
+append "$C/crates/pool-control/src/lib.rs" 'pub fn prove_grouped_clock() { use std::{time}; let _ = time::Instant::now(); }'
+expect 39 clippy 'disallowed_methods' 'std::time::Instant::now'
+restore
+
+append "$C/crates/pool-control/src/lib.rs" 'pub fn prove_path_read(path: &std::path::Path) { let _ = path.metadata(); }'
+expect 40 clippy 'disallowed_methods' 'std::path::Path::metadata'
+restore
+
+for direction in core-control control-core; do
+  case "$direction" in
+    core-control) from=pool-core; to=pool-control; case_id=41 ;;
+    control-core) from=pool-control; to=pool-core; case_id=42 ;;
+  esac
+  add_locked_dependency "$C/Cargo.lock" "$from" "$to"
+  append "$C/tools/repo-check/baseline/internal-dependencies.txt" "$from -> $to"
+  expect "$case_id" guards 'W5' "$from -> $to" 'core/control exclusion'
+  restore
+done
+
+append "$C/tools/repo-check/baseline/forbidden-source-patterns.txt" 'allow crates/pool-control std::fs'
+expect 43 guards 'W3' 'deny crates/pool-control/src std::fs is hidden by allow'
+restore
+
+# Split the header so this proof script itself does not contain a private key block.
+printf '%s%s\n' '-----BEGIN ' 'RSA PRIVATE KEY-----' >"$C/prove-private-key.pem"
+expect 44 guards 'W9' 'prove-private-key.pem' 'private key block'
+restore
+
+replace_first "$C/crates/pool-core/tests/fixtures/node.key" 'MIGH' 'MIXX'
+expect 45 guards 'W9' 'node.key' 'private key block'
+restore
+
+case_id=46
+for key in AWS_LC_SYS_USE_SYSTEM \
+  AWS_LC_SYS_USE_SYSTEM_aarch64_unknown_linux_gnu \
+  AWS_LC_SYS_USE_SYSTEM_x86_64_unknown_linux_gnu \
+  AWS_LC_SYS_USE_SYSTEM_aarch64_apple_darwin \
+  AWS_LC_SYS_USE_SYSTEM_x86_64_apple_darwin \
+  LIBSQLITE3_SYS_USE_PKG_CONFIG; do
+  replace_line_starting "$C/.cargo/config.toml" "$key = " "$key = { value = \"0\", force = false }"
+  expect "$case_id" guards 'W8' '.cargo/config.toml' 'six native-library settings'
+  restore
+  case_id=$((case_id + 1))
+done
+
+append "$C/.github/workflows/ci.yml" '# POOL_IT_FILTER=one is deliberately forbidden even in comments'
+expect 52 guards 'C5' 'POOL_IT_FILTER'
+restore
+
+replace_first "$C/NOTICE" 'aws-lc-sys 0.47.0' 'aws-lc-sys 0.46.0'
+expect 53 guards 'W10' 'aws-lc-sys' 'Cargo.lock'
+restore
+
+replace_first "$C/NOTICE" 'SQLite 3.54.1' 'SQLite 3.54.0'
+expect 54 guards 'W10' 'SQLite 3.54.1'
+restore
+
+replace_first "$C/NOTICE" 'AWS-LC 5.12.0' 'AWS-LC 0.47.0'
+expect 55 guards 'W10' 'AWS-LC 5.12.0'
+restore
+
+replace_first "$C/NOTICE" 'libsqlite3-sys 0.40.0' 'libsqlite3-sys 0.39.0'
+expect 56 guards 'W10' 'libsqlite3-sys' 'Cargo.lock'
+restore
+
+# The resolved thread restriction applies in integration-test compilation units too.
+append "$C/crates/pool-control/tests/controller.rs" 'pub fn prove_test_grouped_thread() { use std::{thread}; let _ = thread::spawn(|| ()); }'
+expect 57 clippy 'disallowed_methods' 'std::thread::spawn'
+restore
+
+# A non-private PEM header and binary prefix cannot hide a later private header.
+printf '\377%s%s%s%s\n' '-----BEGIN ' 'CERTIFICATE----- ' '-----BEGIN ' 'PRIVATE KEY-----' >"$C/prove-multiple-headers.dat"
+expect 58 guards 'W9' 'prove-multiple-headers.dat' 'private key block'
 restore
 
 if [ -n "$failed" ]; then

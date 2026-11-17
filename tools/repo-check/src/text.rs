@@ -97,29 +97,6 @@ pub fn table_header(line: &str) -> Option<String> {
     table_parts(line).map(|parts| parts.join("."))
 }
 
-/// Splits the key at the start of a line from the rest: a quoted key up to its closing quote, a bare key up to the first dot, space or equals sign.
-pub fn leading_key(line: &str) -> Option<(String, &str)> {
-    let line = line.trim_start();
-    let first = line.chars().next()?;
-    if first == '"' || first == '\'' {
-        let close = line[1..].find(first)? + 1;
-        return Some((line[1..close].to_string(), line[close + 1..].trim_start()));
-    }
-    let end = line.find(['.', ' ', '\t', '=']).unwrap_or(line.len());
-    if end == 0 {
-        return None;
-    }
-    Some((line[..end].to_string(), line[end..].trim_start()))
-}
-
-/// Returns the text of a quoted TOML string at the start of `value`.
-pub fn string_value(value: &str) -> Option<String> {
-    let value = value.trim_start();
-    let quote = value.chars().next().filter(|c| *c == '"' || *c == '\'')?;
-    let close = value[1..].find(quote)? + 1;
-    Some(value[1..close].to_string())
-}
-
 /// Splits `key = value` into a trimmed key and a trimmed value.
 pub fn key_value(line: &str) -> Option<(&str, &str)> {
     let (key, value) = line.split_once('=')?;
@@ -287,19 +264,6 @@ mod tests {
             Some(vec!["a.b".to_string(), "c".to_string()])
         );
         assert_eq!(table_parts("[a..b]"), None);
-    }
-
-    #[test]
-    fn leading_keys_and_strings() {
-        assert_eq!(
-            leading_key(r#""pool" = { path = "x" }"#),
-            Some(("pool".to_string(), r#"= { path = "x" }"#))
-        );
-        assert_eq!(
-            leading_key("pool.workspace = true"),
-            Some(("pool".to_string(), ".workspace = true"))
-        );
-        assert_eq!(string_value(" 'pool' }"), Some("pool".to_string()));
     }
 
     #[test]

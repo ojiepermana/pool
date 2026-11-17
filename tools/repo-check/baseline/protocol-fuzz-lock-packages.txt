@@ -1,0 +1,13 @@
+# Baseline of spec 0004 (docs/specs/0004-one-real-primary-path/index.md, "Fuzzing"), rule W1: package names of crates/pool-protocol/fuzz/Cargo.lock
+arbitrary
+cc
+cfg-if
+find-msvc-tools
+getrandom
+jobserver
+libc
+libfuzzer-sys
+pool-protocol
+pool-protocol-fuzz
+r-efi
+shlex
